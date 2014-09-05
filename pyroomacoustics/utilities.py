@@ -213,3 +213,96 @@ def real_spectrum(signal, axis=-1, **kwargs):
     plt.plot(f, P, **kwargs)
 
 
+def convmtx(x, n):
+
+    '''
+    Create a convolution matrix H for the vector x of size len(x) times n.
+    Then, the result of np.dot(H,v) where v is a vector of length n is the same
+    as np.convolve(x, v).
+    '''
+
+    import scipy as s
+
+    c = np.concatenate((x, np.zeros(n-1)))
+    r = np.zeros(n)
+
+    return s.linalg.toeplitz(c,r)
+
+
+def prony(x, p, q):
+    '''
+    Prony's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
+
+    Arguments
+    ---------
+
+    x: signal to model
+    p: order of denominator
+    q: order of numerator
+
+    Returns
+    -------
+
+    a: numerator coefficients
+    b: denominator coefficients
+    err: the squared error of approximation
+    '''
+
+
+    nx = x.shape[0]
+
+    if (p+q >= nx):
+        raise NameError('Model order too large')
+
+    X = convmtx(x, p+1)
+
+    Xq = X[q:nx+p-1,0:p]
+
+    a = np.concatenate((np.ones(1), -np.linalg.lstsq(Xq, X[q+1:nx+p,0])[0]))
+    b = np.dot(X[0:q+1,0:p+1], a)
+
+    err = np.inner(np.conj(x[q+1:nx]), np.dot(X[q+1:nx,:p+1], a))
+
+    return a,b,err
+
+
+def shanks(x, p, q):
+    '''
+    Shank's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
+
+    Arguments
+    ---------
+
+    x: signal to model
+    p: order of denominator
+    q: order of numerator
+
+    Returns
+    -------
+
+    a: numerator coefficients
+    b: denominator coefficients
+    err: the squared error of approximation
+    '''
+
+    from scipy import signal
+
+    nx = x.shape[0]
+
+    if (p+q >= nx):
+        raise NameError('Model order too large')
+
+    a = prony(x, p, q)[0]
+
+    u = np.zeros(nx)
+    u[0] = 1.
+
+    g = signal.lfilter(np.ones(1), a, u)
+
+    G = convmtx(g, q+1)
+    b = np.linalg.lstsq(G[:nx,:], x)[0]
+    err = np.inner(np.conj(x), x) - np.inner(np.conj(x), np.dot(G[:nx,:q+1], b))
+
+    return a,b,err
+
+

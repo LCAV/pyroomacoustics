@@ -117,7 +117,7 @@ class Room(object):
         if (self.micArray is not None):
             for mic in self.micArray.R.T:
                 ax.scatter(mic[0], mic[1], 
-                        marker='x', linewidth=0.5, s=2, c='k')
+                        marker='x', linewidth=0.5, s=10, c='k')
 
             # draw the beam pattern of the beamformer if requested (and
             # available)
@@ -317,6 +317,7 @@ class Room(object):
                 h.append(ir)
 
             self.rir.append(h)
+
 
     def simulate(self, recompute_rir=False):
         '''
