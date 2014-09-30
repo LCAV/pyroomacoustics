@@ -306,3 +306,52 @@ def shanks(x, p, q):
     return a,b,err
 
 
+def lowPassDirac(t0, alpha, Fs, N):
+    '''
+    Creates a vector containing a lowpass Dirac of duration T sampled at Fs
+    with delay t0 and attenuation alpha.
+    
+    If t0 and alpha are 2D column vectors of the same size, then the function
+    returns a matrix with each line corresponding to pair of t0/alpha values.
+    '''
+    
+    return alpha*np.sinc(np.arange(N) - Fs*t0)
+
+def levinson(r, b):
+    '''
+    levinson(r,b)
+
+    Solve a system of the form Rx=b where R is hermitian toeplitz matrix and b
+    is any vector using the generalized Levinson recursion as described in M.H.
+    Hayes, Statistical Signal Processing and Modelling, p. 268.
+
+    Arguments
+    ---------
+    r: First column of R, toeplitz hermitian matrix.
+    b: The right-hand argument. If b is a matrix, the system is solved
+       for every column vector in b.
+
+    Return
+    ------
+    The solution of the linear system Rx = b.
+    '''
+
+    p = b.shape[0]
+
+    a = np.array([1])
+    x = b[np.newaxis,0,]/r[0]
+    epsilon = r[0]
+
+    for j in np.arange(1,p):
+
+        g = np.sum(np.conj(r[1:j+1])*a[::-1])
+        gamma = -g/epsilon
+        a = np.concatenate((a, np.zeros(1))) + gamma*np.concatenate((np.zeros(1), np.conj(a[::-1])))
+        epsilon = epsilon*(1 - np.abs(gamma)**2)
+        delta = np.dot(np.conj(r[1:j+1]),np.flipud(x))
+        q = (b[j,] - delta)/epsilon
+        x = np.concatenate((x, np.zeros( 1 if len(b.shape) == 1 else (1,b.shape[1] ))), axis=0) + q*np.conj(a[::-1,np.newaxis])
+
+    return x
+
+

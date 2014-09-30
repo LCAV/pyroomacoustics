@@ -122,8 +122,9 @@ class Room(object):
             # draw the beam pattern of the beamformer if requested (and
             # available)
             if freq is not None \
-                    and type(self.micArray) is bf.Beamformer \
-                    and self.micArray.weights is not None:
+                    and isinstance(self.micArray, bf.Beamformer) \
+                    and (self.micArray.weights is not None 
+                            or self.micArray.filters is not None):
 
                 freq = np.array(freq)
                 if np.rank(freq) is 0:
@@ -284,6 +285,7 @@ class Room(object):
 
         return images, damping
 
+
     def compute_RIR(self, c=constants.c, window=False):
         '''
         Compute the room impulse response between every source and microphone
@@ -311,8 +313,12 @@ class Room(object):
                 t = np.arange(N)/float(self.Fs)
                 ir = np.zeros(t.shape)
 
+                #from utilities import lowPassDirac
+                import utilities as u
+
                 for ti, ai in zip(time, alpha):
-                    ir += np.sinc(self.Fs*(t-ti))*ai
+                    ir += u.lowPassDirac(ti, ai, self.Fs, N)
+                    #ir += np.sinc(self.Fs*(t-ti))*ai
 
                 h.append(ir)
 
