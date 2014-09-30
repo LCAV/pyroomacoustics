@@ -256,7 +256,13 @@ class Beamformer(MicrophoneArray):
         if self.filters == None:
             raise NameError('Filters must be defined.')
 
-        self.weights = np.conj(np.fft.rfft(self.filters, n=self.N, axis=1))
+        # this is what we want to use, really.
+        #self.weights = np.conj(np.fft.rfft(self.filters, n=self.N, axis=1))
+
+        # quick hack to be able to use MKL acceleration package from anaconda
+        self.weights = np.zeros((self.M, self.N/2+1), dtype=np.complex128)
+        for m in xrange(self.M):
+            self.weights[m] = np.conj(np.fft.rfft(self.filters[m], n=self.N))
 
 
     def steering_vector_2D(self, frequency, phi, dist, attn=False):
