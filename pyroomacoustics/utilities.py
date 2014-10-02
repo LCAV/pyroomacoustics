@@ -317,6 +317,7 @@ def lowPassDirac(t0, alpha, Fs, N):
     
     return alpha*np.sinc(np.arange(N) - Fs*t0)
 
+
 def levinson(r, b):
     '''
     levinson(r,b)

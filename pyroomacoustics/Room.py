@@ -316,9 +316,10 @@ class Room(object):
                 #from utilities import lowPassDirac
                 import utilities as u
 
-                for ti, ai in zip(time, alpha):
-                    ir += u.lowPassDirac(ti, ai, self.Fs, N)
-                    #ir += np.sinc(self.Fs*(t-ti))*ai
+                ir = u.lowPassDirac(time[:,np.newaxis], alpha[:,np.newaxis], self.Fs, N).sum(axis=0)
+
+                #for ti, ai in zip(time, alpha):
+                    #ir += u.lowPassDirac(ti, ai, self.Fs, N)
 
                 h.append(ir)
 
