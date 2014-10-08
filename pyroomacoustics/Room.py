@@ -84,7 +84,7 @@ class Room(object):
         self.sigma2_awgn = sigma2_awgn
 
 
-    def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, **kwargs):
+    def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
 
         import matplotlib
         from matplotlib.patches import Circle, Wedge, Polygon
@@ -117,7 +117,7 @@ class Room(object):
         if (self.micArray is not None):
             for mic in self.micArray.R.T:
                 ax.scatter(mic[0], mic[1], 
-                        marker='x', linewidth=0.5, s=10, c='k')
+                        marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
             # draw the beam pattern of the beamformer if requested (and
             # available)
