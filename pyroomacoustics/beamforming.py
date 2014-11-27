@@ -4,6 +4,8 @@ from scipy.linalg import toeplitz, inv
 import scipy.linalg as la
 
 import constants
+import utilities as u
+from SoundSource import buildRIRMatrix
 
 import windows
 import stft
@@ -255,7 +257,7 @@ class Beamformer(MicrophoneArray):
 
     def weightsFromFilters(self):
 
-        if self.filters == None:
+        if self.filters is None:
             raise NameError('Filters must be defined.')
 
         # this is what we want to use, really.
@@ -346,7 +348,7 @@ class Beamformer(MicrophoneArray):
         elif self.weights is None and self.filters is None:
             raise NameError('Beamforming weights or filters need to be computed first.')
 
-        if np.rank(x) == 0:
+        if x.ndim == 0:
             x = np.array([x])
 
         import matplotlib.pyplot as plt
@@ -714,12 +716,12 @@ class Beamformer(MicrophoneArray):
         Compute directly the time-domain filters for a UDR maximizing beamformer.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
+        dist_mat = distance(self.R, sources)
+        s_time = dist_mat / constants.c
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
+        dist_mat = distance(self.R, interferers)
+        i_time = dist_mat / constants.c
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -744,12 +746,12 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build interferer RIR matrix
-            hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
+            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
             
         # Delay of the system in samples
         kappa = int(delay*self.Fs)
@@ -782,12 +784,12 @@ class Beamformer(MicrophoneArray):
         filter within the 30 ms following the delay.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
+        dist_mat = distance(self.R, sources)
+        s_time = dist_mat / constants.c
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
+        dist_mat = distance(self.R, interferers)
+        i_time = dist_mat / constants.c
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -812,12 +814,12 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build interferer RIR matrix
-            hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
+            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
             
         # Delay of the system in samples
         kappa = int(delay*self.Fs)
@@ -854,12 +856,12 @@ class Beamformer(MicrophoneArray):
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
+        dist_mat = distance(self.R, sources)
+        s_time = dist_mat / constants.c
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
+        dist_mat = distance(self.R, interferers)
+        i_time = dist_mat / constants.c
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -883,12 +885,12 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build interferer RIR matrix
-            hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
+            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
 
         # We first assume the sample are uncorrelated
         K_s = np.dot(H[:,:L], H[:,:L].T)
@@ -910,12 +912,12 @@ class Beamformer(MicrophoneArray):
         while forcing a distortionless response towards the source.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
+        dist_mat = distance(self.R, sources)
+        s_time = dist_mat / constants.c
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
+        dist_mat = distance(self.R, interferers)
+        i_time = dist_mat / constants.c
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -939,12 +941,12 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build interferer RIR matrix
-            hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
+            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
 
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
@@ -989,12 +991,12 @@ class Beamformer(MicrophoneArray):
         towards multiple sources.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
+        dist_mat = distance(self.R, sources)
+        s_time = dist_mat / constants.c
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
+        dist_mat = distance(self.R, interferers)
+        i_time = dist_mat / constants.c
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -1019,16 +1021,16 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build constraint matrix
-            hs = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh)[:,::-1]
+            hs = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh)[:,::-1]
             As[r*Lg+off:r*Lg+Lh+off,:] = hs.T
 
             # build interferer RIR matrix
-            hx = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = pra.convmtx(hx, Lg).T
+            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = pra.convmtx(hq, Lg).T
+            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
 
         ones = np.ones((K,1))
 
@@ -1051,52 +1053,16 @@ class Beamformer(MicrophoneArray):
         return num/denom
 
 
-    def rakeMVDRFilters(self, sources, interferers, R_n, delay=0.03, epsilon=5e-3):
+    def rakeMVDRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
         '''
         Compute the time-domain filters of the minimum variance distortionless response beamformer.
         '''
 
-        dist_mat = pra.distance(self.R, sources)
-        s_time = dist_mat / pra.c
-        s_dmp = 1./(4*np.pi*dist_mat)
-
-        dist_mat = pra.distance(self.R, interferers)
-        i_time = dist_mat / pra.c
-        i_dmp = 1./(4*np.pi*dist_mat)
-
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
-        t_min = np.minimum(s_time.min(), i_time.min())
-        t_max = np.maximum(s_time.max(), i_time.max())
-
-        s_time -= t_min - offset
-        i_time -= t_min - offset
-        Lh = int((t_max - t_min + 2*offset)*float(self.Fs))
-
-        if ((Lh-1) > (self.M-1)*self.Lg):
-            import warnings
-            wng = "Beamforming filters length (%d) are shorter than minimum required (%d)." % (self.Lg, Lh)
-            warnings.warn(wng, UserWarning)
-
-        # the channel matrix
-        Lg = self.Lg
-        L = self.Lg + Lh - 1
-        H = np.zeros((Lg*self.M, 2*L))
-
-        for r in np.arange(self.M):
-
-            hs = pra.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            row = np.pad(hs, ((0,L-len(hs))), mode='constant')
-            col = np.pad(hs[:1], ((0, Lg-1)), mode='constant')
-            H[r*Lg:(r+1)*Lg,0:L] = toeplitz(col, row)
-
-            hi = pra.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            row = np.pad(hi, ((0,L-len(hi))), mode='constant')
-            col = np.pad(hi[:1], ((0, Lg-1)), mode='constant')
-            H[r*Lg:(r+1)*Lg,L:2*L] = toeplitz(col, row)
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
 
         # the constraint vector
         kappa = int(delay*self.Fs)
-        #kappa = np.minimum(int(0.6*(Lh+Lg)), int(2*t_max*self.Fs))
         h = H[:,kappa]
 
         # We first assume the sample are uncorrelated
@@ -1108,7 +1074,7 @@ class Beamformer(MicrophoneArray):
         g_val = la.cho_solve(C, h)
 
         g_val /= np.inner(h, g_val)
-        self.filters = g_val.reshape((self.M,Lg))
+        self.filters = g_val.reshape((self.M,self.Lg))
 
         # compute and return SNR
         num = np.inner(g_val.T, np.dot(R_xx, g_val))

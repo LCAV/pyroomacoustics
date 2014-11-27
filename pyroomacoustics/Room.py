@@ -26,7 +26,7 @@ class Room(object):
 
         # make sure we have an ndarray of the right size
         corners = np.array(corners)
-        if (np.rank(corners) != 2):
+        if (corners.ndim != 2):
             raise NameError('Room corners is a 2D array.')
 
         # make sure the corners are anti-clockwise
@@ -50,9 +50,9 @@ class Room(object):
 
         # list of attenuation factors for the wall reflections
         absorption = np.array(absorption, dtype='float64')
-        if (np.rank(absorption) == 0):
+        if (absorption.ndim == 0):
             self.absorption = absorption * np.ones(self.corners.shape[1])
-        elif (np.rank(absorption) > 1 or self.corners.shape[1] != len(absorption)):
+        elif (absorption.ndim > 1 or self.corners.shape[1] != len(absorption)):
             raise NameError('Absorption and corner must be the same size')
         else:
             self.absorption = absorption
@@ -127,7 +127,7 @@ class Room(object):
                             or self.micArray.filters is not None):
 
                 freq = np.array(freq)
-                if np.rank(freq) is 0:
+                if freq.ndim is 0:
                     freq = np.array([freq])
 
                 # define a new set of colors for the beam patterns
@@ -183,6 +183,15 @@ class Room(object):
             # draw images
             if (img_order is None):
                 img_order = self.max_order
+
+            I = source.orders <= img_order
+
+            val = (np.log2(source.damping[I]) + 10.) / 10.
+            # plot the images
+            ax.scatter(source.images[0, I], source.images[1,I], \
+                       c=cmap(val), s=20,
+                       marker=markers[i % len(markers)], edgecolor=cmap(val))
+            '''
             for o in xrange(img_order):
                 # map the damping to a log scale (mapping 1 to 1)
                 val = (np.log2(source.damping[o]) + 10.) / 10.
@@ -190,6 +199,7 @@ class Room(object):
                 ax.scatter(source.images[o][0, :], source.images[o][1,:], \
                            c=cmap(val), s=20,
                            marker=markers[i % len(markers)], edgecolor=cmap(val))
+                           '''
 
         # keep axis equal, or the symmetry is lost
         #ax.axis('equal')
@@ -228,9 +238,11 @@ class Room(object):
     def addSource(self, position, signal=None, delay=0):
 
         # generate first order images
-        i, d = self.firstOrderImages(np.array(position))
+        i, d, w = self.firstOrderImages(np.array(position))
         images = [i]
         damping = [d]
+        generators = [-np.ones(i.shape[1])]
+        wall_indices = [w]
 
         # generate all higher order images up to max_order
         o = 1
@@ -238,15 +250,23 @@ class Room(object):
             # generate all images of images of previous order
             img = np.zeros((self.dim, 0))
             dmp = np.array([])
-            for si, sd in zip(images[o - 1].T, damping[o - 1]):
-                i, d = self.firstOrderImages(si)
+            gen = np.array([])
+            wal = np.array([])
+            for ind, si, sd in zip(xrange(len(images[o-1])), images[o - 1].T, damping[o - 1]):
+                i, d, w = self.firstOrderImages(si)
                 img = np.concatenate((img, i), axis=1)
                 dmp = np.concatenate((dmp, d * sd))
+                gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
+                wal = np.concatenate((wal, w))
 
             # remove duplicates
             ordering = np.lexsort(img)
+
             img = img[:, ordering]
             dmp = dmp[ordering]
+            gen = gen[ordering]
+            wal = wal[ordering]
+
             diff = np.diff(img, axis=1)
             ui = np.ones(img.shape[1], 'bool')
             ui[1:] = (diff != 0).any(axis=0)
@@ -254,16 +274,47 @@ class Room(object):
             # add to array of images
             images.append(img[:, ui])
             damping.append(dmp[ui])
+            generators.append(gen[ui])
+            wall_indices.append(wal[ui])
 
             # next order
             o += 1
+
+        # linearize the arrays
+        images_lin = np.concatenate(images, axis=1)
+        damping_lin = np.concatenate(damping)
+
+        o_len = np.array([ x.shape[0] for x in generators ])
+        # correct the pointers for linear structure
+        for o in np.arange(2,len(generators)):
+            generators[o] += np.sum(o_len[0:o-2])
+        # linearize
+        generators_lin = np.concatenate(generators)
+
+        walls_lin = np.concatenate(wall_indices)
+
+        # store the corresponding orders in another array
+        ordlist = []
+        for o in xrange(len(generators)):
+            ordlist.append((o+1)*np.ones(o_len[o]))
+        orders_lin = np.concatenate(ordlist)
+
+        # add the direct source to the arrays
+        images_lin = np.concatenate((np.array([position]).T, images_lin), axis=1)
+        damping_lin = np.concatenate(([1], damping_lin))
+        generators_lin = np.concatenate(([np.nan], generators_lin+1))
+        walls_lin = np.concatenate(([np.nan], walls_lin))
+        orders_lin = np.concatenate(([0], orders_lin))
 
         # add a new source to the source list
         self.sources.append(
             SoundSource(
                 position,
-                images=images,
-                damping=damping,
+                images=images_lin,
+                damping=damping_lin,
+                generators=generators_lin,
+                walls=walls_lin,
+                orders=orders_lin,
                 signal=signal,
                 delay=delay))
 
@@ -283,10 +334,13 @@ class Room(object):
         # collect absorption factors of reflecting walls
         damping = self.absorption[ip > 0]
 
-        return images, damping
+        # collect the index of the wall corresponding to the new image
+        wall_indices = np.arange(self.walls.shape[1])[ip > 0]
+
+        return images, damping, wall_indices
 
 
-    def compute_RIR(self, c=constants.c, window=False):
+    def compute_RIR(self, c=constants.c):
         '''
         Compute the room impulse response between every source and microphone
         '''
@@ -298,30 +352,7 @@ class Room(object):
 
             for source in self.sources:
 
-                # stack source and all images
-                img = source.getImages(self.max_order)
-                dmp = source.getDamping(self.max_order)
-
-                # compute the distance
-                dist = np.sqrt(np.sum((img - mic[:, np.newaxis]) ** 2, axis=0))
-                time = dist / c + self.t0
-                alpha = dmp/(4.*np.pi*dist)
-
-                # the number of samples needed
-                N = np.ceil((time.max() + self.t0) * self.Fs)
-
-                t = np.arange(N)/float(self.Fs)
-                ir = np.zeros(t.shape)
-
-                #from utilities import lowPassDirac
-                import utilities as u
-
-                ir = u.lowPassDirac(time[:,np.newaxis], alpha[:,np.newaxis], self.Fs, N).sum(axis=0)
-
-                #for ti, ai in zip(time, alpha):
-                    #ir += u.lowPassDirac(ti, ai, self.Fs, N)
-
-                h.append(ir)
+                h.append(source.getRIR(mic, self.Fs, self.t0))
 
             self.rir.append(h)
 
