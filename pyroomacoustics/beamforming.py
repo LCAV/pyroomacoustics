@@ -173,7 +173,7 @@ class Beamformer(MicrophoneArray):
     should also go here. Probably with generic arguments.
     """
 
-    def __init__(self, R, Fs, N, Lg=None, hop=None, zpf=0, zpb=0):
+    def __init__(self, R, Fs, N=1024, Lg=None, hop=None, zpf=0, zpb=0):
         """
         Arguments:
         ----------
@@ -776,50 +776,16 @@ class Beamformer(MicrophoneArray):
         return SINR[0]
 
 
-
-    def rakePerceptualFilters(self, sources, interferers, R_n, delay=0.03, epsilon=5e-3):
+    def rakePerceptualFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
         '''
         Compute directly the time-domain filters for a perceptually motivated beamformer.
         The beamformer minimizes noise and interference, but relaxes the response of the
         filter within the 30 ms following the delay.
         '''
 
-        dist_mat = distance(self.R, sources)
-        s_time = dist_mat / constants.c
-        s_dmp = 1./(4*np.pi*dist_mat)
-
-        dist_mat = distance(self.R, interferers)
-        i_time = dist_mat / constants.c
-        i_dmp = 1./(4*np.pi*dist_mat)
-
-        # compute offset needed for decay of sinc by epsilon
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
-        t_min = np.minimum(s_time.min(), i_time.min())
-        t_max = np.maximum(s_time.max(), i_time.max())
-        
-
-        # adjust timing
-        s_time -= t_min - offset
-        i_time -= t_min - offset
-        Lh = int((t_max - t_min + 2*offset)*float(self.Fs))
-
-        # the channel matrix
-        K = sources.shape[1]
-        Lg = self.Lg
-        off = (Lg - Lh)/2
-        L = self.Lg + Lh - 1
-
-        H = np.zeros((Lg*self.M, 2*L))
-
-        for r in np.arange(self.M):
-
-            # build interferer RIR matrix
-            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
-
-            # build interferer RIR matrix
-            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
+        # build the channel matrix
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
             
         # Delay of the system in samples
         kappa = int(delay*self.Fs)
@@ -848,7 +814,6 @@ class Beamformer(MicrophoneArray):
         num = np.dot(A, A.T)
         denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
         return num/denom
-
 
 
     def rakeMaxSINRFilters(self, sources, interferers, R_n, delay=None, epsilon=5e-3):

@@ -68,6 +68,7 @@ class SoundSource(object):
         # The sound signal of the source
         self.signal = signal
         self.delay = delay
+        self.max_order = np.max(self.orders)
 
     def addSignal(signal):
 
@@ -77,7 +78,17 @@ class SoundSource(object):
 
         return np.sqrt(np.sum((self.images - ref_point[:,np.newaxis])**2, axis=0))
 
-    def setOrdering(self, ordering='nearest', ref_point=None):
+    def setOrdering(self, ordering, ref_point=None):
+        '''
+        Set the order in which we retrieve images sources.
+        Can be: 'nearest', 'strongest', 'order'
+        Optional argument: ref_point
+        '''
+
+        self.ordering = ordering
+
+        if ref_point is not None and ref_point.ndim > 1:
+            ref_point = ref_point[:,0]
 
         if ordering is 'nearest':
 
@@ -96,10 +107,7 @@ class SoundSource(object):
 
         elif ordering is 'order':
 
-            if max_order is None:
-                max_order = self.max_order
-
-            self.I = (np.orders <= max_order)
+            self.ordering = 'order'
 
         else:
             raise NameError('Ordering can be nearest, strongest, order.')
@@ -110,14 +118,25 @@ class SoundSource(object):
         Overload the bracket operator to access a subset image sources
         '''
 
-        if isinstance(index, slice) or isinstance(index, init):
-            s = SoundSource(
-                    self.position,
-                    images=self.images[:,self.I[index]],
-                    damping=self.damping[self.I[index]],
-                    orders=self.orders[self.I[index]],
-                    signal=self.signal,
-                    delay=self.delay)
+        if isinstance(index, slice) or isinstance(index, int):
+            if self.ordering is 'order':
+                p_orders = np.arange(0, self.max_order+1)[index]
+                I = np.any(self.orders[:,np.newaxis] == p_orders[np.newaxis,:], axis=1)
+                s = SoundSource(
+                        self.position,
+                        images=self.images[:,I],
+                        damping=self.damping[I],
+                        orders=self.orders[I],
+                        signal=self.signal,
+                        delay=self.delay)
+            else:
+                s = SoundSource(
+                        self.position,
+                        images=self.images[:,self.I[index]],
+                        damping=self.damping[self.I[index]],
+                        orders=self.orders[self.I[index]],
+                        signal=self.signal,
+                        delay=self.delay)
         else:
             s = SoundSource(
                     self.position,
@@ -218,7 +237,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     '''
 
     from beamforming import distance
-    from utilities import lowPassDirac
+    from utilities import lowPassDirac, convmtx
     from scipy.linalg import toeplitz
 
     # set the boundaries of RIR filter for given epsilon
@@ -255,9 +274,8 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
             else:
                 dmp = sources[s].damping/(4*np.pi*dist)
 
-            hs = lowPassDirac(time[:,np.newaxis], dmp[:,np.newaxis], Fs, Lh).sum(axis=0)
-            row = np.pad(hs, ((0,L-len(hs))), mode='constant')
-            col = np.pad(hs[:1], ((0, Lg-1)), mode='constant')
-            H[r*Lg:(r+1)*Lg,s*L:(s+1)*L] = toeplitz(col, row)
+            h = lowPassDirac(time[:,np.newaxis], dmp[:,np.newaxis], Fs, Lh).sum(axis=0)
+            H[r*Lg:(r+1)*Lg,s*L:(s+1)*L] = convmtx(h, Lg).T
 
     return H
+
