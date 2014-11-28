@@ -711,47 +711,13 @@ class Beamformer(MicrophoneArray):
             self.weights[:,i] = np.linalg.inv(H(C)).dot(v[:,0])
 
 
-    def rakeMaxUDRFilters(self, sources, interferers, R_n, delay=0.03, epsilon=5e-3):
+    def rakeMaxUDRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
         '''
         Compute directly the time-domain filters for a UDR maximizing beamformer.
         '''
 
-        dist_mat = distance(self.R, sources)
-        s_time = dist_mat / constants.c
-        s_dmp = 1./(4*np.pi*dist_mat)
-
-        dist_mat = distance(self.R, interferers)
-        i_time = dist_mat / constants.c
-        i_dmp = 1./(4*np.pi*dist_mat)
-
-        # compute offset needed for decay of sinc by epsilon
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
-        t_min = np.minimum(s_time.min(), i_time.min())
-        t_max = np.maximum(s_time.max(), i_time.max())
-        
-
-        # adjust timing
-        s_time -= t_min - offset
-        i_time -= t_min - offset
-        Lh = int((t_max - t_min + 2*offset)*float(self.Fs))
-
-        # the channel matrix
-        K = sources.shape[1]
-        Lg = self.Lg
-        off = (Lg - Lh)/2
-        L = self.Lg + Lh - 1
-
-        H = np.zeros((Lg*self.M, 2*L))
-
-        for r in np.arange(self.M):
-
-            # build interferer RIR matrix
-            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
-
-            # build interferer RIR matrix
-            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
             
         # Delay of the system in samples
         kappa = int(delay*self.Fs)
@@ -766,7 +732,7 @@ class Beamformer(MicrophoneArray):
         B = np.dot(Hnc, Hnc.T) + np.dot(Hc, Hc.T) + np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # solve the problem
-        SINR, v = la.eigh(A, b=B, eigvals=(self.M*Lg-1, self.M*Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
+        SINR, v = la.eigh(A, b=B, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
         g_val = np.real(v[:,0])
 
         # reshape and store
@@ -816,109 +782,42 @@ class Beamformer(MicrophoneArray):
         return num/denom
 
 
-    def rakeMaxSINRFilters(self, sources, interferers, R_n, delay=None, epsilon=5e-3):
+    def rakeMaxSINRFilters(self, source, interferer, R_n, delay=None, epsilon=5e-3):
         '''
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
 
-        dist_mat = distance(self.R, sources)
-        s_time = dist_mat / constants.c
-        s_dmp = 1./(4*np.pi*dist_mat)
-
-        dist_mat = distance(self.R, interferers)
-        i_time = dist_mat / constants.c
-        i_dmp = 1./(4*np.pi*dist_mat)
-
-        # compute offset needed for decay of sinc by epsilon
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
-        t_min = np.minimum(s_time.min(), i_time.min())
-        t_max = np.maximum(s_time.max(), i_time.max())
-
-        # adjust timing
-        s_time -= t_min - offset
-        i_time -= t_min - offset
-        Lh = int((t_max - t_min + 2*offset)*float(self.Fs))
-
-        # the channel matrix
-        K = sources.shape[1]
-        Lg = self.Lg
-        off = (Lg - Lh)/2
-        L = self.Lg + Lh - 1
-
-        H = np.zeros((Lg*self.M, 2*L))
-
-        for r in np.arange(self.M):
-
-            # build interferer RIR matrix
-            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
-
-            # build interferer RIR matrix
-            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
-
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
+        
         # We first assume the sample are uncorrelated
         K_s = np.dot(H[:,:L], H[:,:L].T)
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # Compute TD filters using generalized Rayleigh coefficient maximization
-        SINR, v = la.eigh(K_s, b=K_nq, eigvals=(self.M*Lg-1, self.M*Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
+        SINR, v = la.eigh(K_s, b=K_nq, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
         g_val = np.real(v[:,0])
 
-        self.filters = g_val.reshape((self.M, Lg))
+        self.filters = g_val.reshape((self.M, self.Lg))
 
         # compute and return SNR
         return SINR[0]
 
 
-    def rakeDistortionlessFilters(self, sources, interferers, R_n, delay=0.03, epsilon=5e-3):
+    def rakeDistortionlessFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
         '''
         Compute time-domain filters of a beamformer minimizing noise and interference
         while forcing a distortionless response towards the source.
         '''
 
-        dist_mat = distance(self.R, sources)
-        s_time = dist_mat / constants.c
-        s_dmp = 1./(4*np.pi*dist_mat)
-
-        dist_mat = distance(self.R, interferers)
-        i_time = dist_mat / constants.c
-        i_dmp = 1./(4*np.pi*dist_mat)
-
-        # compute offset needed for decay of sinc by epsilon
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
-        t_min = np.minimum(s_time.min(), i_time.min())
-        t_max = np.maximum(s_time.max(), i_time.max())
-
-        # adjust timing
-        s_time -= t_min - offset
-        i_time -= t_min - offset
-        Lh = int((t_max - t_min + 2*offset)*float(self.Fs))
-
-        # the channel matrix
-        K = sources.shape[1]
-        Lg = self.Lg
-        off = (Lg - Lh)/2
-        L = self.Lg + Lh - 1
-
-        H = np.zeros((Lg*self.M, 2*L))
-
-        for r in np.arange(self.M):
-
-            # build interferer RIR matrix
-            hx = u.lowPassDirac(s_time[r,:,np.newaxis], s_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,:L] = u.convmtx(hx, Lg).T
-
-            # build interferer RIR matrix
-            hq = u.lowPassDirac(i_time[r,:,np.newaxis], i_dmp[r,:,np.newaxis], self.Fs, Lh).sum(axis=0)
-            H[r*Lg:(r+1)*Lg,L:] = u.convmtx(hq, Lg).T
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
 
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
 
         # constraint
         kappa = int(delay*self.Fs)
-        kappa = (Lh+Lg)/2
         A = H[:,:L]
         b = np.zeros((L,1))
         b[kappa,0] = 1
@@ -934,18 +833,40 @@ class Beamformer(MicrophoneArray):
         # reshape and store
         self.filters = g_val.reshape((self.M, self.Lg))
 
-        '''
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,:L].T, g_val))
-        plt.plot(np.arange(L)/float(self.Fs), np.dot(H[:,L:].T, g_val))
-        plt.legend(('Channel of desired source','Channel of interferer'))
-        '''
-
         # compute and return SNR
         A = np.dot(g_val.T, H[:,:L])
         num = np.dot(A, A.T)
         denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
+
+        return num/denom
+
+
+    def rakeMVDRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+        '''
+        Compute the time-domain filters of the minimum variance distortionless response beamformer.
+        '''
+
+        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        L = H.shape[1]/2
+
+        # the constraint vector
+        kappa = int(delay*self.Fs)
+        h = H[:,kappa]
+
+        # We first assume the sample are uncorrelated
+        R_xx = np.dot(H[:,:L], H[:,:L].T)
+        K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
+
+        # Compute the TD filters
+        C = la.cho_factor(R_xx + K_nq, check_finite=False)
+        g_val = la.cho_solve(C, h)
+
+        g_val /= np.inner(h, g_val)
+        self.filters = g_val.reshape((self.M,self.Lg))
+
+        # compute and return SNR
+        num = np.inner(g_val.T, np.dot(R_xx, g_val))
+        denom =  np.inner(np.dot(g_val.T, K_nq), g_val)
 
         return num/denom
 
@@ -1017,33 +938,4 @@ class Beamformer(MicrophoneArray):
 
         return num/denom
 
-
-    def rakeMVDRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
-        '''
-        Compute the time-domain filters of the minimum variance distortionless response beamformer.
-        '''
-
-        H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1]/2
-
-        # the constraint vector
-        kappa = int(delay*self.Fs)
-        h = H[:,kappa]
-
-        # We first assume the sample are uncorrelated
-        R_xx = np.dot(H[:,:L], H[:,:L].T)
-        K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
-
-        # Compute the TD filters
-        C = la.cho_factor(R_xx + K_nq, check_finite=False)
-        g_val = la.cho_solve(C, h)
-
-        g_val /= np.inner(h, g_val)
-        self.filters = g_val.reshape((self.M,self.Lg))
-
-        # compute and return SNR
-        num = np.inner(g_val.T, np.dot(R_xx, g_val))
-        denom =  np.inner(np.dot(g_val.T, K_nq), g_val)
-
-        return num/denom
 
