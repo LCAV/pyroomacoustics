@@ -40,13 +40,15 @@ def mdot(*args):
 
 
 def distance(X, Y):
+    '''
+    X and Y are DxN ndarray containing N D-dimensional vectors
+    distance(X,Y) computes the distance matrix E where E[i,j] = sqrt(sum((X[:,i]-Y[:,j])**2))
+    '''
     # Assume X, Y are arrays, *not* matrices
     X = np.array(X)
     Y = np.array(Y)
 
-    XX, YY = [np.sum(A ** 2, axis=0, keepdims=True) for A in (X, Y)]
-
-    return np.sqrt(np.abs((XX.T + YY) - 2 * np.dot(X.T, Y)))
+    return np.sqrt((X[0,:,np.newaxis]-Y[0,:])**2 + (X[1,:,np.newaxis]-Y[1,:])**2) 
 
 
 def unit_vec2D(phi):
@@ -297,16 +299,30 @@ class Beamformer(MicrophoneArray):
             attn: include attenuation factor if True
             ff:   uses far-field distance if true
 
-        Return: 
+        Return:
             A 2x1 ndarray containing the steering vector
         """
-        phi = np.angle(         (source[0] - self.center[0, 0]) 
-                         + 1j * (source[1] - self.center[1, 0]))
-        if (not ff):
-            dist = np.sqrt(np.sum((source - self.center) ** 2, axis=0))
+        X = np.array(source)
+        if X.ndim == 1:
+            X = source[:,np.newaxis]
+
+        # normalize for far-field if requested
+        if (ff):
+            X -= self.center
+            Xn = np.sqrt(np.sum(X**2, axis=0))
+            X *= constants.ffdist/Xn
+            X += self.center
+
+        D = distance(self.R, X)
+        omega = 2 * np.pi * frequency
+
+        if attn:
+            # TO DO 1: This will mean slightly different absolute value for
+            # every entry, even within the same steering vector. Perhaps a
+            # better paradigm is far-field with phase carrier.
+            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.c)
         else:
-            dist = constants.ffdist
-        return self.steering_vector_2D(frequency, phi, dist, attn=attn)
+            return np.exp(-1j * omega * D / constants.c)
 
 
     def response(self, phi_list, frequency):
