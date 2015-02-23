@@ -65,10 +65,14 @@ class SoundSource(object):
         # store the natural ordering for the images
         self.I = np.arange(self.images.shape[1])
 
+        # the natural ordering is per generation
+        self.ordering = 'order'
+
         # The sound signal of the source
         self.signal = signal
         self.delay = delay
         self.max_order = np.max(self.orders)
+
 
     def addSignal(signal):
 
@@ -121,6 +125,8 @@ class SoundSource(object):
         if isinstance(index, slice) or isinstance(index, int):
             if self.ordering is 'order':
                 p_orders = np.arange(0, self.max_order+1)[index]
+                # we use the any operator and broadcasting to get match on
+                # all image source of order contained in p_orders
                 I = np.any(self.orders[:,np.newaxis] == p_orders[np.newaxis,:], axis=1)
                 s = SoundSource(
                         self.position,
@@ -199,9 +205,9 @@ class SoundSource(object):
 
         # the number of samples needed
         if t_max is None:
-            N = np.ceil(t_max * Fs)
+            N = np.ceil((time.max() - t0) * Fs)
         else:
-            N = np.ceil((t_max - t0)*Fs)
+            N = np.ceil((t_max - t0) * Fs)
 
         t = np.arange(N)/float(Fs)
         ir = np.zeros(t.shape)

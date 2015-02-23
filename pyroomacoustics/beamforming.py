@@ -48,7 +48,10 @@ def distance(X, Y):
     X = np.array(X)
     Y = np.array(Y)
 
-    return np.sqrt((X[0,:,np.newaxis]-Y[0,:])**2 + (X[1,:,np.newaxis]-Y[1,:])**2) 
+    #return np.sqrt((X[0,:,np.newaxis]-Y[0,:])**2 + (X[1,:,np.newaxis]-Y[1,:])**2) 
+
+    return np.sqrt(np.sum((X[:,:,np.newaxis] - Y[:,np.newaxis,:])**2, axis=0 ))
+
 
 
 def unit_vec2D(phi):
