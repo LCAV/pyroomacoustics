@@ -29,7 +29,7 @@ class SoundSource(object):
         self.position = np.array(position)
         self.dim = self.position.shape[0]
 
-        if (images is None):
+        if (images == None):
             # set to empty list if nothing provided
             self.images = np.array([position]).T
             self.damping = np.array([1.])
@@ -39,20 +39,20 @@ class SoundSource(object):
 
         else:
             # we need to have damping factors for every image
-            if (damping is None):
+            if (damping == None):
                 # set to one if not set
                 damping = np.ones(images.shape[1])
 
-            if images.shape[1] is not damping.shape[0]:
+            if images.shape[1] != damping.shape[0]:
                 raise NameError('Images and damping must have same shape')
 
-            if generators is not None and generators.shape[0] is not images.shape[1]:
+            if generators != None and generators.shape[0] != images.shape[1]:
                 raise NameError('Images and generators must have same shape')
 
-            if walls is not None and walls.shape[0] is not images.shape[1]:
+            if walls != None and walls.shape[0] != images.shape[1]:
                 raise NameError('Images and walls must have same shape')
 
-            if orders is not None and orders.shape[0] is not images.shape[1]:
+            if orders != None and orders.shape[0] != images.shape[1]:
                 raise NameError('Images and orders must have same shape')
 
 
@@ -94,22 +94,22 @@ class SoundSource(object):
         if ref_point is not None and ref_point.ndim > 1:
             ref_point = ref_point[:,0]
 
-        if ordering is 'nearest':
+        if ordering == 'nearest':
 
-            if ref_point is None:
+            if ref_point == None:
                 raise NameError('For nearest ordering, a reference point is needed.')
 
             self.I = self.distance(ref_point).argsort()
 
-        elif ordering is 'strongest':
+        elif ordering == 'strongest':
 
-            if ref_point is None:
+            if ref_point == None:
                 raise NameError('For strongest ordering, a reference point is needed.')
 
             strength = self.damping/(4*np.pi*self.distance(ref_point))
             self.I = strength.argsort()
 
-        elif ordering is 'order':
+        elif ordering == 'order':
 
             self.ordering = 'order'
 
@@ -123,7 +123,7 @@ class SoundSource(object):
         '''
 
         if isinstance(index, slice) or isinstance(index, int):
-            if self.ordering is 'order':
+            if self.ordering == 'order':
                 p_orders = np.arange(0, self.max_order+1)[index]
                 # we use the any operator and broadcasting to get match on
                 # all image source of order contained in p_orders
@@ -168,14 +168,14 @@ class SoundSource(object):
 
         # TO DO: Make this more efficient if bottleneck (unlikely)
 
-        if (max_order is None):
+        if (max_order == None):
             max_order = np.max(self.orders)
 
         # stack source and all images
         I_ord = (self.orders <= max_order)
         img = self.images[:,I_ord]
 
-        if (n_nearest is not None):
+        if (n_nearest != None):
             dist = np.sum((img - ref_point)**2, axis=0)
             I_near = dist.argsort()[0:n_nearest]
             img = img[:,I_near]
@@ -184,7 +184,7 @@ class SoundSource(object):
 
 
     def getDamping(self, max_order=None):
-        if (max_order is None):
+        if (max_order == None):
             max_order = len(np.max(self.orders))
 
         return self.damping[self.orders <= max_order]
@@ -204,7 +204,7 @@ class SoundSource(object):
         alpha = self.damping/(4.*np.pi*dist)
 
         # the number of samples needed
-        if t_max is None:
+        if t_max == None:
             N = np.ceil((time.max() - t0) * Fs)
         else:
             N = np.ceil((t_max - t0) * Fs)
@@ -252,7 +252,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     dmp_max = 0.
     for s in xrange(len(sources)):
         dist_mat = distance(mics, sources[s].images)
-        if unit_damping is True:
+        if unit_damping == True:
             dmp_max = np.maximum((1./(4*np.pi*dist_mat)).max(), dmp_max)
         else:
             dmp_max = np.maximum((sources[s].damping[np.newaxis,:]/(4*np.pi*dist_mat)).max(), dmp_max)
@@ -275,7 +275,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
 
             dist = sources[s].distance(mics[:,r])
             time = dist/constants.c - t_min + offset
-            if unit_damping is True:
+            if unit_damping == True:
                 dmp = 1./(4*np.pi*dist)
             else:
                 dmp = sources[s].damping/(4*np.pi*dist)
