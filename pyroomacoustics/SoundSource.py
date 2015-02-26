@@ -29,7 +29,7 @@ class SoundSource(object):
         self.position = np.array(position)
         self.dim = self.position.shape[0]
 
-        if (images == None):
+        if (images is None):
             # set to empty list if nothing provided
             self.images = np.array([position]).T
             self.damping = np.array([1.])
@@ -39,20 +39,20 @@ class SoundSource(object):
 
         else:
             # we need to have damping factors for every image
-            if (damping == None):
+            if (damping is None):
                 # set to one if not set
                 damping = np.ones(images.shape[1])
 
             if images.shape[1] != damping.shape[0]:
                 raise NameError('Images and damping must have same shape')
 
-            if generators != None and generators.shape[0] != images.shape[1]:
+            if generators is not None and generators.shape[0] != images.shape[1]:
                 raise NameError('Images and generators must have same shape')
 
-            if walls != None and walls.shape[0] != images.shape[1]:
+            if walls is not None and walls.shape[0] != images.shape[1]:
                 raise NameError('Images and walls must have same shape')
 
-            if orders != None and orders.shape[0] != images.shape[1]:
+            if orders is not None and orders.shape[0] != images.shape[1]:
                 raise NameError('Images and orders must have same shape')
 
 
@@ -96,14 +96,14 @@ class SoundSource(object):
 
         if ordering == 'nearest':
 
-            if ref_point == None:
+            if ref_point is None:
                 raise NameError('For nearest ordering, a reference point is needed.')
 
             self.I = self.distance(ref_point).argsort()
 
         elif ordering == 'strongest':
 
-            if ref_point == None:
+            if ref_point is None:
                 raise NameError('For strongest ordering, a reference point is needed.')
 
             strength = self.damping/(4*np.pi*self.distance(ref_point))
@@ -168,14 +168,14 @@ class SoundSource(object):
 
         # TO DO: Make this more efficient if bottleneck (unlikely)
 
-        if (max_order == None):
+        if (max_order is None):
             max_order = np.max(self.orders)
 
         # stack source and all images
         I_ord = (self.orders <= max_order)
         img = self.images[:,I_ord]
 
-        if (n_nearest != None):
+        if (n_nearest is not None):
             dist = np.sum((img - ref_point)**2, axis=0)
             I_near = dist.argsort()[0:n_nearest]
             img = img[:,I_near]
@@ -184,7 +184,7 @@ class SoundSource(object):
 
 
     def getDamping(self, max_order=None):
-        if (max_order == None):
+        if (max_order is None):
             max_order = len(np.max(self.orders))
 
         return self.damping[self.orders <= max_order]
@@ -204,7 +204,7 @@ class SoundSource(object):
         alpha = self.damping/(4.*np.pi*dist)
 
         # the number of samples needed
-        if t_max == None:
+        if t_max is None:
             N = np.ceil((time.max() - t0) * Fs)
         else:
             N = np.ceil((t_max - t0) * Fs)
