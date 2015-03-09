@@ -2,14 +2,13 @@
 import numpy as np
 
 import beamforming as bf
-from SoundSource import SoundSource
-
+from soundsource import SoundSource
 import constants
 
-'''
+"""
 Room
 A room geometry is defined by all the sources and all their images
-'''
+"""
 
 class Room(object):
 
@@ -45,8 +44,8 @@ class Room(object):
             self.corners[:, xrange(-1, corners.shape[1] - 1)]
 
         # compute normals (outward pointing)
-        self.normals = self.walls[[1, 0], :]/np.linalg.norm(self.walls, axis=0)[np.newaxis,:]
-        self.normals[1, :] *= -1;
+        self.normals = self.walls[[1, 0], :]/np.linalg.norm(self.walls, axis=0)[np.newaxis, :]
+        self.normals[1, :] *= -1
 
         # list of attenuation factors for the wall reflections
         absorption = np.array(absorption, dtype='float64')
@@ -106,24 +105,24 @@ class Room(object):
 
         # draw room
         polygons = [Polygon(self.corners.T, True)]
-        #if no_axis is True:
-            #r = Rectangle((xlim[0],ylim[0]), xlim[1]-xlim[0], ylim[1]-ylim[0])
-            #polygons.append(r)
-        p = PatchCollection(polygons, cmap=matplotlib.cm.jet, 
-                facecolor=np.array([1,1,1]), edgecolor=np.array([0,0,0]))
+        # if no_axis is True:
+        #   r = Rectangle((xlim[0],ylim[0]), xlim[1]-xlim[0], ylim[1]-ylim[0])
+        #   polygons.append(r)
+        p = PatchCollection(polygons, cmap=matplotlib.cm.jet,
+                facecolor=np.array([1, 1, 1]), edgecolor=np.array([0, 0, 0]))
         ax.add_collection(p)
 
         # draw the microphones
         if (self.micArray is not None):
             for mic in self.micArray.R.T:
-                ax.scatter(mic[0], mic[1], 
+                ax.scatter(mic[0], mic[1],
                         marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
             # draw the beam pattern of the beamformer if requested (and
             # available)
             if freq is not None \
                     and isinstance(self.micArray, bf.Beamformer) \
-                    and (self.micArray.weights is not None 
+                    and (self.micArray.weights is not None
                             or self.micArray.filters is not None):
 
                 freq = np.array(freq)
@@ -133,13 +132,13 @@ class Room(object):
                 # define a new set of colors for the beam patterns
                 newmap = plt.get_cmap('autumn')
                 desat = 0.7
-                ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0,1,len(freq))])
+                ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0, 1, len(freq))])
 
-                
+
                 phis = np.arange(360) * 2 * np.pi / 360.
                 newfreq = np.zeros(freq.shape)
                 H = np.zeros((len(freq), len(phis)), dtype=complex)
-                for i,f in enumerate(freq):
+                for i, f in enumerate(freq):
                     newfreq[i], H[i] = self.micArray.response(phis, f)
 
                 # normalize max amplitude to one
@@ -147,19 +146,19 @@ class Room(object):
 
                 # a normalization factor according to room size
                 norm = np.linalg.norm(
-                        (self.corners - self.micArray.center),
-                        axis=0).max()
-                    
+                    (self.corners - self.micArray.center),
+                    axis=0).max()
+
                 # plot all the beam patterns
                 i = 0
-                for f,h in zip(newfreq, H):
+                for f, h in zip(newfreq, H):
                     x = np.cos(phis) * h * norm + self.micArray.center[0, 0]
                     y = np.sin(phis) * h * norm + self.micArray.center[1, 0]
                     l = ax.plot(x, y, '-', linewidth=0.5)
-                    #lbl = '%.2f' % f
-                    #i0 = i*360/len(freq)
-                    #ax.text(x[i0], y[i0], lbl, color=plt.getp(l[0], 'color'))
-                    #i += 1
+                    # lbl = '%.2f' % f
+                    # i0 = i*360/len(freq)
+                    # ax.text(x[i0], y[i0], lbl, color=plt.getp(l[0], 'color'))
+                    # i += 1
 
                 #ax.legend(freq)
 
@@ -188,7 +187,7 @@ class Room(object):
 
             val = (np.log2(source.damping[I]) + 10.) / 10.
             # plot the images
-            ax.scatter(source.images[0, I], source.images[1,I], \
+            ax.scatter(source.images[0, I], source.images[1, I], \
                        c=cmap(val), s=20,
                        marker=markers[i % len(markers)], edgecolor=cmap(val))
             '''
@@ -208,7 +207,7 @@ class Room(object):
 
     def plotRIR(self, FD=False):
 
-        if self.rir == None:
+        if self.rir is None:
             self.compute_RIR()
 
         import matplotlib.pyplot as plt
@@ -230,7 +229,6 @@ class Room(object):
                         plt.xlabel('Time [s]')
                     else:
                         plt.xlabel('Normalized frequency')
-
 
     def addMicrophoneArray(self, micArray):
         self.micArray = micArray
@@ -284,9 +282,9 @@ class Room(object):
         images_lin = np.concatenate(images, axis=1)
         damping_lin = np.concatenate(damping)
 
-        o_len = np.array([ x.shape[0] for x in generators ])
+        o_len = np.array([x.shape[0] for x in generators])
         # correct the pointers for linear structure
-        for o in np.arange(2,len(generators)):
+        for o in np.arange(2, len(generators)):
             generators[o] += np.sum(o_len[0:o-2])
         # linearize
         generators_lin = np.concatenate(generators)
@@ -341,9 +339,9 @@ class Room(object):
 
 
     def compute_RIR(self, c=constants.c):
-        '''
+        """
         Compute the room impulse response between every source and microphone
-        '''
+        """
         self.rir = []
 
         for mic in self.micArray.R.T:
@@ -358,9 +356,7 @@ class Room(object):
 
 
     def simulate(self, recompute_rir=False):
-        '''
-        Simulate the microphone signal at every microphone in the array
-        '''
+        """Simulate the microphone signal at every microphone in the array"""
 
         # import convolution routine
         from scipy.signal import fftconvolve
@@ -387,7 +383,8 @@ class Room(object):
             self.sources[i].signal) + np.floor(self.sources[i].delay * self.Fs)
         max_sig_len = np.array([f(i) for i in xrange(S)]).max()
         L = max_len_rir + max_sig_len - 1
-        if L%2 == 1: L += 1
+        if L % 2 == 1:
+            L += 1
 
         # the array that will receive all the signals
         self.micArray.signals = np.zeros((M, L))
@@ -407,9 +404,8 @@ class Room(object):
             if self.sigma2_awgn is not None:
                 rx += np.random.normal(0., np.sqrt(self.sigma2_awgn), rx.shape)
 
-
     def dSNR(self, x, source=0):
-        ''' direct Signal-to-Noise Ratio'''
+        """direct Signal-to-Noise Ratio"""
 
         if source >= len(self.sources):
             raise NameError('No such source')
@@ -431,13 +427,13 @@ class Room(object):
 
     @classmethod
     def shoeBox2D(cls, p1, p2, Fs, **kwargs):
-        '''
+        """
         Create a new Shoe Box room geometry.
         Arguments:
         p1: the lower left corner of the room
         p2: the upper right corner of the room
         max_order: the maximum order of image sources desired.
-        '''
+        """
 
         # compute room characteristics
         corners = np.array(
@@ -447,23 +443,22 @@ class Room(object):
 
     @classmethod
     def area(cls, corners):
-        '''
-        Compute the area of a 2D room represented by its corners
-        '''
+        """Compute the area of a 2D room represented by its corners"""
+
         x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
         y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
         return -0.5 * (x * y).sum()
 
     @classmethod
     def isAntiClockwise(cls, corners):
-        '''
-        Return true if the corners of the room are arranged anti-clockwise
-        '''
+        """
+        Return true if the corners of the room are arranged anti-clockwise.
+        """
         return (cls.area(corners) > 0)
 
     @classmethod
     def ccw3p(cls, p):
-        '''
+        """
         Argument: p, a (3,2)-ndarray whose rows are the vertices of a 2D triangle
         Returns
         1: if triangle vertices are counter-clockwise
@@ -471,7 +466,7 @@ class Room(object):
         0: if vertices are colinear
 
         Ref: https://en.wikipedia.org/wiki/Curve_orientation
-        '''
+        """
         if (p.shape != (2, 3)):
             raise NameError(
                 'Room.ccw3p is for three 2D points, input is 3x2 ndarray')
