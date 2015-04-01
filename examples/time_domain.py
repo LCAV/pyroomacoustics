@@ -89,7 +89,7 @@ MVDR direct path only simulation
 '''
 
 # compute beamforming filters
-mics = pra.Beamformer(R, Fs, N, Lg=Lg)
+mics = pra.Beamformer(R, Fs, N=N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()

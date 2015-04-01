@@ -467,10 +467,10 @@ class Beamformer(MicrophoneArray):
 
         # To compute the SNR, we /must/ use the real steering vectors, so no
         # far field, and attn=True
-        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source, attn=True, ff=False)
+        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source.images, attn=True, ff=False)
 
         if interferer is not None:
-            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer, attn=True, ff=False)
+            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer.images, attn=True, ff=False)
             R_nq = R_n + sumcols(A_bad) * H(sumcols(A_bad))
         else:
             R_nq = R_n
@@ -498,10 +498,10 @@ class Beamformer(MicrophoneArray):
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
-        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source, attn=True, ff=False)
+        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source.images, attn=True, ff=False)
 
         if interferer is not None:
-            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer, attn=True, ff=False)
+            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer.images, attn=True, ff=False)
             R_nq = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
         else:
             R_nq = R_n
@@ -641,10 +641,10 @@ class Beamformer(MicrophoneArray):
 
         self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
 
-        K = source.shape[1] - 1
+        K = source.images.shape[1] - 1
 
         for i, f in enumerate(self.frequencies):
-            W = self.steering_vector_2D_from_point(f, source, attn=attn, ff=ff)
+            W = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
             self.weights[:,i] = 1.0/self.M/(K+1) * np.sum(W, axis=1)
 
 
@@ -659,11 +659,11 @@ class Beamformer(MicrophoneArray):
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
 
             R_nq     = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
 
-            A_s      = self.steering_vector_2D_from_point(f, source, attn=attn, ff=ff)
+            A_s      = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
             R_nq_inv = np.linalg.pinv(R_nq)
             D        = np.linalg.pinv(mdot(H(A_s), R_nq_inv, A_s))
 
@@ -688,12 +688,12 @@ class Beamformer(MicrophoneArray):
 
         for i,f in enumerate(self.frequencies):
 
-            A_good = self.steering_vector_2D_from_point(f, source, attn=attn, ff=ff)
+            A_good = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
 
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
 
             a_good = sumcols(A_good)
             a_bad = sumcols(A_bad)
@@ -705,8 +705,8 @@ class Beamformer(MicrophoneArray):
 
     def rakeMaxUDRWeights(self, source, interferer, R_n=None, ff=False, attn=True):
         
-        if source.shape[1] is 1:
-            self.rakeMaxSINRWeights(source, interferer, R_n=R_n, ff=ff, attn=attn)
+        if source.images.shape[1] == 1:
+            self.rakeMaxSINRWeights(source.images, interferer.images, R_n=R_n, ff=ff, attn=attn)
             return
 
         if R_n is None:
@@ -715,12 +715,12 @@ class Beamformer(MicrophoneArray):
         self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
 
         for i, f in enumerate(self.frequencies):
-            A_good = self.steering_vector_2D_from_point(f, source, attn=attn, ff=ff)
+            A_good = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
 
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
 
             R_nq = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
 
