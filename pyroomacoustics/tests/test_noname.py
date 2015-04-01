@@ -1,4 +1,4 @@
-from unittest import TestCase
+#unittest import TestCase
 
 import numpy as np
 import matplotlib
@@ -10,6 +10,7 @@ from scipy.signal import resample,fftconvolve
 import pyroomacoustics as pra
 
 class TestTimeDomain(TestCase):
+        
     def test_good_result(self):
         # Spectrogram figure properties
         figsize=(15, 7)        # figure size

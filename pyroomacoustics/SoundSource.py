@@ -13,8 +13,8 @@ class SoundSource(object):
             position,
             images=None,
             damping=None,
-            generators=None,
-            walls=None,
+            generators=None, #parents
+            walls=None, #mur reflecteur
             orders=None,
             signal=None,
             delay=0):

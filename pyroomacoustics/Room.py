@@ -29,7 +29,7 @@ class Room(object):
             raise NameError('Room corners is a 2D array.')
 
         # make sure the corners are anti-clockwise
-        if (self.area(corners) <= 0):
+        if (not Room.isAntiClockwise(corners)):
             raise NameError('Room corners must be anti-clockwise')
 
         self.corners = corners
@@ -234,6 +234,9 @@ class Room(object):
         self.micArray = micArray
 
     def addSource(self, position, signal=None, delay=0):
+
+        if (not self.isInside(np.array(position))):
+            raise NameError('The source must be added inside the room.')
 
         # generate first order images
         i, d, w = self.firstOrderImages(np.array(position))
@@ -443,7 +446,10 @@ class Room(object):
 
     @classmethod
     def area(cls, corners):
-        """Compute the area of a 2D room represented by its corners"""
+        """
+        Computes the signed area of a 2D room represented by its corners.
+        Negative area means anti-clockwise ordered corners.
+        """
 
         x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
         y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
@@ -459,7 +465,7 @@ class Room(object):
     @classmethod
     def ccw3p(cls, p):
         """
-        Argument: p, a (3,2)-ndarray whose rows are the vertices of a 2D triangle
+        Argument: p, a (2,3)-ndarray whose rows are the vertices of a 2D triangle
         Returns
         1: if triangle vertices are counter-clockwise
         -1: if triangle vertices are clock-wise
@@ -469,7 +475,7 @@ class Room(object):
         """
         if (p.shape != (2, 3)):
             raise NameError(
-                'Room.ccw3p is for three 2D points, input is 3x2 ndarray')
+                'Room.ccw3p is for three 2D points, input is 2x3 ndarray')
         D = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
             (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
 
@@ -479,3 +485,140 @@ class Room(object):
             return 1
         else:
             return -1
+
+    @classmethod
+    def intersects(cls, s1, s2):
+        """
+        Returns true (1, 2, 3 or 4) if the two given line segments intersect each other.
+            0 (False) = not intersecting
+            1 (True) = intersecting (standard case)
+            2 (True) = intersecting at the extremity of s2 (might be at the extremity of s1 as well)
+            3 (True) = intersecting at the extremity of s1
+            4 (True) = collinear
+        """
+        
+        #TODO : test if s1 and s2 are true line segments (e.g. not twice the same point)
+        
+        if (s1.shape != (2, 2) or s2.shape != (2, 2)):
+                raise NameError('Room.intersects is for two segments (four 2D points), input is two 2x2 ndarray')
+     
+        print("segment1 : ")
+        print(s1)
+        print("segment2 : ")
+        print(s2)
+     
+        # Build all possible triangles from the points forming the line segments
+        t1 = np.array([[s1[0, 0], s1[0, 1], s2[0, 0]], [s1[1, 0], s1[1, 1], s2[1, 0]]])
+        t2 = np.array([[s1[0, 0], s1[0, 1], s2[0, 1]], [s1[1, 0], s1[1, 1], s2[1, 1]]])
+        t3 = np.array([[s2[0, 0], s2[0, 1], s1[0, 0]], [s2[1, 0], s2[1, 1], s1[1, 0]]])
+        t4 = np.array([[s2[0, 0], s2[0, 1], s1[0, 1]], [s2[1, 0], s2[1, 1], s1[1, 1]]])
+        
+        # Compute the orientation of the triangles
+        d1 = cls.ccw3p(t1)
+        d2 = cls.ccw3p(t2)
+        d3 = cls.ccw3p(t3)
+        d4 = cls.ccw3p(t4)
+        
+        # Standard intersection case
+        if (((d1>0 and d2<0) or (d1<0 and d2>0)) and ((d3>0 and d4<0) or (d3<0 and d4>0))):
+            return 1
+
+        # Special case (collinear)
+        elif (d1==0 and d2==0 and d3==0 and d4==0):
+            return 4
+            
+        # Special case (extremity of a segment)
+        elif (d1==0 or d2==0 or d3==0 or d4==0):
+            if (d1==0 and Room.isBetween(
+                                    np.array([s1[0,0], s1[1,0]]),
+                                    np.array([s1[0,1], s1[1,1]]),
+                                    np.array([s2[0,0], s2[1,0]]))):
+                return 2
+            elif (d2==0 and Room.isBetween(
+                                        np.array([s1[0,0], s1[1,0]]),
+                                        np.array([s1[0,1], s1[1,1]]),
+                                        np.array([s2[0,1], s2[1,1]]))):
+                return 2
+            elif (d3==0 and Room.isBetween(
+                                        np.array([s2[0,0], s2[1,0]]),
+                                        np.array([s2[0,1], s2[1,1]]),
+                                        np.array([s1[0,0], s1[1,0]]))):
+                return 3
+            elif (d4==0 and Room.isBetween(
+                                        np.array([s2[0,0], s2[1,0]]),
+                                        np.array([s2[0,1], s2[1,1]]),
+                                        np.array([s1[0,1], s1[1,1]]))):
+                return 3
+        return 0
+
+    @classmethod
+    def isBetween(cls, p1, p2, q):
+        """
+        Returns true if q is between p1 and p2
+        (i.e. is in a shoebox whose opposite corners are p1 and p2)
+        """
+        
+        if ((min(p1[0], p2[0]) <= q[0] <= max(p1[0], p2[0])) and
+            (min(p1[1], p2[1]) <= q[1] <= max(p1[1], p2[1]))):
+            return True
+        return False
+
+    # @classmethod
+    # def isVisible(cls, source):
+    #   if source order is > 0:
+    #       if intersects([[source.x, source.parent.x], [source.y, source.parent.y]], source.generatingWall):
+    #           return isVisible(source.parent)
+    #       else:
+    #           return False
+    #   else:
+    #       return True
+      
+    @classmethod
+    def isObstructed(cls, p, q):
+        """
+        Returns true if there is a wall obstructing the line of sight
+        going from p to q
+        """
+        
+        #TODO optimization : use only "obstructing walls" (inside convex hull)
+        #TODO optimization : use array operators instead of "for" loop
+        
+        segment = np.array([p[0], q[0]], [p[1], q[1]])
+        lastIntersection = 0
+        ret = False
+        for i in range(len(corners[0])):
+            lastIntersection = Room.intersects( np.array([[corners[0, i], corners[0, (i+1) % len(corners[0])]],
+                                                [corners[1, i], corners[1, (i+1) % len(corners[0])]]]),
+                                                segment)
+            if (lastIntersection == 1):
+                ret = True
+                break
+        return ret
+
+    @classmethod
+    def isInside(cls, p, corners, includeBorders = True):
+        """Returns true if the given point is inside the room."""
+
+        #TODO optimization : use array operators instead of "for" loop
+        
+        if (p.shape[0] != 2):
+                raise NameError(
+                    'Room.isInside is for a 2D point, input is a 1D np.array of size 2')
+        
+        segment = np.array([[np.amin(corners[0])-1, p[0]], [p[1], p[1]]])
+        lastIntersection = 0
+        count = 0
+        for i in range(len(corners[0])):
+            lastIntersection = Room.intersects( np.array([[corners[0, i], corners[0, (i+1) % len(corners[0])]],
+                                                [corners[1, i], corners[1, (i+1) % len(corners[0])]]]),
+                                                segment)
+            if (lastIntersection == 1
+                or lastIntersection == 3
+                or (includeBorders and lastIntersection == 2 and count % 2 == 0)
+                or (not includeBorders and lastIntersection == 2 and count % 2 == 1)):
+                print("INTERSECTS", i)
+                count += 1
+        if count % 2 == 1:
+            return True
+        else:
+            return False
