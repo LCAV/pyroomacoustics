@@ -6,12 +6,12 @@ from SoundSource import SoundSource
 
 import constants
 
-'''
-Room
-A room geometry is defined by all the sources and all their images
-'''
 
 class Room(object):
+    '''
+    Room
+    A room geometry is defined by all the sources and all their images
+    '''
 
     def __init__(
             self,
@@ -484,3 +484,97 @@ class Room(object):
             return 1
         else:
             return -1
+
+
+# Room 3D
+
+wall_dict = {'ground':0, 'south':1, 'west':2, 'north':3, 'east':4, 'ceilling':5}
+
+class ShoeBox3D(Room):
+    '''
+    This class extends room for shoebox room in 3D space.
+    '''
+
+    def __init__(self, p1, p2, Fs,
+            t0=0.,
+            absorption=1.,
+            max_order=1,
+            sigma2_awgn=None,
+            sources=None,
+            mics=None):
+
+        self.Fs = Fs
+        self.t0 = t0
+
+        p1 = np.array(p1, dtype='float64')
+        p2 = np.array(p2, dtype='float64')
+
+        if p1.shape[0] != 3 or p2.shape[0] != 3:
+            raise NameError('Defining points must have 3 elements each.')
+        if p1.ndim != 1 or p2.ndim != 1:
+            raise NameError('Defining points must be 1 dimensional.')
+
+        # We order the faces as ground first and ceiling last
+        # walls order: [Ground, South, West, North, East, Ceilling]
+        # where South: Wall alligned with x axis with least y coordinate
+        #       West : Wall alligned with y axis with least x coordinate
+        #       North: Wall alligned with x axis with largest y coordinate
+        #       East : Wall alligned with y axis with largest x coordinate
+        self.dim = 3.
+        self.corners = np.array([p1, p1, p1, p2, p2, p2]).T
+        self.normals = np.array([[ 0.,  0., -1.,  0., 1., 0.],
+                                 [ 0., -1.,  0.,  1., 0., 0.],
+                                 [-1.,  0.,  0.,  0., 0., 1.]])
+
+        # Array of walls. This is a hack.
+        # For 2D rooms, every wall is a 2D vector.
+        # To generalize to 3D room this will need to be changed
+        # to a list of Wall objects. Wall objects are 2D or 3D polygons.
+        # For now, we just need the array to have self.walls.shape[1]
+        # to be defined because it is used in firstOrderImages function
+        self.walls = np.zeros(self.normals.shape)
+
+        # list of attenuation factors for the wall reflections
+        if isinstance(absorption, dict):
+            self.absorption = np.zeros(self.normals.shape[1])
+            for key,val in absorption.iteritems():
+                try:
+                    self.absorption[wall_dict[key]] = val
+                except KeyError:
+                    print 'Warning: non-existent wall name. Ignoring.'
+        else:
+            absorption = np.array(absorption, dtype='float64')
+            if (absorption.ndim == 0):
+                self.absorption = absorption * np.ones(self.corners.shape[1])
+            elif (absorption.ndim > 1 or self.corners.shape[1] != absorption.shape[0]):
+                raise NameError('Absorption and corner must be the same size')
+            else:
+                self.absorption = absorption
+
+        # a list of sources
+        if (sources is None):
+            self.sources = []
+        elif (sources is list):
+            self.sources = sources
+        else:
+            raise NameError('Room needs a source or list of sources.')
+
+        # a microphone array
+        if (mics is not None):
+            self.micArray = None
+        else:
+            self.micArray = mics
+
+        # a maximum orders for image source computation
+        self.max_order = max_order
+
+        # pre-compute RIR if needed
+        if (len(self.sources) > 0 and self.micArray is not None):
+            self.compute_RIR()
+        else:
+            self.rir = []
+
+        # ambiant additive white gaussian noise level
+        self.sigma2_awgn = sigma2_awgn
+
+

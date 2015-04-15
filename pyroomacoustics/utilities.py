@@ -317,6 +317,62 @@ def lowPassDirac(t0, alpha, Fs, N):
     
     return alpha*np.sinc(np.arange(N) - Fs*t0)
 
+def resample(x, p, q, h=None, roll_off=0.1):
+    '''
+    XXX Not working yet XXX
+
+    y = resample(x, p, q, h=None, roll_off=0.1)
+
+    Resample the signal x to p/q F_s with optionnal filter h.
+
+    Arguments
+    ---------
+
+    x: numpy ndarray containing signal to resample
+    p: numerator of resampling factor
+    q: denominator of resampling factor
+    h: optionnal argument, the filter to use
+    roll_off: roll off of low-pas filter to use
+
+    Return
+    ------
+
+    The signal resampled at the new sampling rate.
+    '''
+
+    import fractions
+    from scipy.signal import butter,lfilter
+
+    gcd = fractions.gcd(p,q)
+
+    p /= gcd
+    q /= gcd
+
+    # create filter
+    b,a = butter(3, (1.-roll_off)*np.minimum(1., float(p)/float(q)), btype='lowpass')
+
+    from scipy.signal import freqz
+    import matplotlib.pyplot as plt
+
+    w, h = freqz(b, a)
+    plt.plot(w, 20 * np.log10(abs(h)))
+    plt.xscale('log')
+    plt.title('Butterworth filter frequency response')
+    plt.xlabel('Frequency [radians / second]')
+    plt.ylabel('Amplitude [dB]')
+    plt.margins(0, 0.1)
+    plt.grid(which='both', axis='both')
+    plt.axvline(100, color='green') # cutoff frequency
+    plt.show()
+
+    x_up = np.zeros(p*x.shape[0]-p+1)
+    x_up[::p] = x
+
+    x_up = lfilter(b,a,x_up)
+
+    return x_up[::q]
+
+
 
 def levinson(r, b):
     '''
