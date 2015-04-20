@@ -197,7 +197,6 @@ class SoundSource(object):
         argument.
         '''
 
-
         # compute the distance
         dist = self.distance(mic)
         time = dist / c + t0
@@ -205,7 +204,8 @@ class SoundSource(object):
 
         # the number of samples needed
         if t_max is None:
-            N = np.ceil((time.max() - t0) * Fs)
+            # we give a little bit of time to the sinc to decay anyway
+            N = np.ceil((1.05*time.max() - t0) * Fs)
         else:
             N = np.ceil((t_max - t0) * Fs)
 

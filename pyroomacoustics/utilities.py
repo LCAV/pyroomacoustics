@@ -3,6 +3,15 @@ import numpy as np
 import constants
 
 
+def to_16b(signal):
+    '''
+    converts float 32 bit signal (-1 to 1) to a signed 16 bits representation
+    No clipping in performed, you are responsible to ensure signal is within
+    the correct interval.
+    '''
+    return ((2**15-1)*signal).astype(np.int16)
+
+
 def clip(signal, high, low):
     '''
     Clip a signal from above at high and from below at low.

@@ -3,7 +3,8 @@ This file defines the main physical constants of the system
 '''
 
 # Speed of sound c=343 m/s
-c = 343.
+#c = 343.
+c = 344.5 # to adapt to experimental data and Reflektor generated data
 
 # distance to the far field
 ffdist = 10.

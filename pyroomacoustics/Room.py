@@ -390,11 +390,11 @@ class Room(object):
         if L%2 == 1: L += 1
 
         # the array that will receive all the signals
-        self.micArray.signals = np.zeros((M, L))
+        signals = np.zeros((M, L))
 
         # compute the signal at every microphone in the array
         for m in np.arange(M):
-            rx = self.micArray.signals[m]
+            rx = signals[m]
             for s in np.arange(S):
                 sig = self.sources[s].signal
                 if sig is None:
@@ -406,6 +406,9 @@ class Room(object):
             # add white gaussian noise if necessary
             if self.sigma2_awgn is not None:
                 rx += np.random.normal(0., np.sqrt(self.sigma2_awgn), rx.shape)
+
+        # record the signals in the microphones
+        self.micArray.record(signals, self.Fs)
 
 
     def dSNR(self, x, source=0):

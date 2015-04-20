@@ -136,6 +136,38 @@ class MicrophoneArray(object):
         self.center = np.mean(R, axis=1, keepdims=True)
 
 
+    def record(self, signals, Fs):
+        '''
+        This simulates the recording of the signals by the microphones.
+        In particular, if the microphones and the room simulation
+        do not use the same sampling frequency, down/up-sampling
+        is done here.
+
+        Arguments:
+        ----------
+
+        signals: An ndarray with as many lines as there are microphones.
+        Fs: the sampling frequency of the signals.
+        '''
+
+        if signals.shape[0] != self.M:
+            raise NameError('The signals array should have as many lines as there are microphones.')
+
+        if signals.ndim != 2:
+            raise NameError('The signals should be a 2D array.')
+
+        if Fs != self.Fs:
+            from scikits.samplerate import resample
+            Fs_ratio = self.Fs/float(Fs)
+            newL = int(Fs_ratio*signals.shape[1])-1
+            self.signals = np.zeros((self.M, newL))
+            # scikits.samplerate resample function considers columns as channels (hence the transpose)
+            for m in range(self.M):
+                self.signals[m] = resample(signals[m], Fs_ratio, 'sinc_best')
+        else:
+            self.signals = signals
+
+
     def to_wav(self, filename, mono=False, norm=False, type=float):
         '''
         Save all the signals to wav files
@@ -184,7 +216,7 @@ class Beamformer(MicrophoneArray):
         ----------
         R        Mics positions
         Fs       Sampling frequency
-        N        Length of FFT, i.e. number of FD beamforming weights, equally spaced.
+        N=1024   Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.
         Lg=N     Length of time-domain filters. Default to N.
         hop=N/2  Hop length for frequency domain processing. Default to N/2.
         zpf=0    Front zero padding length for frequency domain processing. Default is 0.
@@ -801,7 +833,7 @@ class Beamformer(MicrophoneArray):
         return num/denom
 
 
-    def rakeMaxSINRFilters(self, source, interferer, R_n, delay=None, epsilon=5e-3):
+    def rakeMaxSINRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
         '''
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
