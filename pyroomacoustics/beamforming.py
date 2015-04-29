@@ -3,7 +3,7 @@ import numpy as np
 from scipy.linalg import toeplitz, inv
 import scipy.linalg as la
 
-import constants
+from parameters import constants
 import utilities as u
 from SoundSource import buildRIRMatrix
 
@@ -320,9 +320,9 @@ class Beamformer(MicrophoneArray):
             # TO DO 1: This will mean slightly different absolute value for
             # every entry, even within the same steering vector. Perhaps a
             # better paradigm is far-field with phase carrier.
-            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.c)
+            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.get('c'))
         else:
-            return np.exp(-1j * omega * D / constants.c)
+            return np.exp(-1j * omega * D / constants.get('c'))
 
 
     def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
@@ -345,7 +345,7 @@ class Beamformer(MicrophoneArray):
         if (ff):
             X -= self.center
             Xn = np.sqrt(np.sum(X**2, axis=0))
-            X *= constants.ffdist/Xn
+            X *= constants.get('ffdist')/Xn
             X += self.center
 
         D = distance(self.R, X)
@@ -355,9 +355,9 @@ class Beamformer(MicrophoneArray):
             # TO DO 1: This will mean slightly different absolute value for
             # every entry, even within the same steering vector. Perhaps a
             # better paradigm is far-field with phase carrier.
-            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.c)
+            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.get('c'))
         else:
-            return np.exp(-1j * omega * D / constants.c)
+            return np.exp(-1j * omega * D / constants.get('c'))
 
 
     def response(self, phi_list, frequency):
@@ -371,7 +371,7 @@ class Beamformer(MicrophoneArray):
 
         # For the moment assume that we are in 2D
         bfresp = np.dot(H(self.weights[:,i_freq]), self.steering_vector_2D(
-            self.frequencies[i_freq], phi_list, constants.ffdist))
+            self.frequencies[i_freq], phi_list, constants.get('ffdist')))
 
         return self.frequencies[i_freq], bfresp
 
@@ -438,14 +438,13 @@ class Beamformer(MicrophoneArray):
 
         phi = np.linspace(-np.pi, np.pi-np.pi/180, 360)
         freq = self.frequencies
-        #freq = self.frequencies[self.frequencies > constants.fc_hp]
 
         resp = np.zeros((freq.shape[0], phi.shape[0]), dtype=complex)
 
         for i,f in enumerate(freq):
             # For the moment assume that we are in 2D
             resp[i,:] = np.dot(H(self.weights[:,i]), self.steering_vector_2D(
-                f, phi, constants.ffdist))
+                f, phi, constants.get('ffdist')))
 
         H_abs = np.abs(resp)**2
         H_abs /= H_abs.max()
@@ -666,7 +665,7 @@ class Beamformer(MicrophoneArray):
         proj -= proj.max()
 
         self.weights = np.exp(2j * np.pi * 
-        self.frequencies[:, np.newaxis] * proj / constants.c).T
+        self.frequencies[:, np.newaxis] * proj / constants.get('c')).T
 
 
     def rakeDelayAndSumWeights(self, source, interferer=None, R_n=None, attn=True, ff=False):
@@ -793,7 +792,7 @@ class Beamformer(MicrophoneArray):
         return SINR[0]
 
 
-    def rakePerceptualFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+    def rakePerceptualFilters(self, source, interferer, R_n, delay=0.03, d_relax=0.035, epsilon=5e-3):
         '''
         Compute directly the time-domain filters for a perceptually motivated beamformer.
         The beamformer minimizes noise and interference, but relaxes the response of the
@@ -805,12 +804,13 @@ class Beamformer(MicrophoneArray):
         L = H.shape[1]/2
             
         # Delay of the system in samples
-        kappa = int(delay*self.Fs)
+        tau = int(delay*self.Fs)
+        kappa = int(d_relax*self.Fs)
 
         # the constraint
-        A = H[:,:kappa+1]
-        b = np.zeros((kappa+1,1))
-        b[-1,0] = 1
+        A = np.concatenate((H[:,:tau+1], H[:,tau+kappa:]), axis=1)
+        b = np.zeros((A.shape[1],1))
+        b[tau,0] = 1
 
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:,L:], H[:,L:].T) + R_n
@@ -830,10 +830,11 @@ class Beamformer(MicrophoneArray):
         A = np.dot(g_val.T, H[:,:L])
         num = np.dot(A, A.T)
         denom =  np.dot(np.dot(g_val.T, K_nq), g_val)
+
         return num/denom
 
 
-    def rakeMaxSINRFilters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+    def rakeMaxSINRFilters(self, source, interferer, R_n, epsilon=5e-3, delay=0.):
         '''
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
@@ -928,12 +929,12 @@ class Beamformer(MicrophoneArray):
         towards multiple sources.
         '''
 
-        dist_mat = distance(self.R, sources)
-        s_time = dist_mat / constants.c
+        dist_mat = distance(self.R, sources.images)
+        s_time = dist_mat / constants.get('c')
         s_dmp = 1./(4*np.pi*dist_mat)
 
-        dist_mat = distance(self.R, interferers)
-        i_time = dist_mat / constants.c
+        dist_mat = distance(self.R, interferers.images)
+        i_time = dist_mat / constants.get('c')
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
@@ -947,7 +948,7 @@ class Beamformer(MicrophoneArray):
         Lh = np.ceil((t_max - t_min + 2*offset)*float(self.Fs))
 
         # the channel matrix
-        K = sources.shape[1]
+        K = sources.images.shape[1]
         Lg = self.Lg
         off = (Lg - Lh)/2
         L = self.Lg + Lh - 1

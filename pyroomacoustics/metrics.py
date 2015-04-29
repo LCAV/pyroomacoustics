@@ -5,7 +5,7 @@ from stft import stft
 
 import platform
 
-def median(x):
+def median(x, axis=-1, keepdims=False):
     '''
     m, ci = median(x)
     computes median and 0.95% confidence interval.
@@ -14,15 +14,20 @@ def median(x):
     ci: [le, ue]
     The confidence interval is [m-le, m+ue]
     '''
-    x = np.sort(x);
-    n = x.shape[0]
+
+    # place the axis on which to compute median in first position
+    xsw = np.swapaxes(x, axis, 0)
+
+    # sort the array
+    xsw = np.sort(xsw, axis=0)
+    n = xsw.shape[0]
 
     if n % 2 == 1:
         # if n is odd, take central element
-        m = x[(n+1)/2];
+        m = xsw[n/2,];
     else:
         # if n is even, average the two central elements
-        m = 0.5*(x[n/2] + x[n/2+1]);
+        m = 0.5*(xsw[n/2,] + xsw[n/2+1,]);
 
     # This table is taken from the Performance Evaluation lecture notes by J-Y Le Boudec
     # available at: http://perfeval.epfl.ch/lectureNotes.htm
@@ -35,24 +40,32 @@ def median(x):
           [24,40],[24,40],[24,40],[25,41],[25,41],[26,42],[26,43],[26,44],[27,44]];
     CI = np.array(CI)
 
-    # adjust to indexing from 0
+    # Table assumes indexing starting at 1, adjust to indexing from 0
     CI -= 1
 
     if n < 6:
         # If we have less than 6 samples, we cannot have a confidence interval
-        ci = np.array([0,0])
+        ci = np.zeros((2,) + m.shape)
     elif n <= 70:
         # For 6 <= n <= 70, we use exact values from the table
         j = CI[n-6,0]
         k = CI[n-6,1]
-        ci = np.array([x[j]-m,x[k]-m])
+        ci = np.array([xsw[j,]-m ,xsw[k,]-m])
     else:
         # For 70 < n, we use the approximation for large sets
         j = np.floor(0.5*n - 0.98*np.sqrt(n))
         k = np.ceil(0.5*n + 1 + 0.98*np.sqrt(n))
-        ci = np.array([x[j]-m,x[k]-m])
+        ci = np.array([xsw[j,]-m,xsw[k,]-m])
+
+    if keepdims:
+        m = np.swapaxes(m[np.newaxis,], 0, axis)
+        if axis < 0:
+            ci = np.swapaxes(ci[:,np.newaxis,], 1, axis)
+        else:
+            ci = np.swapaxes(ci[:,np.newaxis,], 1, axis+1)
 
     return m, ci
+
 
 # Simple mean squared error function
 def mse(x1, x2):

@@ -4,7 +4,7 @@ import numpy as np
 import beamforming as bf
 from SoundSource import SoundSource
 
-import constants
+import parameters
 
 
 class Room(object):
@@ -340,7 +340,7 @@ class Room(object):
         return images, damping, wall_indices
 
 
-    def compute_RIR(self, c=constants.c):
+    def compute_RIR(self):
         '''
         Compute the room impulse response between every source and microphone
         '''
@@ -481,7 +481,7 @@ class Room(object):
         D = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
             (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
 
-        if (np.abs(D) < constants.eps):
+        if (np.abs(D) < parameters.eps):
             return 0
         elif (D > 0):
             return 1

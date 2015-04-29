@@ -1,6 +1,7 @@
 
 import numpy as np
 import constants
+from parameters import constants
 
 
 class SoundSource(object):
@@ -190,7 +191,7 @@ class SoundSource(object):
         return self.damping[self.orders <= max_order]
 
 
-    def getRIR(self, mic, Fs, t0=0., t_max=None, c=constants.c):
+    def getRIR(self, mic, Fs, t0=0., t_max=None):
         '''
         Compute the room impulse response between the source
         and the microphone whose position is given as an
@@ -199,7 +200,7 @@ class SoundSource(object):
 
         # compute the distance
         dist = self.distance(mic)
-        time = dist / c + t0
+        time = dist / constants.get('c') + t0
         alpha = self.damping/(4.*np.pi*dist)
 
         # the number of samples needed
@@ -258,8 +259,9 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
             dmp_max = np.maximum((sources[s].damping[np.newaxis,:]/(4*np.pi*dist_mat)).max(), dmp_max)
         d_min = np.minimum(dist_mat.min(), d_min)
         d_max = np.maximum(dist_mat.max(), d_max)
-    t_max = d_max/constants.c
-    t_min = d_min/constants.c
+
+    t_max = d_max/constants.get('c')
+    t_min = d_min/constants.get('c')
         
     offset = dmp_max/(np.pi*Fs*epsilon)
 
@@ -274,7 +276,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
         for r in np.arange(mics.shape[1]):
 
             dist = sources[s].distance(mics[:,r])
-            time = dist/constants.c - t_min + offset
+            time = dist/constants.get('c') - t_min + offset
             if unit_damping == True:
                 dmp = 1./(4*np.pi*dist)
             else:
