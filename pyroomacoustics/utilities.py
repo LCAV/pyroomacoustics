@@ -32,11 +32,6 @@ def normalize(signal, bits=None):
     return s
 
 
-def angle_from_points(x1, x2):
-
-    return np.angle((x1[0, 0]-x2[0, 0]) + 1j*(x1[1, 0] - x2[1, 0]))
-
-
 def normalize_pwr(sig1, sig2):
     """Normalize sig1 to have the same power as sig2."""
 
@@ -346,3 +341,54 @@ def levinson(r, b):
         x = np.concatenate((x, np.zeros(1 if len(b.shape) == 1 else (1, b.shape[1]))), axis=0) + q*np.conj(a[::-1, np.newaxis])
 
     return x
+
+    
+    
+"""
+GEOMETRY UTILITIES
+"""
+def angle_from_points(x1, x2):
+    return np.angle((x1[0, 0]-x2[0, 0]) + 1j*(x1[1, 0] - x2[1, 0]))
+
+
+def area(corners):
+    """
+    Computes the signed area of a 2D surface represented by its corners.
+    
+    :arg corners: (np.array 2xN, N>2) list of coordinates of the corners forming the surface
+    
+    :returns: (float) area of the surface
+        positive area means clockwise ordered corners.
+        negative area means anti-clockwise ordered corners.
+    """
+
+    x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
+    y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
+    return -0.5 * (x * y).sum()
+
+
+def ccw3p(p):
+    """
+    Computes the orientation of three 2D points.
+    
+    :arg p: (np.array dim 2x3) coordinates of three 2D points
+    
+    :returns: (int) orientation of the given triangle
+        1 if triangle vertices are counter-clockwise
+        -1 if triangle vertices are clock-wise
+        0 if vertices are colinear
+
+    :ref: https://en.wikipedia.org/wiki/Curve_orientation
+    """
+    if (p.shape != (2, 3)):
+        raise NameError(
+            'Room.ccw3p is for three 2D points, input is 2x3 ndarray')
+    d = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
+        (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
+
+    if (np.abs(d) < constants.eps):
+        return 0
+    elif (d > 0):
+        return 1
+    else:
+        return -1

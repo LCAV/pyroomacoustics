@@ -23,9 +23,6 @@ absorption = 0.90
 max_order_sim = 10
 sigma2_n = 5e-7
 
-# Room 1 : Shoe box
-room_dim = [4, 6]
-
 # the good source is fixed for all 
 good_source = np.array([1, 4.5])           # good source
 normal_interferer = np.array([2.8, 4.3])   # interferer
@@ -67,6 +64,7 @@ signal2 = pra.highpass(signal2, Fs)
 delay2 = 1.
 
 # create the room with sources and mics
+room_dim = [4, 6]
 room1 = pra.Room.shoeBox2D(
     [0,0],
     room_dim,
@@ -94,7 +92,7 @@ room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
 mics.rakeMVDRFilters(room1.sources[0][0:1],
-        room1.sources[1][0:1],
+                    room1.sources[1][0:1],
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
 # process the signal

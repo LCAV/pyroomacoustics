@@ -5,26 +5,26 @@ import constants
 
 
 class SoundSource(object):
+    """
+    A class to represent sound sources.
+    
+    This object represents a sound source in a room by a list containing the original source position
+    as well as all the image sources, up to some maximum order.
 
-    """A class to represent sound sources."""
+    It also keeps track of the sequence of generated images and the index of the walls (in the original room)
+    that generated the reflection.
+    """
 
     def __init__(
             self,
             position,
-            images=None,
+            images=None, #source position
             damping=None,
-            generators=None, #parents
-            walls=None, #mur reflecteur
+            generators=None, #parent source
+            walls=None, #generating wall
             orders=None,
             signal=None,
             delay=0):
-        """
-        This object represent a sound source in a room by a list containing the original source position
-        as well as all the image sources, up to some maximum order.
-
-        It also keeps track of the sequence of generated images and the index of the walls (in the original room)
-        that generated the reflection.
-        """
 
         self.position = np.array(position)
         self.dim = self.position.shape[0]

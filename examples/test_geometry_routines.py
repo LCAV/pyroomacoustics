@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from random import randint
 import numpy as np
 
 import pyroomacoustics as pra
@@ -34,4 +33,21 @@ print('===INSIDEOUTSIDE (false)===')
 print('outside : ', room.isInside(np.array([5,0]), room.corners, True))
    
 print('===INSIDEOUTSIDE (true)===')
-print('on left border : ', room.isInside(np.array([0,2]), room.corners, True))
+print('on left border inclusive : ', room.isInside(np.array([0,2]), room.corners, True))
+
+print('===INSIDEOUTSIDE (true)===')
+print('on right border inclusive : ', room.isInside(np.array([4,2]), room.corners, True))
+
+print('===INSIDEOUTSIDE (false)===')
+print('on left border exclusive : ', room.isInside(np.array([0,2]), room.corners, False))
+
+print('===INSIDEOUTSIDE (false)===')
+print('on right border exclusive : ', room.isInside(np.array([4,2]), room.corners, False))
+
+print('===INTERSECTION===')
+print(room.intersection(np.array([0,0]), np.array([4,0]), np.array([2, -2]), np.array([2, 2])))
+
+print('===OBSTRUCTION===')
+print(room.isObstructed(room.corners, np.array([2,2]), np.array([5,2]), np.array([[4, 0],[4, 4]])))
+
+print(room.walls)
