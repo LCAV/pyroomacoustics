@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
-setup(name='PyRoomAcoustics',
-      version='0.1',
+setup(name='pyroomacoustics',
+      version='1.0',
       description='A simple framework for room acoustics and signal processing in Python.',
-      author='Robin Scheibler, Ivan Dokmanic',
+      author='Robin Scheibler, Ivan Dokmanic, Sidney Barthe',
       author_email='robin.scheibler@epfl.ch',
       url='http://lcav.epfl.ch',
-      packages=['PyRoomAcoustics'],
-     )
+      packages=['pyroomacoustics'],
+	  install_requires=[
+	      'numpy',
+		  'scipy'],
+      test_suite='nose.collector',
+      tests_require=['nose']
+)

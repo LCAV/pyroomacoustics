@@ -1,4 +1,4 @@
-'''A collection of windowing functions.'''
+"""A collection of windowing functions."""
 
 import numpy as np
 

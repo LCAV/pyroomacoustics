@@ -1,88 +1,126 @@
+# @version: 1.0  date: 05/06/2015 by Sidney Barthe
+# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
+# @copyright: EPFL-IC-LCAV 2015
 
 import numpy as np
 
 import beamforming as bf
-from SoundSource import SoundSource
-
+from soundsource import SoundSource
+from wall import Wall
+from utilities import area, ccw3p
 import parameters
 
 
 class Room(object):
-    '''
-    Room
-    A room geometry is defined by all the sources and all their images
-    '''
+    """
+    This class represents a room instance.
+    
+    A room instance is formed by wall instances. Microphones and sound sources can be added.
+    
+    :attribute walls: (Wall array) list of walls forming the room
+    :attribute fs: (int) sampling frequency
+    :attribute t0: (float) time offset
+    :attribute max_order: (int) the maximum computed order for images sources
+    :attribute sigma2_awgn: (?) ambiant additive white gaussian noise level
+    :attribute sources: (SoundSource array) list of sound sources
+    :attribute mics: (?) array of microphones
+    :attribute normals: (np.array 2xN or 3xN, N=number of walls) normal vector for each wall
+    :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
+    :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
+    """
 
     def __init__(
             self,
-            corners,
-            Fs,
+            walls,
+            fs=8000,
             t0=0.,
-            absorption=1.,
             max_order=1,
             sigma2_awgn=None,
             sources=None,
             mics=None):
 
-        # make sure we have an ndarray of the right size
-        corners = np.array(corners)
-        if (corners.ndim != 2):
-            raise NameError('Room corners is a 2D array.')
-
-        # make sure the corners are anti-clockwise
-        if (self.area(corners) <= 0):
-            raise NameError('Room corners must be anti-clockwise')
-
-        self.corners = corners
-        self.dim = corners.shape[0]
-
-        # sampling frequency and time offset
-        self.Fs = Fs
+        self.walls = walls
+        self.fs = fs
         self.t0 = t0
-
-        # circular wall vectors (counter clockwise)
-        self.walls = self.corners - \
-            self.corners[:, xrange(-1, corners.shape[1] - 1)]
-
-        # compute normals (outward pointing)
-        self.normals = self.walls[[1, 0], :]/np.linalg.norm(self.walls, axis=0)[np.newaxis,:]
-        self.normals[1, :] *= -1;
-
-        # list of attenuation factors for the wall reflections
-        absorption = np.array(absorption, dtype='float64')
-        if (absorption.ndim == 0):
-            self.absorption = absorption * np.ones(self.corners.shape[1])
-        elif (absorption.ndim > 1 or self.corners.shape[1] != len(absorption)):
-            raise NameError('Absorption and corner must be the same size')
-        else:
-            self.absorption = absorption
-
-        # a list of sources
-        if (sources is None):
-            self.sources = []
-        elif (sources is list):
+        self.max_order = max_order
+        self.sigma2_awgn = sigma2_awgn
+        
+        if (sources is list):
             self.sources = sources
         else:
-            raise NameError('Room needs a source or list of sources.')
+            self.sources = []
 
-        # a microphone array
-        if (mics is not None):
-            self.micArray = None
-        else:
+        if (mics is list):
             self.micArray = mics
+        else:
+            self.micArray = []
 
-        # a maximum orders for image source computation
-        self.max_order = max_order
-
-        # pre-compute RIR if needed
+        # Pre-compute RIR if needed
         if (len(self.sources) > 0 and self.micArray is not None):
             self.compute_RIR()
         else:
             self.rir = []
+            
+        self.dim = walls[0].dim
+        self.wallsId = {}
+        for i in range(len(walls)):
+            if self.walls[i].name is not None:
+                self.wallsId[self.walls[i].name] = i
 
-        # ambiant additive white gaussian noise level
-        self.sigma2_awgn = sigma2_awgn
+    @classmethod
+    def shoeBox2D(cls, p1, p2, absorption=1., **kwargs):
+        """
+        Creates a 2D "shoe box" room geometry (rectangle).
+        
+        :arg p1: (np.array dim 2) coordinates of the lower left corner of the room
+        :arg p2: (np.array dim 2) coordinates the upper right corner of the room
+        :arg absorption: (float) absorption factor reflection for all walls
+        
+        :returns: (Room) instance of a 2D shoe box room
+        """
 
+        walls = []
+        walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption, "south"))
+        walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption, "east"))
+        walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption, "north"))
+        walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption, "west"))
+
+        return cls(walls, **kwargs)
+        
+    @classmethod
+    def fromCorners(cls, corners, absorption=1., **kwargs):
+        """
+        Creates a 2D room by giving an array of corners.
+        
+        :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
+        :arg absorption: (float array or float) list of absorption factor reflection for each wall or single value for all walls
+        
+        :returns: (Room) instance of a 2D room
+        """
+        
+        corners = np.array(corners)
+        if (corners.size[0] != 2 or len(corners) < 3):
+            raise NameError('Room.fromCorners input error : corners must be more than two 2D points.')
+
+        if (area(corners) >= 0):
+            raise NameError('Room.fromCorners input error : corners must be anti-clockwise ordered.')
+
+        self.corners = corners
+        self.dim = corners.shape[0] 
+            
+        absorption = np.array(absorption, dtype='float64')
+        if (absorption.ndim == 0):
+            self.absorption = absorption * np.ones(self.corners.shape[1])
+        elif (absorption.ndim > 1 and corners.shape[1] != len(absorption)):
+            raise NameError('Room.fromCorners input error : absorption must be the same size as corners or must be a single value.')
+        else:
+            self.absorption = absorption
+        
+        walls = []
+        for i in range(len(corners)):
+            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%len(corners)]]), absorption[i], "wall_"+str(i)))
+            
+        return cls(walls, **kwargs)
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
 
@@ -106,24 +144,23 @@ class Room(object):
 
         # draw room
         polygons = [Polygon(self.corners.T, True)]
-        #if no_axis is True:
-            #r = Rectangle((xlim[0],ylim[0]), xlim[1]-xlim[0], ylim[1]-ylim[0])
-            #polygons.append(r)
-        p = PatchCollection(polygons, cmap=matplotlib.cm.jet, 
-                facecolor=np.array([1,1,1]), edgecolor=np.array([0,0,0]))
+        # if no_axis is True:
+        #   r = Rectangle((xlim[0],ylim[0]), xlim[1]-xlim[0], ylim[1]-ylim[0])
+        #   polygons.append(r)
+        p = PatchCollection(polygons, cmap=matplotlib.cm.jet,
+                facecolor=np.array([1, 1, 1]), edgecolor=np.array([0, 0, 0]))
         ax.add_collection(p)
 
         # draw the microphones
         if (self.micArray is not None):
             for mic in self.micArray.R.T:
-                ax.scatter(mic[0], mic[1], 
+                ax.scatter(mic[0], mic[1],
                         marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
-            # draw the beam pattern of the beamformer if requested (and
-            # available)
+            # draw the beam pattern of the beamformer if requested (and available)
             if freq is not None \
                     and isinstance(self.micArray, bf.Beamformer) \
-                    and (self.micArray.weights is not None 
+                    and (self.micArray.weights is not None
                             or self.micArray.filters is not None):
 
                 freq = np.array(freq)
@@ -133,13 +170,13 @@ class Room(object):
                 # define a new set of colors for the beam patterns
                 newmap = plt.get_cmap('autumn')
                 desat = 0.7
-                ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0,1,len(freq))])
+                ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0, 1, len(freq))])
 
-                
+
                 phis = np.arange(360) * 2 * np.pi / 360.
                 newfreq = np.zeros(freq.shape)
                 H = np.zeros((len(freq), len(phis)), dtype=complex)
-                for i,f in enumerate(freq):
+                for i, f in enumerate(freq):
                     newfreq[i], H[i] = self.micArray.response(phis, f)
 
                 # normalize max amplitude to one
@@ -147,19 +184,19 @@ class Room(object):
 
                 # a normalization factor according to room size
                 norm = np.linalg.norm(
-                        (self.corners - self.micArray.center),
-                        axis=0).max()
-                    
+                    (self.corners - self.micArray.center),
+                    axis=0).max()
+
                 # plot all the beam patterns
                 i = 0
-                for f,h in zip(newfreq, H):
+                for f, h in zip(newfreq, H):
                     x = np.cos(phis) * h * norm + self.micArray.center[0, 0]
                     y = np.sin(phis) * h * norm + self.micArray.center[1, 0]
                     l = ax.plot(x, y, '-', linewidth=0.5)
-                    #lbl = '%.2f' % f
-                    #i0 = i*360/len(freq)
-                    #ax.text(x[i0], y[i0], lbl, color=plt.getp(l[0], 'color'))
-                    #i += 1
+                    # lbl = '%.2f' % f
+                    # i0 = i*360/len(freq)
+                    # ax.text(x[i0], y[i0], lbl, color=plt.getp(l[0], 'color'))
+                    # i += 1
 
                 #ax.legend(freq)
 
@@ -188,27 +225,15 @@ class Room(object):
 
             val = (np.log2(source.damping[I]) + 10.) / 10.
             # plot the images
-            ax.scatter(source.images[0, I], source.images[1,I], \
+            ax.scatter(source.images[0, I], source.images[1, I], \
                        c=cmap(val), s=20,
                        marker=markers[i % len(markers)], edgecolor=cmap(val))
-            '''
-            for o in xrange(img_order):
-                # map the damping to a log scale (mapping 1 to 1)
-                val = (np.log2(source.damping[o]) + 10.) / 10.
-                # plot the images
-                ax.scatter(source.images[o][0, :], source.images[o][1,:], \
-                           c=cmap(val), s=20,
-                           marker=markers[i % len(markers)], edgecolor=cmap(val))
-                           '''
-
-        # keep axis equal, or the symmetry is lost
-        #ax.axis('equal')
 
         return fig, ax
 
     def plotRIR(self, FD=False):
 
-        if self.rir == None:
+        if self.rir is None:
             self.compute_RIR()
 
         import matplotlib.pyplot as plt
@@ -221,7 +246,7 @@ class Room(object):
                 h = self.rir[r][s]
                 plt.subplot(M, S, r*S + s + 1)
                 if not FD:
-                    plt.plot(np.arange(len(h)) / float(self.Fs), h)
+                    plt.plot(np.arange(len(h)) / float(self.fs), h)
                 else:
                     u.real_spectrum(h)
                 plt.title('RIR: mic'+str(r)+' source'+str(s))
@@ -231,11 +256,13 @@ class Room(object):
                     else:
                         plt.xlabel('Normalized frequency')
 
-
     def addMicrophoneArray(self, micArray):
         self.micArray = micArray
 
     def addSource(self, position, signal=None, delay=0):
+
+        if (not self.isInside(np.array(position))):
+            raise NameError('The source must be added inside the room.')
 
         # generate first order images
         i, d, w = self.firstOrderImages(np.array(position))
@@ -259,18 +286,6 @@ class Room(object):
                 gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
                 wal = np.concatenate((wal, w))
 
-            # remove duplicates
-            ordering = np.lexsort(img)
-
-            img = img[:, ordering]
-            dmp = dmp[ordering]
-            gen = gen[ordering]
-            wal = wal[ordering]
-
-            diff = np.diff(img, axis=1)
-            ui = np.ones(img.shape[1], 'bool')
-            ui[1:] = (diff != 0).any(axis=0)
-
             # add to array of images
             images.append(img[:, ui])
             damping.append(dmp[ui])
@@ -284,13 +299,13 @@ class Room(object):
         images_lin = np.concatenate(images, axis=1)
         damping_lin = np.concatenate(damping)
 
-        o_len = np.array([ x.shape[0] for x in generators ])
+        o_len = np.array([x.shape[0] for x in generators])
         # correct the pointers for linear structure
-        for o in np.arange(2,len(generators)):
+        for o in np.arange(2, len(generators)):
             generators[o] += np.sum(o_len[0:o-2])
+            
         # linearize
         generators_lin = np.concatenate(generators)
-
         walls_lin = np.concatenate(wall_indices)
 
         # store the corresponding orders in another array
@@ -321,14 +336,12 @@ class Room(object):
     def firstOrderImages(self, source_position):
 
         # projected length onto normal
-        ip = np.sum(
-            self.normals * (self.corners - source_position[:, np.newaxis]), axis=0)
+        ip = np.sum(self.normals * (self.corners - source_position[:, np.newaxis]), axis=0)
 
         # projected vector from source to wall
         d = ip * self.normals
 
-        # compute images points, positivity is to get only the reflections
-        # outside the room
+        # compute images points, positivity is to get only the reflections outside the room
         images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
 
         # collect absorption factors of reflecting walls
@@ -341,9 +354,9 @@ class Room(object):
 
 
     def compute_RIR(self):
-        '''
+        """
         Compute the room impulse response between every source and microphone
-        '''
+        """
         self.rir = []
 
         for mic in self.micArray.R.T:
@@ -352,15 +365,12 @@ class Room(object):
 
             for source in self.sources:
 
-                h.append(source.getRIR(mic, self.Fs, self.t0))
+                h.append(source.getRIR(mic, self.fs, self.t0))
 
             self.rir.append(h)
 
-
     def simulate(self, recompute_rir=False):
-        '''
-        Simulate the microphone signal at every microphone in the array
-        '''
+        """Simulate the microphone signal at every microphone in the array"""
 
         # import convolution routine
         from scipy.signal import fftconvolve
@@ -384,10 +394,11 @@ class Room(object):
         max_len_rir = np.array([len(self.rir[i][j])
                                 for i, j in product(xrange(M), xrange(S))]).max()
         f = lambda i: len(
-            self.sources[i].signal) + np.floor(self.sources[i].delay * self.Fs)
+            self.sources[i].signal) + np.floor(self.sources[i].delay * self.fs)
         max_sig_len = np.array([f(i) for i in xrange(S)]).max()
         L = max_len_rir + max_sig_len - 1
-        if L%2 == 1: L += 1
+        if L % 2 == 1:
+            L += 1
 
         # the array that will receive all the signals
         signals = np.zeros((M, L))
@@ -399,7 +410,7 @@ class Room(object):
                 sig = self.sources[s].signal
                 if sig is None:
                     continue
-                d = np.floor(self.sources[s].delay * self.Fs)
+                d = np.floor(self.sources[s].delay * self.fs)
                 h = self.rir[m][s]
                 rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
 
@@ -412,7 +423,7 @@ class Room(object):
 
 
     def dSNR(self, x, source=0):
-        ''' direct Signal-to-Noise Ratio'''
+        """direct Signal-to-Noise Ratio"""
 
         if source >= len(self.sources):
             raise NameError('No such source')
@@ -432,61 +443,151 @@ class Room(object):
         return sigma2_s/self.sigma2_awgn/(16*np.pi**2*d2)
 
 
-    @classmethod
-    def shoeBox2D(cls, p1, p2, Fs, **kwargs):
-        '''
-        Create a new Shoe Box room geometry.
-        Arguments:
-        p1: the lower left corner of the room
-        p2: the upper right corner of the room
-        max_order: the maximum order of image sources desired.
-        '''
-
-        # compute room characteristics
-        corners = np.array(
-            [[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p2[1], p2[1]]])
-
-        return Room(corners, Fs, **kwargs)
-
-    @classmethod
-    def area(cls, corners):
-        '''
-        Compute the area of a 2D room represented by its corners
-        '''
-        x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
-        y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
-        return -0.5 * (x * y).sum()
-
-    @classmethod
-    def isAntiClockwise(cls, corners):
-        '''
-        Return true if the corners of the room are arranged anti-clockwise
-        '''
-        return (cls.area(corners) > 0)
-
-    @classmethod
-    def ccw3p(cls, p):
-        '''
-        Argument: p, a (3,2)-ndarray whose rows are the vertices of a 2D triangle
-        Returns
-        1: if triangle vertices are counter-clockwise
-        -1: if triangle vertices are clock-wise
-        0: if vertices are colinear
-
-        Ref: https://en.wikipedia.org/wiki/Curve_orientation
-        '''
-        if (p.shape != (2, 3)):
-            raise NameError(
-                'Room.ccw3p is for three 2D points, input is 3x2 ndarray')
-        D = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
-            (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
-
-        if (np.abs(D) < parameters.eps):
-            return 0
-        elif (D > 0):
-            return 1
+    def getWallFromName(self, name):
+        """
+        Returns the instance of the wall by giving its name.
+        
+        :arg name: (string) name of the wall
+        
+        :returns: (Wall) instance of the wall with this name
+        """
+        
+        if (name in self.wallsId):
+            return self.walls[self.wallsId[name]]
         else:
-            return -1
+            raise NameError('Room.getWallFromName : the wall '+name+' cannot be found.')
+        
+    def checkVisibilityForAllImages(self, source, p):
+        """
+        Checks visibility from a given point for all images of the given source.
+        
+        This function tests visibility for all images of the source.
+        As visibility of an image has impact on its children, we use dynamic programming
+        by storing results in an array. It starts from the last child (i.e. higher order image)
+        and goes up to the original source.
+        
+        :arg source: (SoundSource) the sound source (containing all its images)
+        :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
+        
+        :returns: (int array) list of results of visibility for each image
+            -1 : unchecked (only during execution of the function)
+            0 (False) : not visible
+            1 (True) : visible
+        """
+        
+        visibilityCheck = np.zeros_like(source.images[0])-1
+        
+        for imageId in range(len(visibilityCheck)-1, -1, -1):
+            visibilityCheck[imageId] = isVisible(source, p, imageId, visibilityCheck)
+            
+        return visibilityCheck
+            
+    def isVisible(self, source, p, imageId = 0, visibilityCheck = None):
+        """
+        Returns true if the given sound source (with image source id) is visible from point p.
+        
+        :arg source: (SoundSource) the sound source (containing all its images)
+        :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
+        :arg imageId: (int) id of the image within the SoundSource object
+        :arg visibilityCheck: (int array) used to read results for dynamic programming, ignored if left as None
+        
+        :return: (bool) True (1) if visible, False (0) otherwise
+        """
+
+        p = np.array(p)
+        
+        if ((visibilityCheck is not None) and visibilityCheck[imageId] == 0):
+            return False
+        elif ((visibilityCheck is not None) and visibilityCheck[imageId] == 1):
+            return True
+
+        if (source.order[imageId] > 0):
+        
+            # Check if the line of sight intersects the generating wall
+            genWallId = source.walls[imageId]
+            if self.walls[genWallId].intersects(p, np.array([source.images[:, imageId]])):
+
+                    # Check if there is an obstruction
+                    if(not self.isObstructed(source, p, imageId)):
+                    
+                        # Check visibility for the parent image by recursion
+                        return isVisible(source, self.walls[genWallId].intersection(p, np.array([source.images[:, imageId]])), source.generators[imageId], visibilityCheck)
+                    else:
+                        return False
+            else:
+                return False
+        else:
+            return True
+      
+    def isObstructed(self, source, p, imageId = 0):
+        """
+        Checks if there is a wall obstructing the line of sight going from a source to a point.
+        
+        :arg source: (SoundSource) the sound source (containing all its images)
+        :arg p: (np.array size 2 or 3) coordinates of the point where we check obstruction
+        :arg imageId: (int) id of the image within the SoundSource object
+        
+        :returns: (bool) true if there is an obstruction
+        """
+        
+        #TODO optimization : use only walls inside the convex hull
+        
+        imageSide = self.walls[source.walls[imageId]].side(source.images[:, imageId])
+        
+        for wallId in range(len(self.walls)):
+        
+            # The generating wall can't be obstructive
+            if(wallId != source.walls[imageId]):
+            
+                # Test if the line segment intersects the current wall
+                if (self.walls[wallId].intersects(source.images[:, imageId], p)):
+                    
+                    # Only images with order > 0 have a generating wall. At this point, there is obstruction for source order 0.
+                    if (source.orders[imageId] > 0):
+                    
+                        # Test if the intersection point and the image are at opposite sides of the generating wall
+                        intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
+                        intersectionPointSide = self.walls[source.walls[imageId]].side(intersectionPoint)
+                        if (intersectionPointSide != sourceSide):
+                            return True
+                    else:
+                        return True
+                
+        return False
+
+    def isInside(self, p, includeBorders = False):
+        """
+        Checks if the given point is inside the room.
+        
+        :arg p: (np.array dim 2 or 3) point to be tested
+        :arg includeBorders: (bool) set true if a point on the wall must be considered inside the room
+        
+        :returns: (bool) True if the given point is inside the room, False otherwise.
+        """
+        
+        p = np.array(p)
+        if (self.dim == 2 and p.shape[0] != 2):
+            raise NameError('Room.isInside input error : requires a 2D point.')
+        if (self.dim == 3 and p.shape[0] != 3):
+            raise NameError('Room.isInside input error : requires a 3D point.')
+        
+        # Compute p0, which is a point outside the room at x coordinate xMin-1
+        # (where xMin is the minimum x coordinate among the corners of the walls)
+        p0 = np.array([np.amin(np.array([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[0]])
+        
+        limitCase = False
+        lastIntersection = 0
+        count = 0
+        for i in range(len(self.walls)):
+            lastIntersection = self.walls[i].intersects(p0, p)
+            if (lastIntersection == 2):
+                limitCase = True
+            if (lastIntersection > 0 and lastIntersection <= 3):
+                count += 1
+        if ((not limitCase and count % 2 == 1) or (limitCase and includeBorders)):
+            return True
+        else:
+            return False
 
 
 # Room 3D

@@ -1,4 +1,3 @@
-
 import numpy as np
 from parameters import constants
 
@@ -13,9 +12,7 @@ def to_16b(signal):
 
 
 def clip(signal, high, low):
-    '''
-    Clip a signal from above at high and from below at low.
-    '''
+    """Clip a signal from above at high and from below at low."""
     s = signal.copy()
 
     s[np.where(s > high)] = high
@@ -25,11 +22,11 @@ def clip(signal, high, low):
 
 
 def normalize(signal, bits=None):
-    '''
+    """
     normalize to be in a given range. The default is to normalize the maximum
     amplitude to be one. An optional argument allows to normalize the signal
     to be within the range of a given signed integer representation of bits.
-    '''
+    """
 
     s = signal.copy()
 
@@ -43,15 +40,8 @@ def normalize(signal, bits=None):
     return s
 
 
-def angle_from_points(x1, x2):
-
-    return np.angle((x1[0,0]-x2[0,0]) + 1j*(x1[1,0] - x2[1,0]))
-
-
 def normalize_pwr(sig1, sig2):
-    '''
-    normalize sig1 to have the same power as sig2
-    '''
+    """Normalize sig1 to have the same power as sig2."""
 
     # average power per sample
     p1 = np.mean(sig1 ** 2)
@@ -62,9 +52,7 @@ def normalize_pwr(sig1, sig2):
 
 
 def highpass(signal, Fs, fc=None, plot=False):
-    '''
-    Filter out the really low frequencies, default is below 50Hz
-    '''
+    """ Filter out the really low frequencies, default is below 50Hz """
 
     if fc is None:
         fc = constants.get('fc_hp')
@@ -102,10 +90,10 @@ def highpass(signal, Fs, fc=None, plot=False):
 
 
 def time_dB(signal, Fs, bits=16):
-    '''
+    """
     Compute the signed dB amplitude of the oscillating signal
-    normalized wrt the number of bits used for the signal
-    '''
+    normalized wrt the number of bits used for the signal.
+    """
 
     import matplotlib.pyplot as plt
 
@@ -175,14 +163,14 @@ def comparePlot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, tit
             signal2 /= td_amp
         td_amp = 1.
 
-    plt.subplot(2,2,1)
+    plt.subplot(2, 2, 1)
     plt.plot(np.arange(len(signal1))/float(Fs), signal1)
     plt.axis('tight')
     plt.ylim(-td_amp, td_amp)
     if title1 is not None:
         plt.title(title1)
 
-    plt.subplot(2,2,2)
+    plt.subplot(2, 2, 2)
     plt.plot(np.arange(len(signal2))/float(Fs), signal2)
     plt.axis('tight')
     plt.ylim(-td_amp, td_amp)
@@ -205,14 +193,14 @@ def comparePlot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, tit
     vmin, vmax = np.percentile(all_vals, [p_min, p_max])
 
     cmap = 'jet'
-    interpolation='sinc'
+    interpolation = 'sinc'
 
-    plt.subplot(2,2,3)
+    plt.subplot(2, 2, 3)
     stft.spectroplot(F1.T, fft_size, fft_size / 2, Fs, vmin=vmin, vmax=vmax,
-            cmap=plt.get_cmap(cmap), interpolation=interpolation)
+                    cmap=plt.get_cmap(cmap), interpolation=interpolation)
 
-    plt.subplot(2,2,4)
-    stft.spectroplot(F2.T, fft_size, fft_size / 2, Fs, vmin=vmin, vmax=vmax, 
+    plt.subplot(2, 2, 4)
+    stft.spectroplot(F2.T, fft_size, fft_size / 2, Fs, vmin=vmin, vmax=vmax,
             cmap=plt.get_cmap(cmap), interpolation=interpolation)
 
 
@@ -227,23 +215,22 @@ def real_spectrum(signal, axis=-1, **kwargs):
 
 
 def convmtx(x, n):
-
-    '''
+    """
     Create a convolution matrix H for the vector x of size len(x) times n.
     Then, the result of np.dot(H,v) where v is a vector of length n is the same
     as np.convolve(x, v).
-    '''
+    """
 
     import scipy as s
 
     c = np.concatenate((x, np.zeros(n-1)))
     r = np.zeros(n)
 
-    return s.linalg.toeplitz(c,r)
+    return s.linalg.toeplitz(c, r)
 
 
 def prony(x, p, q):
-    '''
+    """
     Prony's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
     Arguments
@@ -259,8 +246,7 @@ def prony(x, p, q):
     a: numerator coefficients
     b: denominator coefficients
     err: the squared error of approximation
-    '''
-
+    """
 
     nx = x.shape[0]
 
@@ -269,18 +255,18 @@ def prony(x, p, q):
 
     X = convmtx(x, p+1)
 
-    Xq = X[q:nx+p-1,0:p]
+    Xq = X[q:nx+p-1, 0:p]
 
-    a = np.concatenate((np.ones(1), -np.linalg.lstsq(Xq, X[q+1:nx+p,0])[0]))
-    b = np.dot(X[0:q+1,0:p+1], a)
+    a = np.concatenate((np.ones(1), -np.linalg.lstsq(Xq, X[q+1:nx+p, 0])[0]))
+    b = np.dot(X[0:q+1, 0:p+1], a)
 
-    err = np.inner(np.conj(x[q+1:nx]), np.dot(X[q+1:nx,:p+1], a))
+    err = np.inner(np.conj(x[q+1:nx]), np.dot(X[q+1:nx, :p+1], a))
 
-    return a,b,err
+    return a, b, err
 
 
 def shanks(x, p, q):
-    '''
+    """
     Shank's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
     Arguments
@@ -296,7 +282,7 @@ def shanks(x, p, q):
     a: numerator coefficients
     b: denominator coefficients
     err: the squared error of approximation
-    '''
+    """
 
     from scipy import signal
 
@@ -313,26 +299,26 @@ def shanks(x, p, q):
     g = signal.lfilter(np.ones(1), a, u)
 
     G = convmtx(g, q+1)
-    b = np.linalg.lstsq(G[:nx,:], x)[0]
-    err = np.inner(np.conj(x), x) - np.inner(np.conj(x), np.dot(G[:nx,:q+1], b))
+    b = np.linalg.lstsq(G[:nx, :], x)[0]
+    err = np.inner(np.conj(x), x) - np.inner(np.conj(x), np.dot(G[:nx, :q+1], b))
 
-    return a,b,err
+    return a, b, err
 
 
 def lowPassDirac(t0, alpha, Fs, N):
-    '''
+    """
     Creates a vector containing a lowpass Dirac of duration T sampled at Fs
     with delay t0 and attenuation alpha.
-    
+
     If t0 and alpha are 2D column vectors of the same size, then the function
     returns a matrix with each line corresponding to pair of t0/alpha values.
-    '''
-    
+    """
+
     return alpha*np.sinc(np.arange(N) - Fs*t0)
 
 
 def levinson(r, b):
-    '''
+    """
     levinson(r,b)
 
     Solve a system of the form Rx=b where R is hermitian toeplitz matrix and b
@@ -348,24 +334,73 @@ def levinson(r, b):
     Return
     ------
     The solution of the linear system Rx = b.
-    '''
+    """
 
     p = b.shape[0]
 
     a = np.array([1])
-    x = b[np.newaxis,0,]/r[0]
+    x = b[np.newaxis, 0, ]/r[0]
     epsilon = r[0]
 
-    for j in np.arange(1,p):
+    for j in np.arange(1, p):
 
         g = np.sum(np.conj(r[1:j+1])*a[::-1])
         gamma = -g/epsilon
         a = np.concatenate((a, np.zeros(1))) + gamma*np.concatenate((np.zeros(1), np.conj(a[::-1])))
         epsilon = epsilon*(1 - np.abs(gamma)**2)
-        delta = np.dot(np.conj(r[1:j+1]),np.flipud(x))
-        q = (b[j,] - delta)/epsilon
-        x = np.concatenate((x, np.zeros( 1 if len(b.shape) == 1 else (1,b.shape[1] ))), axis=0) + q*np.conj(a[::-1,np.newaxis])
+        delta = np.dot(np.conj(r[1:j+1]), np.flipud(x))
+        q = (b[j, ] - delta)/epsilon
+        x = np.concatenate((x, np.zeros(1 if len(b.shape) == 1 else (1, b.shape[1]))), axis=0) + q*np.conj(a[::-1, np.newaxis])
 
     return x
 
+    
+    
+"""
+GEOMETRY UTILITIES
+"""
+def angle_from_points(x1, x2):
+    return np.angle((x1[0, 0]-x2[0, 0]) + 1j*(x1[1, 0] - x2[1, 0]))
 
+
+def area(corners):
+    """
+    Computes the signed area of a 2D surface represented by its corners.
+    
+    :arg corners: (np.array 2xN, N>2) list of coordinates of the corners forming the surface
+    
+    :returns: (float) area of the surface
+        positive area means clockwise ordered corners.
+        negative area means anti-clockwise ordered corners.
+    """
+
+    x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
+    y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
+    return -0.5 * (x * y).sum()
+
+
+def ccw3p(p):
+    """
+    Computes the orientation of three 2D points.
+    
+    :arg p: (np.array dim 2x3) coordinates of three 2D points
+    
+    :returns: (int) orientation of the given triangle
+        1 if triangle vertices are counter-clockwise
+        -1 if triangle vertices are clock-wise
+        0 if vertices are colinear
+
+    :ref: https://en.wikipedia.org/wiki/Curve_orientation
+    """
+    if (p.shape != (2, 3)):
+        raise NameError(
+            'Room.ccw3p is for three 2D points, input is 2x3 ndarray')
+    d = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
+        (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
+
+    if (np.abs(d) < constants.eps):
+        return 0
+    elif (d > 0):
+        return 1
+    else:
+        return -1

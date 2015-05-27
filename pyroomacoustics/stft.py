@@ -1,4 +1,4 @@
-'''Collection of spectral estimation methods.'''
+"""Collection of spectral estimation methods."""
 
 import sys
 import numpy as np
@@ -43,12 +43,12 @@ def overlap_add(in1, in2, L):
 
 
 # Nicely plot the spectrogram
-def spectroplot(Z, N, hop, Fs, fdiv=None, tdiv=None, 
-        vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
+def spectroplot(Z, N, hop, Fs, fdiv=None, tdiv=None,
+                vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
 
     plt.imshow(
-        20 * np.log10(np.abs(Z[:N / 2 + 1, :])), 
-        aspect='auto', 
+        20 * np.log10(np.abs(Z[:N / 2 + 1, :])),
+        aspect='auto',
         origin='lower',
         vmin=vmin, vmax=vmax, cmap=cmap, interpolation=interpolation)
 
@@ -79,7 +79,7 @@ def spectroplot(Z, N, hop, Fs, fdiv=None, tdiv=None,
 
 
 def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
-    '''
+    """
     Arguments:
     x: input signal
     L: frame size
@@ -90,14 +90,14 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     zp_front: zero padding to apply at the beginning of the frame
     Return:
     The STFT of x
-    '''
+    """
 
     # the transform size
     N = L + zp_back + zp_front
 
     # window needs to be same size as transform
     if (win is not None and len(win) != N):
-        print 'Window length need to be equal to frame length + zero padding.'
+        print('Window length need to be equal to frame length + zero padding.')
         sys.exit(-1)
 
     # reshape
@@ -114,7 +114,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     # apply window if needed
     if (win is not None):
         y = win * y
-        #y = np.expand_dims(win, 0)*y
+        # y = np.expand_dims(win, 0)*y
 
     # transform along rows
     Z = transform(y, axis=1)
@@ -131,7 +131,7 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 
     # window needs to be same size as transform
     if (win is not None and len(win) != N):
-        print 'Window length need to be equal to frame length + zero padding.'
+        print('Window length need to be equal to frame length + zero padding.')
         sys.exit(-1)
 
     # inverse transform
@@ -156,11 +156,11 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 # FreqVec: given FFT size and sampling rate, returns a vector of real
 # frequencies
 def freqvec(N, Fs, centered=False):
-    '''
+    """
     N: FFT length
     Fs: sampling rate of the signal
     shift: False if the DC is at the beginning, True if the DC is centered
-    '''
+    """
 
     # Create a centered vector. The (1-N%2) is to correct for even/odd length
     vec = np.arange(-N / 2 + (1 - N % 2), N / 2 + 1) * float(Fs) / float(N)
