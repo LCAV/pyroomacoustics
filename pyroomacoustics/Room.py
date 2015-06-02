@@ -22,10 +22,12 @@ class Room(object):
     :attribute fs: (int) sampling frequency
     :attribute t0: (float) time offset
     :attribute max_order: (int) the maximum computed order for images sources
-    :attribute sigma2_awgn: (?) ambiant additive white gaussian noise level
+    :attribute sigma2_awgn: (?) ambient additive white gaussian noise level
     :attribute sources: (SoundSource array) list of sound sources
     :attribute mics: (?) array of microphones
-    :attribute normals: (np.array 2xN or 3xN, N=number of walls) normal vector for each wall
+    :attribute normals: (np.array 2xN or 3xN, N=number of walls) array containing normal vector for each wall, used for calculations
+    :attribute corners: (np.array 2xN or 3xN, N=number of walls) array containing a point belonging to each wall, used for calculations
+    :attribute absorption: (np.array size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
     :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
     """
@@ -56,6 +58,10 @@ class Room(object):
             self.micArray = mics
         else:
             self.micArray = []
+            
+        self.normals = np.array([wall.normal for wall in self.walls]).T
+        self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+        self.absorption = np.array([wall.absorption for wall in self.walls])
 
         # Pre-compute RIR if needed
         if (len(self.sources) > 0 and self.micArray is not None):
@@ -70,7 +76,17 @@ class Room(object):
                 self.wallsId[self.walls[i].name] = i
 
     @classmethod
-    def shoeBox2D(cls, p1, p2, absorption=1., **kwargs):
+    def shoeBox2D(
+            cls,
+            p1,
+            p2,
+            absorption=1.,
+            fs=8000,
+            t0=0.,
+            max_order=1,
+            sigma2_awgn=None,
+            sources=None,
+            mics=None):
         """
         Creates a 2D "shoe box" room geometry (rectangle).
         
@@ -87,7 +103,7 @@ class Room(object):
         walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption, "north"))
         walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption, "west"))
 
-        return cls(walls, **kwargs)
+        return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
         
     @classmethod
     def fromCorners(cls, corners, absorption=1., **kwargs):
@@ -112,7 +128,7 @@ class Room(object):
             
         absorption = np.array(absorption, dtype='float64')
         if (absorption.ndim == 0):
-            self.absorption = absorption * np.ones(self.corners.shape[1])
+            self.absorption = absorption * np.ones(corners.shape[1])
         elif (absorption.ndim > 1 and corners.shape[1] != len(absorption)):
             raise NameError('Room.fromCorners input error : absorption must be the same size as corners or must be a single value.')
         else:
@@ -185,9 +201,7 @@ class Room(object):
                 H = np.abs(H)**2/np.abs(H).max()**2
 
                 # a normalization factor according to room size
-                norm = np.linalg.norm(
-                    (self.corners - self.micArray.center),
-                    axis=0).max()
+                norm = np.linalg.norm((self.corners - self.micArray.center), axis=0).max()
 
                 # plot all the beam patterns
                 i = 0
@@ -288,11 +302,18 @@ class Room(object):
                 gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
                 wal = np.concatenate((wal, w))
 
+            # sort
+            ordering = np.lexsort(img)
+            img = img[:, ordering]
+            dmp = dmp[ordering]
+            gen = gen[ordering]
+            wal = wal[ordering]
+                
             # add to array of images
-            images.append(img[:, ui])
-            damping.append(dmp[ui])
-            generators.append(gen[ui])
-            wall_indices.append(wal[ui])
+            images.append(img)
+            damping.append(dmp)
+            generators.append(gen)
+            wall_indices.append(wal)
 
             # next order
             o += 1
@@ -350,7 +371,7 @@ class Room(object):
         damping = self.absorption[ip > 0]
 
         # collect the index of the wall corresponding to the new image
-        wall_indices = np.arange(self.walls.shape[1])[ip > 0]
+        wall_indices = np.arange(len(self.walls))[ip > 0]
 
         return images, damping, wall_indices
 
@@ -457,12 +478,10 @@ class Room(object):
         """
         Checks visibility from a given point for all images of the given source.
         
-        This function tests visibility for all images of the source.
-        As visibility of an image has impact on its children, we use dynamic programming
-        by storing results in an array. It starts from the last child (i.e. higher order image)
-        and goes up to the original source.
+        This function tests visibility for all images of the source and returns the results
+        in an array.
         
-        :arg source: (SoundSource) the sound source (containing all its images)
+        :arg source: (SoundSource) the sound source object (containing all its images)
         :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
         
         :returns: (int array) list of results of visibility for each image
@@ -474,28 +493,24 @@ class Room(object):
         visibilityCheck = np.zeros_like(source.images[0])-1
         
         for imageId in range(len(visibilityCheck)-1, -1, -1):
-            visibilityCheck[imageId] = isVisible(source, p, imageId, visibilityCheck)
+            visibilityCheck[imageId] = isVisible(source, p, imageId)
             
         return visibilityCheck
             
-    def isVisible(self, source, p, imageId = 0, visibilityCheck = None):
+    def isVisible(self, source, p, imageId = 0):
         """
         Returns true if the given sound source (with image source id) is visible from point p.
         
         :arg source: (SoundSource) the sound source (containing all its images)
         :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
         :arg imageId: (int) id of the image within the SoundSource object
-        :arg visibilityCheck: (int array) used to read results for dynamic programming, ignored if left as None
         
-        :return: (bool) True (1) if visible, False (0) otherwise
+        :return: (bool)
+            False (0) : not visible
+            True (1) :  visible
         """
 
         p = np.array(p)
-        
-        if ((visibilityCheck is not None) and visibilityCheck[imageId] == 0):
-            return False
-        elif ((visibilityCheck is not None) and visibilityCheck[imageId] == 1):
-            return True
 
         if (source.order[imageId] > 0):
         
@@ -507,7 +522,7 @@ class Room(object):
                     if(not self.isObstructed(source, p, imageId)):
                     
                         # Check visibility for the parent image by recursion
-                        return isVisible(source, self.walls[genWallId].intersection(p, np.array([source.images[:, imageId]])), source.generators[imageId], visibilityCheck)
+                        return isVisible(source, self.walls[genWallId].intersection(p, np.array([source.images[:, imageId]])), source.generators[imageId])
                     else:
                         return False
             else:
@@ -523,7 +538,9 @@ class Room(object):
         :arg p: (np.array size 2 or 3) coordinates of the point where we check obstruction
         :arg imageId: (int) id of the image within the SoundSource object
         
-        :returns: (bool) true if there is an obstruction
+        :returns: (bool)
+            False (0) : not obstructed
+            True (1) :  obstructed
         """
         
         #TODO optimization : use only walls inside the convex hull
@@ -562,10 +579,8 @@ class Room(object):
         """
         
         p = np.array(p)
-        if (self.dim == 2 and p.shape[0] != 2):
-            raise NameError('Room.isInside input error : requires a 2D point.')
-        if (self.dim == 3 and p.shape[0] != 3):
-            raise NameError('Room.isInside input error : requires a 3D point.')
+        if (self.dim != p.shape[0]):
+            raise NameError('Room.isInside input error : dimension of room and p must match.')
         
         # Compute p0, which is a point outside the room at x coordinate xMin-1
         # (where xMin is the minimum x coordinate among the corners of the walls)

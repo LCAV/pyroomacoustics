@@ -68,11 +68,11 @@ room_dim = [4, 6]
 room1 = pra.Room.shoeBox2D(
     [0,0],
     room_dim,
+    absorption,
     Fs,
-    t0 = t0,
-    max_order=max_order_sim,
-    absorption=absorption,
-    sigma2_awgn=sigma2_n)
+    t0,
+    max_order_sim,
+    sigma2_n)
 
 # add mic and good source to room
 room1.addSource(good_source, signal=signal1, delay=delay1)
