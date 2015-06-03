@@ -35,6 +35,7 @@ class Wall(object):
             self.dim = 3
         else:
             raise NameError('Wall.__init__ input error : corners must be an np.array dim 2x2 or 3xN, N>2')
+        self.normal = self.normal/np.linalg.norm(self.normal)
         if (name is not None):
             self.name = name
 
@@ -55,9 +56,9 @@ class Wall(object):
         if (self.dim == 2):
             if (p1.shape[0] != 2 or p2.shape[0] != 2):
                 raise NameError('Wall.intersection input error : requires two 2D points.')
-            da = self.corners[1]-self.corners[0]
+            da = self.corners[:, 1]-self.corners[:, 0]
             db = p2-p1
-            dp = self.corners[0]-p1
+            dp = self.corners[:, 0]-p1
             dap = np.empty_like(da)
             dap[0] = -da[1]
             dap[1] = da[0]
@@ -155,7 +156,7 @@ class Wall(object):
         """
         
         p = np.array(p)
-        if (self.dim != corners[0].shape[0]):
+        if (self.dim != self.corners[0].shape[0]):
             raise NameError('Wall.side input error : dimension of p and the wall must match.')
         
         projection = np.dot(self.normal, (p - self.corners[0]))

@@ -54,11 +54,12 @@ class Room(object):
         else:
             self.sources = []
 
-        if (mics is list):
-            self.micArray = mics
-        else:
-            self.micArray = []
-            
+        #if (mics is list):
+        #    self.micArray = mics
+        #else:
+        #    self.micArray = []
+        self.micArray = mics
+         
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
@@ -106,7 +107,16 @@ class Room(object):
         return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
         
     @classmethod
-    def fromCorners(cls, corners, absorption=1., **kwargs):
+    def fromCorners(
+            cls,
+            corners,
+            absorption=1.,
+            fs=8000,
+            t0=0.,
+            max_order=1,
+            sigma2_awgn=None,
+            sources=None,
+            mics=None):
         """
         Creates a 2D room by giving an array of corners.
         
@@ -117,28 +127,30 @@ class Room(object):
         """
         
         corners = np.array(corners)
-        if (corners.size[0] != 2 or len(corners) < 3):
+        if (corners.shape[0] != 2 or corners.shape[1] < 3):
             raise NameError('Room.fromCorners input error : corners must be more than two 2D points.')
 
-        if (area(corners) >= 0):
+        print (area(corners))
+        if (area(corners) <= 0):
             raise NameError('Room.fromCorners input error : corners must be anti-clockwise ordered.')
 
-        self.corners = corners
-        self.dim = corners.shape[0] 
+        cls.corners = corners
+        cls.dim = corners.shape[0] 
             
         absorption = np.array(absorption, dtype='float64')
         if (absorption.ndim == 0):
-            self.absorption = absorption * np.ones(corners.shape[1])
+            absorption = absorption * np.ones(corners.shape[1])
         elif (absorption.ndim > 1 and corners.shape[1] != len(absorption)):
             raise NameError('Room.fromCorners input error : absorption must be the same size as corners or must be a single value.')
-        else:
-            self.absorption = absorption
         
         walls = []
-        for i in range(len(corners)):
-            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%len(corners)]]), absorption[i], "wall_"+str(i)))
+        for i in range(corners.shape[1]):
+            print(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]))
+            print(absorption)
+            print(absorption[i])
+            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
             
-        return cls(walls, **kwargs)
+        return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
 
@@ -295,7 +307,7 @@ class Room(object):
             dmp = np.array([])
             gen = np.array([])
             wal = np.array([])
-            for ind, si, sd in zip(xrange(len(images[o-1])), images[o - 1].T, damping[o - 1]):
+            for ind, si, sd in zip(xrange(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                 i, d, w = self.firstOrderImages(si)
                 img = np.concatenate((img, i), axis=1)
                 dmp = np.concatenate((dmp, d * sd))
@@ -318,19 +330,19 @@ class Room(object):
             # next order
             o += 1
 
-        # linearize the arrays
-        images_lin = np.concatenate(images, axis=1)
-        damping_lin = np.concatenate(damping)
-
+        print(generators)
+            
         o_len = np.array([x.shape[0] for x in generators])
         # correct the pointers for linear structure
         for o in np.arange(2, len(generators)):
             generators[o] += np.sum(o_len[0:o-2])
             
-        # linearize
+        # linearize the arrays
+        images_lin = np.concatenate(images, axis=1)
+        damping_lin = np.concatenate(damping)
         generators_lin = np.concatenate(generators)
         walls_lin = np.concatenate(wall_indices)
-
+        
         # store the corresponding orders in another array
         ordlist = []
         for o in xrange(len(generators)):
@@ -382,13 +394,9 @@ class Room(object):
         self.rir = []
 
         for mic in self.micArray.R.T:
-
             h = []
-
             for source in self.sources:
-
                 h.append(source.getRIR(mic, self.fs, self.t0))
-
             self.rir.append(h)
 
     def simulate(self, recompute_rir=False):
@@ -493,7 +501,7 @@ class Room(object):
         visibilityCheck = np.zeros_like(source.images[0])-1
         
         for imageId in range(len(visibilityCheck)-1, -1, -1):
-            visibilityCheck[imageId] = isVisible(source, p, imageId)
+            visibilityCheck[imageId] = self.isVisible(source, p, imageId)
             
         return visibilityCheck
             
@@ -512,23 +520,26 @@ class Room(object):
 
         p = np.array(p)
 
-        if (source.order[imageId] > 0):
+        if (source.orders[imageId] > 0):
         
             # Check if the line of sight intersects the generating wall
-            genWallId = source.walls[imageId]
-            if self.walls[genWallId].intersects(p, np.array([source.images[:, imageId]])):
+            genWallId = int(source.walls[imageId])
+            if self.walls[genWallId].intersects(p, np.array(source.images[:, imageId])):
 
                     # Check if there is an obstruction
                     if(not self.isObstructed(source, p, imageId)):
                     
                         # Check visibility for the parent image by recursion
-                        return isVisible(source, self.walls[genWallId].intersection(p, np.array([source.images[:, imageId]])), source.generators[imageId])
+                        return self.isVisible(source, self.walls[genWallId].intersection(p, np.array(source.images[:, imageId])), source.generators[imageId])
                     else:
                         return False
             else:
                 return False
         else:
-            return True
+            if(not self.isObstructed(source, p, imageId)):
+                return True
+            else:
+                return False
       
     def isObstructed(self, source, p, imageId = 0):
         """
@@ -545,23 +556,30 @@ class Room(object):
         
         #TODO optimization : use only walls inside the convex hull
         
-        imageSide = self.walls[source.walls[imageId]].side(source.images[:, imageId])
+        imageId = int(imageId)
+        if (not np.isnan(source.walls[imageId])):
+            genWallId = int(source.walls[imageId])
+        else:
+            genWallId = -1
+        imageSide = self.walls[genWallId].side(source.images[:, imageId])
         
         for wallId in range(len(self.walls)):
-        
+
             # The generating wall can't be obstructive
-            if(wallId != source.walls[imageId]):
+            if(wallId != genWallId):
             
                 # Test if the line segment intersects the current wall
-                if (self.walls[wallId].intersects(source.images[:, imageId], p)):
+                # We enforce "true intersection" (not at boundaries), because it will be called by isVisible
+                # and the starting point might be in a wall.
+                if (self.walls[wallId].intersects(source.images[:, imageId], p) == 1):
                     
                     # Only images with order > 0 have a generating wall. At this point, there is obstruction for source order 0.
                     if (source.orders[imageId] > 0):
                     
                         # Test if the intersection point and the image are at opposite sides of the generating wall
                         intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
-                        intersectionPointSide = self.walls[source.walls[imageId]].side(intersectionPoint)
-                        if (intersectionPointSide != sourceSide):
+                        intersectionPointSide = self.walls[genWallId].side(intersectionPoint)
+                        if (intersectionPointSide != imageSide):
                             return True
                     else:
                         return True
