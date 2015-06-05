@@ -20,14 +20,8 @@ t_cut = 0.83           # length in [s] to remove at end of signal (no sound)
 Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
 absorption = 0.90
-max_order_sim = 10
+max_order_sim = 2
 sigma2_n = 5e-7
-
-# the good source is fixed for all 
-good_source = np.array([1, 4.5])           # good source
-normal_interferer = np.array([2.8, 4.3])   # interferer
-hard_interferer = np.array([1.5, 3])       # interferer in direct path
-#normal_interferer = hard_interferer
 
 # microphone array design parameters
 mic1 = np.array([2, 1.5])   # position
@@ -50,20 +44,20 @@ else:
     R = pra.linear2DArray(mic1, M, phi, d) 
 
 # The first signal (of interest) is singing
-rate1, signal1 = wavfile.read('samples/singing_'+str(Fs)+'.wav')
+rate1, signal1 = wavfile.read('input_samples/singing_'+str(Fs)+'.wav')
 signal1 = np.array(signal1, dtype=float)
 signal1 = pra.normalize(signal1)
 signal1 = pra.highpass(signal1, Fs)
 delay1 = 0.
 
 # the second signal (interferer) is some german speech
-rate2, signal2 = wavfile.read('samples/german_speech_'+str(Fs)+'.wav')
+rate2, signal2 = wavfile.read('input_samples/german_speech_'+str(Fs)+'.wav')
 signal2 = np.array(signal2, dtype=float)
 signal2 = pra.normalize(signal2)
 signal2 = pra.highpass(signal2, Fs)
 delay2 = 1.
 
-# create the room with sources and mics
+# create the room
 room_dim = [4, 6]
 room1 = pra.Room.shoeBox2D(
     [0,0],
@@ -74,7 +68,9 @@ room1 = pra.Room.shoeBox2D(
     max_order_sim,
     sigma2_n)
 
-# add mic and good source to room
+# add sources to room
+good_source = np.array([1, 4.5])           # good source
+normal_interferer = np.array([2.8, 4.3])   # interferer
 room1.addSource(good_source, signal=signal1, delay=delay1)
 room1.addSource(normal_interferer, signal=signal2, delay=delay2)
 
