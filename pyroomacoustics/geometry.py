@@ -54,23 +54,21 @@ def ccw3p(p1, p2, p3):
     """
     Computes the orientation of three 2D points.
     
-    :arg p1: (np.array size 2) coordinates of a 2D point
-    :arg p2: (np.array size 2) coordinates of a 2D point
-    :arg p3: (np.array size 2) coordinates of a 2D point
+    :arg p1: (ndarray size 2) coordinates of a 2D point
+    :arg p2: (ndarray size 2) coordinates of a 2D point
+    :arg p3: (ndarray size 2) coordinates of a 2D point
     
     :returns: (int) orientation of the given triangle
         1 if triangle vertices are counter-clockwise
-        -1 if triangle vertices are clock-wise
-        0 if vertices are colinear
+        -1 if triangle vertices are clockwise
+        0 if vertices are collinear
 
     :ref: https://en.wikipedia.org/wiki/Curve_orientation
     """
     
-    p1 = np.array(p1)
-    p2 = np.array(p2)
-    p3 = np.array(p3)
+    p1, p2, p3 = np.array(p1), np.array(p2), np.array(p3)
     if (p1.shape[0] != 2 or p2.shape[0] != 2 or p3.shape[0] != 2):
-        raise NameError('utilities.ccw3p is for three 2D points')
+        raise ValueError('geometry.ccw3p is for three 2D points')
     d = (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1])
 
     if (np.abs(d) < constants.eps):

@@ -21,7 +21,7 @@ class Room(object):
     :attribute walls: (Wall array) list of walls forming the room
     :attribute fs: (int) sampling frequency
     :attribute t0: (float) time offset
-    :attribute max_order: (int) the maximum computed order for images sources
+    :attribute max_order: (int) the maximum computed order for images
     :attribute sigma2_awgn: (float) ambient additive white gaussian noise level
     :attribute sources: (SoundSource array) list of sound sources
     :attribute mics: (MicrophoneArray) array of microphones
