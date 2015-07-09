@@ -1,59 +1,119 @@
-from unittest import TestCase
+# @version: 1.0  date: 05/06/2015 by Sidney Barthe
+# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
+# @copyright: EPFL-IC-LCAV 2015
 
-from random import randint
-import numpy as np
+from unittest import TestCase
 
 import pyroomacoustics as pra
 
 class TestGeometryRoutines(TestCase):
 
-    def test_orientation_anticlockwise(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0], roomDimensions, 0)
-        self.assertTrue(room.ccw3p(np.array([[6, 4, 2], [0, 2, 0]])) == 1)
+    def test_area_square(self):
+        self.assertEquals(pra.geometry.area([[0, 4, 4, 0], [0, 0, 4, 4]]), 4*4)
 
-    def test_orientation_clockwise(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0], roomDimensions, 0)
-        self.assertTrue(room.ccw3p(np.array([[2, 4, 6], [0, 2, 0]])) == -1)
+    def test_area_triangle(self):
+        self.assertEquals(pra.geometry.area([[0, 4, 2], [0, 0, 2]]), (4*2)/2)
 
-    def test_intersection_separated(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        s1 = [[4, 4], [0, 4]]
-        s2 = [[0, 2], [2, 2]]
-        self.assertTrue(room.intersects(np.array(s1), np.array(s2)) == 0)
+    def test_side_left(self):
+        self.assertEquals(pra.geometry.side([-1, 0], [0, 0], [1, 0]), -1)
 
-    def test_intersection_cross(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        s1 = [[0, 4], [2, 2]]
-        s2 = [[2, 2], [0, 4]]
-        self.assertTrue(room.intersects(np.array(s1), np.array(s2)) == 1)
-        
-    def test_intersection_t(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        s1 = [[0, 4], [2, 2]]
-        s2 = [[4, 4], [0, 4]]
-        self.assertTrue(room.intersects(np.array(s1), np.array(s2)) == 3)
+    def test_side_right(self):
+        self.assertEquals(pra.geometry.side([1, 0], [0, 0], [1, 0]), 1)
 
-    def test_inside_middle(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        self.assertTrue(room.isInside(np.array([2,2]), room.corners, True))
+    def test_side_middle(self):
+        self.assertEquals(pra.geometry.side([0, 1], [0, 0], [1, 0]), 0)
+
+    def test_ccw3p_counterclockwise(self):
+        self.assertEquals(pra.geometry.ccw3p([0, 0], [2, 0], [1, 1]), 1)
+
+    def test_ccw3p_clockwise(self):
+        self.assertEquals(pra.geometry.ccw3p([1, 1], [2, 0], [0, 0]), -1)
+
+    def test_ccw3p_collinear(self):
+        self.assertEquals(pra.geometry.ccw3p([0, 0], [1, 0], [2, 0]), 0)
+
+    def test_intersection2DSegments_cross(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([-2, 0], [2, 0], [0, -2], [0, 2])
+        i = all(p==[0, 0])
+        self.assertTrue(all([i, not endOfA, not endOfB]))
+
+    def test_intersection2DSegments_T(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [2, -2], [2, 2])
+        i = all(p==[2, 0])
+        self.assertTrue(all([i, endOfA, not endOfB]))
+
+    def test_intersection2DSegments_T2(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([-2, 0], [2, 0], [0, -2], [0, 0])
+        i = all(p==[0, 0])
+        self.assertTrue(all([i, not endOfA, endOfB]))
+
+    def test_intersection2DSegments_L(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [2, 2], [2, 0])
+        i = all(p==[2, 0])
+        self.assertTrue(all([i, endOfA, endOfB]))
+
+    def test_intersection2DSegments_parallel(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [0, 1], [2, 1])
+        i = p is None
+        self.assertTrue(all([i, not endOfA, not endOfB]))
+
+    def test_intersection2DSegments_notTouching(self):
+        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [1, 4], [1, 1])
+        i = p is None
+        self.assertTrue(all([i, not endOfA, not endOfB]))
+
+    def test_intersectionSegmentPlane_through(self):
+        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, -2], [2, 2, 0], [0, 0, -1])
+        i = all(p==[2, 2, 0])
+        self.assertTrue(all([i, not endOfSegment]))
+
+    def test_intersectionSegmentPlane_touching(self):
+        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, 0], [2, 2, 0], [0, 0, -1])
+        i = all(p==[2, 2, 0])
+        self.assertTrue(all([i, endOfSegment]))
+
+    def test_intersectionSegmentPlane_notTouching(self):
+        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, 1], [2, 2, 0], [0, 0, -1])
+        i = p is None
+        self.assertTrue(all([i, not endOfSegment]))
+
+    def test_intersectionSegmentPlane_inside(self):
+        p, endOfSegment = pra.geometry.intersectionSegmentPlane([0, 2, 0], [2, 2, 0], [2, 2, 0], [0, 0, -1])
+        i = p is None
+        self.assertTrue(all([i, not endOfSegment]))
+
+    def test_intersectionSegmentPolygonSurface_through(self):
+        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([2, 2, 2], [2, 2, -2], [[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]], [0, 0, -1])
+        i = all(p==[2, 2, 0])
+        self.assertTrue(all([i, not endOfSegment, not onBorder]))
+
+    def test_intersectionSegmentPolygonSurface_touching(self):
+        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([2, 2, 2], [2, 2, 0], [[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]], [0, 0, -1])
+        i = all(p==[2, 2, 0])
+        self.assertTrue(all([i, endOfSegment, not onBorder]))
+
+    def test_intersectionSegmentPolygonSurface_border(self):
+        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([0, 0, 2], [0, 0, -2], [[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]], [0, 0, -1])
+        i = all(p==[0, 0, 0])
+        self.assertTrue(all([i, not endOfSegment, onBorder]))
+
+    def test_intersectionSegmentPolygonSurface_miss(self):
+        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([-1, -1, 2], [-1, -1, -2], [[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]], [0, 0, -1])
+        i = p is None
+        self.assertTrue(all([i, not endOfSegment, not onBorder]))
         
-    def test_inside_outsideOnTheRight(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        self.assertTrue(not room.isInside(np.array([5,2]), room.corners, True))
+    def test_isInside2DPolygon_inside(self):
+        inside, onBorder = pra.geometry.isInside2DPolygon([2, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([inside, not onBorder]))
         
-    def test_inside_onBorderInclusive(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        self.assertTrue(room.isInside(np.array([0,2]), room.corners, True))
+    def test_isInside2DPolygon_onBorder(self):
+        inside, onBorder = pra.geometry.isInside2DPolygon([0, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([inside, onBorder]))
         
-    def test_inside_onBorderExclusive(self):
-        roomDimensions = [4,4]
-        room = pra.Room.shoeBox2D([0,0],roomDimensions,0)
-        self.assertTrue(room.isInside(np.array([0,2]), room.corners, False))
+    def test_isInside2DPolygon_onCorner(self):
+        inside, onBorder = pra.geometry.isInside2DPolygon([4, 4], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([inside, onBorder]))
+        
+    def test_isInside2DPolygon_outside(self):
+        inside, onBorder = pra.geometry.isInside2DPolygon([5, 5], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([not inside, not onBorder]))

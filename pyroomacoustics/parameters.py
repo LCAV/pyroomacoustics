@@ -1,3 +1,7 @@
+# @version: 1.0  date: 09/07/2015 by Robin Scheibler
+# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
+# @copyright: EPFL-IC-LCAV 2015
+
 '''
 This file defines the main physical constants of the system
 '''
@@ -15,6 +19,7 @@ _constants_default = {
     'ffdist' : 10.,   # distance to the far field
     'fc_hp' : 300.,   # cut-off frequency of standard high-pass filter
     }
+
 
 class Constants:
     '''
@@ -38,6 +43,7 @@ class Constants:
                 raise NameError(name + ': no such constant')
 
         return v
+
 
 # the instanciation of the class
 constants = Constants()

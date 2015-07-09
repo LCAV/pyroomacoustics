@@ -1,3 +1,7 @@
+# @version: 1.0  date: 05/06/2015 by Sidney Barthe
+# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
+# @copyright: EPFL-IC-LCAV 2015
+
 import numpy as np
 from parameters import constants
 
@@ -9,7 +13,6 @@ def to_16b(signal):
     the correct interval.
     '''
     return ((2**15-1)*signal).astype(np.int16)
-
 
 def clip(signal, high, low):
     """Clip a signal from above at high and from below at low."""
@@ -353,7 +356,6 @@ def levinson(r, b):
         x = np.concatenate((x, np.zeros(1 if len(b.shape) == 1 else (1, b.shape[1]))), axis=0) + q*np.conj(a[::-1, np.newaxis])
 
     return x
-
     
     
 """
