@@ -252,7 +252,7 @@ class Room(object):
             dmp = np.array([])
             gen = np.array([])
             wal = np.array([])
-            for ind, si, sd in zip(xrange(len(images[o-1])), images[o - 1].T, damping[o - 1]):
+            for ind, si, sd in zip(xrange(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                 i, d, w = self.firstOrderImages(si)
                 img = np.concatenate((img, i), axis=1)
                 dmp = np.concatenate((dmp, d * sd))
