@@ -3,7 +3,7 @@
 # @copyright: EPFL-IC-LCAV 2015
 
 import numpy as np
-from parameters import constants
+from parameters import constants, eps
 
 
 def to_16b(signal):
@@ -182,8 +182,6 @@ def comparePlot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, tit
 
     import stft
     import windows
-
-    eps = constants.get('eps')
 
     F1 = stft.stft(signal1, fft_size, fft_size / 2, win=windows.hann(fft_size))
     F2 = stft.stft(signal2, fft_size, fft_size / 2, win=windows.hann(fft_size))
