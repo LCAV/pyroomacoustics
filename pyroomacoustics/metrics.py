@@ -7,12 +7,11 @@ import platform
 
 def median(x, axis=-1, keepdims=False):
     '''
-    m, ci = median(x)
-    computes median and 0.95% confidence interval.
-    x: 1D ndarray
-    m: median
-    ci: [le, ue]
-    The confidence interval is [m-le, m+ue]
+    Computes 95% confidence interval for the median.
+
+    :arg x: (ndarray 1D)
+
+    :returns: A tuple (m, [le, ue]). The confidence interval is [m-le, m+ue].
     '''
 
     # place the axis on which to compute median in first position
@@ -69,7 +68,18 @@ def median(x, axis=-1, keepdims=False):
 
 # Simple mean squared error function
 def mse(x1, x2):
-  return (np.abs(x1-x2)**2).sum()/len(x1)
+    """
+    A short hand to compute the mean-squared error of two signals
+    .. math::
+       (a+b)^2
+       \sum_{i=0}^{n-1} (x_i - y_i)^2
+
+
+    :arg x1: (ndarray)
+    :arg x2: (ndarray)
+    :returns: (float) The mean of the squared differences of x1 and x2.
+    """
+    return (np.abs(x1-x2)**2).sum()/len(x1)
 
 
 # Itakura-Saito distance function
@@ -99,22 +109,19 @@ def snr(ref, deg):
 def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin='./bin/pesq'):
     '''
     pesq_vals = pesq(ref_file, deg_files, sample_rate=None, bin='./bin/pesq'):
-    Uses the utility obtained from ITU P.862
-    http://www.itu.int/rec/T-REC-P.862-200511-I!Amd2/en
+    Computes the perceptual evaluation of speech quality (PESQ) metric of a degraded
+    file with respect to a reference file.  Uses the utility obtained from ITU
+    P.862 http://www.itu.int/rec/T-REC-P.862-200511-I!Amd2/en
 
-    Arguments
-    ---------
-    ref_file:    The filename of the reference file.
-    deg_files:   A list of degraded sound files names.
-    sample_rate: Sample rates of the sound files [8kHz or 16kHz, default 8kHz].
-    swap:        Swap byte orders (whatever that does is not clear to me) [default: False].
-    wb:          Use wideband algorithm [default: False].
-    bin:         Location of pesq executable [default: ./bin/pesq].
+    :arg ref_file:    The filename of the reference file.
+    :arg deg_files:   A list of degraded sound files names.
+    :arg sample_rate: Sample rates of the sound files [8kHz or 16kHz, default 8kHz].
+    :arg swap:        Swap byte orders (whatever that does is not clear to me) [default: False].
+    :arg wb:          Use wideband algorithm [default: False].
+    :arg bin:         Location of pesq executable [default: ./bin/pesq].
 
-    Return 
-    ------
-    pesq_vals:   A 2xN ndarray containing Raw MOS and MOS LQO in rows 0 and 1,
-                 respectively, and has one column per degraded file name in deg_files.
+    :returns: (ndarray size 2xN) ndarray containing Raw MOS and MOS LQO in rows 0 and 1, 
+        respectively, and has one column per degraded file name in deg_files.
     '''
 
     if isinstance(deg_files, str):
