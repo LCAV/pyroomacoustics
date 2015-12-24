@@ -37,7 +37,7 @@ Ivan Dokmanić, Robin Scheibler, Sidney Barthe.
 License
 -------
 
-Copyright (c) 2014, Ivan Dokmanić, Robin Scheibler.
+Copyright (c) 2015, Ivan Dokmanić, Robin Scheibler, Sidney Barthe.
 
 This code is free to reuse for non-commercial purpose such as academic or
 educational. For any other use, please contact the authors.
