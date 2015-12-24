@@ -11,3 +11,4 @@ from .sync import *
 from .metrics import *
 from .bss import *
 from .multirate import *
+from .acoustics import *
