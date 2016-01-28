@@ -3,6 +3,8 @@
 # @copyright: EPFL-IC-LCAV 2015
 
 import numpy as np
+from scipy import signal
+
 from parameters import constants, eps
 
 
@@ -354,6 +356,19 @@ def levinson(r, b):
         x = np.concatenate((x, np.zeros(1 if len(b.shape) == 1 else (1, b.shape[1]))), axis=0) + q*np.conj(a[::-1, np.newaxis])
 
     return x
+
+def goertzel(x, k):
+    """ Goertzel algorithm to compute DFT coefficients """
+
+    N = x.shape[0]
+    f = k/float(N)
+
+    a = np.r_[1., -2.*np.cos(2.*np.pi*f), 1.]
+    b = np.r_[1]
+    s = signal.lfilter(b,a, x)
+    y = np.exp(2j*np.pi*f)*s[-1] - s[-2]
+
+    return y
     
     
 """
