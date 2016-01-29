@@ -1,4 +1,2 @@
 sphinx
 numpydoc
-scipy
-numpy
