@@ -4,14 +4,6 @@ pyroomacoustics package
 Submodules
 ----------
 
-pyroomacoustics.Signal module
------------------------------
-
-.. automodule:: pyroomacoustics.Signal
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pyroomacoustics.beamforming module
 ----------------------------------
 
