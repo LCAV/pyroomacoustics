@@ -4,7 +4,7 @@
 
 import numpy as np
 
-import constants
+from parameters import constants, eps
 
 
 def area(corners):
@@ -71,7 +71,7 @@ def ccw3p(p1, p2, p3):
         raise ValueError('geometry.ccw3p is for three 2D points')
     d = (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1])
 
-    if (np.abs(d) < constants.eps):
+    if (np.abs(d) < eps):
         return 0
     elif (d > 0):
         return 1
