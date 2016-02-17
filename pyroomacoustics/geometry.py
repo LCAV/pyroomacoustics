@@ -185,7 +185,7 @@ def intersectionSegmentPlane(a1, a2, p, normal):
     w = a1-p
     num = -np.dot(normal, w)
     denom = np.dot(normal, u)
-    if(abs(denom) < constants.eps):
+    if(abs(denom) < eps):
         return None, False
     else:
         s = num/denom
