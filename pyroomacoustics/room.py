@@ -158,7 +158,7 @@ class Room(object):
             raise ValueError('Arg corners must be more than two 2D points.')
 
         if (geom.area(corners) <= 0):
-            raise ValueError('Corners must be anti-clockwise ordered.')
+            cls.corners = corners[:,::-1]
 
         cls.corners = corners
         cls.dim = corners.shape[0] 
@@ -174,6 +174,90 @@ class Room(object):
             walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
             
         return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
+
+    def extrude(
+            self,
+            height,
+            v_vec=np.array([0.,0.,1]), 
+            absorption=1.):
+        """
+        Creates a 3D room by extruding a 2D polygon. 
+        The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
+
+        Parameters
+        ----------
+        corners : nd-array 2xN, N>2
+            List of corners of the floor, must be anti-clockwise oriented
+        height : float
+            The extrusion height
+        v_vec : array-like 1D length 3, optionnal
+            A unit vector. An orientation for the extrusion direction. The
+            ceiling will be placed as a translation of the floor with respect
+            to this vector (The default is [0,0,1]).
+        absorption : float or array-like
+            Absorption coefficients for all the walls. If a scalar, then all the walls
+            will have the same absorption. If an array is given, it should have as many elements
+            as there will be walls, that is the number of vertices of the polygon plus two. The two
+            last elements are for the floor and the ceiling, respectively. (default 1)
+        """
+
+        if self.dim != 2:
+            raise ValueError('Can only extrude a 2D room.')
+
+        # check that the walls are ordered counterclock wise
+        # that should be the case if created from fromCorners function
+        nw = len(self.walls)
+        floor_corners = np.zeros((2,nw))
+        floor_corners[:,0] = self.walls[0].corners[:,0]
+        ordered = True
+        for iw, wall in enumerate(self.walls[1:]):
+            if not np.allclose(self.walls[iw].corners[:,1], wall.corners[:,0]):
+                ordered = False
+            floor_corners[:,iw] = wall.corners[:,0]
+        if not np.allclose(self.walls[-1].corners[:,1], self.walls[0].corners[:,0]):
+            ordered = False
+
+        if not ordered:
+            raise ValueError("The wall list should be ordered counter-clockwise, which is the case \
+                if the room is created with Room.fromCorners")
+
+        # make sure the floor_corners are ordered anti-clockwise (for now)
+        if (geom.area(floor_corners) <= 0):
+            floor_corners = np.fliplr(floor_corners)
+
+        walls = []
+        for i in xrange(nw):
+            corners = np.array([
+                np.r_[floor_corners[:,i], 0],
+                np.r_[floor_corners[:,(i+1)%nw], 0],
+                np.r_[floor_corners[:,(i+1)%nw], 0] + height*v_vec,
+                np.r_[floor_corners[:,i], 0] + height*v_vec
+                ]).T
+            walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
+
+        absorption = np.array(absorption)
+        if absorption.ndim == 0:
+            absorption = absorption * np.ones(2)
+        elif absorption.ndim == 1 and absorption.shape[0] != 2:
+            raise ValueError("The size of the absorption array must be 2 for extrude, for the floor and ceiling")
+
+        floor_corners = np.pad(floor_corners, ((0, 1),(0,0)), mode='constant')
+        ceiling_corners = (floor_corners.T + height*v_vec).T
+
+        # we need the floor corners to ordered clockwise (for the normal to point outward)
+        floor_corners = np.fliplr(floor_corners)
+
+        walls.append(Wall(floor_corners, absorption[0], name='floor'))
+        walls.append(Wall(ceiling_corners, absorption[1], name='ceiling'))
+
+        self.walls = walls
+        self.dim = 3
+
+        # re-collect all normals, corners, absoption
+        self.normals = np.array([wall.normal for wall in self.walls]).T
+        self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+        self.absorption = np.array([wall.absorption for wall in self.walls])
+
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
         """Plots the room with its walls, microphones, sources and images"""
@@ -272,7 +356,21 @@ class Room(object):
             return fig, ax
             
         if(self.dim==3):
-            raise ValueError('plot() is not implemented for 3D rooms.')
+
+            import mpl_toolkits.mplot3d as a3
+            import matplotlib.colors as colors
+            import matplotlib.pyplot as plt
+            import scipy as sp
+
+            fig = plt.figure(figsize=figsize)
+            ax = a3.Axes3D(fig)
+            for w in self.walls:
+                tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
+                tri.set_color(colors.rgb2hex(sp.rand(3)))
+                tri.set_edgecolor('k')
+                ax.add_collection3d(tri)
+
+            return fig, ax
 
     def plotRIR(self, FD=False):
 
