@@ -191,12 +191,16 @@ class SoundSource(object):
         return self.damping[self.orders <= max_order]
 
 
-    def getRIR(self, mic, Fs, t0=0., t_max=None):
+    def getRIR(self, mic, visibility, Fs, t0=0., t_max=None):
         """
         Compute the room impulse response between the source
         and the microphone whose position is given as an
         argument.
         """
+
+        # fractional delay length
+        fdl = constants.get('frac_delay_length')
+        fdl2 = (fdl-1)/2
 
         # compute the distance
         dist = self.distance(mic)
@@ -210,13 +214,40 @@ class SoundSource(object):
         else:
             N = np.ceil((t_max - t0) * Fs)
 
+        N += fdl
+
         t = np.arange(N)/float(Fs)
         ir = np.zeros(t.shape)
 
         # from utilities import lowPassDirac
         import utilities as u
+        #return u.lowPassDirac(time[:, np.newaxis], alpha[:, np.newaxis], Fs, N).sum(axis=0)
 
-        return u.lowPassDirac(time[:, np.newaxis], alpha[:, np.newaxis], Fs, N).sum(axis=0)
+        for i in xrange(time.shape[0]):
+            if visibility[i] == 1:
+                time_ip = np.round(Fs*time[i])
+                time_fp = (Fs * time[i]) - time_ip
+                ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*u.fractional_delay(time_fp)
+
+        return ir
+        '''
+        import matplotlib.pyplot as plt
+        plt.stem(time, alpha)
+        plt.show()
+        '''
+
+    def wallSequence(self,i):
+        '''
+        Print the wall sequence for the image source indexed by i
+        '''
+        p = self.generators[i]
+        if np.isnan(p):
+            return []
+        w = [self.walls[i]]
+        while not np.isnan(p):
+            w.append(self.walls[p])
+            p = self.generators[p]
+        return w
 
 
 def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):

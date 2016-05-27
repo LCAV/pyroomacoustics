@@ -18,6 +18,7 @@ _constants_default = {
     'c' : 343.0,      # speed of sound at 20 C in dry air
     'ffdist' : 10.,   # distance to the far field
     'fc_hp' : 300.,   # cut-off frequency of standard high-pass filter
+    'frac_delay_length' : 81, # Length of the fractional delay filters used for RIR gen
     }
 
 

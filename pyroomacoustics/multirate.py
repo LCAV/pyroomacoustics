@@ -23,7 +23,10 @@ def frac_delay(delta, N, w_max=0.9, C=4):
     
     n = np.arange(N)
 
-    from cvxopt import solvers, matrix
+    try:
+        from cvxopt import solvers, matrix
+    except:
+        raise ValueError('To use the frac_delay function, the cvxopt module is necessary.')
 
     f = np.concatenate((np.zeros(N), np.ones(1)))
 

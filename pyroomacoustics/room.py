@@ -9,7 +9,7 @@ import geometry as geom
 from soundsource import SoundSource
 from wall import Wall
 from utilities import area, ccw3p
-import parameters
+from parameters import constants
 
 
 class Room(object):
@@ -44,9 +44,13 @@ class Room(object):
 
         self.walls = walls
         self.fs = fs
-        self.t0 = t0
         self.max_order = max_order
         self.sigma2_awgn = sigma2_awgn
+
+        if t0 < (constants.get('frac_delay_length')-1)/float(fs)/2:
+            self.t0 = (constants.get('frac_delay_length')-1)/float(fs)/2
+        else:
+            self.t0 = t0
         
         if (sources is list):
             self.sources = sources
@@ -364,11 +368,52 @@ class Room(object):
 
             fig = plt.figure(figsize=figsize)
             ax = a3.Axes3D(fig)
+
+            # plot the walls
             for w in self.walls:
                 tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
                 tri.set_color(colors.rgb2hex(sp.rand(3)))
                 tri.set_edgecolor('k')
                 ax.add_collection3d(tri)
+
+            # define some markers for different sources and colormap for damping
+            markers = ['o', 's', 'v', '.']
+            cmap = plt.get_cmap('YlGnBu')
+            # draw the scatter of images
+            for i, source in enumerate(self.sources):
+                # draw source
+                ax.scatter(
+                    source.position[0],
+                    source.position[1],
+                    source.position[2],
+                    c=cmap(1.),
+                    s=20,
+                    marker=markers[i %len(markers)],
+                    edgecolor=cmap(1.))
+
+                # draw images
+                if (img_order is None):
+                    img_order = self.max_order
+
+                I = source.orders <= img_order
+
+                val = (np.log2(source.damping[I]) + 10.) / 10.
+                # plot the images
+                ax.scatter(source.images[0, I],
+                    source.images[1, I],
+                    source.images[2, I],
+                    c=cmap(val),
+                    s=20,
+                    marker=markers[i % len(markers)],
+                    edgecolor=cmap(val))
+
+
+            # draw the microphones
+            if (self.micArray is not None):
+                for mic in self.micArray.R.T:
+                    ax.scatter(mic[0], mic[1],
+                            marker='x', linewidth=0.5, s=mic_marker_size, c='k')
+
 
             return fig, ax
 
@@ -446,7 +491,7 @@ class Room(object):
         o_len = np.array([x.shape[0] for x in generators])
         # correct the pointers for linear structure
         for o in np.arange(2, len(generators)):
-            generators[o] += np.sum(o_len[0:o-2])
+            generators[o] += np.sum(o_len[0:o-1])
             
         # linearize the arrays
         images_lin = np.concatenate(images, axis=1)
@@ -465,7 +510,7 @@ class Room(object):
         damping_lin = np.concatenate(([1], damping_lin))
         generators_lin = np.concatenate(([np.nan], generators_lin+1))
         walls_lin = np.concatenate(([np.nan], walls_lin))
-        orders_lin = np.concatenate(([0], orders_lin))
+        orders_lin = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
 
         # add a new source to the source list
         self.sources.append(
@@ -508,7 +553,8 @@ class Room(object):
         for mic in self.micArray.R.T:
             h = []
             for source in self.sources:
-                h.append(source.getRIR(mic, self.fs, self.t0))
+                visibility = self.checkVisibilityForAllImages(source, mic)
+                h.append(source.getRIR(mic, visibility, self.fs, self.t0))
             self.rir.append(h)
 
     def simulate(self, recompute_rir=False):
@@ -598,6 +644,19 @@ class Room(object):
             return self.walls[self.wallsId[name]]
         else:
             raise ValueError('The wall '+name+' cannot be found.')
+
+    def printWallSequences(self, source):
+
+        visibilityCheck = np.zeros_like(source.images[0])-1
+        
+        for imageId in range(len(visibilityCheck)-1, -1, -1):
+            print "%2d, %d,%.0f,%.0f --- "%(imageId,source.orders[imageId],source.generators[imageId],source.walls[imageId]),
+            p = imageId
+            while p >= 0:
+                if not np.isnan(source.walls[p]):
+                    print int(source.walls[p]),
+                p = source.generators[p]
+            print ''
         
     def checkVisibilityForAllImages(self, source, p):
         """
@@ -636,6 +695,7 @@ class Room(object):
         """
 
         p = np.array(p)
+        imageId = int(imageId)
         
         # Check if there is an obstruction
         if(self.isObstructed(source, p, imageId)):
@@ -689,8 +749,10 @@ class Room(object):
                     # Only images with order > 0 have a generating wall. At this point, there is obstruction for source order 0.
                     if (source.orders[imageId] > 0):
                     
-                        # Test if the intersection point and the image are at opposite sides of the generating wall
-                        # We ignore the obstruction if it is inside the generating wall (it is what happens in a corner)
+                        # Test if the intersection point and the image are at
+                        # opposite sides of the generating wall 
+                        # We ignore the obstruction if it is inside the
+                        # generating wall (it is what happens in a corner)
                         intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
                         intersectionPointSide = self.walls[genWallId].side(intersectionPoint)
                         if (intersectionPointSide != imageSide and intersectionPointSide != 0):

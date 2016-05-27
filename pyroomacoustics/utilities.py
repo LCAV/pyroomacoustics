@@ -211,10 +211,17 @@ def real_spectrum(signal, axis=-1, **kwargs):
 
     import matplotlib.pyplot as plt
 
-    P = dB(np.fft.rfft(signal, axis=axis))
-    f = np.arange(P.shape[axis])/float(2*P.shape[axis])
+    S = np.fft.rfft(signal, axis=axis)
+    f = np.arange(S.shape[axis])/float(2*S.shape[axis])
 
+    plt.subplot(2,1,1)
+    P = dB(S)
     plt.plot(f, P, **kwargs)
+
+    plt.subplot(2,1,2)
+    phi = np.unwrap(np.angle(S))
+    plt.plot(f, phi, **kwargs)
+
 
 
 def convmtx(x, n):
@@ -318,6 +325,27 @@ def lowPassDirac(t0, alpha, Fs, N):
     """
 
     return alpha*np.sinc(np.arange(N) - Fs*t0)
+
+
+def fractional_delay(t0):
+    '''
+    Creates a fractional delay filter using a windowed sinc function.
+    The length of the filter is fixed by the module wide constant
+    `frac_delay_length` (default 81).
+
+    Argument
+    --------
+    t0: float
+    The delay in fraction of sample. Typically between 0 and 1.
+
+    Returns
+    -------
+    A fractional delay filter with specified delay.
+    '''
+
+    N = constants.get('frac_delay_length')
+
+    return np.hanning(N)*np.sinc(np.arange(N) - (N-1)/2 + t0)
 
 
 def levinson(r, b):

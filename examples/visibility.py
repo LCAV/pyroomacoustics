@@ -13,7 +13,7 @@ Some information about the images is returned (including visibility at a certain
 fs = 8000
 t0 = 1./(fs*np.pi*1e-2)
 absorption = 0.90
-max_order_sim = 2
+max_order_sim = 3
 sigma2_n = 5e-7
 pVis = [1,1] # this point is where we check visibility (warning : put 3 coordinates for 3D)
 
