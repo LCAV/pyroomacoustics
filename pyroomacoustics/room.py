@@ -182,7 +182,7 @@ class Room(object):
     def extrude(
             self,
             height,
-            v_vec=np.array([0.,0.,1]), 
+            v_vec=None,
             absorption=1.):
         """
         Creates a 3D room by extruding a 2D polygon. 
@@ -190,8 +190,6 @@ class Room(object):
 
         Parameters
         ----------
-        corners : nd-array 2xN, N>2
-            List of corners of the floor, must be anti-clockwise oriented
         height : float
             The extrusion height
         v_vec : array-like 1D length 3, optionnal
@@ -207,6 +205,10 @@ class Room(object):
 
         if self.dim != 2:
             raise ValueError('Can only extrude a 2D room.')
+
+        # default orientation vector is pointing up
+        if v_vec is None:
+            v_vec = np.array([0., 0., 1.])
 
         # check that the walls are ordered counterclock wise
         # that should be the case if created from fromCorners function
