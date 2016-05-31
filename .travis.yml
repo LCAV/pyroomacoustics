@@ -24,11 +24,9 @@ install:
   - conda info -a
 
     # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
-  - source activate test-environment
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib nose
   - python setup.py install
 
 # Run test
 script:
-  - source activate test-environment
   - nosetests
