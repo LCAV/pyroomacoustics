@@ -19,8 +19,8 @@ def area(corners):
     """
 
     corners = np.array(corners)
-    x = corners[0, :] - corners[0, xrange(-1, corners.shape[1]-1)]
-    y = corners[1, :] + corners[1, xrange(-1, corners.shape[1]-1)]
+    x = corners[0, :] - corners[0, range(-1, corners.shape[1]-1)]
+    y = corners[1, :] + corners[1, range(-1, corners.shape[1]-1)]
     return -0.5 * (x * y).sum()
 
 

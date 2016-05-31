@@ -73,7 +73,7 @@ def delay_estimation(x1, x2, L):
     K = np.minimum(x1.shape[0], x2.shape[0])/L
 
     delays = np.zeros(K)
-    for k in xrange(K):
+    for k in range(K):
         delays[k] = phat(x1[k*L:(k+1)*L], x2[k*L:(k+1)*L])
 
     return int(np.median(delays))

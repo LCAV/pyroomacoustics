@@ -66,20 +66,20 @@ def trinicon(signals):
         # use filter from previous iteration to initialize offline part
         w_new = w.copy()
 
-        for j in xrange(j_max):     # offline update loop
+        for j in range(j_max):     # offline update loop
 
             y_c = np.zeros((Q,K*L+N-L))  # c stands for chunk
             y_blocks = np.zeros((Q,K,N))
 
-            for q in xrange(Q):
+            for q in range(Q):
                 # convolve with filters
-                for p in xrange(P):
+                for p in range(P):
                     # We discard the 'oldest' output of the convolution according
                     # to the filter matrix definition (6) in the paper
                     y_c[q,:] += fftconvolve(x[p,:], w_new[p,q,:], mode='valid')[1:]
 
                 # split into smaller blocks
-                for i in xrange(K):
+                for i in range(K):
                     y_blocks[q,i,:] = y_c[q,i*L:i*L+N]
 
             # blocks energy
@@ -87,7 +87,7 @@ def trinicon(signals):
 
             # cross-correlations
             r_cross = np.zeros((Q,K,2*L-1))
-            for i in xrange(K):
+            for i in range(K):
                 y0 = y_c[0,i*L:i*L+N]
                 y1 = y_c[1,i*L:i*L+N]
                 r = fftconvolve(y1, y0[::-1], mode='full')
@@ -99,9 +99,9 @@ def trinicon(signals):
 
             # offline update
             delta_w = np.zeros((P,Q,L))
-            for q in xrange(Q):
-                for p in xrange(P):
-                    for i in xrange(K):
+            for q in range(Q):
+                for p in range(P):
+                    for i in range(K):
                         # this implements the row-wise sylvester constraint as explained in Fig. 4 (b) of paper
                         delta_w[p,q,:] += fftconvolve(r_cross[q,i,:]/(sigma2[q,i]+delta[q,i]), w_new[p,1-q,::-1], mode='valid')[::-1]
                     delta_w[p,q,:] /= K
@@ -112,8 +112,8 @@ def trinicon(signals):
         w = lambd_a*w + (1-lambd_a)*w_new
 
         # compute output signal
-        for q in xrange(Q):
-            for p in xrange(P):
+        for q in range(Q):
+            for p in range(P):
                 y[q,(m-1)*hop:m*hop] += fftconvolve(x[p,-hop-L+1:], w[p,q,:], mode='valid')
         
         # next block

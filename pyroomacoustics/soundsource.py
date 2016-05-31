@@ -223,7 +223,7 @@ class SoundSource(object):
         import utilities as u
         #return u.lowPassDirac(time[:, np.newaxis], alpha[:, np.newaxis], Fs, N).sum(axis=0)
 
-        for i in xrange(time.shape[0]):
+        for i in range(time.shape[0]):
             if visibility[i] == 1:
                 time_ip = np.round(Fs*time[i])
                 time_fp = (Fs * time[i]) - time_ip
@@ -282,7 +282,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     d_min = np.inf
     d_max = 0.
     dmp_max = 0.
-    for s in xrange(len(sources)):
+    for s in range(len(sources)):
         dist_mat = distance(mics, sources[s].images)
         if unit_damping is True:
             dmp_max = np.maximum((1./(4*np.pi*dist_mat)).max(), dmp_max)
@@ -303,7 +303,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     L = Lg + Lh - 1
     H = np.zeros((Lg*mics.shape[1], len(sources)*L))
 
-    for s in xrange(len(sources)):
+    for s in range(len(sources)):
         for r in np.arange(mics.shape[1]):
 
             dist = sources[s].distance(mics[:,r])

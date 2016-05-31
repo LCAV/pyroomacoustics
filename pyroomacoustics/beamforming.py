@@ -305,7 +305,7 @@ class Beamformer(MicrophoneArray):
 
         # quick hack to be able to use MKL acceleration package from anaconda
         self.weights = np.zeros((self.M, self.N/2+1), dtype=np.complex128)
-        for m in xrange(self.M):
+        for m in range(self.M):
             self.weights[m] = np.conj(np.fft.rfft(self.filters[m], n=self.N))
 
     def steering_vector_2D(self, frequency, phi, dist, attn=False):
@@ -567,7 +567,7 @@ class Beamformer(MicrophoneArray):
                                 zp_front=self.zpf,
                                 transform=np.fft.rfft,
                                 win=win) * np.conj(self.weights[0])
-            for i in xrange(1, self.M):
+            for i in range(1, self.M):
                 tfd_sig += stft.stft(self.signals[i],
                                      self.L,
                                      self.hop,
@@ -604,7 +604,7 @@ class Beamformer(MicrophoneArray):
 
             # do real STFT of first signal
             output = fftconvolve(self.filters[0], self.signals[0])
-            for i in xrange(1, len(self.signals)):
+            for i in range(1, len(self.signals)):
                 output += fftconvolve(self.filters[i], self.signals[i])
 
         return output

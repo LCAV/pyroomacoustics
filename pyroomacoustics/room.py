@@ -235,7 +235,7 @@ class Room(object):
             floor_corners = np.fliplr(floor_corners)
 
         walls = []
-        for i in xrange(nw):
+        for i in range(nw):
             corners = np.array([
                 np.r_[floor_corners[:,i], 0],
                 np.r_[floor_corners[:,(i+1)%nw], 0],
@@ -432,8 +432,8 @@ class Room(object):
 
         M = self.micArray.M
         S = len(self.sources)
-        for r in xrange(M):
-            for s in xrange(S):
+        for r in range(M):
+            for s in range(S):
                 h = self.rir[r][s]
                 plt.subplot(M, S, r*S + s + 1)
                 if not FD:
@@ -470,7 +470,7 @@ class Room(object):
             dmp = np.array([])
             gen = np.array([])
             wal = np.array([])
-            for ind, si, sd in zip(xrange(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
+            for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                 i, d, w = self.firstOrderImages(si)
                 img = np.concatenate((img, i), axis=1)
                 dmp = np.concatenate((dmp, d * sd))
@@ -506,7 +506,7 @@ class Room(object):
         
         # store the corresponding orders in another array
         ordlist = []
-        for o in xrange(len(generators)):
+        for o in range(len(generators)):
             ordlist.append((o+1)*np.ones(o_len[o]))
         orders_lin = np.concatenate(ordlist)
 
@@ -585,10 +585,10 @@ class Room(object):
         # compute the maximum signal length
         from itertools import product
         max_len_rir = np.array([len(self.rir[i][j])
-                                for i, j in product(xrange(M), xrange(S))]).max()
+                                for i, j in product(range(M), range(S))]).max()
         f = lambda i: len(
             self.sources[i].signal) + np.floor(self.sources[i].delay * self.fs)
-        max_sig_len = np.array([f(i) for i in xrange(S)]).max()
+        max_sig_len = np.array([f(i) for i in range(S)]).max()
         L = max_len_rir + max_sig_len - 1
         if L % 2 == 1:
             L += 1

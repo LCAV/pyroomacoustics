@@ -39,7 +39,7 @@ def critical_bands():
 
     # now just make pairs
     bands = []
-    for j in xrange(len(fb)-1):
+    for j in range(len(fb)-1):
         bands.append([fb[j],fb[j+1]])
 
     return np.array(bands), fc
@@ -59,7 +59,7 @@ def bands_hz2s(bands_hz, Fs, N, transform='dft'):
         B = float(Fs)/N
 
     bands_s = []
-    for i in xrange(bands_hz.shape[0]):
+    for i in range(bands_hz.shape[0]):
         bands_s.append(np.around(bands_hz[i,]/B))
         if bands_hz[i,1] >= min(Fs/2, bands_hz[-1,1]):
             break

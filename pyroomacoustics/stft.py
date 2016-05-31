@@ -151,7 +151,7 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
     x = np.zeros(X.shape[0] * hop + (L - hop) + zp_back + zp_front)
 
     # overlap add
-    for i in xrange(X.shape[0]):
+    for i in range(X.shape[0]):
         x[i * hop:i * hop + N] += iX[i]
 
     return x
