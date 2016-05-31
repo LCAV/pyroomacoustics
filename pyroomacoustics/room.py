@@ -2,6 +2,8 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
+from __future__ import print_function
+
 import numpy as np
 
 import beamforming as bf
@@ -652,13 +654,13 @@ class Room(object):
         visibilityCheck = np.zeros_like(source.images[0])-1
         
         for imageId in range(len(visibilityCheck)-1, -1, -1):
-            print "%2d, %d,%.0f,%.0f --- "%(imageId,source.orders[imageId],source.generators[imageId],source.walls[imageId]),
+            print("%2d, %d,%.0f,%.0f --- "%(imageId,source.orders[imageId],source.generators[imageId],source.walls[imageId]), end='')
             p = imageId
             while p >= 0:
                 if not np.isnan(source.walls[p]):
-                    print int(source.walls[p]),
+                    print(int(source.walls[p]), end='')
                 p = source.generators[p]
-            print ''
+            print()
         
     def checkVisibilityForAllImages(self, source, p):
         """
@@ -854,7 +856,7 @@ class ShoeBox3D(Room):
                 try:
                     self.absorption[wall_dict[key]] = val
                 except KeyError:
-                    print 'Warning: non-existent wall name. Ignoring.'
+                    print('Warning: non-existent wall name. Ignoring.')
         else:
             absorption = np.array(absorption, dtype='float64')
             if (absorption.ndim == 0):

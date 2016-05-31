@@ -1,6 +1,12 @@
 Pyroomacoustics
 ===============
 
+.. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=master
+    :target: https://travis-ci.org/LCAV/pyroomacoustics
+.. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=latest
+    :target: http://pyroomacoustics.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 Pyroomacoustics is a package for audio signal processing for indoor
 applications. It was developped as a fast prototyping platform for beamforming
 algorithms in indoor scenarios. At the core of the package is a room impulse
