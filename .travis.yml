@@ -30,8 +30,4 @@ install:
 
 # Run test
 script:
-  - nosetests --with-cov --cov pyroomacoustics --cov-config .coveragerc --logging-level=INFO
-
-# Calculate coverage
-after_success:
-  - coveralls --config_file .coveragerc
+  - nosetests
