@@ -5,7 +5,7 @@
 import numpy as np
 from scipy import signal
 
-from parameters import constants, eps
+from .parameters import constants, eps
 
 
 def to_16b(signal):

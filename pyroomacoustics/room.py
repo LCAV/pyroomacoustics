@@ -6,12 +6,13 @@ from __future__ import print_function
 
 import numpy as np
 
-import beamforming as bf
-import geometry as geom
-from soundsource import SoundSource
-from wall import Wall
-from utilities import area, ccw3p
-from parameters import constants
+#import .beamforming as bf
+from . import beamforming as bf
+from . import geometry as geom
+from .soundsource import SoundSource
+from .wall import Wall
+from .utilities import area, ccw3p
+from .parameters import constants
 
 
 class Room(object):

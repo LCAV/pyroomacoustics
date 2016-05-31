@@ -4,7 +4,7 @@
 
 import numpy as np
 
-import geometry as geom
+from . import geometry as geom
 
 
 

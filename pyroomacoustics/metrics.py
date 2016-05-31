@@ -1,9 +1,9 @@
 
 import numpy as np
 import os
-from stft import stft
-
 import platform
+
+from .stft import stft
 
 def median(x, axis=-1, keepdims=False):
     '''

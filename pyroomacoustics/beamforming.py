@@ -5,11 +5,11 @@
 import numpy as np
 import scipy.linalg as la
 
-from parameters import constants
-import utilities as u
-from soundsource import buildRIRMatrix
-import windows
-import stft
+from .parameters import constants
+from . import utilities as u
+from .soundsource import buildRIRMatrix
+from . import windows
+from . import stft
 
 
 #=========================================================================

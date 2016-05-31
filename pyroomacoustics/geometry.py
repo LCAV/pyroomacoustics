@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from parameters import constants, eps
+from .parameters import constants, eps
 
 
 def area(corners):

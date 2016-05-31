@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from parameters import constants
+from .parameters import constants
 
 
 class SoundSource(object):
