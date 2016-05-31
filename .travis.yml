@@ -30,4 +30,5 @@ install:
 
 # Run test
 script:
+  - source activate test-environment
   - nosetests
