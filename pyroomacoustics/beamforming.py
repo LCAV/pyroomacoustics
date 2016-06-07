@@ -2,6 +2,8 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
+from __future__ import division
+
 import numpy as np
 import scipy.linalg as la
 
@@ -98,6 +100,36 @@ def square2DArray(center, M, N, phi, d):
         R[:, i*N:(i+1)*N] = linear2DArray(c[:, i], N, phi, d)
 
     return R
+
+def spiral_2D_array(center, M, radius=1., divi=3, angle=None):
+    """
+    generate microphone array layout randomly
+    :param center: location of the center of the array
+    :param radius: microphones are contained within a cirle of this radius (default 1)
+    :param M: number of microphones
+    :param divi: number of rotations of the spiral (default 3)
+    :param angle: the angle offset of the spiral (default random)
+    :return:
+    """
+    num_seg = np.ceil(M / divi)
+
+    pos_array_norm = np.linspace(0, radius, num=M, endpoint=False)
+
+    pos_array_angle = np.reshape(np.tile(np.pi * 2 * np.arange(divi) / divi, num_seg),
+                                 (divi, -1), order='F') + \
+                      np.linspace(0, 2 * np.pi / divi,
+                                  num=num_seg, endpoint=False)[np.newaxis, :]
+    pos_array_angle = np.insert(pos_array_angle.flatten('F')[:M - 1], 0, 0)
+
+    if angle is None:
+        pos_array_angle += np.random.rand() * np.pi / divi
+    else:
+        pos_array_angle += angle
+
+    pos_mic_x = pos_array_norm * np.cos(pos_array_angle)
+    pos_mic_y = pos_array_norm * np.sin(pos_array_angle)
+
+    return np.array([pos_mic_x, pos_mic_y])
 
 
 def fir_approximation_ls(weights, T, n1, n2):
