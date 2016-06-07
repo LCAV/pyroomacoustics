@@ -55,7 +55,11 @@ beamformer and evaluate the ouput.
 Quick Install
 -------------
 
-The package was only tested with Python 2.7.
+Install the package with pip::
+
+    $ pip install git+https://github.com/LCAV/pyroomacoustics
+
+The requirements are::
 
 * Numpy, scipy, matplotlib
 * cvxopt (only for one routine in the multirate package)
@@ -66,6 +70,19 @@ Example
 .. literalinclude:: ../examples/delay_and_sum.py
    :language: python
    :linenos:
+
+Authors
+-------
+
+* Robin Scheibler
+* Ivan Dokmanić
+* Sidney Barthe
+
+How to contribute
+-----------------
+
+If you would like to contribute, please clone the
+`repository <http://github.com/LCAV/pyroomacoustics>`_ and send a pull request.
 
 Academic publications
 ---------------------
@@ -79,7 +96,7 @@ for the acoustic beamformers introduced in the following papers.
 License
 -------
 
-Copyright (c) 2015, LCAV
+Copyright (c) 2014-2016, LCAV
 
 .. image:: https://i.creativecommons.org/l/by-sa/4.0/88x31.png
 
