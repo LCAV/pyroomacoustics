@@ -7,7 +7,24 @@ Pyroomacoustics
     :target: http://pyroomacoustics.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-Pyroomacoustics is a package for audio signal processing for indoor
+Consider the following scenario.
+
+  Suppose, for example, you wanted to produce a radio crime drama, and it
+  so happens that, according to the scriptwriter, the story line absolutely must culminate
+  in a satanic mass that quickly degenerates into a violent shootout, all taking place
+  right around the altar of the higly reverberant acoustic environment of Oxford's
+  Christ Church cathedral. To ensure that it sounds authentic, you asked the Dean of
+  Christ Church for permission to record the final scene inside the cathedral, but
+  somehow he fails to be convinced of the artistic merit of your production, and declines
+  to give you permission. But recorded in a conventional studio, the scene sounds flat.
+  So what do you do ?
+
+  -- Schnupp, Nelken, and King, *Auditory Neuroscience*, 2010
+
+Faced with this difficult situation, **pyroomacoustics** can save the day by simulating
+the environment of the Christ Church cathedral!
+
+Pyroomacoustics is a pure python package for audio signal processing for indoor
 applications. It was developped as a fast prototyping platform for beamforming
 algorithms in indoor scenarios. At the core of the package is a room impulse
 response generator based on the image source model that can handle
@@ -35,11 +52,6 @@ At the input of the microphone composing the beamformer, an STFT (short time
 Fourier transform) engine allows to quickly process the signals through the
 beamformer and evaluate the ouput.
 
-Example
--------
-
-.. include:: ./examples/delay_and_sum.py
-
 Quick Install
 -------------
 
@@ -47,6 +59,13 @@ The package was only tested with Python 2.7.
 
 * Numpy, scipy, matplotlib
 * cvxopt (only for one routine in the multirate package)
+
+Example
+-------
+
+.. literalinclude:: ../examples/delay_and_sum.py
+   :language: python
+   :linenos:
 
 Academic publications
 ---------------------
