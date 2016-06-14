@@ -25,7 +25,7 @@ class CircularGaussianEmission:
             
             self.O = odim
             self.mu = np.random.normal(size=(self.K, self.O))
-            self.Sigma = np.random.randint(1, high=self.K, size=(self.K, self.O))/self.K
+            self.Sigma = np.ones((self.K, self.O))*10
 
         else:
             # Initialize using K-means
@@ -33,6 +33,7 @@ class CircularGaussianEmission:
 
             X = np.concatenate(examples, axis=0)
 
+            '''
             clustering = KMeans(n_clusters=self.K)
             clustering.fit(X)
 
@@ -45,6 +46,12 @@ class CircularGaussianEmission:
                 X_clus = X[I]
                 centered = X_clus - self.mu[k]
                 self.Sigma[k] = np.diag(np.dot(centered.T, centered)/X_clus.shape[0])
+            '''
+
+            print 'Init from examples'
+            self.mu = np.array([np.mean(X, axis=0)]*self.K)
+            centered = X - self.mu[0]
+            self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))]*self.K)
 
     def update_parameters(self, examples, gamma):
 
@@ -52,12 +59,10 @@ class CircularGaussianEmission:
         X = np.concatenate(examples, axis=0)
         Z = g.sum(axis=0)
 
-        self.mu = (np.sum(X.T[:,:,np.newaxis]*g[np.newaxis,:,:], axis=1)/Z).T
-
         for k in range(self.K):
+            self.mu[k] = np.sum(X.T * g[:,k], axis=1)/Z[k]
             centered = (X - self.mu[k])**2
             self.Sigma[k] = np.sum(centered.T * g[:,k], axis=1)/Z[k]
-
 
 
     def get_pdfs(self):
@@ -95,7 +100,7 @@ class GaussianEmission:
             self.mu = np.random.normal(size=(self.K, self.O))
             self.Sigma = np.random.normal(size=(self.K, self.O, self.O))
             for k in range(self.K):
-                self.Sigma[k] = np.dot(self.Sigma[k].T, self.Sigma[k])/10.
+                self.Sigma[k] = np.dot(self.Sigma[k].T, self.Sigma[k]) + np.eye(self.O)
 
         else:
             # Initialize using K-means
@@ -103,6 +108,7 @@ class GaussianEmission:
 
             X = np.concatenate(examples, axis=0)
 
+            '''
             clustering = KMeans(n_clusters=self.K)
             clustering.fit(X)
 
@@ -115,6 +121,12 @@ class GaussianEmission:
                 X_clus = X[I]
                 centered = X_clus - self.mu[k]
                 self.Sigma[k] = np.dot(centered.T, centered)/X_clus.shape[0]
+            '''
+
+            print 'Init from examples'
+            self.mu = np.array([np.mean(X, axis=0)]*self.K)
+            centered = X - self.mu[0]
+            self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))]*self.K)
 
     def update_parameters(self, examples, gamma):
 
@@ -122,11 +134,10 @@ class GaussianEmission:
         X = np.concatenate(examples, axis=0)
         Z = g.sum(axis=0)
 
-        self.mu = (np.sum(X.T[:,:,np.newaxis]*g[np.newaxis,:,:], axis=1)/Z).T
-
         for k in range(self.K):
+            self.mu[k] = np.sum(X.T * g[:,k], axis=1)/Z[k]
             centered = X - self.mu[k]
-            self.Sigma[k] = np.dot(centered.T*g[:,k], centered)/Z[k]
+            self.Sigma[k] = np.dot(centered.T*g[:,k], centered/Z[k])
 
 
     def get_pdfs(self):
@@ -167,24 +178,35 @@ class HMM:
         KxK transition matrix of the Markov chain
     pi : (ndarray)
         K dim vector of the initial probabilities of the Markov chain
-    mu : (ndarray)
-        KxO matrix that has the means of the K Gaussian distributions as columns
-    Sigma : (ndarray)
-        KxOxO tensor that contains the K covariance matrices of the emissions
+    emission_class : (emission class)
+        An Emission object class
+    emission : (GaussianEmission or CircularGaussianEmission)
+        An instance of emission_class
+    model : string, optional
+        The model used for the chain, can be 'full' or 'left-right'
+    leftright_jum_max : int, optional
 
     '''
 
-    def __init__(self, nstates, emission_class=CircularGaussianEmission):
+    def __init__(self, nstates, emission_class=CircularGaussianEmission, model='full', leftright_jump_max=3):
         '''
         Initialize a Hidden Markov Model with nstates and Gaussian observations 
         
-        nstates: (int)
+        nstates: int
             The number of states in the Markov chain
+        emission_classe : emission class, optional
+            The emission class to use (defaul CircularGaussianEmission)
+        model : string, optional
+            The model used for the chain, can be 'full' or 'left-right'
+        leftright_jump_max : int
+            The maximum jump length in the Left-Right chain model
         '''
 
         self.K = nstates    # number of states
 
         # The Markov chain parameters
+        self.model = model
+        self.leftright_jump_max = leftright_jump_max
         self.A = np.zeros((self.K, self.K)) # the state transition matrix
         self.pi = np.zeros((self.K))        # the initial distribution
 
@@ -205,12 +227,13 @@ class HMM:
         '''
 
         # Initialize the HMM parameters
-        if strategy == 'uniform':
+        if self.model == 'full':
             self.A[:,:] = np.random.uniform(size=(self.K,self.K))
             self.pi[:] = np.random.uniform(size=(self.K))
 
-        elif strategy == 'left-right':
-            self.A[:,:] = np.triu(np.tril(np.random.uniform(size=(self.K,self.K)), k=1))
+        elif self.model == 'left-right':
+            self.A[:,:] = np.triu(np.tril(np.random.uniform(size=(self.K,self.K)), k=self.leftright_jump_max))
+            self.A[:,:] += np.diag(np.sum(self.A[:,:], axis=1)*2)
             self.pi[:] = np.zeros(self.K)
             self.pi[0] = 1
 
@@ -223,7 +246,7 @@ class HMM:
             self.emission = self.emission_class(self.K, odim=odim)
 
 
-    def fit(self, examples, tol=0.1, max_iter=10):
+    def fit(self, examples, tol=0.1, max_iter=10, init_func=None):
         '''
         Training of the HMM using the EM algorithm
 
@@ -242,8 +265,14 @@ class HMM:
         '''
 
         # Initialize all parameters
-        #self.emission = self.emission_class(self.K, examples=examples) 
-        self.initialize(examples[0].shape[1])
+        if init_func is None:
+            self.emission = self.emission_class(self.K, examples=examples) 
+            self.initialize(examples[0].shape[1])
+        else:
+            self.pi = np.zeros((self.K))
+            self.A = np.zeros((self.K, self.K))
+            self.emission = self.emission_class(self.K, odim=examples[0].shape[1])
+            init_func(self.A, self.pi, self.emission, examples)
 
         # Run the EM algorithm
         loglikelihood_old = -np.inf # log-likelihood
@@ -322,7 +351,11 @@ class HMM:
         # normalize to enforce distribution constraints
         self.pi /= np.sum(self.pi)
         for k in range(self.K):
-            self.A[k,:] /= np.sum(self.A[k,:])
+            den = np.sum(self.A[k,:])
+            if den < 1e-15:
+                self.A[k,:] = 0.
+            else:
+                self.A[k,:] /= den
 
 
     def generate(self, N):
@@ -395,20 +428,39 @@ class HMM:
 
 class Word:
 
-    def __init__(self, word, boundaries, data, fs):
+    def __init__(self, word, boundaries, data, fs, phonems=None):
 
         self.word = word
+        self.phonems = phonems
         self.boundaries = boundaries
         self.samples = data[boundaries[0]:boundaries[1]]
         self.fs = fs
         self.features = None
+
+    def __str__(self):
+        return self.word
+
+    def plot(self):
+        try:
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+        except ImportError:
+            return
+
+        sns.set_style('white')
+
+        L = self.samples.shape[0]
+        plt.plot(np.arange(L)/self.fs, self.samples)
+        plt.xlim((0,L/self.fs))
+        plt.xlabel('Time')
+        plt.title(self.word)
 
     def play(self):
         ''' Play the sound sample '''
         play(resample(self.samples, 44100./self.fs, 'sinc_best'))
 
     def mfcc(self, frame_length=1024, hop=512):
-        ''' compute the mfcc of the word samples '''
+        ''' compute the mel-frequency cepstrum coefficients of the word samples '''
         self.features = mfcc(self.samples, L=frame_length, hop=hop)
 
 
@@ -445,21 +497,72 @@ class Sentence:
 
         # Read the word list
         self.words = []
+        self.phonems = []
+
+        # open the word file
         f = open(path + '.WRD', 'r')
-        for line in f.readlines():
-            t = line.split()
-            if len(t) == 3:
-                self.words.append(Word(t[2], (int(t[0]), int(t[1])), self.data, self.fs))
+        w_lines = f.readlines()
         f.close()
 
-        # Read the phonem list
-        self.phonems = []
-        f = open(path + '.PHN', 'r')
-        for line in f.readlines():
+        # get all lines from the phonem file
+        f_ph = open(path + '.PHN', 'r')
+        ph_lines = f_ph.readlines()
+        ph_l_index = 0
+        f_ph.close()
+
+        for line in w_lines:
             t = line.split()
+
+            # just a sanity check
             if len(t) == 3:
-                self.phonems.append(Word(t[2], (int(t[0]), int(t[1])), self.data, self.fs))
-        f.close()
+
+                # the word boundary
+                w_bnd = (int(t[0]), int(t[1]))
+
+                # recover the phonems making up the word
+                w_ph_list = []
+                while ph_l_index < len(ph_lines):
+
+                    ph_line = ph_lines[ph_l_index]
+                    u = ph_line.split()
+
+                    # phonem boundary
+                    ph_bnd = (int(u[0]), int(u[1]))
+
+                    # Check phonem boundary does not exceeds word boundary
+                    if ph_bnd[1] > w_bnd[1]:
+                        break
+
+                    # add to sentence object phonems list
+                    self.phonems.append({'name':u[2], 'bnd':ph_bnd})
+
+                    # increase index
+                    ph_l_index += 1
+
+                    # now skip until beginning of word
+                    if ph_bnd[0] < w_bnd[0]:
+                        continue
+
+                    # add phonem to word if 
+                    w_ph_list.append({'name':u[2], 'bnd':ph_bnd})
+
+                # Finally create word object
+                self.words.append(Word(t[2], w_bnd, self.data, self.fs, phonems=w_ph_list))
+
+        # Read the remaining phonem(s)
+        while ph_l_index < len(ph_lines):
+            ph_line = ph_lines[ph_l_index]
+            u = ph_line.split()
+
+            if len(u) == 3:
+                # phonem boundary
+                ph_bnd = (int(u[0]), int(u[1]))
+
+                # add to sentence object phonems list
+                self.phonems.append({'name':u[2], 'bnd':ph_bnd})
+
+            ph_l_index += 1
+
 
     def __str__(self):
         s = " ".join([self.dialect, self.sex, self.speaker, self.id, self.text])
@@ -468,7 +571,7 @@ class Sentence:
     def play(self):
         play(resample(self.data, 44100./self.fs, 'sinc_best'))
 
-    def plot(self, L=512, hop=128, zpb=0):
+    def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
 
         try:
             import matplotlib.pyplot as plt
@@ -485,19 +588,19 @@ class Sentence:
         ticks = []
         ticklabels = []
 
-        '''
-        for phonem in self.phonems:
-            plt.axvline(x=phonem.boundaries[0]/hop)
-            plt.axvline(x=phonem.boundaries[1]/hop)
-            ticks.append((phonem.boundaries[1]+phonem.boundaries[0])/2/hop)
-            ticklabels.append(phonem.word)
-        '''
+        if phonems:
+            for phonem in self.phonems:
+                plt.axvline(x=phonem['bnd'][0]/hop)
+                plt.axvline(x=phonem['bnd'][1]/hop)
+                ticks.append((phonem['bnd'][1]+phonem['bnd'][0])/2/hop)
+                ticklabels.append(phonem['name'])
 
-        for word in self.words:
-            plt.axvline(x=word.boundaries[0]/hop)
-            plt.axvline(x=word.boundaries[1]/hop)
-            ticks.append((word.boundaries[1]+word.boundaries[0])/2/hop)
-            ticklabels.append(word.word)
+        else:
+            for word in self.words:
+                plt.axvline(x=word.boundaries[0]/hop)
+                plt.axvline(x=word.boundaries[1]/hop)
+                ticks.append((word.boundaries[1]+word.boundaries[0])/2/hop)
+                ticklabels.append(word.word)
 
         plt.xticks(ticks, ticklabels, rotation=-45)
         plt.yticks([],[])
