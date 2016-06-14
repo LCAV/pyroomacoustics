@@ -5,6 +5,10 @@ from scipy.fftpack import dct
 from .stft import stft
 
 def binning(S, bands):
+    '''
+    This function computes the sum of all columns of S in the subbands
+    enumerated in bands
+    '''
     B = np.zeros((S.shape[0], len(bands)), dtype=S.dtype)
     for i,b in enumerate(bands):
         B[:,i] = np.mean(S[:,b[0]:b[1]], axis=1)
@@ -13,16 +17,25 @@ def binning(S, bands):
 
 
 def octave_bands(fc=1000, third=False):
-    ''' Create a bank of octave bands '''
+    '''
+    Create a bank of octave bands
+
+    Parameters
+    ----------
+    fc : float, optional
+        The center frequency
+    third : bool, optional
+        Use third octave bands (default False)
+    '''
 
     div = 1
     if third == True:
         div = 3
 
     # Octave Bands
-    fcentre = fc * ((2.0) ** (np.arange(-6*div,4*div+1)/div))
-    fd = (2**(0.5/div));
-    bands = np.array([ [f/fd, f*fd] for f in fcentre ])
+    fcentre = fc * ((2.0) ** (np.arange(-6*div,4*div + 1) / div))
+    fd = 2**(0.5 / div);
+    bands = np.array([ [f / fd, f*fd] for f in fcentre ])
     
     return bands, fcentre
 
@@ -35,15 +48,14 @@ def critical_bands():
 
     # center frequencies
     fc = [50, 150, 250, 350, 450, 570, 700, 840, 1000, 1170, 1370, 1600, 1850,
-        2150, 2500, 2900, 3400, 4000, 4800, 5800, 7000, 8500, 10500, 13500];
-    # boundaries of the bands (e.g. the first band is from 0Hz to 100Hz with center 50Hz, fb[0] to fb[1], center fc[0]
+          2150, 2500, 2900, 3400, 4000, 4800, 5800, 7000, 8500, 10500, 13500];
+    # boundaries of the bands (e.g. the first band is from 0Hz to 100Hz 
+    # with center 50Hz, fb[0] to fb[1], center fc[0]
     fb = [0,  100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720,
-        2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500];
+          2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500];
 
     # now just make pairs
-    bands = []
-    for j in range(len(fb)-1):
-        bands.append([fb[j],fb[j+1]])
+    bands = [ [fb[j], fb[j+1]] for j in range(len(fb)-1) ]
 
     return np.array(bands), fc
 
@@ -61,32 +73,31 @@ def bands_hz2s(bands_hz, Fs, N, transform='dft'):
     else:
         B = Fs/N
 
-    bands_s = []
-    for i in range(bands_hz.shape[0]):
-        bands_s.append(np.around(bands_hz[i,]/B))
-        if bands_hz[i,1] >= min(Fs/2, bands_hz[-1,1]):
-            break
+    # upper limit of the frequency range
+    limit = min(Fs/2, bands_hz[-1,1])
 
-    bands_s[i][1] = N/2
+    # Convert from Hertz to samples for all bands
+    bands_s = [ np.around(band/B)  for band in bands_hz if band[0] <= limit]
 
+    # Last band ends at N/2
+    bands_s[-1][1] = N/2
 
     # remove duplicate, if any, (typically, if N is small and Fs is large)
     j = 0
-    while (j < i):
+    while (j < len(bands_s)-1):
         if (bands_s[j][0] == bands_s[j+1][0]):
             bands_s.pop(j)
-            i -= 1
         else:
             j += 1
 
     return np.array(bands_s, dtype=np.int)
 
 def melscale(f):
-    ''' The melscale defined according to Huang-Acero-Hon (2.6) '''
+    ''' Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6) '''
     return 1125.*np.log(1+f/700.)
 
 def invmelscale(b):
-    ''' The inverse melscale defined according to Huang-Acero-Hon (6.143) '''
+    ''' Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143) '''
     return 700.*(np.exp(b/1125.)-1)
 
 def melfilterbank(M, N, fs=1, fl=0., fh=0.5):
@@ -114,8 +125,9 @@ def melfilterbank(M, N, fs=1, fl=0., fh=0.5):
     '''
 
     # all center frequencies of the filters
-    f = (N/fs)*invmelscale( melscale(fl*fs) + \
+    f = (N/fs)*invmelscale( melscale(fl*fs) + (
             np.arange(M+2)*(melscale(fh*fs)-melscale(fl*fs))/(M+1) )
+        )
 
     # Construct the triangular filter bank
     H = np.zeros((M, N//2+1))
