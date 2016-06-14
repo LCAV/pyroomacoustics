@@ -5,10 +5,17 @@ import numpy as np
 import os
 from scipy.stats import multivariate_normal
 
-from sklearn.cluster import KMeans
+try:
+    from scikits.audiolab import Sndfile, play
+    have_sk_audiolab = True
+except ImportError:
+    have_sk_audiolab = False
 
-from scikits.audiolab import Sndfile, play
-from scikits.samplerate import resample
+try:
+    from scikits.samplerate import resample
+    have_sk_samplerate = True
+except ImportError:
+    have_sk_samplerate = False
 
 from .stft import stft
 from .acoustics import mfcc
@@ -33,22 +40,6 @@ class CircularGaussianEmission:
 
             X = np.concatenate(examples, axis=0)
 
-            '''
-            clustering = KMeans(n_clusters=self.K)
-            clustering.fit(X)
-
-            self.mu = clustering.cluster_centers_
-
-            # estimate the variance of each cluster
-            self.Sigma = np.ones((self.K, self.O))
-            for k in range(self.K):
-                I = np.where(clustering.labels_ == k)
-                X_clus = X[I]
-                centered = X_clus - self.mu[k]
-                self.Sigma[k] = np.diag(np.dot(centered.T, centered)/X_clus.shape[0])
-            '''
-
-            print 'Init from examples'
             self.mu = np.array([np.mean(X, axis=0)]*self.K)
             centered = X - self.mu[0]
             self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))]*self.K)
@@ -108,22 +99,6 @@ class GaussianEmission:
 
             X = np.concatenate(examples, axis=0)
 
-            '''
-            clustering = KMeans(n_clusters=self.K)
-            clustering.fit(X)
-
-            self.mu = clustering.cluster_centers_
-
-            # estimate the variance of each cluster
-            self.Sigma = np.zeros((self.K, self.O, self.O))
-            for k in range(self.K):
-                I = np.where(clustering.labels_ == k)
-                X_clus = X[I]
-                centered = X_clus - self.mu[k]
-                self.Sigma[k] = np.dot(centered.T, centered)/X_clus.shape[0]
-            '''
-
-            print 'Init from examples'
             self.mu = np.array([np.mean(X, axis=0)]*self.K)
             centered = X - self.mu[0]
             self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))]*self.K)
@@ -457,7 +432,10 @@ class Word:
 
     def play(self):
         ''' Play the sound sample '''
-        play(resample(self.samples, 44100./self.fs, 'sinc_best'))
+        if have_sk_audiolab and have_sk_samplerate:
+            play(np.array(resample(self.samples, 44100./self.fs, 'sinc_best'), dtype=np.float64))
+        else:
+            print 'Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.'
 
     def mfcc(self, frame_length=1024, hop=512):
         ''' compute the mel-frequency cepstrum coefficients of the word samples '''
@@ -473,6 +451,9 @@ class Sentence:
         path: (string)
             the path to the particular sample
         '''
+
+        if not have_sk_audiolab:
+            raise ValueError('scikits.audiolab module is required to read the TIMIT database.')
 
         path, ext = os.path.splitext(path)
 
@@ -569,7 +550,10 @@ class Sentence:
         return s
 
     def play(self):
-        play(resample(self.data, 44100./self.fs, 'sinc_best'))
+        if have_sk_audiolab and have_sk_samplerate:
+            play(np.array(resample(self.data, 44100./self.fs, 'sinc_best'), dtype=np.float64))
+        else:
+            print 'Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.'
 
     def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
 
