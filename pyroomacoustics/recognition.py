@@ -1,5 +1,5 @@
 
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy as np
 import os
@@ -301,14 +301,14 @@ class HMM:
             #--------------------------
             n_iter += 1
             epsilon = loglikelihood - loglikelihood_old
-            print 'Iterations:', n_iter, 'epsilon:', epsilon, 'LL_new:', loglikelihood
+            print('Iterations:', n_iter, 'epsilon:', epsilon, 'LL_new:', loglikelihood)
 
             # some checks here
             if epsilon < tol:
-                print 'Tolerance reached: stopping.'
+                print('Tolerance reached: stopping.')
                 break
             if  n_iter == max_iter:
-                print 'Maximum iterations reached: stopping.'
+                print('Maximum iterations reached: stopping.')
                 break
 
             loglikelihood_old = loglikelihood
@@ -435,7 +435,7 @@ class Word:
         if have_sk_audiolab and have_sk_samplerate:
             play(np.array(resample(self.samples, 44100./self.fs, 'sinc_best'), dtype=np.float64))
         else:
-            print 'Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.'
+            print('Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.')
 
     def mfcc(self, frame_length=1024, hop=512):
         ''' compute the mel-frequency cepstrum coefficients of the word samples '''
@@ -553,7 +553,7 @@ class Sentence:
         if have_sk_audiolab and have_sk_samplerate:
             play(np.array(resample(self.data, 44100./self.fs, 'sinc_best'), dtype=np.float64))
         else:
-            print 'Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.'
+            print('Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.')
 
     def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
 
