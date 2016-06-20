@@ -5,8 +5,16 @@
 
 .. include:: ../README.rst
 
+Table of contents
+-----------------
+
+.. toctree::
+  :maxdepth: 1
+
+  pyroomacoustics
+
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
