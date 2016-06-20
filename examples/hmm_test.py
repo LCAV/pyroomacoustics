@@ -45,7 +45,7 @@ if __name__ == '__main__':
     emission2.Sigma[:,:] = np.array([np.mean(centered**2, axis=0)]*K)
 
     # Now try to fit the model
-    niter = hmm2.fit(examples, tol=1e-8, max_iter=1000)
+    niter = hmm2.fit(examples, tol=1e-8, max_iter=1000, verbose=True)
 
     print 'EM finished in {0} iterations'.format(niter)
 

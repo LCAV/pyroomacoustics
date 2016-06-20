@@ -482,7 +482,7 @@ class Sentence:
             if len(t) == 3:
 
                 # the word boundary
-                w_bnd = (int(t[0]), int(t[1]))
+                w_bnd = np.array([int(t[0]), int(t[1])])
 
                 # recover the phonems making up the word
                 w_ph_list = []
@@ -492,7 +492,7 @@ class Sentence:
                     u = ph_line.split()
 
                     # phonem boundary
-                    ph_bnd = (int(u[0]), int(u[1]))
+                    ph_bnd = np.array([int(u[0]), int(u[1])])
 
                     # Check phonem boundary does not exceeds word boundary
                     if ph_bnd[1] > w_bnd[1]:
@@ -508,8 +508,8 @@ class Sentence:
                     if ph_bnd[0] < w_bnd[0]:
                         continue
 
-                    # add phonem to word if 
-                    w_ph_list.append({'name':u[2], 'bnd':ph_bnd})
+                    # add phonem to word if (with adjusted boundaries wrt to start of word)
+                    w_ph_list.append({'name':u[2], 'bnd':ph_bnd - w_bnd[0]})
 
                 # Finally create word object
                 self.words.append(Word(t[2], w_bnd, self.data, self.fs, phonems=w_ph_list))
