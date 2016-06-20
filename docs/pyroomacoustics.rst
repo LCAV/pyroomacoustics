@@ -1,8 +1,16 @@
-pyroomacoustics package
-=======================
+Pyroomacoustics API
+===================
 
 Submodules
 ----------
+
+pyroomacoustics.acoustics module
+--------------------------------
+
+.. automodule:: pyroomacoustics.acoustics
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 pyroomacoustics.beamforming module
 ----------------------------------
@@ -52,10 +60,26 @@ pyroomacoustics.parameters module
     :undoc-members:
     :show-inheritance:
 
+pyroomacoustics.recognition module
+----------------------------------
+
+.. automodule:: pyroomacoustics.recognition
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pyroomacoustics.room module
 ---------------------------
 
 .. automodule:: pyroomacoustics.room
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pyroomacoustics.signals module
+------------------------------
+
+.. automodule:: pyroomacoustics.signals
     :members:
     :undoc-members:
     :show-inheritance:

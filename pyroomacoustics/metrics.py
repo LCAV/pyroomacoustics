@@ -69,10 +69,11 @@ def median(x, axis=-1, keepdims=False):
 # Simple mean squared error function
 def mse(x1, x2):
     """
-    A short hand to compute the mean-squared error of two signals
+    A short hand to compute the mean-squared error of two signals.
+
     .. math::
-       (a+b)^2
-       \sum_{i=0}^{n-1} (x_i - y_i)^2
+
+       MSE = \\frac{1}{n}\sum_{i=0}^{n-1} (x_i - y_i)^2
 
 
     :arg x1: (ndarray)

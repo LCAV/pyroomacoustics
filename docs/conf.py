@@ -31,7 +31,10 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'scikits.audiolab','scikits.samplerate','scipy.stats','scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot', 'numpy.lib', 'numpy.lib.stride_tricks']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 
+        'scikits.audiolab','scikits.samplerate','scipy.stats',
+        'scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot',
+        'numpy.lib', 'numpy.lib.stride_tricks']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
@@ -51,11 +54,25 @@ for mod_name in MOCK_MODULES:
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'numpydoc',
 ]
+
+numpydoc_show_class_members = False
+
+# Custom function to define some 'noisy' class members to skip
+def skip_member(app, what, name, obj, skip, options):
+    exclusions = ('Sndfile',  # special-members
+                  '__doc__', '__module__', '__dict__',  # undoc-members
+                  )
+    exclude = name in exclusions
+    return skip or exclude
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_member)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
