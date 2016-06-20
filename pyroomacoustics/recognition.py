@@ -30,19 +30,20 @@ class CircularGaussianEmission:
 
         if examples is None:
             
+            # Initialize to random components
             self.O = odim
             self.mu = np.random.normal(size=(self.K, self.O))
             self.Sigma = np.ones((self.K, self.O))*10
 
         else:
-            # Initialize using K-means
+            # Initialize all components to the same mean and variance of the data
             self.O = examples[0].shape[1]
 
             X = np.concatenate(examples, axis=0)
 
             self.mu = np.array([np.mean(X, axis=0)]*self.K)
             centered = X - self.mu[0]
-            self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))]*self.K)
+            self.Sigma = np.array([np.mean(centered**2, axis=0)]*self.K)
 
     def update_parameters(self, examples, gamma):
 
@@ -86,7 +87,7 @@ class GaussianEmission:
         self.K = nstates
 
         if examples is None:
-            # initialize to zero mean unit variance
+            # initialize to random mean unit variance
             self.O = odim
             self.mu = np.random.normal(size=(self.K, self.O))
             self.Sigma = np.random.normal(size=(self.K, self.O, self.O))
@@ -94,7 +95,7 @@ class GaussianEmission:
                 self.Sigma[k] = np.dot(self.Sigma[k].T, self.Sigma[k]) + np.eye(self.O)
 
         else:
-            # Initialize using K-means
+            # Initialize using mean and covariance of dataset
             self.O = examples[0].shape[1]
 
             X = np.concatenate(examples, axis=0)
@@ -153,63 +154,47 @@ class HMM:
         KxK transition matrix of the Markov chain
     pi : (ndarray)
         K dim vector of the initial probabilities of the Markov chain
-    emission_class : (emission class)
-        An Emission object class
     emission : (GaussianEmission or CircularGaussianEmission)
         An instance of emission_class
     model : string, optional
         The model used for the chain, can be 'full' or 'left-right'
     leftright_jum_max : int, optional
-
+        The number of non-zero upper diagonals in a 'left-right' model
     '''
 
-    def __init__(self, nstates, emission_class=CircularGaussianEmission, model='full', leftright_jump_max=3):
+    def __init__(self, nstates, emission, model='full', leftright_jump_max=3):
         '''
         Initialize a Hidden Markov Model with nstates and Gaussian observations 
         
         nstates: int
             The number of states in the Markov chain
-        emission_classe : emission class, optional
-            The emission class to use (defaul CircularGaussianEmission)
+        emission : emission object, optional
+            The emission object (CircularGaussianEmission or GaussianEmission)
         model : string, optional
             The model used for the chain, can be 'full' or 'left-right'
         leftright_jump_max : int
             The maximum jump length in the Left-Right chain model
         '''
 
-        self.K = nstates    # number of states
+        self.K = nstates            # number of states
+        self.emission = emission    # The observation parameters
 
         # The Markov chain parameters
         self.model = model
+
         self.leftright_jump_max = leftright_jump_max
         self.A = np.zeros((self.K, self.K)) # the state transition matrix
         self.pi = np.zeros((self.K))        # the initial distribution
 
-        # The observation parameters
-        self.emission_class = emission_class
-        self.emission = None
-
-    def initialize(self, odim, strategy='uniform'):
-        '''
-        Initialize all the parameters of the model according to some strategy
-
-        Parameters
-        ----------
-        odim : (int)
-            The dimension of the emission vectors
-        strategy : (string)
-            The initialization strategy to use (default 'uniform')
-        '''
-
-        # Initialize the HMM parameters
+        # Initialize the HMM parameters to some random values
         if self.model == 'full':
-            self.A[:,:] = np.random.uniform(size=(self.K,self.K))
-            self.pi[:] = np.random.uniform(size=(self.K))
+            self.A = np.random.uniform(size=(self.K,self.K))
+            self.pi = np.random.uniform(size=(self.K))
 
         elif self.model == 'left-right':
-            self.A[:,:] = np.triu(np.tril(np.random.uniform(size=(self.K,self.K)), k=self.leftright_jump_max))
-            self.A[:,:] += np.diag(np.sum(self.A[:,:], axis=1)*2)
-            self.pi[:] = np.zeros(self.K)
+            self.A = np.triu(np.tril(np.random.uniform(size=(self.K,self.K)), k=self.leftright_jump_max))
+            self.A += np.diag(np.sum(self.A[:,:], axis=1)*2)
+            self.pi = np.zeros(self.K)
             self.pi[0] = 1
 
         # Normalize the distributions
@@ -217,11 +202,7 @@ class HMM:
             row /= row.sum()
         self.pi /= self.pi.sum()
 
-        if self.emission is None:
-            self.emission = self.emission_class(self.K, odim=odim)
-
-
-    def fit(self, examples, tol=0.1, max_iter=10, init_func=None):
+    def fit(self, examples, tol=0.1, max_iter=10, verbose=False):
         '''
         Training of the HMM using the EM algorithm
 
@@ -237,17 +218,14 @@ class HMM:
         max_iter : (int)
             Alternatively the algorithm stops when a maximum number of
             iterations is reached (default 10)
+        verbose : bool, optional
+            When True, prints extra information about convergence
         '''
 
-        # Initialize all parameters
-        if init_func is None:
-            self.emission = self.emission_class(self.K, examples=examples) 
-            self.initialize(examples[0].shape[1])
-        else:
-            self.pi = np.zeros((self.K))
-            self.A = np.zeros((self.K, self.K))
-            self.emission = self.emission_class(self.K, odim=examples[0].shape[1])
-            init_func(self.A, self.pi, self.emission, examples)
+        # Make sure to normalize parameters that should be...
+        for row in self.A:
+            row[:] /= row.sum()
+        self.pi[:] /= self.pi.sum()
 
         # Run the EM algorithm
         loglikelihood_old = -np.inf # log-likelihood
@@ -301,17 +279,23 @@ class HMM:
             #--------------------------
             n_iter += 1
             epsilon = loglikelihood - loglikelihood_old
-            print('Iterations:', n_iter, 'epsilon:', epsilon, 'LL_new:', loglikelihood)
+            if verbose:
+                print('Iterations:', n_iter, 'epsilon:', epsilon, 'LL_new:', loglikelihood)
 
             # some checks here
             if epsilon < tol:
-                print('Tolerance reached: stopping.')
+                if verbose:
+                    print('Tolerance reached: stopping.')
                 break
             if  n_iter == max_iter:
-                print('Maximum iterations reached: stopping.')
+                if verbose:
+                    print('Maximum iterations reached: stopping.')
                 break
 
             loglikelihood_old = loglikelihood
+
+        # return the number of iterations performed
+        return n_iter
 
 
     def update_parameters(self, examples, gamma, xhi):
