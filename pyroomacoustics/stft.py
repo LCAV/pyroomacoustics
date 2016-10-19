@@ -47,7 +47,7 @@ def overlap_add(in1, in2, L):
 
 
 # Nicely plot the spectrogram
-def spectroplot(Z, N, hop, Fs, fdiv=None, tdiv=None,
+def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
                 vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
 
     plt.imshow(
@@ -59,21 +59,21 @@ def spectroplot(Z, N, hop, Fs, fdiv=None, tdiv=None,
     # label y axis correctly
     plt.ylabel('Freq [Hz]')
     yticks = plt.getp(plt.gca(), 'yticks')
-    plt.setp(plt.gca(), 'yticklabels', np.round(yticks / float(N) * Fs))
+    plt.setp(plt.gca(), 'yticklabels', np.round(yticks / float(N) * fs))
     if (fdiv is not None):
-        tick_lbls = np.arange(0, Fs / 2, fdiv)
-        tick_locs = tick_lbls * N / Fs
+        tick_lbls = np.arange(0, fs / 2, fdiv)
+        tick_locs = tick_lbls * N / fs
         plt.yticks(tick_locs, tick_lbls)
 
     # label x axis correctly
     plt.xlabel('Time [s]')
     xticks = plt.getp(plt.gca(), 'xticks')
-    plt.setp(plt.gca(), 'xticklabels', xticks / float(Fs) * hop)
+    plt.setp(plt.gca(), 'xticklabels', xticks / float(fs) * hop)
     if (tdiv is not None):
-        unit = float(hop) / Fs
+        unit = float(hop) / fs
         length = unit * Z.shape[1]
         tick_lbls = np.arange(0, int(length), tdiv)
-        tick_locs = tick_lbls * Fs / hop
+        tick_locs = tick_lbls * fs / hop
         plt.xticks(tick_locs, tick_lbls)
 
     if colorbar is True:
@@ -106,7 +106,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
 
     # reshape
     new_strides = (hop * x.strides[0], x.strides[0])
-    new_shape = ((len(x) - L) / hop + 1, L)
+    new_shape = ((len(x) - L) // hop + 1, L)
     y = as_strided(x, shape=new_shape, strides=new_strides)
 
     # add the zero-padding
@@ -159,15 +159,15 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 
 # FreqVec: given FFT size and sampling rate, returns a vector of real
 # frequencies
-def freqvec(N, Fs, centered=False):
+def freqvec(N, fs, centered=False):
     """
     N: FFT length
-    Fs: sampling rate of the signal
+    fs: sampling rate of the signal
     shift: False if the DC is at the beginning, True if the DC is centered
     """
 
     # Create a centered vector. The (1-N%2) is to correct for even/odd length
-    vec = np.arange(-N / 2 + (1 - N % 2), N / 2 + 1) * float(Fs) / float(N)
+    vec = np.arange(-N / 2 + (1 - N % 2), N / 2 + 1) * float(fs) / float(N)
 
     # Shift positive/negative frequencies if needed. Again (1-N%2) for
     # even/odd length
