@@ -345,7 +345,7 @@ def fractional_delay(t0):
 
     N = constants.get('frac_delay_length')
 
-    return np.hanning(N)*np.sinc(np.arange(N) - (N-1)/2 + t0)
+    return np.hanning(N)*np.sinc(np.arange(N) - (N-1)/2 - t0)
 
 
 def levinson(r, b):
