@@ -227,7 +227,7 @@ class SoundSource(object):
             if visibility[i] == 1:
                 time_ip = np.round(Fs*time[i])
                 time_fp = (Fs * time[i]) - time_ip
-                ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*u.fractional_delay(time_fp)
+                ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*fractional_delay(time_fp)
 
         return ir
         '''
