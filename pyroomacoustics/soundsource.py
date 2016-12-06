@@ -220,7 +220,7 @@ class SoundSource(object):
         ir = np.zeros(t.shape)
 
         # from utilities import lowPassDirac
-        import utilities as u
+        from .utilities import fractional_delay
         #return u.lowPassDirac(time[:, np.newaxis], alpha[:, np.newaxis], Fs, N).sum(axis=0)
 
         for i in range(time.shape[0]):

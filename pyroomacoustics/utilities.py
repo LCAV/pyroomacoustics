@@ -139,11 +139,11 @@ def time_dB(signal, Fs, bits=16):
 
 def spectrum(signal, Fs, N):
 
-    import stft
-    import windows
+    from .stft import stft, spectroplot
+    from .windows import hann
 
-    F = stft.stft(signal, N, N / 2, win=windows.hann(N))
-    stft.spectroplot(F.T, N, N / 2, Fs)
+    F = stft(signal, N, N / 2, win=hann(N))
+    spectroplot(F.T, N, N / 2, Fs)
 
 
 def dB(signal, power=False):
@@ -182,8 +182,8 @@ def comparePlot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, tit
     if title2 is not None:
         plt.title(title2)
 
-    import stft
-    import windows
+    from .stft import stft, spectroplot
+    from .windows import hann
 
     F1 = stft.stft(signal1, fft_size, fft_size / 2, win=windows.hann(fft_size))
     F2 = stft.stft(signal2, fft_size, fft_size / 2, win=windows.hann(fft_size))
