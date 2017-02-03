@@ -70,7 +70,7 @@ class Room(object):
         if (len(self.sources) > 0 and self.micArray is not None):
             self.compute_RIR()
         else:
-            self.rir = []
+            self.rir = None
             
         self.dim = walls[0].dim
         self.wallsId = {}
@@ -165,7 +165,7 @@ class Room(object):
             raise ValueError('Arg corners must be more than two 2D points.')
 
         if (geom.area(corners) <= 0):
-            cls.corners = corners[:,::-1]
+            corners = corners[:,::-1]
 
         cls.corners = corners
         cls.dim = corners.shape[0] 
@@ -416,7 +416,7 @@ class Room(object):
             # draw the microphones
             if (self.micArray is not None):
                 for mic in self.micArray.R.T:
-                    ax.scatter(mic[0], mic[1],
+                    ax.scatter(mic[0], mic[1], mic[2],
                             marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
 
@@ -786,7 +786,7 @@ class Room(object):
         if (self.dim == 2):
             p0 = np.array([np.amin(np.array([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[1]])
         if (self.dim == 3):
-            p0 = np.array([np.amin(np.array([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[1], p[2]])
+            p0 = np.array([np.amin(np.concatenate([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[1], p[2]])
         
         limitCase = False
         count = 0

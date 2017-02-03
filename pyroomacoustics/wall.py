@@ -100,5 +100,5 @@ class Wall(object):
         p = np.array(p)
         if (self.dim != p.shape[0]):
             raise NameError('Wall.side input error : dimension of p and the wall must match.')
-        
+
         return geom.side(p, self.corners[:,0], self.normal)
