@@ -222,7 +222,7 @@ class Room(object):
         for iw, wall in enumerate(self.walls[1:]):
             if not np.allclose(self.walls[iw].corners[:,1], wall.corners[:,0]):
                 ordered = False
-            floor_corners[:,iw] = wall.corners[:,0]
+            floor_corners[:,iw+1] = wall.corners[:,0]
         if not np.allclose(self.walls[-1].corners[:,1], self.walls[0].corners[:,0]):
             ordered = False
 
