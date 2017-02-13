@@ -32,7 +32,13 @@ class Wall(object):
             self.normal = np.array([(self.corners[:, 1] - self.corners[:, 0])[1], (-1)*(self.corners[:, 1] - self.corners[:, 0])[0]])
             self.dim = 2
         elif (self.corners.shape[0] == 3 and self.corners[0].shape[0] > 2):
-            self.normal = np.cross(self.corners[:, 1] - self.corners[:, 0], self.corners[:, 2] - self.corners[:, 0])
+            # compute the normal assuming the vertices are aranged counter
+            # clock wise when the normal defines "up"
+            i_min = np.argmin(self.corners[0,:])
+            i_prev = i_min - 1 if i_min > 0 else self.corners.shape[1] - 1
+            i_next = i_min + 1 if i_min < self.corners.shape[1] - 1 else 0
+            self.normal = np.cross(self.corners[:, i_next] - self.corners[:, i_min], 
+                                   self.corners[:, i_prev] - self.corners[:, i_min])
             self.dim = 3
 
             # Compute a basis for the plane and project the corners into that basis
@@ -66,10 +72,10 @@ class Wall(object):
         p2 = np.array(p2)
     
         if (self.dim == 2):
-            return geom.intersection2DSegments(self.corners[:,0], self.corners[:,1], p1, p2)[0]
+            return geom.intersection2DSegments(p1, p2, self.corners[:,0], self.corners[:,1])
             
         if (self.dim == 3):
-            return geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal, self.plane_point, self.plane_basis)[0]
+            return geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal, self.plane_point, self.plane_basis)
         
     def intersects(self, p1, p2):
         """
@@ -85,7 +91,7 @@ class Wall(object):
         """
         
         if (self.dim == 2):
-            intersection, borderOfWall, borderOfSegment = geom.intersection2DSegments(self.corners[:,0], self.corners[:,1], p1, p2)
+            intersection, borderOfSegment, borderOfWall = geom.intersection2DSegments(p1, p2, self.corners[:,0], self.corners[:,1])
 
         if (self.dim == 3):
             intersection, borderOfSegment, borderOfWall = geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal,

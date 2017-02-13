@@ -1,5 +1,7 @@
 __version__ = '1.0'
 
+from .c_package import libroom
+
 from .room import *
 from .beamforming import *
 from .soundsource import *

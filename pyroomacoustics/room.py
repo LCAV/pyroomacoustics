@@ -712,7 +712,7 @@ class Room(object):
             genWallId = int(source.walls[imageId])
 
             # compute the location of the reflection on the wall
-            intersection = self.walls[genWallId].intersection(p, np.array(source.images[:, imageId]))
+            intersection = self.walls[genWallId].intersection(p, np.array(source.images[:, imageId]))[0]
 
             # the reflection point needs to be visible from the image source that generates the ray
             if intersection is not None:
@@ -752,8 +752,10 @@ class Room(object):
             
                 # Test if the line segment intersects the current wall
                 # We ignore intersections at boundaries of the line of sight
-                intersects, borderOfWall, borderOfSegment = self.walls[wallId].intersects(source.images[:, imageId], p)
-                if (intersects and not borderOfSegment):
+                #intersects, borderOfWall, borderOfSegment = self.walls[wallId].intersects(source.images[:, imageId], p)
+                intersectionPoint, borderOfSegment, borderOfWall = self.walls[wallId].intersection(source.images[:, imageId], p)
+
+                if (intersectionPoint is not None and not borderOfSegment):
                     
                     # Only images with order > 0 have a generating wall. At this point, there is obstruction for source order 0.
                     if (source.orders[imageId] > 0):
@@ -762,7 +764,7 @@ class Room(object):
                         # opposite sides of the generating wall 
                         # We ignore the obstruction if it is inside the
                         # generating wall (it is what happens in a corner)
-                        intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
+                        #intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
                         intersectionPointSide = self.walls[genWallId].side(intersectionPoint)
                         if (intersectionPointSide != imageSide and intersectionPointSide != 0):
                             return True
