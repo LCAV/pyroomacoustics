@@ -35,6 +35,7 @@ class TestVisibilityShoeBox3D(TestCase):
     def test_visibility_east(self):
         computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([5, 3, 3]))
         expected = [1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,0,1,1,0,1,0,1,1,1,1,1,0,0,1,1,1,1]
+        I = np.where(computed != np.array(expected))
         self.assertTrue(all(computed == expected))
         
     def test_visibility_southWestBottomCorner(self):

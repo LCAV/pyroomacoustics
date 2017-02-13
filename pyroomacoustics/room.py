@@ -710,10 +710,14 @@ class Room(object):
         
             # Check if the line of sight intersects the generating wall
             genWallId = int(source.walls[imageId])
-            if self.walls[genWallId].intersects(p, np.array(source.images[:, imageId]))[0]:
 
+            # compute the location of the reflection on the wall
+            intersection = self.walls[genWallId].intersection(p, np.array(source.images[:, imageId]))
+
+            # the reflection point needs to be visible from the image source that generates the ray
+            if intersection is not None:
                     # Check visibility for the parent image by recursion
-                    return self.isVisible(source, self.walls[genWallId].intersection(p, np.array(source.images[:, imageId])), source.generators[imageId])
+                    return self.isVisible(source, intersection, source.generators[imageId])
             else:
                 return False
         else:

@@ -34,6 +34,18 @@ class Wall(object):
         elif (self.corners.shape[0] == 3 and self.corners[0].shape[0] > 2):
             self.normal = np.cross(self.corners[:, 1] - self.corners[:, 0], self.corners[:, 2] - self.corners[:, 0])
             self.dim = 3
+
+            # Compute a basis for the plane and project the corners into that basis
+            self.plane_point = np.array(self.corners[:,0])
+            self.plane_basis = np.zeros((3,2))
+            localx = np.array(self.corners[:,1]-self.plane_point)
+            self.plane_basis[:,0] = localx/np.linalg.norm(localx)
+            localy = np.array(np.cross(self.normal, localx))
+            self.plane_basis[:,1] = localy/np.linalg.norm(localy)
+            self.corners_2d = np.concatenate((
+                [ np.dot(self.corners.T - self.plane_point, self.plane_basis[:,0]) ], 
+                [ np.dot(self.corners.T - self.plane_point, self.plane_basis[:,1]) ]
+                ))
         else:
             raise NameError('Wall.__init__ input error : corners must be an np.array dim 2x2 or 3xN, N>2')
         self.normal = self.normal/np.linalg.norm(self.normal)
@@ -57,7 +69,7 @@ class Wall(object):
             return geom.intersection2DSegments(self.corners[:,0], self.corners[:,1], p1, p2)[0]
             
         if (self.dim == 3):
-            return geom.intersectionSegmentPolygonSurface(p1, p2, self.corners, self.normal)[0]
+            return geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal, self.plane_point, self.plane_basis)[0]
         
     def intersects(self, p1, p2):
         """
@@ -76,7 +88,8 @@ class Wall(object):
             intersection, borderOfWall, borderOfSegment = geom.intersection2DSegments(self.corners[:,0], self.corners[:,1], p1, p2)
 
         if (self.dim == 3):
-            intersection, borderOfSegment, borderOfWall = geom.intersectionSegmentPolygonSurface(p1, p2, self.corners, self.normal)
+            intersection, borderOfSegment, borderOfWall = geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal,
+                                                                                                 self.plane_point, self.plane_basis)
 
         if intersection is None:
             intersects = False

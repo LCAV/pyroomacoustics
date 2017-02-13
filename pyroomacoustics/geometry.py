@@ -116,34 +116,34 @@ def intersection2DSegments(a1, a2, b1, b2) :
     if (b2.shape[0] != 2):
         raise NameError('utilities.intersection2DSegments input error : b2 is a ndarray of size 2')
     
-    da = a2-a1
-    db = b2-b1
-    dp = a1-b1
-    dap = np.empty_like(da)
-    dap[0] = -da[1]
-    dap[1] = da[0]
-    denom = np.dot(dap, db)
-    num = np.dot(dap, dp)
-    if(denom == 0):
-        p = None
-        endpointA = False
-        endpointB = False
-    else:
-        p = np.array((num / denom.astype(float))*db + b1)
-        if (ccw3p(a1,a2,b1) != ccw3p(a1,a2,b2) and ccw3p(b1,b2,a1) != ccw3p(b1,b2,a2)):
+    if (ccw3p(a1,a2,b1) != ccw3p(a1,a2,b2) and ccw3p(b1,b2,a1) != ccw3p(b1,b2,a2)):
+
+        da = a2-a1
+        db = b2-b1
+        dap = np.empty_like(da)
+        dap[0] = -da[1]
+        dap[1] = da[0]
+        denom = np.dot(dap, db)
+
+        if denom != 0:
+
+            dp = a1-b1
+            num = np.dot(dap, dp)
+            p = np.array((num / denom.astype(float))*db + b1)
+
             if (np.allclose(p, a1) or np.allclose(p, a2)):
                 endpointA = True
             else:
                 endpointA = False
+
             if (np.allclose(p, b1) or np.allclose(p, b2)):
                 endpointB = True
             else:
                 endpointB = False
-        else:
-            p = None
-            endpointA = False
-            endpointB = False
-    return p, endpointA, endpointB
+
+            return p, endpointA, endpointB
+
+    return None, False, False
 
     
 def intersectionSegmentPlane(a1, a2, p, normal):
@@ -183,11 +183,13 @@ def intersectionSegmentPlane(a1, a2, p, normal):
     
     u = a2-a1
     w = a1-p
-    num = -np.dot(normal, w)
     denom = np.dot(normal, u)
+
     if(abs(denom) < eps):
         return None, False
+
     else:
+        num = -np.dot(normal, w)
         s = num/denom
         if(s<0 or s>1):
             return None, False
@@ -199,7 +201,7 @@ def intersectionSegmentPlane(a1, a2, p, normal):
             return a1+s*u, limitCase
 
 
-def intersectionSegmentPolygonSurface(a1, a2, corners, normal):
+def intersectionSegmentPolygonSurface(a1, a2, corners_2d, normal, plane_point, plane_basis):
     """
     Computes the intersection between a line segment and a polygon surface in 3D.
     
@@ -225,37 +227,33 @@ def intersectionSegmentPolygonSurface(a1, a2, corners, normal):
 
     a1 = np.array(a1)
     a2 = np.array(a2)
-    corners = np.array(corners)
+    corners_2d = np.array(corners_2d)
     normal = np.array(normal)
     if (a1.shape[0] != 3):
         raise NameError('utilities.intersectionSegmentPolygonSurface input error : a1 is a ndarray of size 3')
     if (a2.shape[0] != 3):
         raise NameError('utilities.intersectionSegmentPolygonSurface input error : a2 is a ndarray of size 3')
-    if (corners.shape[0] != 3 or corners.shape[1] < 3):
+    if (corners_2d.shape[0] != 2 or corners_2d.shape[1] < 3):
         raise NameError('utilities.intersectionSegmentPolygonSurface input error : corners is a 3xN ndarray, N>2')
     if (normal.shape[0] != 3):
         raise NameError('utilities.intersectionSegmentPolygonSurface input error : normal is a ndarray of size 3')
+    if (plane_point.shape[0] != 3):
+        raise NameError('utilities.intersectionSegmentPolygonSurface input error : point_plane is a ndarray of size 3')
+    if (plane_basis.shape != (3,2)):
+        raise NameError('utilities.intersectionSegmentPolygonSurface input error : point_basis is a ndarray of shape (3,2)')
     
     # Check if the segment intersects the plane formed by the surface
     # Get the intersection point if it is the case
-    p, segmentLimit = intersectionSegmentPlane(a1, a2, corners[:,0], normal)
+    p, segmentLimit = intersectionSegmentPlane(a1, a2, plane_point, normal)
     if p is None:
         return None, False, False
 
-    # Convert 3D coordinates to local 2D coordinates in the plane
-    local0 = np.array(corners[:,0])
-    localx = np.array(corners[:,1]-local0)
-    localx = localx/np.linalg.norm(localx)
-    localy = np.array(np.cross(normal, localx))
-    localy = localy/np.linalg.norm(localy)
-    localCorners = np.concatenate(([np.dot(corners.T-local0, localx)], [np.dot(corners.T-local0, localy)]))
-    localp = np.array([np.dot(p-local0, localx), np.dot(p-local0, localy)])
-    
+    # Project intersection in the plane basis
+    localp = np.dot(plane_basis.T, p - plane_point)
+
     # Check if the intersection point is in the polygon on the plane
-    inside, borderLimit = isInside2DPolygon(localp, localCorners)
-    if inside:
-        p = local0 + localp[0]*localx + localp[1]*localy
-    else:
+    inside, borderLimit = isInside2DPolygon(localp, corners_2d)
+    if not inside:
         p = None
     
     return p, segmentLimit, borderLimit
@@ -292,16 +290,49 @@ def isInside2DPolygon(p, corners):
     # (where xMin is the minimum x coordinate among the corners)
     p0 = np.array([np.amin(corners[0])-1, p[1]])
 
-    lastIntersection = 0
-    count = 0
-    limitCase = False
+    is_inside = False
+
+    j = corners.shape[1] - 1
     for i in range(corners.shape[1]):
-        intersection, limitA, limitB = intersection2DSegments(p0, p, corners[:, i], corners[:, (i+1)%corners.shape[1]])
-        if (limitA):
-            limitCase = True
-        if (intersection is not None):
-            count += 1
-    if ((count % 2 == 1) or limitCase):
-        return True, limitCase
+
+        # Check first if the point is on the segment
+        # We count the border as inside the polygon
+        c1c2p = ccw3p(corners[:,i], corners[:,j], p)
+        if c1c2p == 0:
+            # Here we know that p is co-linear with the two corners
+            x_down = min(corners[0,i], corners[0,j])
+            x_up = max(corners[0,i], corners[0,j])
+            y_down = min(corners[1,i], corners[1,j])
+            y_up = max(corners[1,i], corners[1,j])
+            if x_down <= p[0] and p[0] <= x_up and y_down <= p[1] and p[1] <= y_up:
+                return True, True
+
+
+        # Now check the intersection using standard algorithm
+        c1c2p0 = ccw3p(corners[:,i], corners[:,j], p0)
+        if c1c2p == c1c2p0:
+            # we know there is no intersection
+            j = i
+            continue
+
+        pp0c1 = ccw3p(p, p0, corners[:,i])
+        pp0c2 = ccw3p(p, p0, corners[:,j])
+        if pp0c1 == pp0c2:
+            # we know there is no intersection
+            j = i
+            continue
+
+        # At this point, we know there is an intersection
+
+        # the second condition takes care of horizontal edges and intersection on vertex
+        if p[1] < max(corners[1,i], corners[1,j]):
+            is_inside = not is_inside
+
+        # circular move around polygon
+        j = i
+
+    if is_inside:
+        return True, False
     else:
         return False, False
+
