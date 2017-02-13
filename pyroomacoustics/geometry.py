@@ -115,35 +115,51 @@ def intersection2DSegments(a1, a2, b1, b2) :
         raise NameError('utilities.intersection2DSegments input error : b1 is a ndarray of size 2')
     if (b2.shape[0] != 2):
         raise NameError('utilities.intersection2DSegments input error : b2 is a ndarray of size 2')
-    
-    if (ccw3p(a1,a2,b1) != ccw3p(a1,a2,b2) and ccw3p(b1,b2,a1) != ccw3p(b1,b2,a2)):
 
-        da = a2-a1
-        db = b2-b1
-        dap = np.empty_like(da)
-        dap[0] = -da[1]
-        dap[1] = da[0]
-        denom = np.dot(dap, db)
+    # First we weed out the simple cases where no intersection happens
+    # case 1
+    a1a2b1 = ccw3p(a1, a2, b1)
+    a1a2b2 = ccw3p(a1, a2, b2)
+    if a1a2b1 == a1a2b2:
+        return None, False, False
 
-        if denom != 0:
+    # case 2
+    b1b2a1 = ccw3p(b1, b2, a1)
+    b1b2a2 = ccw3p(b1, b2, a2)
+    if b1b2a1 == b1b2a2:
+        return None, False, False
 
-            dp = a1-b1
-            num = np.dot(dap, dp)
-            p = np.array((num / denom.astype(float))*db + b1)
+    da = a2-a1
+    db = b2-b1
+    dap = np.empty_like(da)
+    dap[0] = -da[1]
+    dap[1] = da[0]
+    denom = np.dot(dap, db)
 
-            if (np.allclose(p, a1) or np.allclose(p, a2)):
-                endpointA = True
-            else:
-                endpointA = False
+    # case 3
+    if denom == 0:
+        return None, False, False
 
-            if (np.allclose(p, b1) or np.allclose(p, b2)):
-                endpointB = True
-            else:
-                endpointB = False
+    # At this point, we know there is intersection
+    dp = a1-b1
+    num = np.dot(dap, dp)
+    # This is the intersection point
+    p = np.array((num / denom.astype(float))*db + b1)
 
-            return p, endpointA, endpointB
+    # Test if intersection is actually at one of a1 or a2
+    if b1b2a1 == 0 or b1b2a2 == 0:
+        endpointA = True
+    else:
+        endpointA = False
 
-    return None, False, False
+    # Test if intersection is actually at one of b1 or b2
+    if a1a2b1 == 0 or a1a2b2 == 0:
+        endpointB = True
+    else:
+        endpointB = False
+
+    return p, endpointA, endpointB
+
 
     
 def intersectionSegmentPlane(a1, a2, p, normal):
