@@ -5,6 +5,7 @@
 from __future__ import print_function
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 #import .beamforming as bf
 from . import beamforming as bf
@@ -12,7 +13,7 @@ from . import geometry as geom
 from .soundsource import SoundSource
 from .wall import Wall
 from .utilities import area, ccw3p
-from .parameters import constants
+from .parameters import constants, eps
 
 
 class Room(object):
@@ -77,6 +78,9 @@ class Room(object):
         for i in range(len(walls)):
             if self.walls[i].name is not None:
                 self.wallsId[self.walls[i].name] = i
+
+        # check which walls are part of the convex hull
+        self.convex_hull()
 
     @classmethod
     def shoeBox2D(
@@ -266,6 +270,51 @@ class Room(object):
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
+
+        # recheck which walls are in the convex hull
+        self.convex_hull()
+
+    def convex_hull(self):
+
+        ''' 
+        Finds the walls that are not in the convex hull
+        '''
+
+        all_corners = []
+        for wall in self.walls[1:]:
+            all_corners.append(wall.corners.T)
+        X = np.concatenate(all_corners, axis=0)
+        convex_hull = ConvexHull(X, incremental=True)
+
+        # Now we need to check which walls are on the surface
+        # of the hull
+        self.in_convex_hull = [False] * len(self.walls)
+        for i, wall in enumerate(self.walls):
+            # We check if the center of the wall is co-linear or co-planar
+            # with a face of the convex hull
+            point = np.mean(wall.corners, axis=1)
+
+            for simplex in convex_hull.simplices:
+                if point.shape[0] == 2:
+                    # check if co-linear
+                    p0 = convex_hull.points[simplex[0]]
+                    p1 = convex_hull.points[simplex[1]]
+                    if geom.ccw3p(p0, p1, point) == 0:
+                        # co-linear point add to hull
+                        self.in_convex_hull[i] = True
+
+                elif point.shape[0] == 3:
+                    # Check if co-planar
+                    p0 = convex_hull.points[simplex[0]]
+                    p1 = convex_hull.points[simplex[1]]
+                    p2 = convex_hull.points[simplex[2]]
+
+                    normal = np.cross(p1 - p0, p2 - p0)
+                    if np.abs(np.inner(normal, point - p0)) < eps:
+                        # co-planar point found!
+                        self.in_convex_hull[i] = True
+
+        self.obstructing_walls = [i for i in range(len(self.walls)) if not self.in_convex_hull[i]]
 
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
@@ -513,8 +562,8 @@ class Room(object):
         # add the direct source to the arrays
         images_lin = np.concatenate((np.array([position]).T, images_lin), axis=1)
         damping_lin = np.concatenate(([1], damping_lin))
-        generators_lin = np.concatenate(([np.nan], generators_lin+1))
-        walls_lin = np.concatenate(([np.nan], walls_lin))
+        generators_lin = np.concatenate(([-1], generators_lin+1)).astype(np.int)
+        walls_lin = np.concatenate(([-1], walls_lin)).astype(np.int)
         orders_lin = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
 
         # add a new source to the source list
@@ -681,8 +730,14 @@ class Room(object):
         
         visibilityCheck = np.zeros_like(source.images[0])-1
         
-        for imageId in range(len(visibilityCheck)-1, -1, -1):
-            visibilityCheck[imageId] = self.isVisible(source, p, imageId)
+        if self.isInside(np.array(p)):
+            # Only check for points that are in the room!
+            for imageId in range(len(visibilityCheck)-1, -1, -1):
+                visibilityCheck[imageId] = self.isVisible(source, p, imageId)
+        else:
+            # If point is outside, nothing is visible
+            for imageId in range(len(visibilityCheck)-1, -1, -1):
+                visibilityCheck[imageId] = False
             
         return visibilityCheck
             
@@ -736,16 +791,14 @@ class Room(object):
             True (1) :  obstructed
         """
         
-        #TODO optimization : use only walls inside the convex hull
-        
         imageId = int(imageId)
         if (np.isnan(source.walls[imageId])):
             genWallId = -1
         else:
             genWallId = int(source.walls[imageId])
-        imageSide = self.walls[genWallId].side(source.images[:, imageId])
         
-        for wallId in range(len(self.walls)):
+        # Only 'non-convex' walls can be obstructing
+        for wallId in self.obstructing_walls:
         
             # The generating wall can't be obstructive
             if(wallId != genWallId):
@@ -757,14 +810,16 @@ class Room(object):
 
                 if (intersectionPoint is not None and not borderOfSegment):
                     
-                    # Only images with order > 0 have a generating wall. At this point, there is obstruction for source order 0.
+                    # Only images with order > 0 have a generating wall. 
+                    # At this point, there is obstruction for source order 0.
                     if (source.orders[imageId] > 0):
+
+                        imageSide = self.walls[genWallId].side(source.images[:, imageId])
                     
                         # Test if the intersection point and the image are at
                         # opposite sides of the generating wall 
                         # We ignore the obstruction if it is inside the
                         # generating wall (it is what happens in a corner)
-                        #intersectionPoint = self.walls[wallId].intersection(source.images[:, imageId], p)
                         intersectionPointSide = self.walls[genWallId].side(intersectionPoint)
                         if (intersectionPointSide != imageSide and intersectionPointSide != 0):
                             return True
