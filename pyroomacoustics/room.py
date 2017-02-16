@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.spatial import ConvexHull
+import ctypes
 
 #import .beamforming as bf
 from . import beamforming as bf
@@ -14,6 +15,7 @@ from .soundsource import SoundSource
 from .wall import Wall
 from .utilities import area, ccw3p
 from .parameters import constants, eps
+from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 
 class Room(object):
@@ -314,7 +316,7 @@ class Room(object):
                         # co-planar point found!
                         self.in_convex_hull[i] = True
 
-        self.obstructing_walls = [i for i in range(len(self.walls)) if not self.in_convex_hull[i]]
+        self.obstructing_walls = np.array([i for i in range(len(self.walls)) if not self.in_convex_hull[i]], dtype=np.int32)
 
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
@@ -711,8 +713,59 @@ class Room(object):
                     print(int(source.walls[p]), end='')
                 p = source.generators[p]
             print()
+
+    def c_room(self, source, p):
+        """
+        Wrapper around the C libroom
+        """
+
+        # create the ctypes wall array
+        c_walls = (CWALL * len(self.walls))()
+        c_walls_array = ctypes.cast(c_walls, c_wall_p)
+        for cwall, wall in zip(c_walls_array, self.walls):
+
+            c_corners = wall.corners.ctypes.data_as(c_float_p)
+
+            cwall.dim=wall.dim
+            cwall.absorption=wall.absorption
+            cwall.normal=(ctypes.c_float * 3)(*wall.normal.tolist())
+            cwall.n_corners=wall.corners.shape[1]
+            cwall.corners=c_corners
+
+
+            if wall.dim == 3:
+                c_corners_2d = wall.corners_2d.ctypes.data_as(c_float_p)
+
+                cwall.origin=(ctypes.c_float * 3)(*wall.plane_point.tolist())
+                cwall.basis=(ctypes.c_float * 6)(*wall.plane_basis.flatten('F').tolist())
+                cwall.flat_corners=c_corners_2d
+
+        mics = np.array(p, dtype=np.float32)
+
+        is_visible = np.zeros((source.images.shape[1],), np.int32)
+
+        # create the ctypes Room struct
+        c_room = CROOM(
+                dim = self.dim,
+                n_walls = len(self.walls),
+                walls = c_walls_array,
+                n_sources = source.images.shape[1],
+                sources = source.images.ctypes.data_as(c_float_p),
+                parents = source.generators.ctypes.data_as(c_int_p),
+                gen_walls = source.walls.ctypes.data_as(c_int_p),
+                orders = source.orders.ctypes.data_as(c_int_p),
+                n_obstructing_walls = self.obstructing_walls.shape[0],
+                obstructing_walls = self.obstructing_walls.ctypes.data_as(c_int_p),
+                n_microphones = 1,
+                microphones = mics.ctypes.data_as(c_float_p),
+                is_visible = is_visible.ctypes.data_as(c_int_p),
+                )
+
+        libroom.check_visibility_all(ctypes.byref(c_room))
+
+        return is_visible
         
-    def checkVisibilityForAllImages(self, source, p):
+    def checkVisibilityForAllImages(self, source, p, use_libroom=True):
         """
         Checks visibility from a given point for all images of the given source.
         
@@ -732,14 +785,19 @@ class Room(object):
         
         if self.isInside(np.array(p)):
             # Only check for points that are in the room!
-            for imageId in range(len(visibilityCheck)-1, -1, -1):
-                visibilityCheck[imageId] = self.isVisible(source, p, imageId)
+            if use_libroom:
+                # Call the C routine that checks visibility
+                return self.c_room(source, p)
+            else:
+                for imageId in range(len(visibilityCheck)-1, -1, -1):
+                    visibilityCheck[imageId] = self.isVisible(source, p, imageId)
         else:
             # If point is outside, nothing is visible
             for imageId in range(len(visibilityCheck)-1, -1, -1):
                 visibilityCheck[imageId] = False
             
         return visibilityCheck
+
             
     def isVisible(self, source, p, imageId = 0):
         """

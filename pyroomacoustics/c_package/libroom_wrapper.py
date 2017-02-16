@@ -2,6 +2,7 @@
 import ctypes as ct
 
 c_float_p = ct.POINTER(ct.c_float)
+c_int_p = ct.POINTER(ct.c_int)
 
 class CWALL(ct.Structure):
     _fields_ = [
@@ -11,7 +12,7 @@ class CWALL(ct.Structure):
             ('n_corners', ct.c_int),
             ('corners', c_float_p),
             ('origin', ct.c_float * 3),
-            ('local_basis', ct.c_float * 6),
+            ('basis', ct.c_float * 6),
             ('flat_corners', c_float_p),
             ]
 
@@ -24,13 +25,14 @@ class CROOM(ct.Structure):
             ('walls', c_wall_p),
             ('n_sources', ct.c_int),
             ('sources', c_float_p),
-            ('generators', ct.c_int_p),
-            ('gen_walls', ct.c_int_p),
-            ('orders', ct.c_int_p),
-            ('obstructing_walls', ct.c_int_p),
+            ('parents', c_int_p),
+            ('gen_walls', c_int_p),
+            ('orders', c_int_p),
             ('n_obstructing_walls', ct.c_int),
-            ('microphones', c_float_p),
+            ('obstructing_walls', c_int_p),
             ('n_microphones', ct.c_int),
+            ('microphones', c_float_p),
+            ('is_visible', c_int_p),
             ]
 
 c_room_p = ct.POINTER(CROOM)

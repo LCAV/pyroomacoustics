@@ -6,7 +6,7 @@
 
 float eps = 1e-5;
 
-wall_t *new_wall(int dim, float absorption, int n_corners, float *corners)
+wall_t *new_wall(int dim, int n_corners, float *corners, float absorption)
 {
   int i;
 
@@ -50,10 +50,11 @@ wall_t *new_wall(int dim, float absorption, int n_corners, float *corners)
     for (i = dim ; i < dim * n_corners ; i += dim)
       if (wall->corners[i] < wall->corners[i_min])
         i_min = i;
-    i_prev = (i_min == 0) ? n_corners - dim : i_min - dim;
-    i_next = (i_min == n_corners - dim) ? 0 : i_min + dim;
+    // get previous and next, taking care of wraparound
+    i_prev = (i_min == 0) ? (n_corners - 1) * dim : i_min - dim;
+    i_next = (i_min == (n_corners - 1) * dim) ? 0 : i_min + dim;
 
-    // Save the (non-orthogonal basis for the wall plane
+    // Save the (non-orthogonal at this point) basis for the wall plane
     for (i = 0 ; i < dim ; i++)
     {
       wall->origin[i] = wall->corners[i_min+i];
@@ -67,20 +68,19 @@ wall_t *new_wall(int dim, float absorption, int n_corners, float *corners)
     // compute the normal with cross product
     cross(wall->basis, wall->basis + dim, wall->normal);
     
-
-    // compute the normal
-    cross(wall->basis, wall->basis + dim, wall->normal);
-
     // Project the 3d corners into 2d plane
     wall->flat_corners = (float *)malloc(2 * n_corners * sizeof(float));
     float tmp[3];
     for (i = 0 ; i < n_corners ; i++)
     {
       int d;
-      for (d = 0 ; d < dim ; d++)
-        tmp[d] = wall->corners[i * dim + d] - wall->origin[i];
+      // difference with origin
+      for (d = 0 ; d < 3 ; d++)
+        tmp[d] = wall->corners[i * 3 + d] - wall->origin[d];
+
+      // project to plane basis
       for (d = 0 ; d < 2 ; d++)
-        wall->flat_corners[i * 2 + d] = inner(tmp, wall->basis + d * dim, wall->dim);
+        wall->flat_corners[i * 2 + d] = inner(tmp, wall->basis + d * 3, 3);
     }
   }
 
@@ -158,7 +158,7 @@ int wall_side(wall_t *wall, float *p)
   for (i = 0 ; i < wall->dim ; i++)
     vec[i] = p[i] - wall->origin[i];
 
-  float ip = inner(vec, p, wall->dim);
+  float ip = inner(vec, wall->normal, wall->dim);
 
   if (ip > eps)
     return 1;
@@ -284,28 +284,30 @@ int intersection_segment_plane(float *a1, float *a2, float *p, float *normal, fl
 
 
   float num=0, denom=0;
-  float u[3];
+  float u[3], w[3];
   int i;
 
   for (i = 0 ; i < 3 ; i++)
-  {
     u[i] = a2[i] - a1[i];
-    num -= normal[i] * (a1[i] - p[i]);
-    denom += normal[i] * u[i];
-  }
+  denom = inner(normal, u, 3);
 
   if (fabsf(denom) > eps)
   {
+
+    for (i = 0 ; i < 3 ; i++)
+      w[i] = a1[i] - p[i];
+    num = -inner(normal, w, 3);
+
     float s = num / denom;
 
-    if (s >= 0 || s <= 1)
+    if (0-eps <= s && s <= 1+eps)
     {
       // compute intersection point
       for (i = 0 ; i < 3 ; i++)
         intersection[i] = s*u[i] + a1[i];
 
       // check limit case
-      if (s == 0 || s == 1)
+      if (fabsf(s) < eps || fabsf(s - 1) < eps)
         return 1;  // a1 or a2 belongs to plane
       else
         return 0;  // plane is between a1 and a2
@@ -349,7 +351,7 @@ int intersection_segment_wall_3d(float *a1, float *a2, wall_t *wall, float *inte
   float delta[3];
   float flat_intersection[2];
 
-  ret1 = intersection_segment_plane(a1, a2, wall->corners, wall->normal, intersection);
+  ret1 = intersection_segment_plane(a1, a2, wall->origin, wall->normal, intersection);
 
   if (ret1 == -1)
     return -1;  // there is no intersection

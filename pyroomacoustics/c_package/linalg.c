@@ -87,7 +87,7 @@ void print_vec(float *p, int dim)
   printf("[ ");
 
   for (i = 0 ; i < dim-1 ; i++)
-    printf("%f ", p[i]);
-  printf("%f ]\n", p[dim-1]);
+    printf("%f ", (double)p[i]);
+  printf("%f ]\n", (double)p[dim-1]);
 }
 

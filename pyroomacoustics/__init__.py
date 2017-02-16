@@ -1,6 +1,6 @@
 __version__ = '1.0'
 
-from .c_package import libroom
+from . import c_package
 
 from .room import *
 from .beamforming import *

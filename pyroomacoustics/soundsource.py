@@ -34,11 +34,11 @@ class SoundSource(object):
 
         if (images is None):
             # set to empty list if nothing provided
-            self.images = np.array([position]).T
+            self.images = np.asfortranarray(np.array([position], dtype=np.float32).T)
             self.damping = np.array([1.])
-            self.generators = np.array([np.nan])
-            self.walls = np.array([np.nan])
-            self.orders = np.array([0])
+            self.generators = np.array([-1], dtype=np.int32)
+            self.walls = np.array([-1], dtype=np.int32)
+            self.orders = np.array([0], dtype=np.int32)
 
         else:
             # we need to have damping factors for every image
@@ -59,11 +59,11 @@ class SoundSource(object):
                 raise NameError('Images and orders must have same shape')
 
 
-            self.images = images
+            self.images = np.array(images, order='F', dtype=np.float32)
             self.damping = damping
-            self.walls = walls
-            self.generators = generators
-            self.orders = orders
+            self.walls = np.array(walls, dtype=np.int32)
+            self.generators = np.array(generators, dtype=np.int32)
+            self.orders = np.array(orders, dtype=np.int32)
 
         # store the natural ordering for the images
         self.I = np.arange(self.images.shape[1])

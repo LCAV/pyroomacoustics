@@ -5,14 +5,24 @@
 #include "room.h"
 
 // All the test routines.
+int test_side();
 int test_ccw3p();
 int test_intersection_2d_segments();
+int test_intersection_segment_plane();
+int test_intersection_segment_wall_3d();
+int test_is_inside_2d_polygon();
 
 // Run them all in the main
 int main()
 {
   int ret;
   int all_ret = 0;
+
+  // Test side detection for point / line or point / plane
+  ret = test_side();
+  if (ret != 0)
+    printf("Test side fails with ret=%d\n", ret);
+  all_ret = all_ret || ret;
 
   // 3 points orientation (clockwise / counter-clockwise / colinear)
   ret = test_ccw3p();
@@ -23,7 +33,23 @@ int main()
   // 2d segments intersection
   ret = test_intersection_2d_segments();
   if (ret != 0)
-    printf("Test intersection_2D_segments fails with ret=%d\n", ret);
+    printf("Test intersection_2d_segments fails with ret=%d\n", ret);
+  all_ret = all_ret || ret;
+
+  // 3d plane segment intersection
+  ret = test_intersection_segment_plane();
+  if (ret != 0)
+    printf("Test intersection_segment_plane fails with ret=%d\n", ret);
+  all_ret = all_ret || ret;
+
+  ret = test_intersection_segment_wall_3d();
+  if (ret != 0)
+    printf("Test intersection_segment_wall_3d fails with ret=%d\n", ret);
+  all_ret = all_ret || ret;
+
+  ret = test_is_inside_2d_polygon();
+  if (ret != 0)
+    printf("Test is_inside_2d_polygon fails with ret=%d\n", ret);
   all_ret = all_ret || ret;
 
   // Final report
@@ -31,6 +57,53 @@ int main()
     printf("All tests succeeded.\n");
   else
     printf("There were some errors.\n");
+}
+
+int test_side()
+{
+  int ret, ret_e;
+  float p[2] = {-1, 0};
+  wall_t wall;
+
+  wall.dim = 2;
+  wall.origin[0] = 0; wall.origin[1] = 0;
+  wall.normal[0] = 1; wall.normal[1] = 0;
+  
+
+  /* 2d, left */
+  ret_e = -1;
+
+  ret = wall_side(&wall, p);
+  if (ret != ret_e)
+  {
+    printf("Test wall_side left returns %d (expected %d)\n", ret, ret_e);
+    return 1;
+  }
+
+  /* 2d, right */
+  p[0] = 1; p[1] = 0;
+  ret_e = 1;
+
+  ret = wall_side(&wall, p);
+  if (ret != ret_e)
+  {
+    printf("Test wall_side right returns %d (expected %d)\n", ret, ret_e);
+    return 2;
+  }
+
+  /* 2d, middle */
+  p[0] = 0; p[1] = 1;
+  ret_e = 0;
+
+  ret = wall_side(&wall, p);
+  if (ret != ret_e)
+  {
+    printf("Test wall_side middle returns %d (expected %d)\n", ret, ret_e);
+    return 3;
+  }
+
+  return 0;
+
 }
 
 int test_ccw3p()
@@ -256,7 +329,7 @@ int test_intersection_2d_segments()
 
 }
 
-int test_interesection_segment_plane()
+int test_intersection_segment_plane()
 {
   int ret, ret_e;
   float a1[3], a2[3], p[3], normal[3], intersection[3], inter_e[3];
@@ -273,7 +346,7 @@ int test_interesection_segment_plane()
   // intersection happens, points outside plane
   ret_e = 0;
 
-  a1[0] = -1; a1[1] = -1.; a1[1] = -1;
+  a1[0] = -1; a1[1] = -1.; a1[2] = -1;
   for (i = 0 ; i < 3 ; i++)
     a2[i] = 2 * inter_e[i] - a1[i];
 
@@ -289,7 +362,7 @@ int test_interesection_segment_plane()
   // intersection happens, points on plane
   ret_e = 1;
 
-  a1[0] = -1; a1[1] = -1.; a1[1] = -1;
+  a1[0] = -1; a1[1] = -1.; a1[2] = -1;
   for (i = 0 ; i < 3 ; i++)
     a2[i] = inter_e[i];
 
@@ -315,7 +388,7 @@ int test_interesection_segment_plane()
   inter_e[0] = p[0] + 0.5; inter_e[1] = p[1] + 0.5; inter_e[2] = p[2] - 1.;
   ret_e = -1;
 
-  a1[0] = -1; a1[1] = -1.; a1[1] = -1;
+  a1[0] = -1; a1[1] = -1.; a1[2] = -1;
   for (i = 0 ; i < 3 ; i++)
     a2[i] = 0.9 * inter_e[i] + a1[i];
 
@@ -327,12 +400,14 @@ int test_interesection_segment_plane()
   }
 
   // no intersection but on other side
-  a1[0] = -1; a1[1] = -1.; a1[1] = -1;
+  a1[0] = -1; a1[1] = -1.; a1[2] = -1;
   for (i = 0 ; i < 3 ; i++)
   {
     a2[i] = 1.1 * inter_e[i] + a1[i];
     a1[i] = 2 * inter_e[i] + a1[i];
   }
+  a1[0] = a1[1] = a1[2] = -3;
+  a2[0] = a2[1] = a2[2] = -4;
 
   ret = intersection_segment_plane(a2, a1, p, normal, intersection);
   if (ret != ret_e || distance(intersection, inter_e, 3) > eps)
@@ -343,8 +418,225 @@ int test_interesection_segment_plane()
     return 5;
   }
 
+  normal[0] = 1; normal[1] = normal[2] = 0;
+  p[0] = 3; p[1] = p[2] = 0;
+  a1[0] = -1.5; a1[1] = 1.2; a1[2] = 0.5;
+  a2[0] = 1.5; a2[1] = 1.2; a2[2] = 0.5;
+  ret_e = -1;
+  ret = intersection_segment_plane(a1, a2, p, normal, intersection);
+  if (ret != ret_e)
+  {
+    printf("Intersection seg/plane fails ret=%d (expects %d)\n", ret, ret_e);
+    return 6;
+  }
+
+
   return 0;
 
 }
 
+int test_intersection_segment_wall_3d()
+{
+  int ret, ret_e;
+  int test_result = 0;
+  float inters[3], inters_e[3], p1[3], p2[3];
+  float corners[12] = { 0, 0, 0,  4, 0, 0,  4, 4, 0,  0, 4, 0 };
+  wall_t *wall = new_wall(3, 4, corners, 1.);
+
+  /* through */
+  p1[0] = p1[1] = p1[2] = 2;
+  p2[0] = p2[1] = 2; p2[2] = -2;
+  ret_e = 0;
+  inters_e[0] = 2; inters_e[1] = 2; inters_e[2] = 0;
+
+  ret = intersection_segment_wall_3d(p1, p2, wall, inters);
+  
+  if (ret != ret_e || distance(inters_e, inters, 3) > eps)
+  {
+    printf("Intersection seg/wall 3d fails ret=%d (expects %d), [%f,%f,%f] but expects [%f,%f,%f]\n",
+        ret, ret_e, inters[0], inters[1], inters[2], 
+        inters_e[0], inters_e[1], inters_e[2]);
+
+    test_result = 1;
+    goto test_end;
+  }
+
+  /* touching */
+  ret_e = 1;
+
+  ret = intersection_segment_wall_3d(p1, inters_e, wall, inters);
+  
+  if (ret != ret_e || distance(inters_e, inters, 3) > eps)
+  {
+    printf("Intersection seg/wall 3d fails ret=%d (expects %d), [%f,%f,%f] but expects [%f,%f,%f]\n",
+        ret, ret_e, inters[0], inters[1], inters[2], 
+        inters_e[0], inters_e[1], inters_e[2]);
+
+    test_result = 2;
+    goto test_end;
+  }
+
+  /* border */
+  p1[0] = p1[1] = p2[0] = p2[1] = 0;
+  p1[2] = 2;
+  p2[2] = -2;
+  ret_e = 2;
+  inters_e[0] = inters_e[1] = inters_e[2] = 0;
+
+  ret = intersection_segment_wall_3d(p1, p2, wall, inters);
+
+  if (ret != ret_e || distance(inters_e, inters, 3) > eps)
+  {
+    printf("Intersection seg/wall 3d fails ret=%d (expects %d), [%f,%f,%f] but expects [%f,%f,%f]\n",
+        ret, ret_e, inters[0], inters[1], inters[2], 
+        inters_e[0], inters_e[1], inters_e[2]);
+
+    test_result = 3;
+    goto test_end;
+  }
+
+  /* touching border */
+  p1[0] = p1[1] = p2[0] = p2[1] = p2[2] = 0;
+  p1[2] = 2;
+  ret_e = 3;
+  inters_e[0] = inters_e[1] = inters_e[2] = 0;
+
+  ret = intersection_segment_wall_3d(p1, p2, wall, inters);
+
+  if (ret != ret_e || distance(inters_e, inters, 3) > eps)
+  {
+    printf("Intersection seg/wall 3d fails ret=%d (expects %d), [%f,%f,%f] but expects [%f,%f,%f]\n",
+        ret, ret_e, inters[0], inters[1], inters[2], 
+        inters_e[0], inters_e[1], inters_e[2]);
+
+    test_result = 4;
+    goto test_end;
+  }
+
+  /* miss */
+  p1[0] = p1[1] = p2[0] = p2[1] = -1;
+  p1[2] = 2;
+  p2[2] = -2;
+  ret_e = -1;
+  inters_e[0] = inters_e[1] = inters_e[2] = 0;
+
+  ret = intersection_segment_wall_3d(p1, p2, wall, inters);
+
+  if (ret != ret_e)
+  {
+    printf("Intersection seg/wall 3d fails ret=%d (expects %d)\n", ret, ret_e);
+
+    test_result = 5;
+    goto test_end;
+  }
+
+
+test_end:
+  free_wall(wall);
+  return test_result;
+
+}
+
+int test_is_inside_2d_polygon()
+{
+  int ret, ret_e;
+  float polygon1[8] = { 0, 0, 4, 0, 4, 4, 0, 4 };
+  float polygon2[12] = { 0, 0, 0, 1, 1, 1, 1, 2, 3, 2, 3, 0 };
+  float polygon3[10] = { 0, 0, 1, 1, 1, 2, 3, 2, 3, 0 };
+  float p[2];
+
+  /* inside */
+  p[0] = p[1] = 2;
+  ret_e = 0;
+
+  ret = is_inside_2d_polygon(p, polygon1, 4);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 1;
+  }
+
+  /* on border */
+  p[0] = 0; p[1] = 2;
+  ret_e = 1;
+
+  ret = is_inside_2d_polygon(p, polygon1, 4);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 2;
+  }
+
+  /* on corner */
+  p[0] = p[1] = 4;
+  ret_e = 1;
+
+  ret = is_inside_2d_polygon(p, polygon1, 4);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 3;
+  }
+
+  /* outside */
+  p[0] = p[1] = 5;
+  ret_e = -1;
+
+  ret = is_inside_2d_polygon(p, polygon1, 4);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 4;
+  }
+
+  /* horizontal wall aligned with point */
+  p[0] = 2; p[1] = 1;
+  ret_e = 0;
+
+  ret = is_inside_2d_polygon(p, polygon2, 6);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 5;
+  }
+
+  /* ray is going through vertex */
+  p[0] = 2; p[1] = 1;
+  ret_e = 0;
+
+  ret = is_inside_2d_polygon(p, polygon3, 5);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 6;
+  }
+
+  /* point is at the same height as top of polygon, but outside */
+  p[0] = 4; p[1] = 2;
+  ret_e = -1;
+
+  ret = is_inside_2d_polygon(p, polygon3, 5);
+
+  if (ret != ret_e)
+  {
+    printf("Point in polygon failed ret=%d (expects %d)\n", ret, ret_e);
+
+    return 7;
+  }
+
+
+  return 0;
+}
 

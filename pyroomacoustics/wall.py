@@ -26,8 +26,12 @@ class Wall(object):
         absorption = 1.,
         name = None):
         
-        self.corners = np.array(corners)
+        self.corners = np.array(corners, order='F', dtype=np.float32)
         self.absorption = absorption
+
+        # set first corner as origin of plane
+        self.plane_point = np.array(self.corners[:,0])
+
         if (self.corners.shape == (2, 2)):
             self.normal = np.array([(self.corners[:, 1] - self.corners[:, 0])[1], (-1)*(self.corners[:, 1] - self.corners[:, 0])[0]])
             self.dim = 2
@@ -42,8 +46,7 @@ class Wall(object):
             self.dim = 3
 
             # Compute a basis for the plane and project the corners into that basis
-            self.plane_point = np.array(self.corners[:,0])
-            self.plane_basis = np.zeros((3,2))
+            self.plane_basis = np.zeros((3,2), order='F', dtype=np.float32)
             localx = np.array(self.corners[:,1]-self.plane_point)
             self.plane_basis[:,0] = localx/np.linalg.norm(localx)
             localy = np.array(np.cross(self.normal, localx))
@@ -52,6 +55,7 @@ class Wall(object):
                 [ np.dot(self.corners.T - self.plane_point, self.plane_basis[:,0]) ], 
                 [ np.dot(self.corners.T - self.plane_point, self.plane_basis[:,1]) ]
                 ))
+            self.corners_2d = np.array(self.corners_2d, order='F', dtype=np.float32)
         else:
             raise NameError('Wall.__init__ input error : corners must be an np.array dim 2x2 or 3xN, N>2')
         self.normal = self.normal/np.linalg.norm(self.normal)
