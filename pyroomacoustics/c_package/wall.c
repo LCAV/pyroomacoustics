@@ -33,12 +33,17 @@ wall_t *new_wall(int dim, int n_corners, float *corners, float absorption)
   for (i = 0 ; i < dim * n_corners ; i++)
     wall->corners[i] = corners[i];
 
+
   if (dim == 2)
   {
     // compute normal (difference of 2 corners, swap x-y, change 1 sign)
     wall->normal[0] = wall->corners[3] - wall->corners[1];
     wall->normal[1] = wall->corners[0] - wall->corners[2];
     wall->flat_corners = NULL;
+
+    // Pick one of the corners as the origin of the wall
+    for (i = 0 ; i < dim ; i++)
+      wall->origin[i] = wall->corners[i];
   }
   else if (dim == 3)
   {

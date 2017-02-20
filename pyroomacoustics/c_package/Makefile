@@ -1,4 +1,5 @@
 CC = gcc
+#CFLAGS = -Wall -O3
 CFLAGS = -Wall -g
 INCLUDES =
 LFLAGS =

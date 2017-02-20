@@ -84,12 +84,14 @@ int is_obstructed(room_t *room, float *p, int image_id)
      False (0) : not obstructed
      True (1) :  obstructed
      */
-  int wall_id;
+  int ow;
   int gen_wall_id = room->gen_walls[image_id];
 
   // Check candidate walls for obstructions
-  for (wall_id = 0 ; wall_id < room->n_obstructing_walls ; wall_id++)
+  for (ow = 0 ; ow < room->n_obstructing_walls ; ow++)
   {
+    int wall_id = room->obstructing_walls[ow];
+
     // generating wall can't be obstructive
     if (wall_id != gen_wall_id)
     {
@@ -98,12 +100,13 @@ int is_obstructed(room_t *room, float *p, int image_id)
                                   room->sources + image_id * room->dim,
                                   p,
                                   intersection);
+
       // There is an intersection and it is distinct from segment endpoints
       if (ret == 0 || ret == 2)
       {
-        if (room->orders[image_id > 0])
+        if (room->orders[image_id] > 0)
         {
-          // Test if the intersection point and the image are at
+          // Test if the intersection point and the image are on
           // opposite sides of the generating wall 
           // We ignore the obstruction if it is inside the
           // generating wall (it is what happens in a corner)

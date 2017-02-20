@@ -732,11 +732,11 @@ class Room(object):
             cwall.n_corners=wall.corners.shape[1]
             cwall.corners=c_corners
 
+            cwall.origin=(ctypes.c_float * 3)(*wall.plane_point.tolist())
 
             if wall.dim == 3:
                 c_corners_2d = wall.corners_2d.ctypes.data_as(c_float_p)
 
-                cwall.origin=(ctypes.c_float * 3)(*wall.plane_point.tolist())
                 cwall.basis=(ctypes.c_float * 6)(*wall.plane_basis.flatten('F').tolist())
                 cwall.flat_corners=c_corners_2d
 

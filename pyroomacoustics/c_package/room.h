@@ -51,6 +51,18 @@ typedef struct room_struct
 }
 room_t;
 
+/*
+ * A structure for an image source in the tree
+ */
+typedef struct image_source_struct
+{
+  float loc[3];
+  int order;
+  int gen_wall;
+  struct image_source_struct *parent;
+}
+image_source_t;
+
 /* Linear algebra routines */
 float distance(float *p1, float *p2, int dim);
 float inner(float *p1, float *p2, int dim);
