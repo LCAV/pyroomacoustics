@@ -39,6 +39,7 @@ wall_t *new_wall(int dim, int n_corners, float *corners, float absorption)
     // compute normal (difference of 2 corners, swap x-y, change 1 sign)
     wall->normal[0] = wall->corners[3] - wall->corners[1];
     wall->normal[1] = wall->corners[0] - wall->corners[2];
+    normalize(wall->normal, wall->dim);
     wall->flat_corners = NULL;
 
     // Pick one of the corners as the origin of the wall
@@ -134,7 +135,7 @@ int ccw3p(float *p1, float *p2, float *p3)
 int wall_intersection(wall_t *wall, float *p1, float *p2, float *intersection)
 {
   /*
-   * Compute intersection between line segment and wall (2D or 3D)
+   * Compute intersection between line segment (p1, p2) and wall (2D or 3D)
    *
    * Returns
    * -1 : no intersection
@@ -151,6 +152,43 @@ int wall_intersection(wall_t *wall, float *p1, float *p2, float *intersection)
     fprintf(stderr, "Walls can only be 2D or 3D.\n");
 
   return -1;
+}
+
+int wall_reflect(wall_t *wall, float *p, float *p_reflected)
+{
+  /*
+   * Reflects point p across the wall 
+   *
+   * wall: a wall object (2d or 3d)
+   * p: a point in space
+   * p_reflected: a pointer to a buffer large enough to receive
+   *              the location of the reflected point
+   *
+   * Returns: 1 if reflection is in the same direction as the normal
+   *          0 if the point is within tolerance of the wall
+   *         -1 if the reflection is in the opposite direction of the normal
+   */
+
+  int i;
+  float distance_wall2p;
+
+  // vector from wall to point
+  for (i = 0 ; i < wall->dim ; i++)
+    p_reflected[i] = wall->origin[i] - p[i];
+
+  // projection onto normal axis
+  distance_wall2p = inner(wall->normal, p_reflected, wall->dim);
+
+  // compute reflected point
+  for (i = 0 ; i < wall->dim ; i++)
+    p_reflected[i] = p[i] + 2 * distance_wall2p * wall->normal[i];
+
+  if (distance_wall2p > eps)
+    return 1;
+  else if (distance_wall2p < -eps)
+    return -1;
+  else
+    return 0;
 }
 
 /* checks on which side of a wall a point is */

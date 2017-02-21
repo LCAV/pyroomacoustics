@@ -21,6 +21,27 @@ typedef struct wall_struct
 wall_t;
 
 /*
+ * A structure for an image source in the tree
+ */
+typedef struct image_source_struct
+{
+  float loc[3];
+  float attenuation;
+  int order;
+  int gen_wall;
+  struct image_source_struct *parent;
+}
+image_source_t;
+
+typedef struct is_linked_list_struct
+{
+  image_source_t is;
+  int *visible_mics;
+  struct is_linked_list_struct *next;
+}
+is_ll_t;
+
+/*
  * Structure for a room as a list of walls
  * with a few sources and microphones around
  */
@@ -36,6 +57,7 @@ typedef struct room_struct
   int *parents;
   int *gen_walls;
   int *orders;
+  float *attenuations;
 
   // List of obstructing walls
   int n_obstructing_walls;
@@ -51,18 +73,6 @@ typedef struct room_struct
 }
 room_t;
 
-/*
- * A structure for an image source in the tree
- */
-typedef struct image_source_struct
-{
-  float loc[3];
-  int order;
-  int gen_wall;
-  struct image_source_struct *parent;
-}
-image_source_t;
-
 /* Linear algebra routines */
 float distance(float *p1, float *p2, int dim);
 float inner(float *p1, float *p2, int dim);
@@ -77,6 +87,7 @@ wall_t *new_wall(int dim, int n_corners, float *corners, float absorption);
 void free_wall(wall_t *wall);
 int wall_side(wall_t *wall, float *p);
 int ccw3p(float *p1, float *p2, float *p3);
+int wall_reflect(wall_t *wall, float *p, float *p_reflected);
 int wall_intersection(wall_t *wall, float *p1, float *p2, float *intersection);
 int check_intersection_2d_segments(float *a1, float *a2, float *b1, float *b2);
 int intersection_2d_segments(float *a1, float *a2, float *b1, float *b2, float *p);
@@ -88,6 +99,11 @@ int is_inside_2d_polygon(float *p, float *corners, int n_corners);
 void check_visibility_all(room_t *room);
 int is_visible(room_t *room, float *p, int image_id);
 int is_obstructed(room_t *room, float *p, int image_id);
+
+int image_source_model(room_t *room, float *source_location, int max_order);
+void image_sources_dfs(room_t *room,  image_source_t *is, int max_order);
+int is_visible_dfs(room_t *room, float *p, image_source_t *image);
+int is_obstructed_dfs(room_t *room, float *p, image_source_t *image);
 
 void set_num_threads(int n);
 

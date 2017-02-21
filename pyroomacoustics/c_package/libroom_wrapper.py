@@ -28,6 +28,7 @@ class CROOM(ct.Structure):
             ('parents', c_int_p),
             ('gen_walls', c_int_p),
             ('orders', c_int_p),
+            ('attenuations', c_float_p),
             ('n_obstructing_walls', ct.c_int),
             ('obstructing_walls', c_int_p),
             ('n_microphones', ct.c_int),

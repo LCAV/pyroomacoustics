@@ -11,6 +11,7 @@ int test_intersection_2d_segments();
 int test_intersection_segment_plane();
 int test_intersection_segment_wall_3d();
 int test_is_inside_2d_polygon();
+int test_wall_reflection();
 
 // Run them all in the main
 int main()
@@ -50,6 +51,11 @@ int main()
   ret = test_is_inside_2d_polygon();
   if (ret != 0)
     printf("Test is_inside_2d_polygon fails with ret=%d\n", ret);
+  all_ret = all_ret || ret;
+
+  ret = test_wall_reflection();
+  if (ret != 0)
+    printf("Test wall_reflect fails with ret=%d\n", ret);
   all_ret = all_ret || ret;
 
   // Final report
@@ -636,6 +642,44 @@ int test_is_inside_2d_polygon()
     return 7;
   }
 
+
+  return 0;
+}
+
+int test_wall_reflection()
+{
+  float corners_3d[9] = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
+  float corners_2d[4] = { 1, 0, 0, 1 };
+  float p2d[2] = { -1, -1 };
+  float p3d[3] = { -1, -1, -1 };
+  float reflection_exp_2d[2] = { 2, 2 };
+  float reflection_exp_3d[3] = { 5./3., 5./3., 5./3. };
+  float reflection[3];
+  int ret, ret_e;
+
+  wall_t *wall2d = new_wall(2, 2, corners_2d, 1.);
+  wall_t *wall3d = new_wall(3, 3, corners_3d, 1.);
+
+  ret = wall_reflect(wall2d, p2d, reflection);
+  ret_e = 1;
+  if (ret != ret_e || distance(reflection, reflection_exp_2d, 2) > eps)
+  {
+    printf("Test wall_reflect fails ret=%d (expected %d) point=[%f, %f] (expected [%f, %f])\n",
+        ret, ret_e, reflection[0], reflection[1], reflection_exp_2d[0], reflection_exp_2d[1]);
+    return 1;
+  }
+
+  ret = wall_reflect(wall3d, p3d, reflection);
+  ret_e = 1;
+  if (ret != ret_e || distance(reflection, reflection_exp_3d, 3) > eps)
+  {
+    printf("Test wall_reflect fails ret=%d (expected %d) point=[%f, %f, %f] (expected [%f, %f, %f])\n",
+        ret, ret_e, reflection[0], reflection[1], reflection[2], reflection_exp_3d[0], reflection_exp_3d[1], reflection_exp_3d[2]);
+    return 2;
+  }
+
+  free_wall(wall2d);
+  free_wall(wall3d);
 
   return 0;
 }

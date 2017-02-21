@@ -84,6 +84,7 @@ class Room(object):
         # check which walls are part of the convex hull
         self.convex_hull()
 
+
     @classmethod
     def shoeBox2D(
             cls,
@@ -275,6 +276,7 @@ class Room(object):
 
         # recheck which walls are in the convex hull
         self.convex_hull()
+
 
     def convex_hull(self):
 
@@ -506,79 +508,13 @@ class Room(object):
         if (not self.isInside(np.array(position))):
             raise ValueError('The source must be added inside the room.')
 
-        # generate first order images
-        i, d, w = self.firstOrderImages(np.array(position))
-        images = [i]
-        damping = [d]
-        generators = [-np.ones(i.shape[1])]
-        wall_indices = [w]
-
-        # generate all higher order images up to max_order
-        o = 1
-        while o < self.max_order:
-            # generate all images of images of previous order
-            img = np.zeros((self.dim, 0))
-            dmp = np.array([])
-            gen = np.array([])
-            wal = np.array([])
-            for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
-                i, d, w = self.firstOrderImages(si)
-                img = np.concatenate((img, i), axis=1)
-                dmp = np.concatenate((dmp, d * sd))
-                gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
-                wal = np.concatenate((wal, w))
-
-            # sort
-            ordering = np.lexsort(img)
-            img = img[:, ordering]
-            dmp = dmp[ordering]
-            gen = gen[ordering]
-            wal = wal[ordering]
-                
-            # add to array of images
-            images.append(img)
-            damping.append(dmp)
-            generators.append(gen)
-            wall_indices.append(wal)
-
-            # next order
-            o += 1
-            
-        o_len = np.array([x.shape[0] for x in generators])
-        # correct the pointers for linear structure
-        for o in np.arange(2, len(generators)):
-            generators[o] += np.sum(o_len[0:o-1])
-            
-        # linearize the arrays
-        images_lin = np.concatenate(images, axis=1)
-        damping_lin = np.concatenate(damping)
-        generators_lin = np.concatenate(generators)
-        walls_lin = np.concatenate(wall_indices)
-        
-        # store the corresponding orders in another array
-        ordlist = []
-        for o in range(len(generators)):
-            ordlist.append((o+1)*np.ones(o_len[o]))
-        orders_lin = np.concatenate(ordlist)
-
-        # add the direct source to the arrays
-        images_lin = np.concatenate((np.array([position]).T, images_lin), axis=1)
-        damping_lin = np.concatenate(([1], damping_lin))
-        generators_lin = np.concatenate(([-1], generators_lin+1)).astype(np.int)
-        walls_lin = np.concatenate(([-1], walls_lin)).astype(np.int)
-        orders_lin = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
-
-        # add a new source to the source list
         self.sources.append(
-            SoundSource(
-                position,
-                images=images_lin,
-                damping=damping_lin,
-                generators=generators_lin,
-                walls=walls_lin,
-                orders=orders_lin,
-                signal=signal,
-                delay=delay))
+                SoundSource(
+                    position,
+                    signal=signal,
+                    delay=delay
+                    )
+                )
 
     def firstOrderImages(self, source_position):
 
@@ -600,17 +536,133 @@ class Room(object):
         return images, damping, wall_indices
 
 
+    def image_source_model(self, use_libroom=True):
+
+        self.visibility = []
+
+        for source in self.sources:
+
+            if not use_libroom:
+                # Then do it in pure python
+
+                # First, we will generate all the image sources
+
+                # generate first order images
+                i, d, w = self.firstOrderImages(np.array(source.position))
+                images = [i]
+                damping = [d]
+                generators = [-np.ones(i.shape[1])]
+                wall_indices = [w]
+
+                # generate all higher order images up to max_order
+                o = 1
+                while o < self.max_order:
+                    # generate all images of images of previous order
+                    img = np.zeros((self.dim, 0))
+                    dmp = np.array([])
+                    gen = np.array([])
+                    wal = np.array([])
+                    for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
+                        i, d, w = self.firstOrderImages(si)
+                        img = np.concatenate((img, i), axis=1)
+                        dmp = np.concatenate((dmp, d * sd))
+                        gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
+                        wal = np.concatenate((wal, w))
+
+                    # sort
+                    ordering = np.lexsort(img)
+                    img = img[:, ordering]
+                    dmp = dmp[ordering]
+                    gen = gen[ordering]
+                    wal = wal[ordering]
+                        
+                    # add to array of images
+                    images.append(img)
+                    damping.append(dmp)
+                    generators.append(gen)
+                    wall_indices.append(wal)
+
+                    # next order
+                    o += 1
+                    
+                o_len = np.array([x.shape[0] for x in generators])
+                # correct the pointers for linear structure
+                for o in np.arange(2, len(generators)):
+                    generators[o] += np.sum(o_len[0:o-1])
+                    
+                # linearize the arrays
+                images_lin = np.concatenate(images, axis=1)
+                damping_lin = np.concatenate(damping)
+                generators_lin = np.concatenate(generators)
+                walls_lin = np.concatenate(wall_indices)
+                
+                # store the corresponding orders in another array
+                ordlist = []
+                for o in range(len(generators)):
+                    ordlist.append((o+1)*np.ones(o_len[o]))
+                orders_lin = np.concatenate(ordlist)
+
+                # add the direct source to the arrays
+                source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
+                source.damping = np.concatenate(([1], damping_lin))
+                source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
+                source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
+                source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
+
+                # Then we will check the visibilty of the sources
+                self.visibility.append([])
+                for mic in self.micArray.R.T:
+                    self.visibility[-1].append(
+                            self.checkVisibilityForAllImages(source, mic, use_libroom=False)
+                            )
+
+
+            else:
+                # if libroom is available, use it!
+
+                c_room = self.make_c_room()
+
+                # copy microphone information to struct
+                mic = np.asfortranarray(self.micArray.R, dtype=np.float32)
+                c_room.n_microphones = ctypes.c_int(mic.shape[1])
+                c_room.microphones = mic.ctypes.data_as(c_float_p)
+
+                src = np.array(source.position, dtype=np.float32)
+
+                libroom.image_source_model(ctypes.byref(c_room), src.ctypes.data_as(c_float_p), self.max_order)
+
+                # Recover all the arrays as ndarray from the c struct
+                n_sources = c_room.n_sources
+
+                if (n_sources > 0):
+                    images = np.ctypeslib.as_array(c_room.sources, shape=(n_sources, self.dim))
+                    orders = np.ctypeslib.as_array(c_room.orders, shape=(n_sources,))
+                    gen_walls = np.ctypeslib.as_array(c_room.gen_walls, shape=(n_sources,))
+                    attenuations = np.ctypeslib.as_array(c_room.attenuations, shape=(n_sources,))
+                    is_visible = np.ctypeslib.as_array(c_room.is_visible, shape=(mic.shape[1], n_sources))
+                    # Copy to python managed memory
+                    source.images = np.asfortranarray(images.copy().T)
+                    source.orders = orders.copy()
+                    source.walls = gen_walls.copy()
+                    source.damping = attenuations.copy()
+
+                    self.visibility.append(is_visible.copy())
+
+                    # free the C malloc'ed memory
+                    libroom.free_sources(ctypes.byref(c_room))
+
+
     def compute_RIR(self):
         """
         Compute the room impulse response between every source and microphone
         """
         self.rir = []
 
-        for mic in self.micArray.R.T:
+        for m, mic in enumerate(self.micArray.R.T):
             h = []
-            for source in self.sources:
-                visibility = self.checkVisibilityForAllImages(source, mic)
-                h.append(source.getRIR(mic, visibility, self.fs, self.t0))
+            for s, source in enumerate(self.sources):
+                #visibility = self.checkVisibilityForAllImages(source, mic)
+                h.append(source.getRIR(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 
     def simulate(self, recompute_rir=False):
@@ -714,7 +766,7 @@ class Room(object):
                 p = source.generators[p]
             print()
 
-    def c_room(self, source, p):
+    def make_c_room(self):
         """
         Wrapper around the C libroom
         """
@@ -740,30 +792,16 @@ class Room(object):
                 cwall.basis=(ctypes.c_float * 6)(*wall.plane_basis.flatten('F').tolist())
                 cwall.flat_corners=c_corners_2d
 
-        mics = np.array(p, dtype=np.float32)
-
-        is_visible = np.zeros((source.images.shape[1],), np.int32)
-
         # create the ctypes Room struct
         c_room = CROOM(
                 dim = self.dim,
                 n_walls = len(self.walls),
                 walls = c_walls_array,
-                n_sources = source.images.shape[1],
-                sources = source.images.ctypes.data_as(c_float_p),
-                parents = source.generators.ctypes.data_as(c_int_p),
-                gen_walls = source.walls.ctypes.data_as(c_int_p),
-                orders = source.orders.ctypes.data_as(c_int_p),
                 n_obstructing_walls = self.obstructing_walls.shape[0],
                 obstructing_walls = self.obstructing_walls.ctypes.data_as(c_int_p),
-                n_microphones = 1,
-                microphones = mics.ctypes.data_as(c_float_p),
-                is_visible = is_visible.ctypes.data_as(c_int_p),
                 )
 
-        libroom.check_visibility_all(ctypes.byref(c_room))
-
-        return is_visible
+        return c_room
         
     def checkVisibilityForAllImages(self, source, p, use_libroom=True):
         """
@@ -781,13 +819,35 @@ class Room(object):
             1 (True) : visible
         """
         
-        visibilityCheck = np.zeros_like(source.images[0])-1
+        visibilityCheck = np.zeros_like(source.images[0], dtype=np.int32)-1
         
         if self.isInside(np.array(p)):
             # Only check for points that are in the room!
             if use_libroom:
                 # Call the C routine that checks visibility
-                return self.c_room(source, p)
+
+                # Create the C struct
+                c_room = self.make_c_room()
+
+                # copy source information to struct
+                c_room.n_sources = ctypes.c_int(source.images.shape[1])
+                c_room.sources = source.images.ctypes.data_as(c_float_p)
+                c_room.parents = source.generators.ctypes.data_as(c_int_p)
+                c_room.gen_walls = source.walls.ctypes.data_as(c_int_p)
+                c_room.orders = source.orders.ctypes.data_as(c_int_p)
+
+                # copy microphone information to struct
+                mic = np.array(p, dtype=np.float32)
+                c_room.n_microphones = ctypes.c_int(1)
+                c_room.microphones = mic.ctypes.data_as(c_float_p)
+
+                # add the array for the visibility information
+                c_room.is_visible = visibilityCheck.ctypes.data_as(c_int_p)
+
+                # Run the routine here
+                libroom.check_visibility_all(ctypes.byref(c_room))
+
+                return visibilityCheck
             else:
                 for imageId in range(len(visibilityCheck)-1, -1, -1):
                     visibilityCheck[imageId] = self.isVisible(source, p, imageId)

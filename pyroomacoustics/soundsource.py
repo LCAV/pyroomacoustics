@@ -230,11 +230,6 @@ class SoundSource(object):
                 ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*fractional_delay(time_fp)
 
         return ir
-        '''
-        import matplotlib.pyplot as plt
-        plt.stem(time, alpha)
-        plt.show()
-        '''
 
     def wallSequence(self,i):
         '''
