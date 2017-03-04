@@ -53,6 +53,7 @@ class Room(object):
         self.max_order = max_order
         self.sigma2_awgn = sigma2_awgn
 
+        # Compute the filter delay if not provided
         if t0 < (constants.get('frac_delay_length')-1)/float(fs)/2:
             self.t0 = (constants.get('frac_delay_length')-1)/float(fs)/2
         else:
@@ -74,8 +75,11 @@ class Room(object):
             self.compute_RIR()
         else:
             self.rir = None
-            
+
+        # Get the room dimension from that of the walls
         self.dim = walls[0].dim
+
+        # mapping between wall names and indices
         self.wallsId = {}
         for i in range(len(walls)):
             if self.walls[i].name is not None:
@@ -84,69 +88,6 @@ class Room(object):
         # check which walls are part of the convex hull
         self.convex_hull()
 
-
-    @classmethod
-    def shoeBox2D(
-            cls,
-            p1,
-            p2,
-            absorption=1.,
-            fs=8000,
-            t0=0.,
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None):
-        """
-        Creates a 2D "shoe box" room geometry (rectangle).
-        
-        :arg p1: (np.array dim 2) coordinates of the lower left corner of the room
-        :arg p2: (np.array dim 2) coordinates the upper right corner of the room
-        :arg absorption: (float) absorption factor reflection for all walls
-        
-        :returns: (Room) instance of a 2D shoe box room
-        """
-
-        walls = []
-        walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption, "south"))
-        walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption, "east"))
-        walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption, "north"))
-        walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption, "west"))
-
-        return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
-
-    @classmethod
-    def shoeBox3D(
-            cls,
-            p1,
-            p2,
-            absorption=1.,
-            fs=8000,
-            t0=0.,
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None):
-        """
-        Creates a 3D "shoe box" room geometry (rectangular cuboid).
-        
-        :arg p1: (np.array dim 3) coordinates of the lower left (on floor) corner of the room
-        :arg p2: (np.array dim 3) coordinates the upper right (on ceiling) corner of the room
-        :arg absorption: (float) absorption factor reflection for all walls
-        
-        :returns: (Room) instance of a 3D shoe box room
-        """
-
-        walls = []
-        walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "south"))
-        walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "east"))
-        walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "north"))
-        walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "west"))
-        walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption, "ceiling"))
-        walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption, "floor"))
-
-        return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
-        
     @classmethod
     def fromCorners(
             cls,
@@ -499,6 +440,7 @@ class Room(object):
                         plt.xlabel('Time [s]')
                     else:
                         plt.xlabel('Normalized frequency')
+
 
     def addMicrophoneArray(self, micArray):
         self.micArray = micArray
@@ -985,12 +927,14 @@ class Room(object):
 
 wall_dict = {'ground':0, 'south':1, 'west':2, 'north':3, 'east':4, 'ceilling':5}
 
-class ShoeBox3D(Room):
+class ShoeBox(Room):
     '''
     This class extends room for shoebox room in 3D space.
     '''
 
-    def __init__(self, p1, p2, Fs,
+    def __init__(self, 
+            p, p2=None, 
+            fs=8000,
             t0=0.,
             absorption=1.,
             max_order=1,
@@ -998,78 +942,43 @@ class ShoeBox3D(Room):
             sources=None,
             mics=None):
 
-        self.fs = Fs
-        self.t0 = t0
+        if len(p.shape) > 1:
+            raise ValueError("p must be a vector of length 2 or 3.")
 
-        p1 = np.array(p1, dtype='float64')
-        p2 = np.array(p2, dtype='float64')
+        self.dim = p.shape[0]
 
-        if p1.shape[0] != 3 or p2.shape[0] != 3:
-            raise NameError('Defining points must have 3 elements each.')
-        if p1.ndim != 1 or p2.ndim != 1:
-            raise NameError('Defining points must be 1 dimensional.')
-
-        # We order the faces as ground first and ceiling last
-        # walls order: [Ground, South, West, North, East, Ceilling]
-        # where South: Wall alligned with x axis with least y coordinate
-        #       West : Wall alligned with y axis with least x coordinate
-        #       North: Wall alligned with x axis with largest y coordinate
-        #       East : Wall alligned with y axis with largest x coordinate
-        self.dim = 3.
-        self.corners = np.array([p1, p1, p1, p2, p2, p2]).T
-        self.normals = np.array([[ 0.,  0., -1.,  0., 1., 0.],
-                                 [ 0., -1.,  0.,  1., 0., 0.],
-                                 [-1.,  0.,  0.,  0., 0., 1.]])
-
-        # Array of walls. This is a hack.
-        # For 2D rooms, every wall is a 2D vector.
-        # To generalize to 3D room this will need to be changed
-        # to a list of Wall objects. Wall objects are 2D or 3D polygons.
-        # For now, we just need the array to have self.walls.shape[1]
-        # to be defined because it is used in firstOrderImages function
-        self.walls = np.zeros(self.normals.shape)
-
-        # list of attenuation factors for the wall reflections
-        if isinstance(absorption, dict):
-            self.absorption = np.zeros(self.normals.shape[1])
-            for key,val in absorption.iteritems():
-                try:
-                    self.absorption[wall_dict[key]] = val
-                except KeyError:
-                    print('Warning: non-existent wall name. Ignoring.')
+        if p2 is None:
+            # if only one point is provided, place the other at origin
+            p2 = np.array(p)
+            p1 = np.zeros(self.dim)
         else:
-            absorption = np.array(absorption, dtype='float64')
-            if (absorption.ndim == 0):
-                self.absorption = absorption * np.ones(self.corners.shape[1])
-            elif (absorption.ndim > 1 or self.corners.shape[1] != absorption.shape[0]):
-                raise NameError('Absorption and corner must be the same size')
-            else:
-                self.absorption = absorption
+            p1 = np.array(p2)
+            p2 = np.array(p)
 
-        # a list of sources
-        if (sources is None):
-            self.sources = []
-        elif (sources is list):
-            self.sources = sources
+        if self.dim == 2:
+            walls = []
+            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption, "south"))
+            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption, "east"))
+            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption, "north"))
+            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption, "west"))
+
+        elif self.dim == 3:
+            walls = []
+            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "south"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "east"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "north"))
+            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "west"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption, "ceiling"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption, "floor"))
+
         else:
-            raise NameError('Room needs a source or list of sources.')
+            raise ValueError("Only 2D and 3D rooms are supported.")
 
-        # a microphone array
-        if (mics is not None):
-            self.micArray = None
-        else:
-            self.micArray = mics
+        Room.__init__(self, walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
-        # a maximum orders for image source computation
-        self.max_order = max_order
+    def extrude(self, height):
+        ''' Overload the extrude method from 3D rooms '''
 
-        # pre-compute RIR if needed
-        if (len(self.sources) > 0 and self.micArray is not None):
-            self.compute_RIR()
-        else:
-            self.rir = []
-
-        # ambiant additive white gaussian noise level
-        self.sigma2_awgn = sigma2_awgn
+        Room.extrude(self, np.array([0., 0., height]))
 
 
