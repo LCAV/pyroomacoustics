@@ -10,63 +10,6 @@ int num_threads = 1;
 // The head of the linked list of visible image sources
 is_ll_t *visible_sources = NULL;
 
-void insert_visible_source(is_ll_t *new_node)
-{
-  /*
-   * Add a new node to the linked list of visible sources
-   */
-  if (visible_sources == NULL)
-  {
-    visible_sources = new_node;
-    new_node->next = NULL;
-  }
-  else
-  {
-    new_node->next = visible_sources;
-    visible_sources = new_node;
-  }
-}
-
-void pop_visible_sources()
-{
-  /* Delete first element in linked list */
-  is_ll_t *tmp = visible_sources->next;
-  free(visible_sources->visible_mics);
-  free(visible_sources);
-  visible_sources = tmp;
-}
-
-void delete_visible_sources()
-{
-  /*
-   * Deletes the linked list of image sources
-   * and frees the memory
-   */
-
-  while (visible_sources != NULL)
-  {
-    pop_visible_sources();
-  }
-}
-
-int count_visible_sources(is_ll_t *node)
-{
-  if (node == NULL)
-    return 0;
-  else
-    return count_visible_sources(node->next) + 1;
-}
-
-void print_visible_sources(is_ll_t *node, int dim)
-{
-  /* print the linked list */
-  if (node != NULL)
-  {
-    print_visible_sources(node->next, dim);
-    print_vec(node->is.loc, dim);
-  }
-}
-
 void set_num_threads(int n)
 {
   num_threads = n;
@@ -191,7 +134,7 @@ int is_obstructed(room_t *room, float *p, int image_id)
 
 int image_source_model(room_t *room, float *source_location, int max_order)
 {
-  int i, d;
+  int d;
   image_source_t source;
 
   // That's the original source
@@ -204,8 +147,14 @@ int image_source_model(room_t *room, float *source_location, int max_order)
 
   image_sources_dfs(room, &source, max_order);
 
-  // count the number of image sources visible
-  room->n_sources = count_visible_sources(visible_sources);
+  // fill the sources array in room and return
+  return fill_sources(room, &visible_sources);
+}
+
+int fill_sources(room_t *room, is_ll_t **stack)
+{
+  int i, d;
+  room->n_sources = is_list_count(*stack);
 
   // Create linear arrays to store the image sources
   if (room->n_sources > 0)
@@ -224,18 +173,21 @@ int image_source_model(room_t *room, float *source_location, int max_order)
 
     // Copy from linked list to linear array (in reverse order)
     i = room->n_sources - 1;
-    while (visible_sources != NULL)
+    while (*stack != NULL)
     {
       for (d = 0 ; d < room->dim ; d++)
-        room->sources[i * room->dim + d] = visible_sources->is.loc[d];
-      room->orders[i] = visible_sources->is.order;
-      room->gen_walls[i] = visible_sources->is.gen_wall;
-      room->attenuations[i] = visible_sources->is.attenuation;
+        room->sources[i * room->dim + d] = (*stack)->is.loc[d];
+      room->orders[i] = (*stack)->is.order;
+      room->gen_walls[i] = (*stack)->is.gen_wall;
+      room->attenuations[i] = (*stack)->is.attenuation;
       for (d = 0 ; d < room->n_microphones ; d++)
-        room->is_visible[d * room->n_sources + i] = visible_sources->visible_mics[d];
+        if ((*stack)->visible_mics != NULL)
+          room->is_visible[d * room->n_sources + i] = (*stack)->visible_mics[d];
+        else
+          room->is_visible[d * room->n_sources + i] = 1;  // for shoebox room, all mics are visible
 
       // Remove top of linked list
-      pop_visible_sources();
+      is_list_pop(stack);
 
       i--;
     }
@@ -301,7 +253,8 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
     for (mic = 0 ; mic < room->n_microphones ; mic++)
       new_node->visible_mics[mic] = visible_mics[mic];
 
-    insert_visible_source(new_node);
+    //insert_visible_source(new_node);
+    is_list_insert(&visible_sources, new_node);
   }
 
   // If we reached maximal depth, stop

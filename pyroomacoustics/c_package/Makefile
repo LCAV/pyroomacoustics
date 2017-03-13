@@ -6,20 +6,28 @@ LFLAGS =
 LIBS = -lm
 
 LIB_MAIN = libroom.so
-LIB_SRC = wall.c linalg.c room.c
+LIB_HDR = room.h hash_table.h
+LIB_SRC = wall.c linalg.c room.c is_list.c shoebox.c
 LIB_OBJS = $(LIB_SRC:.c=.o)
 
 TEST_MAIN = tests
 TEST_SRC = tests.c
 TEST_OBJS = $(TEST_SRC:.c=.o)
 
-all: $(LIB_MAIN) $(TEST_MAIN)
+TEST_HASH_MAIN = test_hash_table
+TEST_HASH_SRC = test_hash_table.c
+TEST_HASH_OBJS = $(TEST_HASH_SRC:.c=.o)
+
+all: $(LIB_MAIN) $(TEST_MAIN) $(TEST_HASH_MAIN)
 
 $(LIB_MAIN): $(LIB_OBJS) 
 			$(CC) -shared $(CFLAGS) $(INCLUDES) -o $(LIB_MAIN) $(LIB_OBJS) $(LFLAGS) $(LIBS)
 
 $(TEST_MAIN): $(LIB_MAIN) $(TEST_OBJS) 
 			$(CC) -L. $(CFLAGS) $(INCLUDES) -o $(TEST_MAIN) $(TEST_OBJS) $(LFLAGS) $(LIBS) -lroom
+
+$(TEST_HASH_MAIN): $(LIB_MAIN) $(TEST_HASH_OBJS) 
+			$(CC) -L. $(CFLAGS) $(INCLUDES) -o $(TEST_HASH_MAIN) $(TEST_HASH_OBJS) $(LFLAGS) $(LIBS) -lroom
 
 share_lib: wall.o
 	gcc -shared -o room.so 

@@ -17,7 +17,6 @@ from .utilities import area, ccw3p
 from .parameters import constants, eps
 from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
-
 class Room(object):
     """
     This class represents a room instance.
@@ -517,12 +516,31 @@ class Room(object):
                     dmp = dmp[ordering]
                     gen = gen[ordering]
                     wal = wal[ordering]
-                        
-                    # add to array of images
-                    images.append(img)
-                    damping.append(dmp)
-                    generators.append(gen)
-                    wall_indices.append(wal)
+
+                    if isinstance(self, ShoeBox):
+                        '''
+                        For shoebox rooms, we can remove duplicate
+                        image sources from different wall orderings
+                        '''
+                        diff = np.diff(img, axis=1)
+                        ui = np.ones(img.shape[1], 'bool')
+                        ui[1:] = (diff != 0).any(axis=0)
+
+                        # add to array of images
+                        images.append(img[:, ui])
+                        damping.append(dmp[ui])
+                        generators.append(gen[ui])
+                        wall_indices.append(wal[ui])
+
+                    else:
+                        '''
+                        But in general, we have to keep everything
+                        '''
+                        # add to array of images
+                        images.append(img)
+                        damping.append(dmp)
+                        generators.append(gen)
+                        wall_indices.append(wal)
 
                     # next order
                     o += 1
@@ -552,11 +570,17 @@ class Room(object):
                 source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
 
                 # Then we will check the visibilty of the sources
+                # visibility is a list with first index for sources, and second for mics
                 self.visibility.append([])
                 for mic in self.micArray.R.T:
-                    self.visibility[-1].append(
-                            self.checkVisibilityForAllImages(source, mic, use_libroom=False)
-                            )
+                    if isinstance(self, ShoeBox):
+                        # All sources are visible in shoebox rooms
+                        self.visibility[-1].append(np.ones(source.images.shape[1], dtype=bool))
+                    else:
+                        # In general, we need to check
+                        self.visibility[-1].append(
+                                self.checkVisibilityForAllImages(source, mic, use_libroom=False)
+                                )
 
 
             else:
@@ -571,7 +595,23 @@ class Room(object):
 
                 src = np.array(source.position, dtype=np.float32)
 
-                libroom.image_source_model(ctypes.byref(c_room), src.ctypes.data_as(c_float_p), self.max_order)
+                if isinstance(self, ShoeBox):
+
+                    # create absorption list in correct order for shoebox algorithm
+                    absorption_list_shoebox = np.array([self.absorption_dict[d] for d in self.wall_names], dtype=np.float32)
+                    room_dim = np.array(self.shoebox_dim, dtype=np.float32)
+
+                    # Call the dedicated C routine for shoebox room
+                    libroom.image_source_shoebox(
+                            ctypes.byref(c_room), 
+                            src.ctypes.data_as(c_float_p), 
+                            room_dim.ctypes.data_as(c_float_p),
+                            absorption_list_shoebox.ctypes.data_as(c_float_p),
+                            self.max_order
+                            )
+                else:
+                    # Call the general image source generator
+                    libroom.image_source_model(ctypes.byref(c_room), src.ctypes.data_as(c_float_p), self.max_order)
 
                 # Recover all the arrays as ndarray from the c struct
                 n_sources = c_room.n_sources
@@ -925,15 +965,13 @@ class Room(object):
 
 # Room 3D
 
-wall_dict = {'ground':0, 'south':1, 'west':2, 'north':3, 'east':4, 'ceilling':5}
-
 class ShoeBox(Room):
     '''
     This class extends room for shoebox room in 3D space.
     '''
 
     def __init__(self, 
-            p, p2=None, 
+            p,
             fs=8000,
             t0=0.,
             absorption=1.,
@@ -942,34 +980,64 @@ class ShoeBox(Room):
             sources=None,
             mics=None):
 
+        p = np.array(p, dtype=np.float32)
+
         if len(p.shape) > 1:
             raise ValueError("p must be a vector of length 2 or 3.")
 
         self.dim = p.shape[0]
 
-        if p2 is None:
-            # if only one point is provided, place the other at origin
-            p2 = np.array(p)
-            p1 = np.zeros(self.dim)
+        # if only one point is provided, place the other at origin
+        p2 = np.array(p)
+        p1 = np.zeros(self.dim)
+
+        # record shoebox dimension in object
+        self.shoebox_dim = p2
+
+        # Keep the correctly ordered naming of walls
+        # This is the correct order for the shoebox computation later
+        # W/E is for axis x, S/N for y-axis, F/C for z-axis
+        self.wall_names = ['west', 'east', 'south', 'north']
+        if self.dim == 3:
+            self.wall_names += ['floor', 'ceiling']
+
+        # copy over the aborption coefficent
+        if isinstance(absorption, float):
+            self.absorption_dict = dict(zip(self.wall_names, [absorption] * len(self.wall_names)))
+            absorption = self.absorption_dict
+
+        self.absorption = []
+        if isinstance(absorption, dict):
+            self.absorption_dict = absorption
+            for d in self.wall_names:
+                if d in self.absorption_dict:
+                    self.absorption.append(self.absorption_dict[d])
+                else:
+                    raise KeyError(
+                            "Absorbtion needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            )
+
+            self.absorption = np.array(self.absorption)
         else:
-            p1 = np.array(p2)
-            p2 = np.array(p)
+            raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+
 
         if self.dim == 2:
             walls = []
-            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption, "south"))
-            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption, "east"))
-            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption, "north"))
-            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption, "west"))
+            # seems the order of walls is important here, don't change!
+            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
+            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
+            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
+            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
 
         elif self.dim == 3:
             walls = []
-            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "south"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "east"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "north"))
-            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption, "west"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption, "ceiling"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption, "floor"))
+            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
+            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
 
         else:
             raise ValueError("Only 2D and 3D rooms are supported.")

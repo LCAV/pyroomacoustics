@@ -73,7 +73,15 @@ typedef struct room_struct
 }
 room_t;
 
+/* image source linked lists methods */
+void is_list_insert(is_ll_t **head, is_ll_t *new_node);
+void is_list_pop(is_ll_t **head);
+void is_list_delete(is_ll_t **head);
+int is_list_count(is_ll_t *node);
+void is_list_print(is_ll_t *node, int dim);
+
 /* Linear algebra routines */
+void veccpy(float *v_dst, float *v_src, int dim);
 float distance(float *p1, float *p2, int dim);
 float inner(float *p1, float *p2, int dim);
 void cross(float *p1, float *p2, float *xprod);
@@ -104,6 +112,10 @@ int image_source_model(room_t *room, float *source_location, int max_order);
 void image_sources_dfs(room_t *room,  image_source_t *is, int max_order);
 int is_visible_dfs(room_t *room, float *p, image_source_t *image);
 int is_obstructed_dfs(room_t *room, float *p, image_source_t *image);
+int fill_sources(room_t *room, is_ll_t **stack);
+void free_sources(room_t *room);
+
+int image_source_shoebox(room_t *room, float *source, float *room_size, float *absorption, int max_order);
 
 void set_num_threads(int n);
 

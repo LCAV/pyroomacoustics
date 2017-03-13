@@ -4,6 +4,12 @@
 #include <math.h>
 #include <stdio.h>
 
+void veccpy(float *v_dst, float *v_src, int dim)
+{
+  for (int i = 0 ; i < dim ; i++)
+    v_dst[i] = v_src[i];
+}
+
 float distance(float *p1, float *p2, int dim)
 {
   float d = 0.;
