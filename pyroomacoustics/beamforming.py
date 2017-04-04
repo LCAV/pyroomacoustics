@@ -375,23 +375,33 @@ class Beamformer(MicrophoneArray):
         if X.ndim == 1:
             X = source[:, np.newaxis]
 
+        omega = 2 * np.pi * frequency
+
         # normalize for far-field if requested
         if (ff):
-            X -= self.center
-            Xn = np.sqrt(np.sum(X**2, axis=0))
-            X *= constants.get('ffdist')/Xn
-            X += self.center
+            # unit vectors pointing towards sources
+            p = (X - self.center)
+            p /= np.linalg.norm(p)
 
-        D = distance(self.R, X)
-        omega = 2 * np.pi * frequency
+            # The projected microphone distances on the unit vectors
+            D = np.dot(self.R.T, p)
+
+            # subtract minimum in each column
+            D -= np.min(D)
+
+        else:
+
+            D = distance(self.R, X)
+
+        phase = np.exp(-1j * omega * D / constants.get('c'))
 
         if attn:
             # TO DO 1: This will mean slightly different absolute value for
             # every entry, even within the same steering vector. Perhaps a
             # better paradigm is far-field with phase carrier.
-            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.get('c'))
+            return 1. / (4 * np.pi) / D * phase
         else:
-            return np.exp(-1j * omega * D / constants.get('c'))
+            return phase
 
     def response(self, phi_list, frequency):
 
