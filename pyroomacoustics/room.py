@@ -16,7 +16,12 @@ from .wall import Wall
 from .utilities import area, ccw3p
 from .parameters import constants, eps
 
-from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
+try:
+    from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
+    libroom_available = True
+except ImportError:
+    libroom_available = False
+
 
 class Room(object):
     """
@@ -484,7 +489,8 @@ class Room(object):
 
         for source in self.sources:
 
-            if not use_libroom:
+            # Fall back to pure python if requested or C module unavailable
+            if not use_libroom or not libroom_available:
                 # Then do it in pure python
 
                 # First, we will generate all the image sources
@@ -582,6 +588,20 @@ class Room(object):
                         self.visibility[-1].append(
                                 self.checkVisibilityForAllImages(source, mic, use_libroom=False)
                                 )
+                self.visibility[-1] = np.array(self.visibility[-1])
+
+                I = np.zeros(self.visibility[-1].shape[1], dtype=bool)
+                for mic_vis in self.visibility[-1]:
+                    I = np.logical_or(I, mic_vis == 1)
+
+                # Now we can get rid of the superfluous images
+                source.images = source.images[:,I]
+                source.damping = source.damping[I]
+                source.generators = source.generators[I]
+                source.walls = source.walls[I]
+                source.orders = source.orders[I]
+
+                self.visibility[-1] = self.visibility[-1][:,I]
 
 
             else:
@@ -637,6 +657,12 @@ class Room(object):
 
                     # free the C malloc'ed memory
                     libroom.free_sources(ctypes.byref(c_room))
+
+                    # We need to check that microphones are indeed in the room
+                    for m in range(self.micArray.R.shape[1]):
+                        # if not, it's not visible from anywhere!
+                        if not self.isInside(self.micArray.R[:,m]):
+                            self.visibility[-1][m,:] = 0
 
 
     def compute_RIR(self):
