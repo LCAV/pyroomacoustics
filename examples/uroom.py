@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import numpy as np
 import pyroomacoustics as pra
@@ -12,7 +13,7 @@ max_order_sim = 2
 sigma2_n = 5e-7
 
 corners = np.array([[0,5,5,3,3,2,2,0], [0,0,5,5,2,2,5,5]])
-room1 = pra.Room.fromCorners(
+room = pra.Room.fromCorners(
     corners,
     absorption,
     fs,
@@ -20,23 +21,17 @@ room1 = pra.Room.fromCorners(
     max_order_sim,
     sigma2_n)
     
-room1.addSource([1, 4], signal=None, delay=0, compute_images=True)
-mics = pra.MicrophoneArray(np.array([[4], [4]]),fs)
-room1.addMicrophoneArray(mics)
+room.addSource([1, 4], signal=None, delay=0)
+mics = pra.MicrophoneArray(np.array([[4, 4], [2.5, 1], [2.5, 4]]).T,fs)
+room.addMicrophoneArray(mics)
 
+room.image_source_model(use_libroom=False)
 
-computed = room1.checkVisibilityForAllImages(room1.sources[0], mics.R[:,0])
-expected = [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+ordering = np.lexsort(room.sources[0].images)
 
-print expected
-print computed
-print room1.sources[0].damping
+print("Image sources:", room.sources[0].images[:,ordering])
+print("Visibles:", room.visibility[0][:,ordering])
 
-room1.plot(img_order=2)
-
-
-room1.image_source_model()
-print room1.sources[0].images
-print room1.sources[0].damping
+room.plot(img_order=2)
 
 plt.show()
