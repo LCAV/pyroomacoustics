@@ -15,6 +15,7 @@ from .soundsource import SoundSource
 from .wall import Wall
 from .utilities import area, ccw3p
 from .parameters import constants, eps
+
 from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):
@@ -617,16 +618,20 @@ class Room(object):
                 n_sources = c_room.n_sources
 
                 if (n_sources > 0):
+
+                    # numpy wrapper around C arrays
                     images = np.ctypeslib.as_array(c_room.sources, shape=(n_sources, self.dim))
                     orders = np.ctypeslib.as_array(c_room.orders, shape=(n_sources,))
                     gen_walls = np.ctypeslib.as_array(c_room.gen_walls, shape=(n_sources,))
                     attenuations = np.ctypeslib.as_array(c_room.attenuations, shape=(n_sources,))
                     is_visible = np.ctypeslib.as_array(c_room.is_visible, shape=(mic.shape[1], n_sources))
+
                     # Copy to python managed memory
                     source.images = np.asfortranarray(images.copy().T)
                     source.orders = orders.copy()
                     source.walls = gen_walls.copy()
                     source.damping = attenuations.copy()
+                    source.generators = -np.ones(source.walls.shape)
 
                     self.visibility.append(is_visible.copy())
 

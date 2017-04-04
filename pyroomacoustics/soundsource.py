@@ -135,7 +135,9 @@ class SoundSource(object):
                     damping=self.damping[I],
                     orders=self.orders[I],
                     signal=self.signal,
-                    delay=self.delay)
+                    delay=self.delay,
+                    generators=self.generators[I],
+                    walls=self.walls[I])
             else:
                 s = SoundSource(
                     self.position,
@@ -143,7 +145,9 @@ class SoundSource(object):
                     damping=self.damping[self.I[index]],
                     orders=self.orders[self.I[index]],
                     signal=self.signal,
-                    delay=self.delay)
+                    delay=self.delay,
+                    generators=self.generators[self.I[index]],
+                    walls=self.walls[self.I[index]])
         else:
             s = SoundSource(
                 self.position,
@@ -151,7 +155,9 @@ class SoundSource(object):
                 damping=self.damping[index],
                 orders=self.orders[index],
                 signal=self.signal,
-                delay=self.delay)
+                delay=self.delay,
+                generators=self.generators[index],
+                walls=self.walls[index])
 
         return s
 

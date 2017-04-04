@@ -14,8 +14,7 @@ max_order_sim = 2
 sigma2_n = 5e-7
 
 room_dim = [6, 6, 6]
-room1 = pra.Room.shoeBox3D(
-    [0,0,0],
+room1 = pra.ShoeBox(
     room_dim,
     absorption,
     fs,
