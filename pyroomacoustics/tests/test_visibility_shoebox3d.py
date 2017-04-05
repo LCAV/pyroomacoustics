@@ -90,7 +90,6 @@ class TestVisibilityShoeBox3D(TestCase):
         self.assertTrue(np.allclose(images_found[:,visibilities[0,:]], sources[:,visible_middle]))
 
     def test_visibility_east(self):
-        print visibilities[0,:]
         self.assertTrue(np.allclose(images_found[:,visibilities[1,:]], sources[:,visible_east]))
         
     def test_visibility_southWestBottomCorner(self):

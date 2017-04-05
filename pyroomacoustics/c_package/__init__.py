@@ -11,4 +11,4 @@ except OSError:
     libroom = False
     libroom_available = False
 
-from libroom_wrapper import *
+from .libroom_wrapper import *
