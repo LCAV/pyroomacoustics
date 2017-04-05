@@ -18,11 +18,15 @@ src_dir = 'pyroomacoustics/c_package/'
 files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
 
 libroom_ext = Extension('pyroomacoustics.c_package.libroom',
-                    define_macros = [('MAJOR_VERSION', '0'),
-                                     ('MINOR_VERSION', '1')],
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + f for f in files],
                     include_dirs=[src_dir])
+
+libroom_lib = ('pyroomacoustics.c_package.libroom', {
+    'sources': [src_dir + f for f in files],
+    'extra_compile_args': ['-Wall', '-O3', '-std=c99'],
+    'include_dirs':[src_dir]
+    })
 
 here = path.abspath(path.dirname(__file__))
 
@@ -93,9 +97,9 @@ try:
     # Try to build everything first
     setup(**setup_kwargs)
 
-except Error:
+except:
     # Retry without the C module
-    print("Error. Probably build of C extension failed. Retrying without the module.")
+    print("Error. Probably building C extension failed. Retrying without.")
     setup_kwargs.pop('ext_modules')
     setup(**setup_kwargs)
     

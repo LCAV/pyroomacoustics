@@ -16,12 +16,7 @@ from .wall import Wall
 from .utilities import area, ccw3p
 from .parameters import constants, eps
 
-try:
-    from .c_package import CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
-    libroom_available = True
-except ImportError:
-    libroom_available = False
-
+from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):
     """
@@ -787,6 +782,10 @@ class Room(object):
         Wrapper around the C libroom
         """
 
+        # exit if libroom is not available
+        if not libroom_available:
+            return
+
         # create the ctypes wall array
         c_walls = (CWALL * len(self.walls))()
         c_walls_array = ctypes.cast(c_walls, c_wall_p)
@@ -839,7 +838,7 @@ class Room(object):
         
         if self.isInside(np.array(p)):
             # Only check for points that are in the room!
-            if use_libroom:
+            if use_libroom and libroom_available:
                 # Call the C routine that checks visibility
 
                 # Create the C struct

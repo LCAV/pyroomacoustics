@@ -28,6 +28,8 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib nose
   - python setup.py install
 
-# Run test
+# Run test twice, without C lib, and with C lib
 script:
+  - nosetests
+  - python setup.py build_ext --inplace
   - nosetests
