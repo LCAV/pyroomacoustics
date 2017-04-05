@@ -10,7 +10,7 @@ try:
     match_files = glob.glob(path + "/libroom*so")
     libroom = _ctypes.cdll.LoadLibrary(match_files[0])
     libroom_available = True
-except OSError:
+except:
     libroom = False
     libroom_available = False
 
