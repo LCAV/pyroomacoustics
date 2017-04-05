@@ -1,3 +1,13 @@
+'''
+In this example, we construct an L-shape 3D room. We use the same floor as in
+the 2D example and extrude a 3D room from the floor with a given height.  This
+is a simple way to create 3D rooms that fits most situations.  Then, we place
+one source and two microphones in the room and compute the room impulse
+responses.
+
+In this example, we also compare the speed of the C extension module to
+that of the pure python code.
+'''
 from __future__ import print_function
 
 import numpy as np
@@ -5,25 +15,11 @@ import matplotlib.pyplot as plt
 import time
 import pyroomacoustics as pra
 
-room_ll = [-1,-1]
-room_ur = [1,1]
-src_pos = [0,0]
-mic_pos = [0.5, 0.1]
-
-max_order = 7
-absorption = 0.85
-
-# Create a 4 by 6 metres shoe box room
+# Create the 2D L-shaped room from the floor polygon
 pol = 4 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
-#pol = 3 * np.array([[1,0], [1,0.5], [2,0.5], [2,1], [0,1], [0,0]]).T
+room = pra.Room.fromCorners(pol, fs=16000, max_order=6, absorption=0.85)
 
-# U-room
-#pol = 3 * np.array([[0,0], [3,0], [3,2], [2,2], [2,1], [1,1], [1,2], [0,2],]).T
-
-
-room = pra.Room.shoeBox2D([0, 0], [6, 4], fs=16000, max_order=max_order, absorption=absorption)
-room = pra.Room.fromCorners(pol, fs=16000, max_order=max_order, absorption=absorption)
-
+# Create the 3D room by extruding the 2D by 3 meters
 room.extrude(3.)
 
 # Add a source somewhere in the room
@@ -31,10 +27,14 @@ room.addSource([1.5, 1.2, 0.5])
 
 # Create a linear array beamformer with 4 microphones
 # Place an array of two microphones
-R = np.array([[3., 2.2], [2.25, 2.1], [0.6, 0.55]])
+R = np.array([[3.,   2.2], 
+              [2.25, 2.1], 
+              [0.6,  0.55]])
 room.addMicrophoneArray(pra.MicrophoneArray(R, room.fs))
 
 then = time.time()
+# a parameter controls the use of the c-extension
+# for the computation of image sources
 room.image_source_model(use_libroom=False)
 t_pure_python = time.time() - then
 
@@ -50,6 +50,7 @@ room.compute_RIR()
 room.plotRIR()
 plt.title('libroom')
 
+#show the room and the image sources
 room.plot()
 
 print("Time to compute in Python:", t_pure_python)

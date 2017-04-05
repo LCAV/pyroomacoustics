@@ -1,4 +1,8 @@
 *.pyc
 *.swp
+*.o
+*.vim
 build/
 docs/_build
+dist/
+local_examples/

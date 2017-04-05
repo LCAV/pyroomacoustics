@@ -76,6 +76,9 @@ class Room(object):
         else:
             self.rir = None
 
+        # in the beginning, nothing has been 
+        self.visibility = None
+
         # Get the room dimension from that of the walls
         self.dim = walls[0].dim
 
@@ -422,7 +425,7 @@ class Room(object):
             self.compute_RIR()
 
         import matplotlib.pyplot as plt
-        import utilities as u
+        from . import utilities as u
 
         M = self.micArray.M
         S = len(self.sources)
@@ -669,10 +672,13 @@ class Room(object):
         """
         self.rir = []
 
+        # Run image source model if this hasn't been done
+        if self.visibility is None:
+            self.image_source_model()
+
         for m, mic in enumerate(self.micArray.R.T):
             h = []
             for s, source in enumerate(self.sources):
-                #visibility = self.checkVisibilityForAllImages(source, mic)
                 h.append(source.getRIR(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 

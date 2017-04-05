@@ -275,9 +275,8 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     and M, S are the number of microphones, sources, respectively.
     """
 
-    from beamforming import distance
-    from utilities import lowPassDirac, convmtx
-    from scipy.linalg import toeplitz
+    from .beamforming import distance
+    from .utilities import lowPassDirac, convmtx
 
     # set the boundaries of RIR filter for given epsilon
     d_min = np.inf
