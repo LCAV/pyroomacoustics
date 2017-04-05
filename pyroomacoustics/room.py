@@ -489,6 +489,9 @@ class Room(object):
 
         for source in self.sources:
 
+            if use_libroom and not libroom_available:
+                print("C-extension libroom unavailable. Falling back to pure python")
+
             # Fall back to pure python if requested or C module unavailable
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
