@@ -709,7 +709,7 @@ class Room(object):
         f = lambda i: len(
             self.sources[i].signal) + np.floor(self.sources[i].delay * self.fs)
         max_sig_len = np.array([f(i) for i in range(S)]).max()
-        L = max_len_rir + max_sig_len - 1
+        L = int(max_len_rir) + int(max_sig_len) - 1
         if L % 2 == 1:
             L += 1
 
@@ -723,7 +723,7 @@ class Room(object):
                 sig = self.sources[s].signal
                 if sig is None:
                     continue
-                d = np.floor(self.sources[s].delay * self.fs)
+                d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
                 rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
 

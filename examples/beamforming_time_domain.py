@@ -97,7 +97,7 @@ mics.rakeMVDRFilters(room1.sources[0][0:1],
 output = mics.process()
 
 # save to output file
-input_mic = pra.normalize(pra.highpass(mics.signals[mics.M/2], Fs))
+input_mic = pra.normalize(pra.highpass(mics.signals[mics.M//2], Fs))
 wavfile.write(path + '/output_samples/input.wav', Fs, input_mic)
 
 out_DirectMVDR = pra.normalize(pra.highpass(output, Fs))
@@ -176,7 +176,7 @@ dSNR = pra.dB(room1.dSNR(mics.center[:,0], source=0), power=True)
 print('The direct SNR for good source is ' + str(dSNR))
 
 # remove a bit of signal at the end
-n_lim = np.ceil(len(input_mic) - t_cut*Fs)
+n_lim = int(np.ceil(len(input_mic) - t_cut*Fs))
 input_clean = signal1[:n_lim]
 input_mic = input_mic[:n_lim]
 out_DirectMVDR = out_DirectMVDR[:n_lim]
