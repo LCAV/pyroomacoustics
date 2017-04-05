@@ -19,7 +19,7 @@ files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
 libroom_ext = Extension('libroom',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '1')],
-                    extra_compile_args = ['-Wall', '-O3'],
+                    extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + f for f in files],
                     include_dirs=[src_dir])
 
