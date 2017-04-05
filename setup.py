@@ -20,7 +20,8 @@ libroom_ext = Extension('libroom',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '1')],
                     extra_compile_args = ['-Wall', '-O3'],
-                    sources = [src_dir + f for f in files])
+                    sources = [src_dir + f for f in files],
+                    include_dirs=[src_dir])
 
 here = path.abspath(path.dirname(__file__))
 
@@ -31,7 +32,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
         name='pyroomacoustics',
 
-        version='1.0',
+        version='1.0.4',
 
         description='A simple framework for room acoustics and signal processing in Python.',
         long_description=long_description,
@@ -42,7 +43,7 @@ setup(
 
         url='https://github.com/LCAV/pyroomacoustics',
 
-        license='GPL-3.0',
+        license='GPL3',
 
         # You can just specify the packages manually here if your project is
         # simple. Or you can use find_packages().
@@ -71,7 +72,7 @@ setup(
             'Topic :: Software Development :: Build Tools',
 
             # Pick your license as you wish (should match "license" above)
-            'License :: OSI Approved :: GPL-3.0 License',
+            'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 
             # Specify the Python versions you support here. In particular, ensure
             # that you indicate whether you support Python 2, Python 3 or both.
