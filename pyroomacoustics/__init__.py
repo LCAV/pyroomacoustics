@@ -1,6 +1,10 @@
 __version__ = '1.0'
 
-from . import c_package
+try:
+    from . import c_package
+    libroom_available = True
+except ImportError:
+    libroom_available = False
 
 from .room import *
 from .beamforming import *

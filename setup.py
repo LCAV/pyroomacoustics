@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from setuptools import setup
@@ -29,10 +30,10 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(
+setup_kwargs = dict(
         name='pyroomacoustics',
 
-        version='1.0.4',
+        version='1.0.5',
 
         description='A simple framework for room acoustics and signal processing in Python.',
         long_description=long_description,
@@ -87,3 +88,15 @@ setup(
         # What does your project relate to?
         keywords='room acoustics signal processing',
 )
+
+try:
+    # Try to build everything first
+    setup(**setup_kwargs)
+
+except Error:
+    # Retry without the C module
+    print("Error. Probably build of C extension failed. Retrying without the module.")
+    setup_kwargs.pop('ext_modules')
+    setup(**setup_kwargs)
+    
+
