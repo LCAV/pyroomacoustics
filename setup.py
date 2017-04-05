@@ -16,7 +16,7 @@ from os import path
 src_dir = 'pyroomacoustics/c_package/'
 files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
 
-libroom_ext = Extension('libroom',
+libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '1')],
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],

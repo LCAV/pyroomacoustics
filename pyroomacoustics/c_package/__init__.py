@@ -6,6 +6,7 @@ from ctypes.util import find_library
 path = find_library("libroom.so")
 print "found", path
 
-libroom = _ctypes.cdll.LoadLibrary("libroom.so")
+path = os.path.dirname(__file__)
+libroom = _ctypes.cdll.LoadLibrary(path + "/libroom.so")
 
 from libroom_wrapper import *

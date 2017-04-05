@@ -5,7 +5,7 @@ INCLUDES =
 LFLAGS =
 LIBS = -lm
 
-LIB_MAIN = ../../libroom.so
+LIB_MAIN = libroom.so
 LIB_HDR = room.h
 LIB_SRC = wall.c linalg.c room.c is_list.c shoebox.c
 LIB_OBJS = $(LIB_SRC:.c=.o)
