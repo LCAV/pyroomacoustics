@@ -33,7 +33,7 @@ mics = pra.MicrophoneArray(np.array([[3, 5, 0, 7],
 room.addMicrophoneArray(mics)
 
 # run the image source model
-room.image_source_model(use_libroom=False)
+room.image_source_model()
 
 # we order the sources lexicographically
 ordering = np.lexsort(room.sources[0].images)

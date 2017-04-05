@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 fs = 16000
 t0 = 1./(fs*np.pi*1e-2)
 absorption = 0.80
-max_order_sim = 10
+max_order_sim = 30
 sigma2_n = 5e-7
 
 room_dim = [5, 4, 6]
@@ -37,13 +37,13 @@ room.addMicrophoneArray(pra.MicrophoneArray(mic_loc, fs))
 shoebox.addMicrophoneArray(pra.MicrophoneArray(mic_loc, fs))
 
 then = time.time()
-shoebox.image_source_model(use_libroom=False)
+shoebox.image_source_model(use_libroom=True)
 shoebox.compute_RIR()
 shoebox_exec_time = time.time() - then
 
-then = time.time()
-room.image_source_model(use_libroom=True)
-room.compute_RIR()
+#then = time.time()
+#room.image_source_model(use_libroom=True)
+#room.compute_RIR()
 room_exec_time = time.time() - then
 
 print("Time spent (room):", room_exec_time)
