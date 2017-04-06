@@ -1,4 +1,6 @@
-__version__ = '1.0'
+__version__ = '1.1.0'
+
+from . import c_package
 
 from .room import *
 from .beamforming import *

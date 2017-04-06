@@ -1,11 +1,21 @@
+'''
+This is a simple example of training a Hidden Markov Model.
+
+We create a random left-right model with a number of states K and emissions of
+dimension O.  We sample from this model a number of examples.
+
+Then we train a second models on these examples.
+'''
+
+from __future__ import print_function, division
 import numpy as np
 from pyroomacoustics import HMM, CircularGaussianEmission, GaussianEmission
 
 if __name__ == '__main__':
 
-    K = 4
-    O = 6
-    model = 'left-right'
+    K = 4  # number of states
+    O = 6  # dimension of the emission vector
+    model = 'left-right'  # transition matrix model
     leftright_jump_max = K
     n_examples = 200
     example_size = np.arange(40,60)
@@ -16,7 +26,7 @@ if __name__ == '__main__':
             model=model,
             leftright_jump_max=leftright_jump_max)
 
-    # Draw a 100 examples
+    # Sample examples from the model
     examples = []
     for i in range(n_examples):
         N = np.random.choice(example_size)
@@ -47,11 +57,11 @@ if __name__ == '__main__':
     # Now try to fit the model
     niter = hmm2.fit(examples, tol=1e-8, max_iter=1000, verbose=True)
 
-    print 'EM finished in {0} iterations'.format(niter)
+    print('EM finished in {0} iterations'.format(niter))
 
     for k in range(K):
-        print 'True mu:',hmm.emission.mu[k],'Estimated:',hmm2.emission.mu[k]
+        print('True mu:',hmm.emission.mu[k],'Estimated:',hmm2.emission.mu[k])
 
-    print 'hmm A:',hmm.A
-    print 'hmm2 A:',hmm2.A
+    print('hmm A:',hmm.A)
+    print('hmm2 A:',hmm2.A)
 

@@ -3,6 +3,7 @@
 # @copyright: EPFL-IC-LCAV 2015
 
 """Collection of spectral estimation methods."""
+from __future__ import division
 
 import sys
 import numpy as np
@@ -51,7 +52,7 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
                 vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
 
     plt.imshow(
-        20 * np.log10(np.abs(Z[:N / 2 + 1, :])),
+        20 * np.log10(np.abs(Z[:N // 2 + 1, :])),
         aspect='auto',
         origin='lower',
         vmin=vmin, vmax=vmax, cmap=cmap, interpolation=interpolation)
@@ -167,11 +168,11 @@ def freqvec(N, fs, centered=False):
     """
 
     # Create a centered vector. The (1-N%2) is to correct for even/odd length
-    vec = np.arange(-N / 2 + (1 - N % 2), N / 2 + 1) * float(fs) / float(N)
+    vec = np.arange(-N // 2 + (1 - N % 2), N // 2 + 1) * float(fs) / float(N)
 
     # Shift positive/negative frequencies if needed. Again (1-N%2) for
     # even/odd length
     if centered:
         return vec
     else:
-        return np.concatenate((vec[N / 2 - (1 - N % 2):], vec[0:N / 2 - 1]))
+        return np.concatenate((vec[N // 2 - (1 - N % 2):], vec[0:N // 2 - 1]))

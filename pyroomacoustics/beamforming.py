@@ -831,7 +831,7 @@ class Beamformer(MicrophoneArray):
 
         # build the channel matrix
         H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1]/2
+        L = H.shape[1] // 2
 
         # Delay of the system in samples
         tau = int(delay*self.Fs)
@@ -928,7 +928,7 @@ class Beamformer(MicrophoneArray):
         """
 
         H = buildRIRMatrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1]/2
+        L = H.shape[1] // 2
 
         # the constraint vector
         kappa = int(delay*self.Fs)

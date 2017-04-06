@@ -13,41 +13,59 @@ absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
 
-dimension = [4, 4]
-room1 = pra.Room.shoeBox2D(
-    [0, 0],
-    dimension,
+corners = np.array([[0,0,4,4],[0,4,4,0]])
+room = pra.Room.fromCorners(
+    corners,
     absorption,
     fs,
     t0,
     max_order_sim,
     sigma2_n)
     
-room1.addSource([2, 2], None, 0)
+    
+room.addSource([2, 2], None, 0)
+
+# place 3 microphones in the room
+mics = pra.MicrophoneArray(np.array([[2, 5, 3, 1, 2,],
+                                     [2, 5, 3, 1, 1,]]), fs)
+room.addMicrophoneArray(mics)
+
+# run the image source model
+room.image_source_model(use_libroom=False)
+
+# we order the sources lexicographically
+ordering = np.lexsort(room.sources[0].images)
+images_found = room.sources[0].images[:,ordering]
+visibilities = np.array(room.visibility[0][:,ordering], dtype=bool)
+
+# This should be all visible sources, from the 3 mic locations
+sources = np.array([[  2.,  -2.,  -2.,   2.,   6.,   6.,  -6.,  -2.,   2.,   6.,  10., -2.,  -2.,   2.,   6.,   6.,   2.],
+                    [ -6.,  -2.,  -2.,  -2.,  -2.,  -2.,   2.,   2.,   2.,   2.,   2.,  6.,   6.,   6.,   6.,   6.,  10.]])
+
+# These are the visibilities for each individual microphone
+visible_middle = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=bool)
+visible_outside = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=bool)
+visible_upperRight = np.array([1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1], dtype=bool)
+visible_lowerLeft = np.array([1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1], dtype=bool)
+visible_lowMiddle = np.array([1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1], dtype=bool)
+
 
 class TestVisibilityShoeBox2D(TestCase):
 
+    def test_sources(self):
+        self.assertTrue(np.allclose(images_found, sources))
+
     def test_visibility_middle(self):
-        computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([2, 2]))
-        expected = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-        self.assertTrue(all(computed == expected))
+        self.assertTrue(np.allclose(images_found[:,visibilities[0,:]], sources[:,visible_middle]))
         
     def test_visibility_outside(self):
-        computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([5, 5]))
-        expected = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        self.assertTrue(all(computed == expected))
+        self.assertTrue(np.allclose(images_found[:,visibilities[1,:]], sources[:,visible_outside]))
 
     def test_visibility_upperRight(self):
-        computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([3, 3]))
-        expected = [1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1]
-        self.assertTrue(all(computed == expected))
+        self.assertTrue(np.allclose(images_found[:,visibilities[2,:]], sources[:,visible_upperRight]))
         
     def test_visibility_lowerLeft(self):
-        computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([1, 1]))
-        expected = [1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1]
-        self.assertTrue(all(computed == expected))
+        self.assertTrue(np.allclose(images_found[:,visibilities[3,:]], sources[:,visible_lowerLeft]))
         
     def test_visibility_lowMiddle(self):
-        computed = room1.checkVisibilityForAllImages(room1.sources[0], np.array([2, 1]))
-        expected = [1,1,1,1,1,1,0,1,0,1,1,1,1,0,0,1,1]
-        self.assertTrue(all(computed == expected))
+        self.assertTrue(np.allclose(images_found[:,visibilities[4,:]], sources[:,visible_lowMiddle]))

@@ -1,16 +1,16 @@
+"""
+This is a longer example that applies time domain beamforming towards a source
+of interest in the presence of a strong interfering source.
+"""
 
+from __future__ import division, print_function
+
+import os
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
-from scipy.linalg import toeplitz
 from scipy.io import wavfile
-from scipy.signal import resample,fftconvolve
 
 import pyroomacoustics as pra
-
-"""
-Here is an example about trying to isolate a desired sound source when parasited by another one.
-"""
 
 # Spectrogram figure properties
 figsize=(15, 7)        # figure size
@@ -47,15 +47,18 @@ if shape is 'Circular':
 else:
     R = pra.linear2DArray(mic1, M, phi, d) 
 
+# path to samples
+path = os.path.dirname(__file__)
+
 # The first signal (of interest) is singing
-rate1, signal1 = wavfile.read('input_samples/singing_'+str(Fs)+'.wav')
+rate1, signal1 = wavfile.read(path + '/input_samples/singing_'+str(Fs)+'.wav')
 signal1 = np.array(signal1, dtype=float)
 signal1 = pra.normalize(signal1)
 signal1 = pra.highpass(signal1, Fs)
 delay1 = 0.
 
 # The second signal (interferer) is some german speech
-rate2, signal2 = wavfile.read('input_samples/german_speech_'+str(Fs)+'.wav')
+rate2, signal2 = wavfile.read(path + '/input_samples/german_speech_'+str(Fs)+'.wav')
 signal2 = np.array(signal2, dtype=float)
 signal2 = pra.normalize(signal2)
 signal2 = pra.highpass(signal2, Fs)
@@ -63,24 +66,19 @@ delay2 = 1.
 
 # Create the room
 room_dim = [4, 6]
-room1 = pra.Room.shoeBox2D(
-    [0,0],
+room1 = pra.ShoeBox(
     room_dim,
-    absorption,
-    Fs,
-    t0,
-    max_order_sim,
-    sigma2_n)
+    absorption=absorption,
+    fs=Fs,
+    t0=t0,
+    max_order=max_order_sim,
+    sigma2_awgn=sigma2_n)
 
 # Add sources to room
 good_source = np.array([1, 4.5])           # good source
 normal_interferer = np.array([2.8, 4.3])   # interferer
 room1.addSource(good_source, signal=signal1, delay=delay1)
 room1.addSource(normal_interferer, signal=signal2, delay=delay2)
-
-# Obtain the desired order sources
-good_sources = room1.sources[0][:max_order_design+1]
-bad_sources = room1.sources[1][:max_order_design+1]
 
 """
 MVDR direct path only simulation
@@ -99,22 +97,26 @@ mics.rakeMVDRFilters(room1.sources[0][0:1],
 output = mics.process()
 
 # save to output file
-input_mic = pra.normalize(pra.highpass(mics.signals[mics.M/2], Fs))
-wavfile.write('output_samples/input.wav', Fs, input_mic)
+input_mic = pra.normalize(pra.highpass(mics.signals[mics.M//2], Fs))
+wavfile.write(path + '/output_samples/input.wav', Fs, input_mic)
 
 out_DirectMVDR = pra.normalize(pra.highpass(output, Fs))
-wavfile.write('output_samples/output_DirectMVDR.wav', Fs, out_DirectMVDR)
+wavfile.write(path + '/output_samples/output_DirectMVDR.wav', Fs, out_DirectMVDR)
 
 
 """
 Rake MVDR simulation
 """
 
-# compute beamforming filters
+# Add the microphone array and compute RIR
 mics = pra.Beamformer(R, Fs, N, Lg=Lg)
 room1.addMicrophoneArray(mics)
 room1.compute_RIR()
 room1.simulate()
+
+# Design the beamforming filters using some of the images sources
+good_sources = room1.sources[0][:max_order_design+1]
+bad_sources = room1.sources[1][:max_order_design+1]
 mics.rakeMVDRFilters(good_sources, 
                     bad_sources, 
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
@@ -124,7 +126,7 @@ output = mics.process()
 
 # save to output file
 out_RakeMVDR = pra.normalize(pra.highpass(output, Fs))
-wavfile.write('output_samples/output_RakeMVDR.wav', Fs, out_RakeMVDR)
+wavfile.write(path + '/output_samples/output_RakeMVDR.wav', Fs, out_RakeMVDR)
 
 """
 Perceptual direct path only simulation
@@ -144,7 +146,7 @@ output = mics.process()
 
 # save to output file
 out_DirectPerceptual = pra.normalize(pra.highpass(output, Fs))
-wavfile.write('output_samples/output_DirectPerceptual.wav', Fs, out_DirectPerceptual)
+wavfile.write(path + '/output_samples/output_DirectPerceptual.wav', Fs, out_DirectPerceptual)
 
 """
 Rake Perceptual simulation
@@ -164,17 +166,17 @@ output = mics.process()
 
 # save to output file
 out_RakePerceptual = pra.normalize(pra.highpass(output, Fs))
-wavfile.write('output_samples/output_RakePerceptual.wav', Fs, out_RakePerceptual)
+wavfile.write(path + '/output_samples/output_RakePerceptual.wav', Fs, out_RakePerceptual)
 
 """
 Plot all the spectrogram
 """
 
 dSNR = pra.dB(room1.dSNR(mics.center[:,0], source=0), power=True)
-print 'The direct SNR for good source is ' + str(dSNR)
+print('The direct SNR for good source is ' + str(dSNR))
 
 # remove a bit of signal at the end
-n_lim = np.ceil(len(input_mic) - t_cut*Fs)
+n_lim = int(np.ceil(len(input_mic) - t_cut*Fs))
 input_clean = signal1[:n_lim]
 input_mic = input_mic[:n_lim]
 out_DirectMVDR = out_DirectMVDR[:n_lim]
@@ -274,6 +276,6 @@ ax.set_xlabel('')
 ax.set_aspect('auto')
 ax.axis('off')
 
-fig.savefig('figures/spectrograms.png', dpi=150)
+fig.savefig(path + '/figures/spectrograms.png', dpi=150)
 
 plt.show()

@@ -2,7 +2,9 @@ language: python
 python:
   - 2.7
   - 3.5
+
 notifications:
+  slack: echology:avPAhIlErQnf7XSUGcSB5awZ
   email: false
 
 # Install packages
@@ -27,6 +29,33 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib nose
   - python setup.py install
 
-# Run test
+# Run test twice, without C lib, and with C lib
 script:
   - nosetests
+  - python setup.py build_ext --inplace
+  - nosetests
+
+# Deploy to pypi (or test)
+deploy:
+  # pypi
+  - provider: pypi
+    server: https://pypi.python.org/pypi
+    on:
+      branch: pypi-release
+      tags: true
+      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+    distributions: "sdist"
+    user: "fakufaku"
+    password:
+      secure: "DT89f2IjQQ23UHa9CTKcxSDGYzk6HD4gBh4s41Qd34VyIuUvVrYxXNq0dWc+ciSVG1HjzpVEqUZj1+zD9yoDciczvBGE5qXXGhW8XjMQVzA8wzyO9H4ybkKwFlKgK6GM0K7vs+E+E7/T06u4ktiB+Rvu3nzFOLnl8fEMAlXWJH067dK+ltX4iVtHs06Q8yRpKFrVCOpyJuMP4FIqK4YA/azvH0TEG/P5DM6omATZUuoNGgXdE+oD2pkguhcejOwvSSmk7m2M1BPuesoeF4uYI1jEWrev++7zXtvwT0f2FKOXd21SVe3dzZv478C2ttABFFIDXRlYPWgSuwE311hUqlDrkmWgvJ1rdj2A5ajTew00EJBRjfrdRNiHzYJ7p51HLD2oGM+44EPqXCx8+OmD9TmdPGjwP1OGxFsJ0ADWcFQWeaubOjmBPv8P7DLORg5sHqt3IHmlL/F6JOmLkOLJ9nqi1hcHMrJpoWO83RqyZ/2HhVxmjrBMmVqXjmH5QJx1Kj2G1tZov55XHXO+XOfiFpJXtLQggZsOsipQ9ZuPG/WzWgcfLoMEpQCweZDw/ynSnG1JeEYK6csEEWIGfcnkk0zu1wcxPX7SQTEKVqg3uC1IG6lSQicCsBbDc83iEP3B908VLHv1Cav3VIqUh55QsyDjaGs5XJpp7sOnCx2xiB8="
+  # pypi test
+  - provider: pypi
+    server: https://testpypi.python.org/pypi
+    on:
+      branch: pypi-test
+      tags: false
+      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+    distributions: "sdist"
+    user: "fakufaku"
+    password:
+      secure: "dIgbQ5hZ4aH0RzriwFT5A6uZa0K1462C6wtSY7coS+ztQPdrRCKjI/bTKV5j++CEBj6Lz5oUOxsmc86PF7I1IVtbVcT2jeR+nFJt87XCg8iQ1CYRQ24NXw/erLniDYl3HE6F0HQvKS7UDdjv7csiKgwfpEZEpYOZo+kNyANgS0EeUlIGMzYEIhBww/nfAefkDoNGOCEUJ5kTd7JWYhdg+PfFhIjDwNHYQ7YEufoFyrx10bl4Ka/uGAlAnhyMc3Q4tLN+oCx08gmo9/lvc9Vio6fzmVDzX5Ay5KA9LjbOFz0xr1s1zrZXP3ZILvrRElQClWTq8RQFQtoUMXpeszLxKdVHo8pPLZdZnkbMX0xD+3QRaxu6SiooDqFxRTUvlVpKQDJDLCDyq74RsrLa+qBWRJSQzlRqHUzsgpNHMS2w3x7M4zjjvr5oYExwnrBfC9W+A9ymcnyvWJYuNkTY40k4cx+8cDBdog9/ESliVsS5jkrSC1II1iqk6R6GSKHieGoyXDgtV2G1q+2wRZSVl6WMWomP66rIHNAmxvMQCWPfG1Bt4xT+HMPftdt04yfHJY8vFpU9PZy7U23h9fFw/goFQI94J0bessOudjGTOgdej3GZQT/stIKkHVZr5lX3+ZPjRg8kO2evXD9IJIIze64+qy/l89RAhUry7cpBEVhC5wk="

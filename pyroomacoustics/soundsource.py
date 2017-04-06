@@ -34,11 +34,11 @@ class SoundSource(object):
 
         if (images is None):
             # set to empty list if nothing provided
-            self.images = np.array([position]).T
+            self.images = np.asfortranarray(np.array([position], dtype=np.float32).T)
             self.damping = np.array([1.])
-            self.generators = np.array([np.nan])
-            self.walls = np.array([np.nan])
-            self.orders = np.array([0])
+            self.generators = np.array([-1], dtype=np.int32)
+            self.walls = np.array([-1], dtype=np.int32)
+            self.orders = np.array([0], dtype=np.int32)
 
         else:
             # we need to have damping factors for every image
@@ -59,11 +59,11 @@ class SoundSource(object):
                 raise NameError('Images and orders must have same shape')
 
 
-            self.images = images
+            self.images = np.array(images, order='F', dtype=np.float32)
             self.damping = damping
-            self.walls = walls
-            self.generators = generators
-            self.orders = orders
+            self.walls = np.array(walls, dtype=np.int32)
+            self.generators = np.array(generators, dtype=np.int32)
+            self.orders = np.array(orders, dtype=np.int32)
 
         # store the natural ordering for the images
         self.I = np.arange(self.images.shape[1])
@@ -135,7 +135,9 @@ class SoundSource(object):
                     damping=self.damping[I],
                     orders=self.orders[I],
                     signal=self.signal,
-                    delay=self.delay)
+                    delay=self.delay,
+                    generators=self.generators[I],
+                    walls=self.walls[I])
             else:
                 s = SoundSource(
                     self.position,
@@ -143,7 +145,9 @@ class SoundSource(object):
                     damping=self.damping[self.I[index]],
                     orders=self.orders[self.I[index]],
                     signal=self.signal,
-                    delay=self.delay)
+                    delay=self.delay,
+                    generators=self.generators[self.I[index]],
+                    walls=self.walls[self.I[index]])
         else:
             s = SoundSource(
                 self.position,
@@ -151,7 +155,9 @@ class SoundSource(object):
                 damping=self.damping[index],
                 orders=self.orders[index],
                 signal=self.signal,
-                delay=self.delay)
+                delay=self.delay,
+                generators=self.generators[index],
+                walls=self.walls[index])
 
         return s
 
@@ -230,11 +236,6 @@ class SoundSource(object):
                 ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*fractional_delay(time_fp)
 
         return ir
-        '''
-        import matplotlib.pyplot as plt
-        plt.stem(time, alpha)
-        plt.show()
-        '''
 
     def wallSequence(self,i):
         '''
@@ -274,9 +275,8 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     and M, S are the number of microphones, sources, respectively.
     """
 
-    from beamforming import distance
-    from utilities import lowPassDirac, convmtx
-    from scipy.linalg import toeplitz
+    from .beamforming import distance
+    from .utilities import lowPassDirac, convmtx
 
     # set the boundaries of RIR filter for given epsilon
     d_min = np.inf
