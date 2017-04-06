@@ -37,7 +37,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup_kwargs = dict(
         name='pyroomacoustics',
 
-        version='1.0.5',
+        version='1.1.0a',
 
         description='A simple framework for room acoustics and signal processing in Python.',
         long_description=long_description,
