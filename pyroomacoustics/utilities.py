@@ -243,18 +243,23 @@ def prony(x, p, q):
     """
     Prony's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
-    Arguments
-    ---------
+    Parameters
+    ----------
 
-    x: signal to model
-    p: order of denominator
-    q: order of numerator
+    x: 
+        signal to model
+    p: 
+        order of denominator
+    q: 
+        order of numerator
 
     Returns
     -------
 
-    a: numerator coefficients
-    b: denominator coefficients
+    a: 
+        numerator coefficients
+    b: 
+        denominator coefficients
     err: the squared error of approximation
     """
 
@@ -279,19 +284,23 @@ def shanks(x, p, q):
     """
     Shank's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
-    Arguments
-    ---------
-
-    x: signal to model
-    p: order of denominator
-    q: order of numerator
+    Parameters
+    ----------
+    x: 
+        signal to model
+    p: 
+        order of denominator
+    q: 
+        order of numerator
 
     Returns
     -------
-
-    a: numerator coefficients
-    b: denominator coefficients
-    err: the squared error of approximation
+    a: 
+        numerator coefficients
+    b: 
+        denominator coefficients
+    err: 
+        the squared error of approximation
     """
 
     from scipy import signal
@@ -333,10 +342,10 @@ def fractional_delay(t0):
     The length of the filter is fixed by the module wide constant
     `frac_delay_length` (default 81).
 
-    Argument
-    --------
+    Parameters
+    ----------
     t0: float
-    The delay in fraction of sample. Typically between 0 and 1.
+        The delay in fraction of sample. Typically between 0 and 1.
 
     Returns
     -------
@@ -356,14 +365,16 @@ def levinson(r, b):
     is any vector using the generalized Levinson recursion as described in M.H.
     Hayes, Statistical Signal Processing and Modelling, p. 268.
 
-    Arguments
-    ---------
-    r: First column of R, toeplitz hermitian matrix.
-    b: The right-hand argument. If b is a matrix, the system is solved
-       for every column vector in b.
+    Parameters
+    ----------
+    r: 
+        First column of R, toeplitz hermitian matrix.
+    b: 
+        The right-hand argument. If b is a matrix, the system is solved
+        for every column vector in b.
 
-    Return
-    ------
+    Returns
+    -------
     The solution of the linear system Rx = b.
     """
 

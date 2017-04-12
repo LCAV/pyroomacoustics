@@ -139,20 +139,17 @@ class GaussianEmission:
 
 class HMM:
     '''
-    Class HMM
-    =========
-
     Hidden Markov Model with Gaussian emissions
 
     Attributes
     ----------
-    K : (int)
+    K : int
         Number of states in the model
-    O : (int)
+    O : int
         Number of dimensions of the Gaussian emission distribution
-    A : (ndarray)
+    A : ndarray
         KxK transition matrix of the Markov chain
-    pi : (ndarray)
+    pi : ndarray
         K dim vector of the initial probabilities of the Markov chain
     emission : (GaussianEmission or CircularGaussianEmission)
         An instance of emission_class
@@ -613,8 +610,8 @@ class TimitCorpus:
                     Speakers (one directory per speaker)
                         Sentences (one file per sentence)
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         sentences: (list)
             A list containing the sentences to which we want to restrict the corpus
             Example: sentences=['SA1','SA2']

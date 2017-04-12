@@ -56,15 +56,17 @@ def calculate_speed_of_sound(t, h, p):
     Compute the speed of sound as a function of
     temperature, humidity and pressure
 
-    Arguments
-    ---------
+    Parameters
+    ----------
+    t: 
+        temperature [Celsius]
+    h: 
+        relative humidity [%]
+    p: 
+        atmospheric pressure [kpa]
 
-    t: temperature [Celsius]
-    h: relative humidity [%]
-    p: atmospheric pressure [kpa]
-
-    Return
-    ------
+    Returns
+    -------
 
     Speed of sound in [m/s]
     '''

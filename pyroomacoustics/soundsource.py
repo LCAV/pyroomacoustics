@@ -1,6 +1,7 @@
 # @version: 1.0  date: 05/06/2015 by Sidney Barthe
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
+from __future__ import division, print_function
 
 import numpy as np
 
@@ -109,7 +110,7 @@ class SoundSource(object):
             if ref_point is None:
                 raise NameError('For strongest ordering, a reference point is needed.')
 
-            strength = self.damping/(4*np.pi*self.distance(ref_point))
+            strength = self.damping / (4*np.pi*self.distance(ref_point))
             self.I = strength.argsort()
 
         elif ordering == 'order':
@@ -206,12 +207,12 @@ class SoundSource(object):
 
         # fractional delay length
         fdl = constants.get('frac_delay_length')
-        fdl2 = (fdl-1)/2
+        fdl2 = (fdl-1) // 2
 
         # compute the distance
         dist = self.distance(mic)
         time = dist / constants.get('c') + t0
-        alpha = self.damping/(4.*np.pi*dist)
+        alpha = self.damping / (4.*np.pi*dist)
 
         # the number of samples needed
         if t_max is None:
@@ -222,7 +223,7 @@ class SoundSource(object):
 
         N += fdl
 
-        t = np.arange(N)/float(Fs)
+        t = np.arange(N) / float(Fs)
         ir = np.zeros(t.shape)
 
         # from utilities import lowPassDirac
@@ -231,9 +232,9 @@ class SoundSource(object):
 
         for i in range(time.shape[0]):
             if visibility[i] == 1:
-                time_ip = np.round(Fs*time[i])
+                time_ip = int(np.round(Fs * time[i]))
                 time_fp = (Fs * time[i]) - time_ip
-                ir[int(time_ip-fdl2):int(time_ip+fdl2+1)] += alpha[i]*fractional_delay(time_fp)
+                ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[i]*fractional_delay(time_fp)
 
         return ir
 
@@ -264,11 +265,13 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
 
     returns the RIR matrix H =
 
-    --------------------
-    | H_{11} H_{12} ...
-    | ...
-    |
-    --------------------
+    ::
+
+         --------------------
+         | H_{11} H_{12} ...
+         | ...
+         |
+         --------------------
 
     where H_{ij} is channel matrix between microphone i and source j.
     H is of type (M*Lg)x((Lg+Lh-1)*S) where Lh is the channel length (determined by epsilon),
@@ -285,16 +288,16 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     for s in range(len(sources)):
         dist_mat = distance(mics, sources[s].images)
         if unit_damping is True:
-            dmp_max = np.maximum((1./(4*np.pi*dist_mat)).max(), dmp_max)
+            dmp_max = np.maximum((1. / (4*np.pi*dist_mat)).max(), dmp_max)
         else:
-            dmp_max = np.maximum((sources[s].damping[np.newaxis, :]/(4*np.pi*dist_mat)).max(), dmp_max)
+            dmp_max = np.maximum((sources[s].damping[np.newaxis, :] / (4*np.pi*dist_mat)).max(), dmp_max)
         d_min = np.minimum(dist_mat.min(), d_min)
         d_max = np.maximum(dist_mat.max(), d_max)
 
-    t_max = d_max/constants.get('c')
-    t_min = d_min/constants.get('c')
+    t_max = d_max / constants.get('c')
+    t_min = d_min / constants.get('c')
         
-    offset = dmp_max/(np.pi*Fs*epsilon)
+    offset = dmp_max / (np.pi*Fs*epsilon)
 
     # RIR length
     Lh = int((t_max - t_min + 2*offset)*float(Fs))
@@ -307,11 +310,11 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
         for r in np.arange(mics.shape[1]):
 
             dist = sources[s].distance(mics[:,r])
-            time = dist/constants.get('c') - t_min + offset
+            time = dist / constants.get('c') - t_min + offset
             if unit_damping == True:
-                dmp = 1./(4*np.pi*dist)
+                dmp = 1. / (4*np.pi*dist)
             else:
-                dmp = sources[s].damping/(4*np.pi*dist)
+                dmp = sources[s].damping / (4*np.pi*dist)
 
             h = lowPassDirac(time[:, np.newaxis], dmp[:, np.newaxis], Fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, s*L:(s+1)*L] = convmtx(h, Lg).T

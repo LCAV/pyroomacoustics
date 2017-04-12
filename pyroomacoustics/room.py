@@ -5,7 +5,7 @@
 from __future__ import print_function
 
 import numpy as np
-from scipy.spatial import ConvexHull
+import scipy.spatial as spatial
 import ctypes
 
 #import .beamforming as bf
@@ -232,7 +232,7 @@ class Room(object):
         for wall in self.walls[1:]:
             all_corners.append(wall.corners.T)
         X = np.concatenate(all_corners, axis=0)
-        convex_hull = ConvexHull(X, incremental=True)
+        convex_hull = spatial.ConvexHull(X, incremental=True)
 
         # Now we need to check which walls are on the surface
         # of the hull

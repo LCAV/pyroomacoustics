@@ -1,3 +1,4 @@
+
 from __future__ import division
 
 import numpy as np
@@ -119,8 +120,8 @@ def melfilterbank(M, N, fs=1, fl=0., fh=0.5):
     fh : (float)
         Highest frequency in filter bank as a fraction of fs (default 0.5)
 
-    Return
-    ------
+    Returns
+    -------
     An M times int(N/2)+1 ndarray that contains one filter per row
     '''
 

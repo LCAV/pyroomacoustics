@@ -85,15 +85,25 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
 
 def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     """
-    Arguments:
-    x: input signal
-    L: frame size
-    hop: shift size between frames
-    transform: the transform routine to apply (default FFT)
-    win: the window to apply (default None)
-    zp_back: zero padding to apply at the end of the frame
-    zp_front: zero padding to apply at the beginning of the frame
-    Return:
+    Parameters:
+    -----------
+    x: 
+        input signal
+    L: 
+        frame size
+    hop: 
+        shift size between frames
+    transform: 
+        the transform routine to apply (default FFT)
+    win: 
+        the window to apply (default None)
+    zp_back: 
+        zero padding to apply at the end of the frame
+    zp_front: 
+        zero padding to apply at the beginning of the frame
+
+    Returns:
+    --------
     The STFT of x
     """
 

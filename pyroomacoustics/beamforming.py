@@ -182,8 +182,8 @@ class MicrophoneArray(object):
         do not use the same sampling frequency, down/up-sampling
         is done here.
 
-        Arguments:
-        ----------
+        Parameters:
+        -----------
 
         signals: An ndarray with as many lines as there are microphones.
         Fs: the sampling frequency of the signals.
@@ -249,8 +249,8 @@ class Beamformer(MicrophoneArray):
 
     def __init__(self, R, Fs, N=1024, Lg=None, hop=None, zpf=0, zpb=0):
         """
-        Arguments:
-        ----------
+        Parameters:
+        -----------
         R        Mics positions
         Fs       Sampling frequency
         N=1024   Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from pyroomacoustics import __version__
+
 try:
     from setuptools import setup
     from setuptools import Extension
@@ -37,7 +39,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup_kwargs = dict(
         name='pyroomacoustics',
 
-        version='1.1.0',
+        version=__version__,
 
         description='A simple framework for room acoustics and signal processing in Python.',
         long_description=long_description,

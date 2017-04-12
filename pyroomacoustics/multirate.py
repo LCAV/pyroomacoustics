@@ -8,13 +8,16 @@ def frac_delay(delta, N, w_max=0.9, C=4):
     Design of Fractional Delay Filters Using Convex Optimization
     William Putnam and Julius Smith
 
-    Arguments
-    ---------
-
-    delta: delay of filter in (fractionnal) samples
-    N: number of taps
-    w_max: Bandwidth of the filter (in fraction of pi) (default 0.9)
-    C: sets the number of constraints to C*N (default 4)
+    Parameters
+    ----------
+    delta: 
+        delay of filter in (fractionnal) samples
+    N: 
+        number of taps
+    w_max: 
+        Bandwidth of the filter (in fraction of pi) (default 0.9)
+    C: 
+        sets the number of constraints to C*N (default 4)
     '''
 
     # constraints
