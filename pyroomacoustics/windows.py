@@ -2,7 +2,7 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-"""A collection of windowing functions."""
+'''A collection of windowing functions.'''
 
 import numpy as np
 

@@ -9,7 +9,7 @@ from .parameters import constants
 
 
 class SoundSource(object):
-    """
+    '''
     A class to represent sound sources.
     
     This object represents a sound source in a room by a list containing the original source position
@@ -17,7 +17,7 @@ class SoundSource(object):
 
     It also keeps track of the sequence of generated images and the index of the walls (in the original room)
     that generated the reflection.
-    """
+    '''
 
     def __init__(
             self,
@@ -78,7 +78,7 @@ class SoundSource(object):
         self.max_order = np.max(self.orders)
 
 
-    def addSignal(signal):
+    def add_signal(signal):
 
         self.signal = signal
 
@@ -86,12 +86,12 @@ class SoundSource(object):
 
         return np.sqrt(np.sum((self.images - ref_point[:, np.newaxis])**2, axis=0))
 
-    def setOrdering(self, ordering, ref_point=None):
-        """
+    def set_ordering(self, ordering, ref_point=None):
+        '''
         Set the order in which we retrieve images sources.
         Can be: 'nearest', 'strongest', 'order'
         Optional argument: ref_point
-        """
+        '''
 
         self.ordering = ordering
 
@@ -122,7 +122,7 @@ class SoundSource(object):
 
 
     def __getitem__(self, index):
-        """Overload the bracket operator to access a subset image sources"""
+        '''Overload the bracket operator to access a subset image sources'''
 
         if isinstance(index, slice) or isinstance(index, int):
             if self.ordering == 'order':
@@ -163,11 +163,11 @@ class SoundSource(object):
         return s
 
 
-    def getImages(self, max_order=None, max_distance=None, n_nearest=None, ref_point=None):
-        """
+    def get_images(self, max_order=None, max_distance=None, n_nearest=None, ref_point=None):
+        '''
         Keep this for compatibility
         Now replaced by the bracket operator and the setOrdering function.
-        """
+        '''
 
         # TO DO: Add also n_strongest
 
@@ -191,19 +191,19 @@ class SoundSource(object):
         return img
 
 
-    def getDamping(self, max_order=None):
+    def get_damping(self, max_order=None):
         if (max_order is None):
             max_order = len(np.max(self.orders))
 
         return self.damping[self.orders <= max_order]
 
 
-    def getRIR(self, mic, visibility, Fs, t0=0., t_max=None):
-        """
+    def get_rir(self, mic, visibility, Fs, t0=0., t_max=None):
+        '''
         Compute the room impulse response between the source
         and the microphone whose position is given as an
         argument.
-        """
+        '''
 
         # fractional delay length
         fdl = constants.get('frac_delay_length')
@@ -238,7 +238,7 @@ class SoundSource(object):
 
         return ir
 
-    def wallSequence(self,i):
+    def wall_sequence(self,i):
         '''
         Print the wall sequence for the image source indexed by i
         '''
@@ -252,8 +252,8 @@ class SoundSource(object):
         return w
 
 
-def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
-    """
+def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
+    '''
     A function to build the channel matrix for many sources and microphones
 
     mics is a dim-by-M ndarray where each column is the position of a microphone
@@ -276,10 +276,10 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     where H_{ij} is channel matrix between microphone i and source j.
     H is of type (M*Lg)x((Lg+Lh-1)*S) where Lh is the channel length (determined by epsilon),
     and M, S are the number of microphones, sources, respectively.
-    """
+    '''
 
     from .beamforming import distance
-    from .utilities import lowPassDirac, convmtx
+    from .utilities import low_pass_dirac, convmtx
 
     # set the boundaries of RIR filter for given epsilon
     d_min = np.inf
@@ -316,7 +316,7 @@ def buildRIRMatrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
             else:
                 dmp = sources[s].damping / (4*np.pi*dist)
 
-            h = lowPassDirac(time[:, np.newaxis], dmp[:, np.newaxis], Fs, Lh).sum(axis=0)
+            h = low_pass_dirac(time[:, np.newaxis], dmp[:, np.newaxis], Fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, s*L:(s+1)*L] = convmtx(h, Lg).T
 
     return H

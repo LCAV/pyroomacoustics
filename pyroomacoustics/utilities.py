@@ -17,7 +17,7 @@ def to_16b(signal):
     return ((2**15-1)*signal).astype(np.int16)
 
 def clip(signal, high, low):
-    """Clip a signal from above at high and from below at low."""
+    '''Clip a signal from above at high and from below at low.'''
     s = signal.copy()
 
     s[np.where(s > high)] = high
@@ -27,11 +27,11 @@ def clip(signal, high, low):
 
 
 def normalize(signal, bits=None):
-    """
+    '''
     normalize to be in a given range. The default is to normalize the maximum
     amplitude to be one. An optional argument allows to normalize the signal
     to be within the range of a given signed integer representation of bits.
-    """
+    '''
 
     s = signal.copy()
 
@@ -46,7 +46,7 @@ def normalize(signal, bits=None):
 
 
 def normalize_pwr(sig1, sig2):
-    """Normalize sig1 to have the same power as sig2."""
+    '''Normalize sig1 to have the same power as sig2.'''
 
     # average power per sample
     p1 = np.mean(sig1 ** 2)
@@ -57,7 +57,7 @@ def normalize_pwr(sig1, sig2):
 
 
 def highpass(signal, Fs, fc=None, plot=False):
-    """ Filter out the really low frequencies, default is below 50Hz """
+    ''' Filter out the really low frequencies, default is below 50Hz '''
 
     if fc is None:
         fc = constants.get('fc_hp')
@@ -95,10 +95,10 @@ def highpass(signal, Fs, fc=None, plot=False):
 
 
 def time_dB(signal, Fs, bits=16):
-    """
+    '''
     Compute the signed dB amplitude of the oscillating signal
     normalized wrt the number of bits used for the signal.
-    """
+    '''
 
     import matplotlib.pyplot as plt
 
@@ -153,7 +153,7 @@ def dB(signal, power=False):
         return 20*np.log10(np.abs(signal))
 
 
-def comparePlot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, title1=None, title2=None):
+def compare_plot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, title1=None, title2=None):
 
     import matplotlib.pyplot as plt
 
@@ -225,11 +225,11 @@ def real_spectrum(signal, axis=-1, **kwargs):
 
 
 def convmtx(x, n):
-    """
+    '''
     Create a convolution matrix H for the vector x of size len(x) times n.
     Then, the result of np.dot(H,v) where v is a vector of length n is the same
     as np.convolve(x, v).
-    """
+    '''
 
     import scipy as s
 
@@ -240,7 +240,7 @@ def convmtx(x, n):
 
 
 def prony(x, p, q):
-    """
+    '''
     Prony's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
     Parameters
@@ -261,7 +261,7 @@ def prony(x, p, q):
     b: 
         denominator coefficients
     err: the squared error of approximation
-    """
+    '''
 
     nx = x.shape[0]
 
@@ -281,7 +281,7 @@ def prony(x, p, q):
 
 
 def shanks(x, p, q):
-    """
+    '''
     Shank's Method from Monson H. Hayes' Statistical Signal Processing, p. 154
 
     Parameters
@@ -301,7 +301,7 @@ def shanks(x, p, q):
         denominator coefficients
     err: 
         the squared error of approximation
-    """
+    '''
 
     from scipy import signal
 
@@ -324,14 +324,14 @@ def shanks(x, p, q):
     return a, b, err
 
 
-def lowPassDirac(t0, alpha, Fs, N):
-    """
+def low_pass_dirac(t0, alpha, Fs, N):
+    '''
     Creates a vector containing a lowpass Dirac of duration T sampled at Fs
     with delay t0 and attenuation alpha.
 
     If t0 and alpha are 2D column vectors of the same size, then the function
     returns a matrix with each line corresponding to pair of t0/alpha values.
-    """
+    '''
 
     return alpha*np.sinc(np.arange(N) - Fs*t0)
 
@@ -358,7 +358,7 @@ def fractional_delay(t0):
 
 
 def levinson(r, b):
-    """
+    '''
     levinson(r,b)
 
     Solve a system of the form Rx=b where R is hermitian toeplitz matrix and b
@@ -376,7 +376,7 @@ def levinson(r, b):
     Returns
     -------
     The solution of the linear system Rx = b.
-    """
+    '''
 
     p = b.shape[0]
 
@@ -397,7 +397,7 @@ def levinson(r, b):
     return x
 
 def goertzel(x, k):
-    """ Goertzel algorithm to compute DFT coefficients """
+    ''' Goertzel algorithm to compute DFT coefficients '''
 
     N = x.shape[0]
     f = k/float(N)
@@ -410,51 +410,9 @@ def goertzel(x, k):
     return y
     
     
-"""
+'''
 GEOMETRY UTILITIES
-"""
+'''
 def angle_from_points(x1, x2):
     return np.angle((x1[0, 0]-x2[0, 0]) + 1j*(x1[1, 0] - x2[1, 0]))
 
-
-def area(corners):
-    """
-    Computes the signed area of a 2D surface represented by its corners.
-    
-    :arg corners: (np.array 2xN, N>2) list of coordinates of the corners forming the surface
-    
-    :returns: (float) area of the surface
-        positive area means clockwise ordered corners.
-        negative area means anti-clockwise ordered corners.
-    """
-
-    x = corners[0, :] - corners[0, range(-1, corners.shape[1]-1)]
-    y = corners[1, :] + corners[1, range(-1, corners.shape[1]-1)]
-    return -0.5 * (x * y).sum()
-
-
-def ccw3p(p):
-    """
-    Computes the orientation of three 2D points.
-    
-    :arg p: (np.array dim 2x3) coordinates of three 2D points
-    
-    :returns: (int) orientation of the given triangle
-        1 if triangle vertices are counter-clockwise
-        -1 if triangle vertices are clock-wise
-        0 if vertices are colinear
-
-    :ref: https://en.wikipedia.org/wiki/Curve_orientation
-    """
-    if (p.shape != (2, 3)):
-        raise NameError(
-            'Room.ccw3p is for three 2D points, input is 2x3 ndarray')
-    d = (p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0]) - \
-        (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0])
-
-    if (np.abs(d) < constants.eps):
-        return 0
-    elif (d > 0):
-        return 1
-    else:
-        return -1

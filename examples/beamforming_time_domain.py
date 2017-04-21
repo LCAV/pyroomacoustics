@@ -1,7 +1,7 @@
-"""
+'''
 This is a longer example that applies time domain beamforming towards a source
 of interest in the presence of a strong interfering source.
-"""
+'''
 
 from __future__ import division, print_function
 
@@ -43,9 +43,9 @@ N = 1024
 
 # Create a microphone array
 if shape is 'Circular':
-    R = pra.circular2DArray(mic1, M, phi, d*M/(2*np.pi)) 
+    R = pra.circular_2D_array(mic1, M, phi, d*M/(2*np.pi)) 
 else:
-    R = pra.linear2DArray(mic1, M, phi, d) 
+    R = pra.linear_2D_array(mic1, M, phi, d) 
 
 # path to samples
 path = os.path.dirname(__file__)
@@ -77,19 +77,19 @@ room1 = pra.ShoeBox(
 # Add sources to room
 good_source = np.array([1, 4.5])           # good source
 normal_interferer = np.array([2.8, 4.3])   # interferer
-room1.addSource(good_source, signal=signal1, delay=delay1)
-room1.addSource(normal_interferer, signal=signal2, delay=delay2)
+room1.add_source(good_source, signal=signal1, delay=delay1)
+room1.add_source(normal_interferer, signal=signal2, delay=delay2)
 
-"""
+'''
 MVDR direct path only simulation
-"""
+'''
 
 # compute beamforming filters
 mics = pra.Beamformer(R, Fs, N=N, Lg=Lg)
-room1.addMicrophoneArray(mics)
-room1.compute_RIR()
+room1.add_microphone_array(mics)
+room1.compute_rir()
 room1.simulate()
-mics.rakeMVDRFilters(room1.sources[0][0:1],
+mics.rake_mvdr_filters(room1.sources[0][0:1],
                     room1.sources[1][0:1],
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
@@ -104,20 +104,20 @@ out_DirectMVDR = pra.normalize(pra.highpass(output, Fs))
 wavfile.write(path + '/output_samples/output_DirectMVDR.wav', Fs, out_DirectMVDR)
 
 
-"""
+'''
 Rake MVDR simulation
-"""
+'''
 
 # Add the microphone array and compute RIR
 mics = pra.Beamformer(R, Fs, N, Lg=Lg)
-room1.addMicrophoneArray(mics)
-room1.compute_RIR()
+room1.add_microphone_array(mics)
+room1.compute_rir()
 room1.simulate()
 
 # Design the beamforming filters using some of the images sources
 good_sources = room1.sources[0][:max_order_design+1]
 bad_sources = room1.sources[1][:max_order_design+1]
-mics.rakeMVDRFilters(good_sources, 
+mics.rake_mvdr_filters(good_sources, 
                     bad_sources, 
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
@@ -128,16 +128,16 @@ output = mics.process()
 out_RakeMVDR = pra.normalize(pra.highpass(output, Fs))
 wavfile.write(path + '/output_samples/output_RakeMVDR.wav', Fs, out_RakeMVDR)
 
-"""
+'''
 Perceptual direct path only simulation
-"""
+'''
 
 # compute beamforming filters
 mics = pra.Beamformer(R, Fs, N, Lg=Lg)
-room1.addMicrophoneArray(mics)
-room1.compute_RIR()
+room1.add_microphone_array(mics)
+room1.compute_rir()
 room1.simulate()
-mics.rakePerceptualFilters(room1.sources[0][0:1],
+mics.rake_perceptual_filters(room1.sources[0][0:1],
         room1.sources[1][0:1],
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
@@ -148,16 +148,16 @@ output = mics.process()
 out_DirectPerceptual = pra.normalize(pra.highpass(output, Fs))
 wavfile.write(path + '/output_samples/output_DirectPerceptual.wav', Fs, out_DirectPerceptual)
 
-"""
+'''
 Rake Perceptual simulation
-"""
+'''
 
 # compute beamforming filters
 mics = pra.Beamformer(R, Fs, N, Lg=Lg)
-room1.addMicrophoneArray(mics)
-room1.compute_RIR()
+room1.add_microphone_array(mics)
+room1.compute_rir()
 room1.simulate()
-mics.rakePerceptualFilters(good_sources, 
+mics.rake_perceptual_filters(good_sources, 
                     bad_sources, 
                     sigma2_n*np.eye(mics.Lg*mics.M), delay=delay)
 
@@ -168,11 +168,11 @@ output = mics.process()
 out_RakePerceptual = pra.normalize(pra.highpass(output, Fs))
 wavfile.write(path + '/output_samples/output_RakePerceptual.wav', Fs, out_RakePerceptual)
 
-"""
+'''
 Plot all the spectrogram
-"""
+'''
 
-dSNR = pra.dB(room1.dSNR(mics.center[:,0], source=0), power=True)
+dSNR = pra.dB(room1.direct_snr(mics.center[:,0], source=0), power=True)
 print('The direct SNR for good source is ' + str(dSNR))
 
 # remove a bit of signal at the end

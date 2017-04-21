@@ -13,13 +13,13 @@ from . import beamforming as bf
 from . import geometry as geom
 from .soundsource import SoundSource
 from .wall import Wall
-from .utilities import area, ccw3p
+from .geometry import area, ccw3p
 from .parameters import constants, eps
 
 from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):
-    """
+    '''
     This class represents a room instance.
     
     A room instance is formed by wall instances. A MicrophoneArray and SoundSources can be added.
@@ -36,7 +36,7 @@ class Room(object):
     :attribute absorption: (numpy.ndarray size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
     :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
-    """
+    '''
 
     def __init__(
             self,
@@ -72,7 +72,7 @@ class Room(object):
 
         # Pre-compute RIR if needed
         if (len(self.sources) > 0 and self.micArray is not None):
-            self.compute_RIR()
+            self.compute_rir()
         else:
             self.rir = None
 
@@ -92,7 +92,7 @@ class Room(object):
         self.convex_hull()
 
     @classmethod
-    def fromCorners(
+    def from_corners(
             cls,
             corners,
             absorption=1.,
@@ -102,14 +102,14 @@ class Room(object):
             sigma2_awgn=None,
             sources=None,
             mics=None):
-        """
+        '''
         Creates a 2D room by giving an array of corners.
         
         :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
         :arg absorption: (float array or float) list of absorption factor reflection for each wall or single value for all walls
         
         :returns: (Room) instance of a 2D room
-        """
+        '''
         
         corners = np.array(corners)
         if (corners.shape[0] != 2 or corners.shape[1] < 3):
@@ -138,7 +138,7 @@ class Room(object):
             height,
             v_vec=None,
             absorption=1.):
-        """
+        '''
         Creates a 3D room by extruding a 2D polygon. 
         The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
 
@@ -155,7 +155,7 @@ class Room(object):
             will have the same absorption. If an array is given, it should have as many elements
             as there will be walls, that is the number of vertices of the polygon plus two. The two
             last elements are for the floor and the ceiling, respectively. (default 1)
-        """
+        '''
 
         if self.dim != 2:
             raise ValueError('Can only extrude a 2D room.')
@@ -165,7 +165,7 @@ class Room(object):
             v_vec = np.array([0., 0., 1.])
 
         # check that the walls are ordered counterclock wise
-        # that should be the case if created from fromCorners function
+        # that should be the case if created from from_corners function
         nw = len(self.walls)
         floor_corners = np.zeros((2,nw))
         floor_corners[:,0] = self.walls[0].corners[:,0]
@@ -179,7 +179,7 @@ class Room(object):
 
         if not ordered:
             raise ValueError("The wall list should be ordered counter-clockwise, which is the case \
-                if the room is created with Room.fromCorners")
+                if the room is created with Room.from_corners")
 
         # make sure the floor_corners are ordered anti-clockwise (for now)
         if (geom.area(floor_corners) <= 0):
@@ -266,7 +266,7 @@ class Room(object):
 
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
-        """Plots the room with its walls, microphones, sources and images"""
+        ''' Plots the room with its walls, microphones, sources and images '''
     
         import matplotlib
         from matplotlib.patches import Circle, Wedge, Polygon
@@ -419,10 +419,10 @@ class Room(object):
 
             return fig, ax
 
-    def plotRIR(self, FD=False):
+    def plot_rir(self, FD=False):
 
         if self.rir is None:
-            self.compute_RIR()
+            self.compute_rir()
 
         import matplotlib.pyplot as plt
         from . import utilities as u
@@ -445,12 +445,12 @@ class Room(object):
                         plt.xlabel('Normalized frequency')
 
 
-    def addMicrophoneArray(self, micArray):
+    def add_microphone_array(self, micArray):
         self.micArray = micArray
 
-    def addSource(self, position, signal=None, delay=0):
+    def add_source(self, position, signal=None, delay=0):
 
-        if (not self.isInside(np.array(position))):
+        if (not self.is_inside(np.array(position))):
             raise ValueError('The source must be added inside the room.')
 
         self.sources.append(
@@ -461,7 +461,7 @@ class Room(object):
                     )
                 )
 
-    def firstOrderImages(self, source_position):
+    def first_order_images(self, source_position):
 
         # projected length onto normal
         ip = np.sum(self.normals * (self.corners - source_position[:, np.newaxis]), axis=0)
@@ -497,7 +497,7 @@ class Room(object):
                 # First, we will generate all the image sources
 
                 # generate first order images
-                i, d, w = self.firstOrderImages(np.array(source.position))
+                i, d, w = self.first_order_images(np.array(source.position))
                 images = [i]
                 damping = [d]
                 generators = [-np.ones(i.shape[1])]
@@ -512,7 +512,7 @@ class Room(object):
                     gen = np.array([])
                     wal = np.array([])
                     for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
-                        i, d, w = self.firstOrderImages(si)
+                        i, d, w = self.first_order_images(si)
                         img = np.concatenate((img, i), axis=1)
                         dmp = np.concatenate((dmp, d * sd))
                         gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
@@ -587,7 +587,7 @@ class Room(object):
                     else:
                         # In general, we need to check
                         self.visibility[-1].append(
-                                self.checkVisibilityForAllImages(source, mic, use_libroom=False)
+                                self.check_visibility_for_all_images(source, mic, use_libroom=False)
                                 )
                 self.visibility[-1] = np.array(self.visibility[-1])
 
@@ -662,14 +662,13 @@ class Room(object):
                     # We need to check that microphones are indeed in the room
                     for m in range(self.micArray.R.shape[1]):
                         # if not, it's not visible from anywhere!
-                        if not self.isInside(self.micArray.R[:,m]):
+                        if not self.is_inside(self.micArray.R[:,m]):
                             self.visibility[-1][m,:] = 0
 
 
-    def compute_RIR(self):
-        """
-        Compute the room impulse response between every source and microphone
-        """
+    def compute_rir(self):
+        ''' Compute the room impulse response between every source and microphone '''
+        
         self.rir = []
 
         # Run image source model if this hasn't been done
@@ -679,11 +678,11 @@ class Room(object):
         for m, mic in enumerate(self.micArray.R.T):
             h = []
             for s, source in enumerate(self.sources):
-                h.append(source.getRIR(mic, self.visibility[s][m], self.fs, self.t0))
+                h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 
     def simulate(self, recompute_rir=False):
-        """Simulates the microphone signal at every microphone in the array"""
+        ''' Simulates the microphone signal at every microphone in the array '''
 
         # import convolution routine
         from scipy.signal import fftconvolve
@@ -696,7 +695,7 @@ class Room(object):
 
         # compute RIR if necessary
         if len(self.rir) == 0 or recompute_rir:
-            self.compute_RIR()
+            self.compute_rir()
 
         # number of mics and sources
         M = self.micArray.M
@@ -735,8 +734,8 @@ class Room(object):
         self.micArray.record(signals, self.fs)
 
 
-    def dSNR(self, x, source=0):
-        """Computes the direct Signal-to-Noise Ratio"""
+    def direct_snr(self, x, source=0):
+        ''' Computes the direct Signal-to-Noise Ratio '''
 
         if source >= len(self.sources):
             raise ValueError('No such source')
@@ -756,21 +755,21 @@ class Room(object):
         return sigma2_s/self.sigma2_awgn/(16*np.pi**2*d2)
 
 
-    def getWallFromName(self, name):
-        """
+    def get_wall_by_name(self, name):
+        '''
         Returns the instance of the wall by giving its name.
         
         :arg name: (string) name of the wall
         
         :returns: (Wall) instance of the wall with this name
-        """
+        '''
         
         if (name in self.wallsId):
             return self.walls[self.wallsId[name]]
         else:
             raise ValueError('The wall '+name+' cannot be found.')
 
-    def printWallSequences(self, source):
+    def print_wall_sequences(self, source):
 
         visibilityCheck = np.zeros_like(source.images[0])-1
         
@@ -784,9 +783,7 @@ class Room(object):
             print()
 
     def make_c_room(self):
-        """
-        Wrapper around the C libroom
-        """
+        ''' Wrapper around the C libroom '''
 
         # exit if libroom is not available
         if not libroom_available:
@@ -824,8 +821,8 @@ class Room(object):
 
         return c_room
         
-    def checkVisibilityForAllImages(self, source, p, use_libroom=True):
-        """
+    def check_visibility_for_all_images(self, source, p, use_libroom=True):
+        '''
         Checks visibility from a given point for all images of the given source.
         
         This function tests visibility for all images of the source and returns the results
@@ -838,11 +835,11 @@ class Room(object):
             -1 : unchecked (only during execution of the function)
             0 (False) : not visible
             1 (True) : visible
-        """
+        '''
         
         visibilityCheck = np.zeros_like(source.images[0], dtype=np.int32)-1
         
-        if self.isInside(np.array(p)):
+        if self.is_inside(np.array(p)):
             # Only check for points that are in the room!
             if use_libroom and libroom_available:
                 # Call the C routine that checks visibility
@@ -871,7 +868,7 @@ class Room(object):
                 return visibilityCheck
             else:
                 for imageId in range(len(visibilityCheck)-1, -1, -1):
-                    visibilityCheck[imageId] = self.isVisible(source, p, imageId)
+                    visibilityCheck[imageId] = self.is_visible(source, p, imageId)
         else:
             # If point is outside, nothing is visible
             for imageId in range(len(visibilityCheck)-1, -1, -1):
@@ -880,8 +877,8 @@ class Room(object):
         return visibilityCheck
 
             
-    def isVisible(self, source, p, imageId = 0):
-        """
+    def is_visible(self, source, p, imageId = 0):
+        '''
         Returns true if the given sound source (with image source id) is visible from point p.
         
         :arg source: (SoundSource) the sound source (containing all its images)
@@ -891,13 +888,13 @@ class Room(object):
         :return: (bool)
             False (0) : not visible
             True (1) :  visible
-        """
+        '''
 
         p = np.array(p)
         imageId = int(imageId)
         
         # Check if there is an obstruction
-        if(self.isObstructed(source, p, imageId)):
+        if(self.is_obstructed(source, p, imageId)):
             return False
         
         if (source.orders[imageId] > 0):
@@ -911,14 +908,14 @@ class Room(object):
             # the reflection point needs to be visible from the image source that generates the ray
             if intersection is not None:
                     # Check visibility for the parent image by recursion
-                    return self.isVisible(source, intersection, source.generators[imageId])
+                    return self.is_visible(source, intersection, source.generators[imageId])
             else:
                 return False
         else:
             return True
       
-    def isObstructed(self, source, p, imageId = 0):
-        """
+    def is_obstructed(self, source, p, imageId = 0):
+        '''
         Checks if there is a wall obstructing the line of sight going from a source to a point.
         
         :arg source: (SoundSource) the sound source (containing all its images)
@@ -928,7 +925,7 @@ class Room(object):
         :returns: (bool)
             False (0) : not obstructed
             True (1) :  obstructed
-        """
+        '''
         
         imageId = int(imageId)
         if (np.isnan(source.walls[imageId])):
@@ -967,15 +964,15 @@ class Room(object):
                 
         return False
 
-    def isInside(self, p, includeBorders = True):
-        """
+    def is_inside(self, p, includeBorders = True):
+        '''
         Checks if the given point is inside the room.
         
         :arg p: (np.array dim 2 or 3) point to be tested
         :arg includeBorders: (bool) set true if a point on the wall must be considered inside the room
         
         :returns: (bool) True if the given point is inside the room, False otherwise.
-        """
+        '''
         
         p = np.array(p)
         if (self.dim != p.shape[0]):

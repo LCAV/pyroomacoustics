@@ -1,4 +1,4 @@
-"""
+'''
 pyroomacoustics
 ===============
 
@@ -92,7 +92,7 @@ Utilities
 __version__
     pyroomacoustics version string
 
-"""
+'''
 
 __version__ = '1.1.0'
 

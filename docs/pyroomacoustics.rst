@@ -1,13 +1,12 @@
-API Documentation
-=================
+pyroomacoustics package
+=======================
 
-Module contents
----------------
+Subpackages
+-----------
 
-.. automodule:: pyroomacoustics
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
+
+    pyroomacoustics.c_package
 
 Submodules
 ----------
@@ -30,10 +29,10 @@ Submodules
    pyroomacoustics.wall
    pyroomacoustics.windows
 
-Subpackages
------------
+Module contents
+---------------
 
-.. toctree::
-
-    pyroomacoustics.c_package
-
+.. automodule:: pyroomacoustics
+    :members:
+    :undoc-members:
+    :show-inheritance:

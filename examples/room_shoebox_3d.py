@@ -21,8 +21,8 @@ shoebox = pra.ShoeBox(
     )
 
 # source and mic locations
-shoebox.addSource([2, 3.1, 2])
-shoebox.addMicrophoneArray(
+shoebox.add_source([2, 3.1, 2])
+shoebox.add_microphone_array(
         pra.MicrophoneArray(
             np.array([[2, 1.5, 2]]).T, 
             shoebox.fs)

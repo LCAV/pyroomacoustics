@@ -2,7 +2,7 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-"""Collection of spectral estimation methods."""
+'''Collection of spectral estimation methods.'''
 from __future__ import division
 
 import sys
@@ -84,7 +84,7 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
 
 
 def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
-    """
+    '''
     Parameters:
     -----------
     x: 
@@ -105,7 +105,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     Returns:
     --------
     The STFT of x
-    """
+    '''
 
     # the transform size
     N = L + zp_back + zp_front
@@ -171,11 +171,11 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 # FreqVec: given FFT size and sampling rate, returns a vector of real
 # frequencies
 def freqvec(N, fs, centered=False):
-    """
+    '''
     N: FFT length
     fs: sampling rate of the signal
     shift: False if the DC is at the beginning, True if the DC is centered
-    """
+    '''
 
     # Create a centered vector. The (1-N%2) is to correct for even/odd length
     vec = np.arange(-N // 2 + (1 - N % 2), N // 2 + 1) * float(fs) / float(N)

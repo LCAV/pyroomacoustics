@@ -9,7 +9,7 @@ from . import geometry as geom
 
 
 class Wall(object):
-    """
+    '''
     This class represents a wall instance. A room instance is formed by these.
     
     :attribute corners: (np.array dim 2x2 or 3xN, N>2) endpoints forming the wall
@@ -17,7 +17,7 @@ class Wall(object):
     :attribute name: (string) name given to the wall, which can be reused to reference it in the Room object
     :attribute normal: (np.array dim 2 or 3) normal vector pointing outward the room
     :attribute dim: (int) dimension of the wall (2 or 3, meaning 2D or 3D)
-    """
+    '''
     
     
     def __init__(
@@ -63,26 +63,26 @@ class Wall(object):
             self.name = name
 
     def intersection(self, p1, p2):
-        """
+        '''
         Returns the intersection point between the wall and a line segment.
         
         :arg p1: (np.array dim 2 or 3) first end point of the line segment
         :arg p2: (np.array dim 2 or 3) second end point of the line segment
         
         :returns: (np.array dim 2 or 3 or None) intersection point between the wall and the line segment
-        """
+        '''
         
         p1 = np.array(p1)
         p2 = np.array(p2)
     
         if (self.dim == 2):
-            return geom.intersection2DSegments(p1, p2, self.corners[:,0], self.corners[:,1])
+            return geom.intersection_2D_segments(p1, p2, self.corners[:,0], self.corners[:,1])
             
         if (self.dim == 3):
-            return geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal, self.plane_point, self.plane_basis)
+            return geom.intersection_segment_polygon_surface(p1, p2, self.corners_2d, self.normal, self.plane_point, self.plane_basis)
         
     def intersects(self, p1, p2):
-        """
+        '''
         Tests if the given line segment intersects the wall.
         
         :arg p1: (ndarray size 2 or 3) first endpoint of the line segment
@@ -92,13 +92,13 @@ class Wall(object):
             (bool) True if the line segment intersects the wall
             (bool) True if the intersection happens at a border of the wall
             (bool) True if the intersection happens at the extremity of the segment
-        """
+        '''
         
         if (self.dim == 2):
-            intersection, borderOfSegment, borderOfWall = geom.intersection2DSegments(p1, p2, self.corners[:,0], self.corners[:,1])
+            intersection, borderOfSegment, borderOfWall = geom.intersection_2D_segments(p1, p2, self.corners[:,0], self.corners[:,1])
 
         if (self.dim == 3):
-            intersection, borderOfSegment, borderOfWall = geom.intersectionSegmentPolygonSurface(p1, p2, self.corners_2d, self.normal,
+            intersection, borderOfSegment, borderOfWall = geom.intersection_segment_polygon_surface(p1, p2, self.corners_2d, self.normal,
                                                                                                  self.plane_point, self.plane_basis)
 
         if intersection is None:
@@ -109,7 +109,7 @@ class Wall(object):
         return intersects, borderOfWall, borderOfSegment
             
     def side(self, p):
-        """
+        '''
         Computes on which side of the wall the point p is.
         
         :arg p: (np.array dim 2 or 3) coordinates of the point
@@ -118,7 +118,7 @@ class Wall(object):
             -1 : opposite to the normal vector (going inside the room)
             0 : on the wall
             1 : in the direction of the normal vector (going outside of the room)
-        """
+        '''
         
         p = np.array(p)
         if (self.dim != p.shape[0]):

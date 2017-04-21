@@ -21,12 +21,12 @@ room = pra.ShoeBox(
     max_order=2)
 
 # add mic and good source to room
-room.addSource(source)
+room.add_source(source)
 
 # place 1 microphone in the room
 mics = pra.MicrophoneArray(np.array([[4,],
                                      [2,]]), room.fs)
-room.addMicrophoneArray(mics)
+room.add_microphone_array(mics)
 
 # Run the image source model
 room.image_source_model()

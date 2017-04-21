@@ -33,110 +33,110 @@ class TestGeometryRoutines(TestCase):
         self.assertEquals(pra.geometry.ccw3p([0, 0], [1, 0], [2, 0]), 0)
 
     def test_intersection2DSegments_cross(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([-2, 0], [2, 0], [0, -2], [0, 2])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([-2, 0], [2, 0], [0, -2], [0, 2])
         i = all(p==[0, 0])
         self.assertTrue(all([i, not endOfA, not endOfB]))
 
     def test_intersection2DSegments_T(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [2, -2], [2, 2])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [2, -2], [2, 2])
         i = all(p==[2, 0])
         self.assertTrue(all([i, endOfA, not endOfB]))
 
     def test_intersection2DSegments_T2(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([-2, 0], [2, 0], [0, -2], [0, 0])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([-2, 0], [2, 0], [0, -2], [0, 0])
         i = all(p==[0, 0])
         self.assertTrue(all([i, not endOfA, endOfB]))
 
     def test_intersection2DSegments_L(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [2, 2], [2, 0])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [2, 2], [2, 0])
         i = all(p==[2, 0])
         self.assertTrue(all([i, endOfA, endOfB]))
 
     def test_intersection2DSegments_parallel(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [0, 1], [2, 1])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [0, 1], [2, 1])
         i = p is None
         self.assertTrue(all([i, not endOfA, not endOfB]))
 
     def test_intersection2DSegments_notTouching(self):
-        p, endOfA, endOfB = pra.geometry.intersection2DSegments([0, 0], [2, 0], [1, 4], [1, 1])
+        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [1, 4], [1, 1])
         i = p is None
         self.assertTrue(all([i, not endOfA, not endOfB]))
 
     def test_intersectionSegmentPlane_through(self):
-        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, -2], [2, 2, 0], [0, 0, -1])
+        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, -2], [2, 2, 0], [0, 0, -1])
         i = all(p==[2, 2, 0])
         self.assertTrue(all([i, not endOfSegment]))
 
     def test_intersectionSegmentPlane_touching(self):
-        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, 0], [2, 2, 0], [0, 0, -1])
+        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, 0], [2, 2, 0], [0, 0, -1])
         i = all(p==[2, 2, 0])
         self.assertTrue(all([i, endOfSegment]))
 
     def test_intersectionSegmentPlane_notTouching(self):
-        p, endOfSegment = pra.geometry.intersectionSegmentPlane([2, 2, 2], [2, 2, 1], [2, 2, 0], [0, 0, -1])
+        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, 1], [2, 2, 0], [0, 0, -1])
         i = p is None
         self.assertTrue(all([i, not endOfSegment]))
 
     def test_intersectionSegmentPlane_inside(self):
-        p, endOfSegment = pra.geometry.intersectionSegmentPlane([0, 2, 0], [2, 2, 0], [2, 2, 0], [0, 0, -1])
+        p, endOfSegment = pra.geometry.intersection_segment_plane([0, 2, 0], [2, 2, 0], [2, 2, 0], [0, 0, -1])
         i = p is None
         self.assertTrue(all([i, not endOfSegment]))
 
     def test_intersectionSegmentPolygonSurface_through(self):
         wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([2, 2, 2], [2, 2, -2], wall.corners_2d, wall.normal,
+        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([2, 2, 2], [2, 2, -2], wall.corners_2d, wall.normal,
                 wall.plane_point, wall.plane_basis)
         i = all(p==[2, 2, 0])
         self.assertTrue(all([i, not endOfSegment, not onBorder]))
 
     def test_intersectionSegmentPolygonSurface_touching(self):
         wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([2, 2, 2], [2, 2, 0], wall.corners_2d, wall.normal,
+        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([2, 2, 2], [2, 2, 0], wall.corners_2d, wall.normal,
                 wall.plane_point, wall.plane_basis)
         i = all(p==[2, 2, 0])
         self.assertTrue(all([i, endOfSegment, not onBorder]))
 
     def test_intersectionSegmentPolygonSurface_border(self):
         wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([0, 0, 2], [0, 0, -2], wall.corners_2d, wall.normal,
+        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([0, 0, 2], [0, 0, -2], wall.corners_2d, wall.normal,
                 wall.plane_point, wall.plane_basis)
         i = all(p==[0, 0, 0])
         self.assertTrue(all([i, not endOfSegment, onBorder]))
 
     def test_intersectionSegmentPolygonSurface_miss(self):
         wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersectionSegmentPolygonSurface([-1, -1, 2], [-1, -1, -2], wall.corners_2d, wall.normal,
+        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([-1, -1, 2], [-1, -1, -2], wall.corners_2d, wall.normal,
                 wall.plane_point, wall.plane_basis)
         i = p is None
         self.assertTrue(all([i, not endOfSegment, not onBorder]))
         
     def test_isInside2DPolygon_inside(self):
-        inside, onBorder = pra.geometry.isInside2DPolygon([2, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
         self.assertTrue(all([inside, not onBorder]))
         
     def test_isInside2DPolygon_onBorder(self):
-        inside, onBorder = pra.geometry.isInside2DPolygon([0, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([0, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
         self.assertTrue(all([inside, onBorder]))
         
     def test_isInside2DPolygon_onCorner(self):
-        inside, onBorder = pra.geometry.isInside2DPolygon([4, 4], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([4, 4], [[0, 4, 4, 0], [0, 0, 4, 4]])
         self.assertTrue(all([inside, onBorder]))
         
     def test_isInside2DPolygon_outside(self):
-        inside, onBorder = pra.geometry.isInside2DPolygon([5, 5], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([5, 5], [[0, 4, 4, 0], [0, 0, 4, 4]])
         self.assertTrue(all([not inside, not onBorder]))
 
     def test_isInside2DPolygon_parallel_wall(self):
         corners = [[0, 0, 1, 1, 3, 3], [0, 1, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.isInside2DPolygon([2, 1], corners)
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 1], corners)
         self.assertTrue(all([inside, not onBorder]))
 
     def test_isInside2DPolygon_at_corner(self):
         corners = [[0, 1, 1, 3, 3], [0, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.isInside2DPolygon([2, 1], corners)
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 1], corners)
         self.assertTrue(all([inside, not onBorder]))
 
     def test_isInside2DPolygon_just_out(self):
         corners = [[0, 1, 1, 3, 3], [0, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.isInside2DPolygon([4, 2], corners)
+        inside, onBorder = pra.geometry.is_inside_2D_polygon([4, 2], corners)
         self.assertTrue(all([not inside, not onBorder]))

@@ -8,7 +8,7 @@ from .parameters import constants, eps
 
 
 def area(corners):
-    """
+    '''
     Computes the signed area of a 2D surface represented by its corners.
     
     :arg corners: (np.array 2xN, N>2) list of coordinates of the corners forming the surface
@@ -16,7 +16,7 @@ def area(corners):
     :returns: (float) area of the surface
         positive area means anti-clockwise ordered corners.
         negative area means clockwise ordered corners.
-    """
+    '''
 
     corners = np.array(corners)
     x = corners[0, :] - corners[0, range(-1, corners.shape[1]-1)]
@@ -25,7 +25,7 @@ def area(corners):
 
 
 def side(p, p0, vector):
-    """
+    '''
     Compute on which side of a given point an other given point is according to a vector.
     
     :arg p: (ndarray size 2 or 3) point to be tested
@@ -36,7 +36,7 @@ def side(p, p0, vector):
         1 : p is at the side pointed by the vector
         0 : p is in the middle (on the same line as p0)
         -1 : p is at the opposite side of the one pointed by the vector
-    """
+    '''
     p = np.array(p)
     p0 = np.array(p0)
     vector = np.array(vector)
@@ -51,7 +51,7 @@ def side(p, p0, vector):
 
 
 def ccw3p(p1, p2, p3):
-    """
+    '''
     Computes the orientation of three 2D points.
     
     :arg p1: (ndarray size 2) coordinates of a 2D point
@@ -64,7 +64,7 @@ def ccw3p(p1, p2, p3):
         0 if vertices are collinear
 
     :ref: https://en.wikipedia.org/wiki/Curve_orientation
-    """
+    '''
     
     p1, p2, p3 = np.array(p1), np.array(p2), np.array(p3)
     if (p1.shape[0] != 2 or p2.shape[0] != 2 or p3.shape[0] != 2):
@@ -79,8 +79,8 @@ def ccw3p(p1, p2, p3):
         return -1
 
 
-def intersection2DSegments(a1, a2, b1, b2) :
-    """
+def intersection_2D_segments(a1, a2, b1, b2) :
+    '''
     Computes the intersection between two 2D line segments.
     
     This function computes the intersection between two 2D segments
@@ -101,7 +101,7 @@ def intersection2DSegments(a1, a2, b1, b2) :
         (ndarray size 2 or None) coordinates of the intersection point
         (bool) True if the intersection is at boundaries of segment a
         (bool) True if the intersection is at boundaries of segment b
-    """
+    '''
     
     a1=np.array(a1)
     a2=np.array(a2)
@@ -162,8 +162,8 @@ def intersection2DSegments(a1, a2, b1, b2) :
 
 
     
-def intersectionSegmentPlane(a1, a2, p, normal):
-    """
+def intersection_segment_plane(a1, a2, p, normal):
+    '''
     Computes the intersection between a line segment and a plane in 3D.
     
     This function computes the intersection between a line segment (defined
@@ -182,7 +182,7 @@ def intersectionSegmentPlane(a1, a2, p, normal):
     :returns: (tuple of 2 elements) results of the computation
         (ndarray size 3 or None) coordinates of the intersection point
         (bool) True if the intersection is at boundaries of the segment
-    """
+    '''
 
     a1=np.array(a1).astype(float)
     a2=np.array(a2).astype(float)
@@ -217,8 +217,8 @@ def intersectionSegmentPlane(a1, a2, p, normal):
             return a1+s*u, limitCase
 
 
-def intersectionSegmentPolygonSurface(a1, a2, corners_2d, normal, plane_point, plane_basis):
-    """
+def intersection_segment_polygon_surface(a1, a2, corners_2d, normal, plane_point, plane_basis):
+    '''
     Computes the intersection between a line segment and a polygon surface in 3D.
     
     This function computes the intersection between a line segment (defined
@@ -239,7 +239,7 @@ def intersectionSegmentPolygonSurface(a1, a2, corners_2d, normal, plane_point, p
         (ndarray size 3 or None) coordinates of the intersection point
         (bool) True if the intersection is at boundaries of the segment
         (bool) True if the intersection is at boundaries of the polygon
-    """
+    '''
 
     a1 = np.array(a1)
     a2 = np.array(a2)
@@ -260,7 +260,7 @@ def intersectionSegmentPolygonSurface(a1, a2, corners_2d, normal, plane_point, p
     
     # Check if the segment intersects the plane formed by the surface
     # Get the intersection point if it is the case
-    p, segmentLimit = intersectionSegmentPlane(a1, a2, plane_point, normal)
+    p, segmentLimit = intersection_segment_plane(a1, a2, plane_point, normal)
     if p is None:
         return None, False, False
 
@@ -268,15 +268,15 @@ def intersectionSegmentPolygonSurface(a1, a2, corners_2d, normal, plane_point, p
     localp = np.dot(plane_basis.T, p - plane_point)
 
     # Check if the intersection point is in the polygon on the plane
-    inside, borderLimit = isInside2DPolygon(localp, corners_2d)
+    inside, borderLimit = is_inside_2D_polygon(localp, corners_2d)
     if not inside:
         p = None
     
     return p, segmentLimit, borderLimit
 
 
-def isInside2DPolygon(p, corners):
-    """
+def is_inside_2D_polygon(p, corners):
+    '''
     Checks if a given point is inside a given polygon in 2D.
     
     This function checks if a point (defined by its coordinates) is inside
@@ -293,7 +293,7 @@ def isInside2DPolygon(p, corners):
     :returns: (tuple of 2 elements) results of the computation
         (bool) True if the point is inside
         (bool) True if the intersection is at boundaries of the polygon
-    """
+    '''
     
     p = np.array(p)
     corners = np.array(corners)
