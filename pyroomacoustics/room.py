@@ -95,7 +95,7 @@ class Room(object):
     def from_corners(
             cls,
             corners,
-            absorption=1.,
+            absorption=0.,
             fs=8000,
             t0=0.,
             max_order=1,
@@ -106,7 +106,7 @@ class Room(object):
         Creates a 2D room by giving an array of corners.
         
         :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
-        :arg absorption: (float array or float) list of absorption factor reflection for each wall or single value for all walls
+        :arg absorption: (float array or float) list of absorption factor for each wall or single value for all walls
         
         :returns: (Room) instance of a 2D room
         '''
@@ -137,7 +137,7 @@ class Room(object):
             self,
             height,
             v_vec=None,
-            absorption=1.):
+            absorption=0.):
         '''
         Creates a 3D room by extruding a 2D polygon. 
         The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
@@ -473,7 +473,7 @@ class Room(object):
         images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
 
         # collect absorption factors of reflecting walls
-        damping = self.absorption[ip > 0]
+        damping = (1 - self.absorption[ip > 0])
 
         # collect the index of the wall corresponding to the new image
         wall_indices = np.arange(len(self.walls))[ip > 0]
@@ -1010,7 +1010,7 @@ class ShoeBox(Room):
             p,
             fs=8000,
             t0=0.,
-            absorption=1.,
+            absorption=0.,
             max_order=1,
             sigma2_awgn=None,
             sources=None,

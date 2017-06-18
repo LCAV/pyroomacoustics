@@ -18,18 +18,18 @@ source = np.array([1, 4.5])
 room = pra.ShoeBox(
     room_dim,
     fs=16000,
-    max_order=2)
+    max_order=4)
 
 # add mic and good source to room
 room.add_source(source)
 
 # place 1 microphone in the room
-mics = pra.MicrophoneArray(np.array([[4,],
+mics = pra.MicrophoneArray(np.array([[3,],
                                      [2,]]), room.fs)
 room.add_microphone_array(mics)
 
 # Run the image source model
-room.image_source_model()
+room.image_source_model(use_libroom=True)
 
 # Plot the result up to fourth order images
 room.plot(img_order=4)

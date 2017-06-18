@@ -23,7 +23,7 @@ t_cut = 0.83           # length in [s] to remove at end of signal (no sound)
 # Some simulation parameters
 Fs = 8000
 t0 = 1./(Fs*np.pi*1e-2)  # starting time function of sinc decay in RIR response
-absorption = 0.90
+absorption = 0.1
 max_order_sim = 2
 sigma2_n = 5e-7
 

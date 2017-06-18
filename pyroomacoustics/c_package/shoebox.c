@@ -10,17 +10,17 @@ int image_source_shoebox(room_t *room, float *source, float *room_size, float *a
   int i, d;
 
   // precompute powers of the absorption coefficients
-  float *absorption_pwr = (float *)malloc((max_order + 1) * 2 * room->dim * sizeof(int));
+  float *transmission_pwr = (float *)malloc((max_order + 1) * 2 * room->dim * sizeof(int));
   for (d = 0 ; d < 2 * room->dim ; d++)
-    absorption_pwr[d] = 1.;
+    transmission_pwr[d] = 1.;
   for (i = 1 ; i <= max_order ; i++)
     for (d = 0 ; d < 2 * room->dim ; d++)
-      absorption_pwr[i * 2 * room->dim + d] = absorption[d] * absorption_pwr[(i-1)*2*room->dim + d];
+      transmission_pwr[i * 2 * room->dim + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*room->dim + d];
 
   /*
   for (i = 0 ; i <= max_order ; i++)
     for (d = 0 ; d < 2 * room->dim ; d++)
-      printf("abs wall=%d pwr=%d abs=%f\n", d, i, absorption_pwr[i * 2 * room->dim + d]);
+      printf("abs wall=%d pwr=%d abs=%f\n", d, i, transmission_pwr[i * 2 * room->dim + d]);
   */
 
   // The linked list of image sources
@@ -73,8 +73,8 @@ int image_source_shoebox(room_t *room, float *source, float *room_size, float *a
             p1 = abs((point[d]-1)/2);
             p2 = abs(point[d]/2);
           }
-          float a1 = absorption_pwr[2 * room->dim * p1 + 2*d];
-          float a2 = absorption_pwr[2 * room->dim * p2 + 2*d+1];
+          float a1 = transmission_pwr[2 * room->dim * p1 + 2*d];
+          float a2 = transmission_pwr[2 * room->dim * p2 + 2*d+1];
           /*
           printf("(%d,%d) dim=%d p1=%d a[%d]=%f p2=%d a[%d]=%f\n", point[0], point[1], d, 
               p1, 2 * room->dim * p1 + 2*d, a1, 
@@ -91,7 +91,7 @@ int image_source_shoebox(room_t *room, float *source, float *room_size, float *a
   }
 
   // Clean up allocated memory
-  free(absorption_pwr);
+  free(transmission_pwr);
 
   // fill linear arrays and return status
   return fill_sources(room, &source_list);

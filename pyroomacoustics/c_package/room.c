@@ -271,7 +271,7 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
     if (dir <= 0)
       continue;
 
-    new_is.attenuation = is->attenuation * wall->absorption;
+    new_is.attenuation = is->attenuation * (1. - wall->absorption);
     new_is.order = is->order + 1;
     new_is.gen_wall = wi;
     new_is.parent = is;
