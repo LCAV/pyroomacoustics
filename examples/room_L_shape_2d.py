@@ -31,9 +31,7 @@ room.add_source([1.5, 1.2])
 R = np.array([[3., 4.2], [2.25, 2.1]])
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-then = time.time()
 room.compute_rir()
-t_compute_rir = time.time() - then
 
 # plot the room and resulting beamformer
 room.plot(img_order=6)

@@ -218,63 +218,36 @@ all_vals = np.concatenate((pra.dB(F1+pra.eps),
 vmin, vmax = np.percentile(all_vals, [p_min, p_max])
 
 cmap = 'afmhot'
-interpolation='sinc'
+interpolation='none'
 
 fig, ax = plt.subplots(figsize=figsize, nrows=2, ncols=3)
 
+def plot_spectrogram(F, title):
+    pra.spectroplot(F.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax,
+            cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
+    ax.set_title(title)
+    ax.set_ylabel('')
+    ax.set_xlabel('')
+    ax.set_aspect('auto')
+    ax.axis('off')
+
 ax = plt.subplot(2,3,1)
-pra.spectroplot(F0.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax,
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Desired Signal')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F0, 'Desired Signal')
 
 ax = plt.subplot(2,3,4)
-pra.spectroplot(F1.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax,
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Microphone Input')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F1, 'Microphone Input')
 
 ax = plt.subplot(2,3,2)
-pra.spectroplot(F2.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax, 
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Direct MVDR')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F2, 'Direct MVDR')
 
 ax = plt.subplot(2,3,5)
-pra.spectroplot(F3.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax, 
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Rake MVDR')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F3, 'Rake MVDR')
 
 ax = plt.subplot(2,3,3)
-pra.spectroplot(F4.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax, 
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Direct Perceptual')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F4, 'Direct Perceptual')
 
 ax = plt.subplot(2,3,6)
-pra.spectroplot(F5.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax, 
-        cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
-ax.set_title('Rake Perceptual')
-ax.set_ylabel('')
-ax.set_xlabel('')
-ax.set_aspect('auto')
-ax.axis('off')
+plot_spectrogram(F5, 'Rake Perceptual')
 
 fig.savefig(path + '/figures/spectrograms.png', dpi=150)
 

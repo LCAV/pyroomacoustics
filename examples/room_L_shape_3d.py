@@ -32,29 +32,13 @@ R = np.array([[3.,   2.2],
               [0.6,  0.55]])
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-then = time.time()
-# a parameter controls the use of the c-extension
-# for the computation of image sources
-room.image_source_model(use_libroom=False)
-t_pure_python = time.time() - then
-
-room.plot_rir()
-plt.title('Pure python')
-
-then = time.time()
 room.image_source_model(use_libroom=True)
-t_c = time.time() - then
 
 room.compute_rir()
 
 room.plot_rir()
-plt.title('libroom')
 
 #show the room and the image sources
 room.plot()
-
-print("Time to compute in Python:", t_pure_python)
-print("Time to compute in C:", t_c)
-print("Speed-up:", t_pure_python/t_c, "x")
 
 plt.show()

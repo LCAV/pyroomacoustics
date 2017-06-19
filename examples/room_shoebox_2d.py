@@ -29,7 +29,7 @@ mics = pra.MicrophoneArray(np.array([[3,],
 room.add_microphone_array(mics)
 
 # Run the image source model
-room.image_source_model(use_libroom=True)
+room.image_source_model()
 
 # Plot the result up to fourth order images
 room.plot(img_order=4)
