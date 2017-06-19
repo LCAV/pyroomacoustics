@@ -64,14 +64,14 @@ class Room(object):
         else:
             self.sources = []
 
-        self.micArray = mics
+        self.mic_array = mics
          
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
 
         # Pre-compute RIR if needed
-        if (len(self.sources) > 0 and self.micArray is not None):
+        if (len(self.sources) > 0 and self.mic_array is not None):
             self.compute_rir()
         else:
             self.rir = None
@@ -292,15 +292,15 @@ class Room(object):
             ax.add_collection(p)
 
             # draw the microphones
-            if (self.micArray is not None):
-                for mic in self.micArray.R.T:
+            if (self.mic_array is not None):
+                for mic in self.mic_array.R.T:
                     ax.scatter(mic[0], mic[1],
                             marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
                 # draw the beam pattern of the beamformer if requested (and available)
                 if freq is not None \
-                        and isinstance(self.micArray, bf.Beamformer) \
-                        and (self.micArray.weights is not None or self.micArray.filters is not None):
+                        and isinstance(self.mic_array, bf.Beamformer) \
+                        and (self.mic_array.weights is not None or self.mic_array.filters is not None):
 
                     freq = np.array(freq)
                     if freq.ndim is 0:
@@ -309,25 +309,30 @@ class Room(object):
                     # define a new set of colors for the beam patterns
                     newmap = plt.get_cmap('autumn')
                     desat = 0.7
-                    ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0, 1, len(freq))])
+                    try:
+                        # this is for matplotlib >= 2.0.0
+                        ax.set_prop_cycle(color=[newmap(k) for k in desat*np.linspace(0, 1, len(freq))])
+                    except:
+                        # keep this for backward compatibility
+                        ax.set_color_cycle([newmap(k) for k in desat*np.linspace(0, 1, len(freq))])
 
                     phis = np.arange(360) * 2 * np.pi / 360.
                     newfreq = np.zeros(freq.shape)
                     H = np.zeros((len(freq), len(phis)), dtype=complex)
                     for i, f in enumerate(freq):
-                        newfreq[i], H[i] = self.micArray.response(phis, f)
+                        newfreq[i], H[i] = self.mic_array.response(phis, f)
 
                     # normalize max amplitude to one
                     H = np.abs(H)**2/np.abs(H).max()**2
 
                     # a normalization factor according to room size
-                    norm = np.linalg.norm((self.corners - self.micArray.center), axis=0).max()
+                    norm = np.linalg.norm((self.corners - self.mic_array.center), axis=0).max()
 
                     # plot all the beam patterns
                     i = 0
                     for f, h in zip(newfreq, H):
-                        x = np.cos(phis) * h * norm + self.micArray.center[0, 0]
-                        y = np.sin(phis) * h * norm + self.micArray.center[1, 0]
+                        x = np.cos(phis) * h * norm + self.mic_array.center[0, 0]
+                        y = np.sin(phis) * h * norm + self.mic_array.center[1, 0]
                         l = ax.plot(x, y, '-', linewidth=0.5)
 
             # define some markers for different sources and colormap for damping
@@ -411,8 +416,8 @@ class Room(object):
 
 
             # draw the microphones
-            if (self.micArray is not None):
-                for mic in self.micArray.R.T:
+            if (self.mic_array is not None):
+                for mic in self.mic_array.R.T:
                     ax.scatter(mic[0], mic[1], mic[2],
                             marker='x', linewidth=0.5, s=mic_marker_size, c='k')
 
@@ -427,7 +432,7 @@ class Room(object):
         import matplotlib.pyplot as plt
         from . import utilities as u
 
-        M = self.micArray.M
+        M = self.mic_array.M
         S = len(self.sources)
         for r in range(M):
             for s in range(S):
@@ -446,7 +451,7 @@ class Room(object):
 
 
     def add_microphone_array(self, micArray):
-        self.micArray = micArray
+        self.mic_array = micArray
 
     def add_source(self, position, signal=None, delay=0):
 
@@ -580,7 +585,7 @@ class Room(object):
                 # Then we will check the visibilty of the sources
                 # visibility is a list with first index for sources, and second for mics
                 self.visibility.append([])
-                for mic in self.micArray.R.T:
+                for mic in self.mic_array.R.T:
                     if isinstance(self, ShoeBox):
                         # All sources are visible in shoebox rooms
                         self.visibility[-1].append(np.ones(source.images.shape[1], dtype=bool))
@@ -611,7 +616,7 @@ class Room(object):
                 c_room = self.make_c_room()
 
                 # copy microphone information to struct
-                mic = np.asfortranarray(self.micArray.R, dtype=np.float32)
+                mic = np.asfortranarray(self.mic_array.R, dtype=np.float32)
                 c_room.n_microphones = ctypes.c_int(mic.shape[1])
                 c_room.microphones = mic.ctypes.data_as(c_float_p)
 
@@ -660,9 +665,9 @@ class Room(object):
                     libroom.free_sources(ctypes.byref(c_room))
 
                     # We need to check that microphones are indeed in the room
-                    for m in range(self.micArray.R.shape[1]):
+                    for m in range(self.mic_array.R.shape[1]):
                         # if not, it's not visible from anywhere!
-                        if not self.is_inside(self.micArray.R[:,m]):
+                        if not self.is_inside(self.mic_array.R[:,m]):
                             self.visibility[-1][m,:] = 0
 
 
@@ -675,7 +680,7 @@ class Room(object):
         if self.visibility is None:
             self.image_source_model()
 
-        for m, mic in enumerate(self.micArray.R.T):
+        for m, mic in enumerate(self.mic_array.R.T):
             h = []
             for s, source in enumerate(self.sources):
                 h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
@@ -690,7 +695,7 @@ class Room(object):
         # Throw an error if we are missing some hardware in the room
         if (len(self.sources) is 0):
             raise ValueError('There are no sound sources in the room.')
-        if (self.micArray is None):
+        if (self.mic_array is None):
             raise ValueError('There is no microphone in the room.')
 
         # compute RIR if necessary
@@ -698,7 +703,7 @@ class Room(object):
             self.compute_rir()
 
         # number of mics and sources
-        M = self.micArray.M
+        M = self.mic_array.M
         S = len(self.sources)
 
         # compute the maximum signal length
@@ -731,7 +736,7 @@ class Room(object):
                 rx += np.random.normal(0., np.sqrt(self.sigma2_awgn), rx.shape)
 
         # record the signals in the microphones
-        self.micArray.record(signals, self.fs)
+        self.mic_array.record(signals, self.fs)
 
 
     def direct_snr(self, x, source=0):

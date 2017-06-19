@@ -23,8 +23,8 @@ R = pra.linear_2D_array(mic_pos, 4, 0, 0.04)
 room.add_microphone_array(pra.Beamformer(R, room.fs))
 
 # Now compute the delay and sum weights for the beamformer
-room.micArray.far_field_weights(np.arctan2(src_pos[0]-mic_pos[0], src_pos[1]-mic_pos[1]))
-room.micArray.rake_delay_and_sum_weights(room.sources[0][:1])
+room.mic_array.far_field_weights(np.arctan2(src_pos[0]-mic_pos[0], src_pos[1]-mic_pos[1]))
+room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
 
 # plot the room and resulting beamformer
 room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
