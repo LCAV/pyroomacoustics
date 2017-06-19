@@ -111,3 +111,5 @@ from .bss import *
 from .multirate import *
 from .acoustics import *
 from .recognition import *
+
+from . import doa

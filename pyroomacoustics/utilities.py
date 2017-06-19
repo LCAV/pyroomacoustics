@@ -357,6 +357,53 @@ def fractional_delay(t0):
     return np.hanning(N)*np.sinc(np.arange(N) - (N-1)/2 - t0)
 
 
+def fractional_delay_filter_bank(delays):
+    '''
+    Creates a fractional delay filter bank of windowed sinc filters
+
+    Parameters
+    ----------
+    delays: 1d narray
+        The delays corresponding to each filter in fractional samples
+        
+    Returns
+    -------
+    An ndarray where the ith row contains the fractional delay filter
+    corresponding to the ith delay. The number of columns of the matrix
+    is proportional to the maximum delay.
+    '''
+
+    # constants and lengths
+    N = delays.shape[0]
+    L = constants.get('frac_delay_length')
+    filter_length = L + int(np.ceil(delays).max())
+
+    # subtract the minimum delay, so that all delays are positive
+    delays -= delays.min()
+
+    # allocate a flat array for the filter bank that we'll reshape at the end
+    bank_flat = np.zeros(N * filter_length)
+
+    # separate delays in integer and fractional parts
+    di = np.floor(delays).astype(np.int)
+    df = delays - di
+
+    # broadcasting tricks to compute at once all the locations
+    # and sinc times that must be computed
+    T = np.tile(np.arange(L), (N, 1))
+    indices = (T + (di[:,None] + filter_length * np.arange(N)[:,None]))
+    sinc_times = (T - df[:,None] - (L - 1) / 2)
+
+    # we'll need to window also all the sincs at once
+    windows = np.tile(np.hanning(L), N)
+
+    # compute all sinc with one call
+    bank_flat[indices.ravel()] = windows * np.sinc(sinc_times.ravel())
+
+    return np.reshape(bank_flat, (N, -1))
+
+
+
 def levinson(r, b):
     '''
     levinson(r,b)
