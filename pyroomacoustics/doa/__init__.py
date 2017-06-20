@@ -91,7 +91,7 @@ References
 .. [5] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband 
     signals*, IEEE Trans. Signal Process., Vol. 54, Num 6., pp 1977--1989, 2006
 
-.. [6] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanić, and M. Vetterli, *FRIDA:
+.. [6] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanic, and M. Vetterli, *FRIDA:
     FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
     pp 3186-3190, 2017
 

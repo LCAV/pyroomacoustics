@@ -27,6 +27,7 @@ install:
 
     # Replace dep1 dep2 ... with your dependencies
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib nose
+  - pip install -r requirements.txt
   - python setup.py install
 
 # Run test twice, without C lib, and with C lib

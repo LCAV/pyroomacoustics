@@ -58,7 +58,7 @@ class FRIDA(DOA):
     References
     ----------
 
-    .. [FRIDA] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanić, and M. Vetterli, *FRIDA:
+    .. [FRIDA] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanic, and M. Vetterli, *FRIDA:
         FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
         pp 3186-3190, 2017
     '''
