@@ -1,3 +1,6 @@
+'''
+A collection of functions to plot maps and points on circles and spheres.
+'''
 
 def polar_plt_dirac(self, azimuth_ref=None, alpha_ref=None, save_fig=False, 
         file_name=None, plt_dirty_img=True):

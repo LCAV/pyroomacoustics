@@ -1,7 +1,7 @@
 '''
 Routines to perform grid search on the sphere
 '''
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.spatial import ConvexHull, SphericalVoronoi
@@ -9,7 +9,7 @@ from scipy.spatial import ConvexHull, SphericalVoronoi
 from abc import ABCMeta, abstractmethod
 
 from .detect_peaks import detect_peaks
-from . import doa
+from .utils import great_circ_dist
 
 class Grid:
     '''
@@ -255,7 +255,7 @@ class GridSphere(Grid):
 
                 phi2, theta2 = self.spherical[:,v]
 
-                d = doa.great_circ_dist(1, theta1, phi1, theta2, phi2)
+                d = great_circ_dist(1, theta1, phi1, theta2, phi2)
 
                 dist.append(d)
 

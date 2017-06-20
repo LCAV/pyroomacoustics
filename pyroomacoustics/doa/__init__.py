@@ -105,6 +105,7 @@ from .waves import *
 from .tops import *
 from .frida import *
 from .grid import *
+from .utils import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {

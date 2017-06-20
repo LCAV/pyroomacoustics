@@ -14,25 +14,6 @@
 
 import sys
 import os
-
-'''
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(self, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
-'''
-
 import mock
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
@@ -43,7 +24,7 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'matplotlib.transforms', 'matplotlib.collections', 'matplotlib.scale',
         'matplotlib.tri.triangulation', 'matplotlib.colors', 'matplotlib.cm',
         'matplotlib.patches', 'matplotlib.cbook', 'matplotlib.projections',
-        'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg']
+        'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
