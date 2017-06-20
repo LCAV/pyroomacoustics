@@ -1,5 +1,5 @@
-pyroomacoustics.sync module
-===========================
+pyroomacoustics\.sync module
+============================
 
 .. automodule:: pyroomacoustics.sync
     :members:

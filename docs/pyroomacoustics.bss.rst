@@ -1,5 +1,5 @@
-pyroomacoustics.bss module
-==========================
+pyroomacoustics\.bss module
+===========================
 
 .. automodule:: pyroomacoustics.bss
     :members:

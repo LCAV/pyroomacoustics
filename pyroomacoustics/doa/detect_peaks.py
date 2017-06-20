@@ -1,4 +1,10 @@
-"""Detect peaks in data based on their amplitude and other features."""
+"""
+Detect peaks in data based on their amplitude and other features.
+
+Author: Marcos Duarte, https://github.com/demotu/BMC
+Version: 1.0.4
+License: MIT
+"""
 
 from __future__ import division, print_function
 import numpy as np
@@ -10,7 +16,8 @@ __license__ = "MIT"
 def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
                  kpsh=False, valley=False, show=False, ax=None):
 
-    """Detect peaks in data based on their amplitude and other features.
+    """
+    Detect peaks in data based on their amplitude and other features.
 
     Parameters
     ----------

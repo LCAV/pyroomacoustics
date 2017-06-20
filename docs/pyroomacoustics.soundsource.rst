@@ -1,5 +1,5 @@
-pyroomacoustics.soundsource module
-==================================
+pyroomacoustics\.soundsource module
+===================================
 
 .. automodule:: pyroomacoustics.soundsource
     :members:

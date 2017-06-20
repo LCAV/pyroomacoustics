@@ -1,7 +1,7 @@
-pyroomacoustics\.geometry module
+pyroomacoustics\.doa\.srp module
 ================================
 
-.. automodule:: pyroomacoustics.geometry
+.. automodule:: pyroomacoustics.doa.srp
     :members:
     :undoc-members:
     :show-inheritance:

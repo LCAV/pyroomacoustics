@@ -1,5 +1,5 @@
-pyroomacoustics.c_package package
-=================================
+pyroomacoustics\.c\_package package
+===================================
 
 Submodules
 ----------

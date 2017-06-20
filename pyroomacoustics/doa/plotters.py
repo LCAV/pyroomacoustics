@@ -4,18 +4,20 @@ def polar_plt_dirac(self, azimuth_ref=None, alpha_ref=None, save_fig=False,
     """
     Generate polar plot of DoA results.
 
-    :param azimuth_ref: True direction of sources (in radians).
-    :type azimuth_ref: numpy array
-    :param alpha_ref: Estimated amplitude of sources.
-    :type alpha_ref: numpy array
-    :param save_fig: Whether or not to save figure as pdf.
-    :type save_fig: bool
-    :param file_name: Name of file (if saved). Default is 
-    'polar_recon_dirac.pdf'
-    :type file_name: str
-    :param plt_dirty_img: Whether or not to plot spatial spectrum or 
-    'dirty image' in the case of FRI.
-    :type plt_dirty_img: bool
+    Parameters
+    ----------
+    azimuth_ref: numpy array
+        True direction of sources (in radians).
+    alpha_ref: numpy array
+        Estimated amplitude of sources.
+    save_fig: bool
+        Whether or not to save figure as pdf.
+    file_name: str
+        Name of file (if saved). Default is 
+        'polar_recon_dirac.pdf'
+    plt_dirty_img: bool
+        Whether or not to plot spatial spectrum or 
+        'dirty image' in the case of FRI.
     """
 
     if self.dim != 2:
@@ -138,10 +140,37 @@ def sph_plot_diracs_plotly(
         dirty_img=None, azimuth_grid=None, colatitude_grid=None,
         surface_base=1, surface_height=0.,
         ):
+    '''
+    Plots a 2D map on a sphere as well as a collection of diracs using the plotly library
 
-    from plotly.offline import plot
-    import plotly.graph_objs as go
-    import plotly
+    Parameters
+    ----------
+    colatitude_ref: ndarray, optional
+        The colatitudes of a collection of reference points
+    azimuths_ref: ndarray, optional
+        The azimuths of a collection of reference points for the Diracs
+    colatitude: ndarray, optional
+        The colatitudes of the collection of points to visualize
+    azimuth: ndarray, optional
+        The azimuths of the collection of points to visualize
+    dirty_img: ndarray
+        A 2D map for displaying a pattern on the sphere under the points
+    azimuth_grid: ndarray
+        The azimuths indexing the dirty_img 2D map
+    colatitude_grid: ndarray
+        The colatitudes indexing the dirty_img 2D map
+    surface_base:
+        radius corresponding to lowest height on the map
+    sufrace_height:
+        radius difference between the lowest and highest point on the map
+    '''
+
+    try:
+        from plotly.offline import plot
+        import plotly.graph_objs as go
+        import plotly
+    except ImportError:
+        raise ValueError('The plotly package is required to use this function')
 
     plotly.offline.init_notebook_mode()
 
@@ -263,7 +292,25 @@ def sph_plot_diracs(
     '''
     This function plots the dirty image with sources locations on
     a flat projection of the sphere
+
+    Parameters
+    ----------
+    colatitude_ref: ndarray, optional
+        The colatitudes of a collection of reference points
+    azimuths_ref: ndarray, optional
+        The azimuths of a collection of reference points for the Diracs
+    colatitude: ndarray, optional
+        The colatitudes of the collection of points to visualize
+    azimuth: ndarray, optional
+        The azimuths of the collection of points to visualize
+    dirty_img: ndarray
+        A 2D map for displaying a pattern on the sphere under the points
+    azimuth_grid: ndarray
+        The azimuths indexing the dirty_img 2D map
+    colatitude_grid: ndarray
+        The colatitudes indexing the dirty_img 2D map
     '''
+
 
     fig = plt.figure(figsize=(6.47, 4), dpi=90)
     ax = fig.add_subplot(111, projection="mollweide")

@@ -1,7 +1,7 @@
-pyroomacoustics\.acoustics module
+pyroomacoustics\.doa\.cssm module
 =================================
 
-.. automodule:: pyroomacoustics.acoustics
+.. automodule:: pyroomacoustics.doa.cssm
     :members:
     :undoc-members:
     :show-inheritance:

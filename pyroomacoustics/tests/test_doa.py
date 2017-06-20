@@ -44,47 +44,47 @@ X = np.array([ pra.stft(signal, nfft, nfft // 2, win=np.hanning(nfft), transform
 class TestDOA(TestCase):
 
     def test_music(self):
-        doa = pra.doa.algos['MUSIC'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['MUSIC'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
     def test_srp_phat(self):
-        doa = pra.doa.algos['SRP'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['SRP'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
     def test_cssm(self):
-        doa = pra.doa.algos['CSSM'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['CSSM'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
     def test_tops(self):
-        doa = pra.doa.algos['TOPS'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['TOPS'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
     def test_waves(self):
-        doa = pra.doa.algos['WAVES'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['WAVES'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
     def test_frida(self):
-        doa = pra.doa.algos['FRIDA'](R, fs, nfft, c=c)
+        doa = pra.doa.algorithms['FRIDA'](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print('distance:', circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(circ_dist(azimuth, doa.azimuth_recon) < tol)
 
 if __name__ == '__main__':
 
-    algo_names = sorted(pra.doa.algos.keys())
+    algo_names = sorted(pra.doa.algorithms.keys())
 
     for algo_name in algo_names:
-        doa = pra.doa.algos[algo_name](R, fs, nfft, c=c, max_four=4)
+        doa = pra.doa.algorithms[algo_name](R, fs, nfft, c=c, max_four=4)
         doa.locate_sources(X, freq_bins=freq_bins)
         print(algo_name, doa.azimuth_recon / np.pi * 180., 
             circ_dist(azimuth, doa.azimuth_recon) / np.pi * 180.)

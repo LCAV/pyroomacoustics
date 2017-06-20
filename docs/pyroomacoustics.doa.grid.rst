@@ -1,7 +1,7 @@
-pyroomacoustics\.acoustics module
+pyroomacoustics\.doa\.grid module
 =================================
 
-.. automodule:: pyroomacoustics.acoustics
+.. automodule:: pyroomacoustics.doa.grid
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,5 +1,5 @@
-pyroomacoustics.room module
-===========================
+pyroomacoustics\.room module
+============================
 
 .. automodule:: pyroomacoustics.room
     :members:

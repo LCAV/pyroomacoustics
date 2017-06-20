@@ -23,7 +23,7 @@ We recommend exploring the docstrings using
 TAB-completion and introspection capabilities.  See below for further
 instructions.
 
-The docstring examples assume that `numpy` has been imported as `np`::
+The docstring examples assume that `pyroomacoustics` has been imported as `pra`::
 
   >>> import pyroomacoustics as pra
 
@@ -34,57 +34,57 @@ Code snippets are indicated by three greater-than signs::
 
 Use the built-in ``help`` function to view a function's docstring::
 
-  >>> help(np.sort)
-  ... # doctest: +SKIP
-
-For some objects, ``np.info(obj)`` may provide additional help.  This is
-particularly true if you see the line "Help on ufunc object:" at the top
-of the help() page.  Ufuncs are implemented in C, not Python, for speed.
-The native Python help() does not know how to view their help, but our
-np.info() function does.
-To search for documents containing a keyword, do::
-
-  >>> np.lookfor('keyword')
-  ... # doctest: +SKIP
-
-General-purpose documents like a glossary and help on the basic concepts
-of numpy are available under the ``doc`` sub-module::
-
-  >>> from numpy import doc
-  >>> help(doc)
+  >>> help(pra.stft)
   ... # doctest: +SKIP
 
 Available subpackages
 ---------------------
-acoustics
+:py:obj:`pyroomacoustics.acoustics`
     Acoustics and psychoacoustics routines, mel-scale, critcal bands, etc.
-beamforming
+
+:py:obj:`pyroomacoustics.beamforming`
     Microphone arrays and beamforming routines.
-bss
+
+:py:obj:`pyroomacoustics.bss`
     Blind source separation.
-geometry
+
+:py:obj:`pyroomacoustics.doa`
+    Direction of arrival finding algorithms
+
+:py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
-metrics
+
+:py:obj:`pyroomacoustics.metrics`
     Performance metrics like mean-squared error, median, Itakura-Saito, etc.
-multirate
+
+:py:obj:`pyroomacoustics.multirate`
     Rate conversion routines.
-parameters
+
+:py:obj:`pyroomacoustics.parameters`
     Global parameters, i.e. for physics constants.
-recognition
+
+:py:obj:`pyroomacoustics.recognition`
     Hidden Markov Model and TIMIT database structure.
-room
+
+:py:obj:`pyroomacoustics.room`
     Abstraction of room and image source model.
-soundsource
+
+:py:obj:`pyroomacoustics.soundsource`
     Abstraction for a sound source.
-stft
+ 
+:py:obj:`pyroomacoustics.stft`
     STFT processing engine.
-sync
+
+:py:obj:`pyroomacoustics.sync`
     A few routines to help synchronize signals.
-utilities
+
+:py:obj:`pyroomacoustics.utilities`
     A bunch of routines to do various stuff.
-wall
+
+:py:obj:`pyroomacoustics.wall`
     Abstraction for walls of a room.
-windows
+
+:py:obj:`pyroomacoustics.windows`
     Tapering windows for spectral analysis.
 
 Utilities

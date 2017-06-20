@@ -15,9 +15,13 @@ thread_num = 1
 def polar2cart(rho, phi):
     """
     convert from polar to cartesian coordinates
-    :param rho: radius
-    :param phi: azimuth
-    :return:
+
+    Parameters
+    ----------
+    rho: 
+        radius
+    phi: 
+        azimuth
     """
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
@@ -28,8 +32,11 @@ def polar2cart(rho, phi):
 def cov_mtx_est(y_mic):
     """
     estimate covariance matrix
-    :param y_mic: received signal (complex based band representation) at microphones
-    :return:
+
+    Parameters
+    ----------
+    y_mic: 
+        received signal (complex based band representation) at microphones
     """
     # Q: total number of microphones
     # num_snapshot: number of snapshots used to estimate the covariance matrix
@@ -50,8 +57,11 @@ def extract_off_diag(mtx):
     """
     extract off diagonal entries in mtx.
     The output vector is order in a column major manner.
-    :param mtx: input matrix to extract the off diagonal entries
-    :return:
+
+    Parameters
+    ----------
+    mtx: 
+        input matrix to extract the off diagonal entries
     """
     # we transpose the matrix because the function np.extract will first flatten the matrix
     # withe ordering convention 'C' instead of 'F'!!
@@ -62,8 +72,11 @@ def extract_off_diag(mtx):
 def multiband_cov_mtx_est(y_mic):
     """
     estimate covariance matrix based on the received signals at microphones
-    :param y_mic: received signal (complex base-band representation) at microphones
-    :return:
+
+    Parameters
+    ----------
+    y_mic: 
+        received signal (complex base-band representation) at microphones
     """
     # Q: total number of microphones
     # num_snapshot: number of snapshots used to estimate the covariance matrix
@@ -83,8 +96,10 @@ def multiband_extract_off_diag(mtx):
     """
     extract off-diagonal entries in mtx
     The output vector is order in a column major manner
-    :param mtx: input matrix to extract the off-diagonal entries
-    :return:
+
+    Parameters
+    ----------
+    mtx: input matrix to extract the off-diagonal entries
     """
     # we transpose the matrix because the function np.extract will first flatten the matrix
     # withe ordering convention 'C' instead of 'F'!!
@@ -99,10 +114,15 @@ def multiband_extract_off_diag(mtx):
 def mtx_freq2raw(M, p_mic_x, p_mic_y):
     """
     build the matrix that maps the Fourier series to the raw microphone signals
-    :param M: the Fourier series expansion is limited from -M to M
-    :param p_mic_x: a vector that contains microphones x coordinates
-    :param p_mic_y: a vector that contains microphones y coordinates
-    :return:
+
+    Parameters
+    ----------
+    M: 
+        the Fourier series expansion is limited from -M to M
+    p_mic_x: 
+        a vector that contains microphones x coordinates
+    p_mic_y: 
+        a vector that contains microphones y coordinates
     """
     num_mic = p_mic_x.size
     ms = np.reshape(np.arange(-M, M + 1, step=1), (1, -1), order='F')
@@ -116,38 +136,18 @@ def mtx_freq2raw(M, p_mic_x, p_mic_y):
     return G
 
 
-# def mtx_freq2visi(M, p_mic_x, p_mic_y):
-#     """
-#     build the matrix that maps the Fourier series to the visibility
-#     :param M: the Fourier series expansion is limited from -M to M
-#     :param p_mic_x: a vector that constains microphones x coordinates
-#     :param p_mic_y: a vector that constains microphones y coordinates
-#     :return:
-#     """
-#     num_mic = p_mic_x.size
-#     ms = np.reshape(np.arange(-M, M + 1, step=1), (1, -1), order='F')
-#     G = np.zeros((num_mic * (num_mic - 1), 2 * M + 1), dtype=complex, order='C')
-#     count_G = 0
-#     for q in range(num_mic):
-#         p_x_outer = p_mic_x[q]
-#         p_y_outer = p_mic_y[q]
-#         for qp in range(num_mic):
-#             if not q == qp:
-#                 p_x_qqp = p_x_outer - p_mic_x[qp]
-#                 p_y_qqp = p_y_outer - p_mic_y[qp]
-#                 norm_p_qqp = np.sqrt(p_x_qqp ** 2 + p_y_qqp ** 2)
-#                 phi_qqp = np.arctan2(p_y_qqp, p_x_qqp)
-#                 G[count_G, :] = (-1j) ** ms * sp.special.jv(ms, norm_p_qqp) * \
-#                                 np.exp(1j * ms * phi_qqp)
-#                 count_G += 1
-#     return G
 def mtx_freq2visi(M, p_mic_x, p_mic_y):
     """
     build the matrix that maps the Fourier series to the visibility
-    :param M: the Fourier series expansion is limited from -M to M
-    :param p_mic_x: a vector that constains microphones x coordinates
-    :param p_mic_y: a vector that constains microphones y coordinates
-    :return:
+
+    Parameters
+    ----------
+    M: 
+        the Fourier series expansion is limited from -M to M
+    p_mic_x: 
+        a vector that constains microphones x coordinates
+    p_mic_y: 
+        a vector that constains microphones y coordinates
     """
     num_mic = p_mic_x.size
     ms = np.reshape(np.arange(-M, M + 1, step=1), (1, -1), order='F')
@@ -167,15 +167,23 @@ def mtx_fri2signal_ri_multiband(M, p_mic_x_all, p_mic_y_all, D1, D2, aslist=Fals
     """
     build the matrix that maps the Fourier series to the visibility in terms of
     REAL-VALUED entries only. (matrix size double)
-    :param M: the Fourier series expansion is limited from -M to M
-    :param p_mic_x_all: a matrix that contains microphones x coordinates
-    :param p_mic_y_all: a matrix that contains microphones y coordinates
-    :param D1: expansion matrix for the real-part
-    :param D2: expansion matrix for the imaginary-part
-    :param aslist: whether the linear mapping for each subband is returned as a list
-                or a block diagonal matrix
-    :param signal: The type of signal considered ('visibility' for covariance matrix, 'raw' for microphone inputs)
-    :return:
+
+    Parameters
+    ----------
+    M: 
+        the Fourier series expansion is limited from -M to M
+    p_mic_x_all: 
+        a matrix that contains microphones x coordinates
+    p_mic_y_all: 
+        a matrix that contains microphones y coordinates
+    D1: 
+        expansion matrix for the real-part
+    D2: 
+        expansion matrix for the imaginary-part aslist: whether the linear
+        mapping for each subband is returned as a list or a block diagonal
+        matrix
+    signal: 
+        The type of signal considered ('visibility' for covariance matrix, 'raw' for microphone inputs)
     """
     num_bands = p_mic_x_all.shape[1]
     if aslist:
@@ -192,13 +200,21 @@ def mtx_fri2signal_ri(M, p_mic_x, p_mic_y, D1, D2, signal='visibility'):
     """
     build the matrix that maps the Fourier series to the visibility in terms of
     REAL-VALUED entries only. (matrix size double)
-    :param M: the Fourier series expansion is limited from -M to M
-    :param p_mic_x: a vector that contains microphones x coordinates
-    :param p_mic_y: a vector that contains microphones y coordinates
-    :param D1: expansion matrix for the real-part
-    :param D2: expansion matrix for the imaginary-part
-    :param signal: The type of signal considered ('visibility' for covariance matrix, 'raw' for microphone inputs)
-    :return:
+
+    Parameters
+    ----------
+    M: 
+        the Fourier series expansion is limited from -M to M
+    p_mic_x: 
+        a vector that contains microphones x coordinates
+    p_mic_y: 
+        a vector that contains microphones y coordinates
+    D1: 
+        expansion matrix for the real-part
+    D2: 
+        expansion matrix for the imaginary-part
+    signal: 
+        The type of signal considered ('visibility' for covariance matrix, 'raw' for microphone inputs)
     """
 
     if signal == 'visibility':
@@ -213,8 +229,11 @@ def mtx_fri2signal_ri(M, p_mic_x, p_mic_y, D1, D2, signal='visibility'):
 def cpx_mtx2real(mtx):
     """
     extend complex valued matrix to an extended matrix of real values only
-    :param mtx: input complex valued matrix
-    :return:
+
+    Parameters
+    ----------
+    mtx: 
+        input complex valued matrix
     """
     return np.vstack((np.hstack((mtx.real, -mtx.imag)), np.hstack((mtx.imag, mtx.real))))
 
@@ -224,8 +243,11 @@ def hermitian_expan(half_vec_len):
     expand a real-valued vector to a Hermitian symmetric vector.
     The input vector is a concatenation of the real parts with NON-POSITIVE indices and
     the imaginary parts with STRICTLY-NEGATIVE indices.
-    :param half_vec_len: length of the first half vector
-    :return:
+
+    Parameters
+    ----------
+    half_vec_len: 
+        length of the first half vector
     """
     D0 = np.eye(half_vec_len)
     D1 = np.vstack((D0, D0[1:, ::-1]))
@@ -239,9 +261,13 @@ def output_shrink(K, L):
     shrink the convolution output to half the size.
     used when both the annihilating filter and the uniform samples of sinusoids satisfy
     Hermitian symmetric.
-    :param K: the annihilating filter size: K + 1
-    :param L: length of the (complex-valued) b vector
-    :return:
+
+    Parameters
+    ----------
+    K: 
+        the annihilating filter size: K + 1
+    L: 
+        length of the (complex-valued) b vector
     """
     out_len = L - K
     if out_len % 2 == 0:
@@ -261,8 +287,11 @@ def output_shrink(K, L):
 def coef_expan_mtx(K):
     """
     expansion matrix for an annihilating filter of size K + 1
-    :param K: number of Dirac. The filter size is K + 1
-    :return:
+
+    Parameters
+    ----------
+    K: 
+        number of Dirac. The filter size is K + 1
     """
     if K % 2 == 0:
         D0 = np.eye(np.int(K / 2. + 1))
@@ -278,11 +307,17 @@ def coef_expan_mtx(K):
 def Tmtx_ri(b_ri, K, D, L):
     """
     build convolution matrix associated with b_ri
-    :param b_ri: a real-valued vector
-    :param K: number of Diracs
-    :param D1: expansion matrix for the real-part
-    :param D2: expansion matrix for the imaginary-part
-    :return:
+
+    Parameters
+    ----------
+    b_ri: 
+        a real-valued vector
+    K: 
+        number of Diracs
+    D1: 
+        expansion matrix for the real-part
+    D2: 
+        expansion matrix for the imaginary-part
     """
     b_ri = np.dot(D, b_ri)
     b_r = b_ri[:L]
@@ -293,18 +328,21 @@ def Tmtx_ri(b_ri, K, D, L):
 
 
 def Tmtx_ri_half(b_ri, K, D, L, D_coef):
+    ''' Split T matrix in conjugate symmetric representation '''
     return np.dot(Tmtx_ri(b_ri, K, D, L), D_coef)
 
 
 def Tmtx_ri_half_out_half(b_ri, K, D, L, D_coef, mtx_shrink):
     """
-    if both b and annihilation filter coefficients are Hermitian symmetric, then
-    the output will also be Hermitian symmetric => the effectively output is half the size
+    if both b and annihilation filter coefficients are Hermitian symmetric,
+    then the output will also be Hermitian symmetric => the effectively output
+    is half the size
     """
     return np.dot(np.dot(mtx_shrink, Tmtx_ri(b_ri, K, D, L)), D_coef)
 
 
 def Rmtx_ri(coef_ri, K, D, L):
+    ''' Split T matrix in rea/imaginary representation '''
     coef_ri = np.squeeze(coef_ri)
     coef_r = coef_ri[:K + 1]
     coef_i = coef_ri[K + 1:]
@@ -322,47 +360,31 @@ def Rmtx_ri(coef_ri, K, D, L):
 
 
 def Rmtx_ri_half(coef_half, K, D, L, D_coef):
+    ''' Split T matrix in rea/imaginary conjugate symmetric representation '''
     return Rmtx_ri(np.dot(D_coef, coef_half), K, D, L)
 
 
 def Rmtx_ri_half_out_half(coef_half, K, D, L, D_coef, mtx_shrink):
     """
-    if both b and annihilation filter coefficients are Hermitian symmetric, then
-    the output will also be Hermitian symmetric => the effectively output is half the size
+    if both b and annihilation filter coefficients are Hermitian symmetric,
+    then the output will also be Hermitian symmetric => the effectively output
+    is half the size
     """
     return np.dot(mtx_shrink, Rmtx_ri(np.dot(D_coef, coef_half), K, D, L))
 
 
-# def build_mtx_amp(phi_k, p_mic_x, p_mic_y):
-#     """
-#     the matrix that maps Diracs' amplitudes to the visibility
-#     :param phi_k: Diracs' location (azimuth)
-#     :param p_mic_x: a vector that contains microphones' x-coordinates
-#     :param p_mic_y: a vector that contains microphones' y-coordinates
-#     :return:
-#     """
-#     xk, yk = polar2cart(1, phi_k)
-#     num_mic = p_mic_x.size
-#     K = phi_k.size
-#     mtx = np.zeros((num_mic * (num_mic - 1), K), dtype=complex, order='C')
-#     count_inner = 0
-#     for q in range(num_mic):
-#         p_x_outer = p_mic_x[q]
-#         p_y_outer = p_mic_y[q]
-#         for qp in range(num_mic):
-#             if q != qp:
-#                 p_x_qqp = p_x_outer - p_mic_x[qp]  # a scalar
-#                 p_y_qqp = p_y_outer - p_mic_y[qp]  # a scalar
-#                 mtx[count_inner, :] = np.exp(-1j * (xk * p_x_qqp + yk * p_y_qqp))
-#                 count_inner += 1
-#     return mtx
 def build_mtx_amp(phi_k, p_mic_x, p_mic_y):
     """
     the matrix that maps Diracs' amplitudes to the visibility
-    :param phi_k: Diracs' location (azimuth)
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :return:
+
+    Parameters
+    ----------
+    phi_k: 
+        Diracs' location (azimuth)
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
     """
     xk, yk = polar2cart(1, phi_k[np.newaxis, :])
     num_mic = p_mic_x.size
@@ -377,6 +399,7 @@ def build_mtx_amp(phi_k, p_mic_x, p_mic_y):
 
 
 def build_mtx_amp_ri(p_mic_x, p_mic_y, phi_k):
+    ''' builds real/imaginary amplitude matrix '''
     mtx = build_mtx_amp(phi_k, p_mic_x, p_mic_y)
     return np.vstack((mtx.real, mtx.imag))
 
@@ -384,10 +407,15 @@ def build_mtx_amp_ri(p_mic_x, p_mic_y, phi_k):
 def build_mtx_raw_amp(p_mic_x, p_mic_y, phi_k):
     """
     the matrix that maps Diracs' amplitudes to the visibility
-    :param phi_k: Diracs' location (azimuth)
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :return:
+
+    Parameters
+    ----------
+    phi_k: 
+        Diracs' location (azimuth)
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
     """
     xk, yk = polar2cart(1, phi_k)
     num_mic = p_mic_x.size
@@ -395,8 +423,6 @@ def build_mtx_raw_amp(p_mic_x, p_mic_y, phi_k):
     mtx = np.zeros((num_mic, K), dtype=complex, order='C')
     for q in range(num_mic):
         mtx[q, :] = np.exp(-1j * (xk * p_mic_x[q] + yk * p_mic_y[q]))
-
-    # mtx = np.exp(-1j * (p_mic_x[:,None] * xk[None,:] + p_mic_y[:,None] * yk[None,:]))
 
     return mtx
 
@@ -406,12 +432,19 @@ def mtx_updated_G_multiband(phi_recon, M, mtx_amp2visi_ri,
     """
     Update the linear transformation matrix that links the FRI sequence to the
     visibilities by using the reconstructed Dirac locations.
-    :param phi_recon: the reconstructed Dirac locations (azimuths)
-    :param M: the Fourier series expansion is between -M to M
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param mtx_fri2visi: the linear mapping from Fourier series to visibilities
-    :return:
+
+    Parameters
+    ----------
+    phi_recon: 
+        the reconstructed Dirac locations (azimuths)
+    M: 
+        the Fourier series expansion is between -M to M
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    mtx_fri2visi: 
+        the linear mapping from Fourier series to visibilities
     """
     L = 2 * M + 1
     ms_half = np.reshape(np.arange(-M, 1, step=1), (-1, 1), order='F')
@@ -436,13 +469,21 @@ def mtx_updated_G_multiband_new(phi_opt, M, p_x, p_y,
     """
     Update the linear transformation matrix that links the FRI sequence to the
     visibilities by using the reconstructed Dirac locations.
-    :param phi_opt: the reconstructed Dirac locations (azimuths)
-    :param M: the Fourier series expansion is between -M to M
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param G0_lst: the original linear mapping from Fourier series to visibilities
-    :param num_bands: number of subbands
-    :return:
+
+    Parameters
+    ----------
+    phi_opt: 
+        the reconstructed Dirac locations (azimuths)
+    M: 
+        the Fourier series expansion is between -M to M
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    G0_lst: 
+        the original linear mapping from Fourier series to visibilities
+    num_bands: 
+        number of subbands
     """
     L = 2 * M + 1
     ms_half = np.reshape(np.arange(-M, 1, step=1), (-1, 1), order='F')
@@ -486,12 +527,18 @@ def mtx_updated_G(phi_recon, M, mtx_amp2visi_ri, mtx_fri2visi_ri):
     """
     Update the linear transformation matrix that links the FRI sequence to the
     visibilities by using the reconstructed Dirac locations.
-    :param phi_recon: the reconstructed Dirac locations (azimuths)
-    :param M: the Fourier series expansion is between -M to M
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param mtx_freq2visi: the linear mapping from Fourier series to visibilities
-    :return:
+    Parameters
+    ----------
+    phi_recon: 
+        the reconstructed Dirac locations (azimuths)
+    M: 
+        the Fourier series expansion is between -M to M
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    mtx_freq2visi: 
+        the linear mapping from Fourier series to visibilities
     """
     L = 2 * M + 1
     ms_half = np.reshape(np.arange(-M, 1, step=1), (-1, 1), order='F')
@@ -510,15 +557,24 @@ def mtx_updated_G(phi_recon, M, mtx_amp2visi_ri, mtx_fri2visi_ri):
 def dirac_recon_ri(G, a_ri, K, M, noise_level, max_ini=100, stop_cri='mse'):
     """
     Reconstruct point sources' locations (azimuth) from the visibility measurements
-    :param G: the linear transformation matrix that links the visibilities to
-                uniformly sampled sinusoids
-    :param a_ri: the visibility measurements
-    :param K: number of Diracs
-    :param M: the Fourier series expansion is between -M and M
-    :param noise_level: level of noise (ell_2 norm) in the measurements
-    :param max_ini: maximum number of initialisations
-    :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-    :return:
+
+    Parameters
+    ----------
+    G: 
+        the linear transformation matrix that links the visibilities to
+        uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
     """
     L = 2 * M + 1  # length of the (complex-valued) b vector
     a_ri = a_ri.flatten('F')
@@ -609,15 +665,24 @@ def dirac_recon_ri_half(G, a_ri, K, M, noise_level, max_ini=100, stop_cri='mse')
     Reconstruct point sources' locations (azimuth) from the visibility measurements.
     Here we enforce hermitian symmetry in the annihilating filter coefficients so that
     roots on the unit circle are encouraged.
-    :param G: the linear transformation matrix that links the visibilities to
-                uniformly sampled sinusoids
-    :param a_ri: the visibility measurements
-    :param K: number of Diracs
-    :param M: the Fourier series expansion is between -M and M
-    :param noise_level: level of noise (ell_2 norm) in the measurements
-    :param max_ini: maximum number of initialisations
-    :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-    :return:
+
+    Parameters
+    ----------
+    param G: 
+        the linear transformation matrix that links the visibilities to
+        uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
     """
     L = 2 * M + 1  # length of the (complex-valued) b vector
     a_ri = a_ri.flatten('F')
@@ -705,153 +770,31 @@ def dirac_recon_ri_half(G, a_ri, K, M, noise_level, max_ini=100, stop_cri='mse')
             break
     return c_opt, min_error, b_opt, ini
 
-
-# def dirac_recon_ri_half_parallel(G, a_ri, K, M, max_ini=100):
-#     """
-#     Reconstruct point sources' locations (azimuth) from the visibility measurements.
-#     Here we enforce hermitian symmetry in the annihilating filter coefficients so that
-#     roots on the unit circle are encouraged.
-#     We use parallel implementation when stop_cri == 'max_iter'
-#     :param G: the linear transformation matrix that links the visibilities to
-#                 uniformly sampled sinusoids
-#     :param a_ri: the visibility measurements
-#     :param K: number of Diracs
-#     :param M: the Fourier series expansion is between -M and M
-#     :param noise_level: level of noise (ell_2 norm) in the measurements
-#     :param max_ini: maximum number of initialisations
-#     :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-#     :return:
-#     """
-#     L = 2 * M + 1  # length of the (complex-valued) b vector
-#     a_ri = a_ri.flatten('F')
-#     # size of G: (Q(Q-1)) x (2M + 1), where Q is the number of antennas
-#     assert not np.iscomplexobj(G)  # G should be real-valued
-#     Gt_a = np.dot(G.T, a_ri)
-#     # maximum number of iterations with each initialisation
-#     max_iter = 50
-#
-#     # the least-square solution
-#     beta_ri = linalg.lstsq(G, a_ri)[0]
-#     D1, D2 = hermitian_expan(M + 1)
-#     D = linalg.block_diag(D1, D2)
-#     D_coef1, D_coef2 = coef_expan_mtx(K)
-#     D_coef = linalg.block_diag(D_coef1, D_coef2)
-#
-#     # size of Tbeta_ri: 2(L - K) x 2(K + 1)
-#     Tbeta_ri = Tmtx_ri_half(beta_ri, K, D, L, D_coef)
-#
-#     # size of various matrices / vectors
-#     sz_G1 = L
-#
-#     sz_Tb0 = 2 * (L - K)
-#
-#     sz_Rc0 = 2 * (L - K)
-#
-#     sz_coef = K + 1
-#
-#     rhs = np.append(np.zeros(sz_coef + sz_Tb0 + sz_G1, dtype=float), 1)
-#     rhs_bl = np.concatenate((Gt_a, np.zeros(sz_Rc0, dtype=Gt_a.dtype)))
-#
-#     # the main iteration with different random initialisations
-#     partial_dirac_recon = partial(dirac_recon_ri_inner, a_ri=a_ri, rhs=rhs,
-#                                   rhs_bl=rhs_bl, K=K, M=M, D1=D1, D2=D2, D_coef=D_coef,
-#                                   Tbeta_ri=Tbeta_ri, G=G, max_iter=max_iter)
-#
-#     # generate all the random initialisations
-#     c_ri_half_all = np.random.randn(sz_coef, max_ini)
-#
-#     res_all = Parallel(n_jobs=-1)(
-#         delayed(partial_dirac_recon)(c_ri_half_all[:, loop][:, np.newaxis])
-#         for loop in range(max_ini))
-#
-#     # find the one with smallest error
-#     min_idx = np.array(zip(*res_all)[1]).argmin()
-#     c_opt, min_error, b_opt = res_all[min_idx]
-#
-#     return c_opt, min_error, b_opt
-#
-#
-# def dirac_recon_ri_inner(c_ri_half, a_ri, rhs, rhs_bl, K, M,
-#                          D1, D2, D_coef, Tbeta_ri, G, max_iter):
-#     min_error = float('inf')
-#     # size of various matrices / vectors
-#     L = 2 * M + 1  # length of the (complex-valued) b vector
-#
-#     sz_Tb0 = 2 * (L - K)
-#     sz_Tb1 = K + 1
-#
-#     sz_Rc0 = 2 * (L - K)
-#     sz_Rc1 = L
-#
-#     sz_coef = K + 1
-#     sz_bri = L
-#
-#     GtG = np.dot(G.T, G)
-#     D = linalg.block_diag(D1, D2)
-#
-#     c0_ri_half = c_ri_half.copy()
-#     error_seq = np.zeros(max_iter, dtype=float)
-#     R_loop = Rmtx_ri_half(c_ri_half, K, D, L, D_coef)
-#
-#     # first row of mtx_loop
-#     mtx_loop_first_row = np.hstack((np.zeros((sz_coef, sz_coef)), Tbeta_ri.T,
-#                                     np.zeros((sz_coef, sz_Rc1)), c0_ri_half))
-#     # last row of mtx_loop
-#     mtx_loop_last_row = np.hstack((c0_ri_half.T, np.zeros((1, sz_Tb0 + sz_Rc1 + 1))))
-#
-#     for inner in range(max_iter):
-#         mtx_loop = np.vstack((mtx_loop_first_row,
-#                               np.hstack((Tbeta_ri,
-#                                          np.zeros((sz_Tb0, sz_Tb0)),
-#                                          -R_loop,
-#                                          np.zeros((sz_Rc0, 1))
-#                                          )),
-#                               np.hstack((np.zeros((sz_Rc1, sz_Tb1)),
-#                                          -R_loop.T,
-#                                          GtG,
-#                                          np.zeros((sz_Rc1, 1))
-#                                          )),
-#                               mtx_loop_last_row
-#                               ))
-#         # matrix should be symmetric
-#         # mtx_loop = (mtx_loop + mtx_loop.T) / 2.
-#         mtx_loop += mtx_loop.T
-#         mtx_loop *= 0.5
-#         c_ri_half = linalg.lstsq(mtx_loop, rhs)[0][:sz_coef]
-#
-#         R_loop = Rmtx_ri_half(c_ri_half, K, D, L, D_coef)
-#         mtx_brecon = np.vstack((np.hstack((GtG, R_loop.T)),
-#                                 np.hstack((R_loop, np.zeros((sz_Rc0, sz_Rc0))))
-#                                 ))
-#         # mtx_brecon = (mtx_brecon + mtx_brecon.T) / 2.
-#         mtx_brecon += mtx_brecon.T
-#         mtx_brecon *= 0.5
-#         b_recon_ri = linalg.lstsq(mtx_brecon, rhs_bl)[0][:sz_bri]
-#
-#         error_seq[inner] = linalg.norm(a_ri - np.dot(G, b_recon_ri))
-#         if error_seq[inner] < min_error:
-#             min_error = error_seq[inner]
-#             b_opt = np.dot(D1, b_recon_ri[:M + 1]) + 1j * np.dot(D2, b_recon_ri[M + 1:])
-#             c_ri = np.dot(D_coef, c_ri_half)
-#             c_opt = c_ri[:K + 1] + 1j * c_ri[K + 1:]  # real and imaginary parts
-#     return c_opt, min_error, b_opt
-
 def dirac_recon_ri_half_multiband_lu(G_lst, GtG_lst, GtG_inv_lst, a_ri, K, M, max_ini=100, max_iter=50):
     """
-    Here we use LU decomposition to precompute a few entries.
-        Reconstruct point sources' locations (azimuth) from the visibility measurements.
-        Here we enforce hermitian symmetry in the annihilating filter coefficients so that
-        roots on the unit circle are encouraged.
-        :param G_lst: a list of the linear transformation matrices that links the
-                    visibilities to uniformly sampled sinusoids
-        :param a_ri: the visibility measurements
-        :param K: number of Diracs
-        :param M: the Fourier series expansion is between -M and M
-        :param noise_level: level of noise (ell_2 norm) in the measurements
-        :param max_ini: maximum number of initialisations
-        :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-        :return:
-        """
+    Here we use LU decomposition to precompute a few entries.  Reconstruct
+    point sources' locations (azimuth) from the visibility measurements.  Here
+    we enforce hermitian symmetry in the annihilating filter coefficients so
+    that roots on the unit circle are encouraged.
+
+    Parameters
+    ----------
+    G_lst: 
+        a list of the linear transformation matrices that links the
+        visibilities to uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
+    """
     num_bands = a_ri.shape[1]  # number of bands considered
     L = 2 * M + 1  # length of the (complex-valued) b vector for each band
     assert not np.iscomplexobj(np.concatenate(G_lst))  # G should be real-valued
@@ -938,19 +881,28 @@ def dirac_recon_ri_half_multiband_lu(G_lst, GtG_lst, GtG_inv_lst, a_ri, K, M, ma
 
 def dirac_recon_ri_half_multiband(G_lst, a_ri, K, M, max_ini=100):
     """
-        Reconstruct point sources' locations (azimuth) from the visibility measurements.
-        Here we enforce hermitian symmetry in the annihilating filter coefficients so that
-        roots on the unit circle are encouraged.
-        :param G_lst: a list of the linear transformation matrices that links the
-                    visibilities to uniformly sampled sinusoids
-        :param a_ri: the visibility measurements
-        :param K: number of Diracs
-        :param M: the Fourier series expansion is between -M and M
-        :param noise_level: level of noise (ell_2 norm) in the measurements
-        :param max_ini: maximum number of initialisations
-        :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-        :return:
-        """
+    Reconstruct point sources' locations (azimuth) from the visibility measurements.
+    Here we enforce hermitian symmetry in the annihilating filter coefficients so that
+    roots on the unit circle are encouraged.
+
+    Parameters
+    ----------
+    G_lst: 
+        a list of the linear transformation matrices that links the
+        visibilities to uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
+    """
     num_bands = a_ri.shape[1]  # number of bands considered
     L = 2 * M + 1  # length of the (complex-valued) b vector for each band
     assert not np.iscomplexobj(np.concatenate(G_lst))  # G should be real-valued
@@ -1031,10 +983,14 @@ def lu_compute_mtx_obj(Tbeta_lst, num_bands, K, lu_R_GtGinv_Rt_lst):
         min   c^H M c
         s.t.  c0^H c = 1
 
-    :param GtG_lst: list of G^H * G
-    :param Tbeta_lst: list of Teoplitz matrices for beta-s
-    :param Rc0: right dual matrix for the annihilating filter (same of each block -> not a list)
-    :return:
+    Parameters
+    ----------
+    GtG_lst: 
+        list of G^H * G
+    Tbeta_lst: 
+        list of Teoplitz matrices for beta-s
+    Rc0: 
+        right dual matrix for the annihilating filter (same of each block -> not a list)
     """
     mtx = np.zeros((K + 1, K + 1), dtype=float)  # <= assume G, Tbeta and Rc0 are real-valued
 
@@ -1054,10 +1010,14 @@ def lu_compute_mtx_obj_initial(GtG_inv_lst, Tbeta_lst, Rc0, num_bands, K):
         min   c^H M c
         s.t.  c0^H c = 1
 
-    :param GtG_lst: list of G^H * G
-    :param Tbeta_lst: list of Teoplitz matrices for beta-s
-    :param Rc0: right dual matrix for the annihilating filter (same of each block -> not a list)
-    :return:
+    Parameters
+    ----------
+    GtG_lst: 
+        list of G^H * G
+    Tbeta_lst: 
+        list of Teoplitz matrices for beta-s
+    Rc0: 
+        right dual matrix for the annihilating filter (same of each block -> not a list)
     """
     mtx = np.zeros((K + 1, K + 1), dtype=float)  # <= assume G, Tbeta and Rc0 are real-valued
     for loop in range(num_bands):
@@ -1076,10 +1036,14 @@ def compute_mtx_obj(GtG_lst, Tbeta_lst, Rc0, num_bands, K):
         min   c^H M c
         s.t.  c0^H c = 1
 
-    :param GtG_lst: list of G^H * G
-    :param Tbeta_lst: list of Teoplitz matrices for beta-s
-    :param Rc0: right dual matrix for the annihilating filter (same of each block -> not a list)
-    :return:
+    Parameters
+    ----------
+    GtG_lst: 
+        list of G^H * G
+    Tbeta_lst: 
+        list of Teoplitz matrices for beta-s
+    Rc0: 
+        right dual matrix for the annihilating filter (same of each block -> not a list)
     """
     mtx = np.zeros((K + 1, K + 1), dtype=float)  # <= assume G, Tbeta and Rc0 are real-valued
     for loop in range(num_bands):
@@ -1095,7 +1059,6 @@ def compute_obj_val(GtG_inv_lst, Tbeta_lst, Rc0, c_ri_half, num_bands, K):
     """
     compute the fitting error.
     CAUTION: Here we assume use_lu = True
-    :return:
     """
     mtx = np.zeros((K + 1, K + 1), dtype=float)  # <= assume G, Tbeta and Rc0 are real-valued
     fitting_error = 0
@@ -1122,12 +1085,19 @@ def compute_b(G_lst, GtG_lst, beta_lst, Rc0, num_bands, a_ri, use_lu=False, GtG_
     """
     compute the uniform sinusoidal samples b from the updated annihilating
     filter coeffiients.
-    :param GtG_lst: list of G^H G for different subbands
-    :param beta_lst: list of beta-s for different subbands
-    :param Rc0: right-dual matrix, here it is the convolution matrix associated with c
-    :param num_bands: number of bands
-    :param a_ri: a 2D numpy array. each column corresponds to the measurements within a subband
-    :return:
+
+    Parameters
+    ----------
+    GtG_lst: 
+        list of G^H G for different subbands
+    beta_lst: 
+        list of beta-s for different subbands
+    Rc0: 
+        right-dual matrix, here it is the convolution matrix associated with c
+    num_bands: 
+        number of bands
+    a_ri: 
+        a 2D numpy array. each column corresponds to the measurements within a subband
     """
     b_lst = []
     a_Gb_lst = []
@@ -1176,15 +1146,24 @@ def dirac_recon_ri_half_multiband_parallel(G, a_ri, K, M, max_ini=100):
     Here we enforce hermitian symmetry in the annihilating filter coefficients so that
     roots on the unit circle are encouraged.
     We use parallel implementation when stop_cri == 'max_iter'
-    :param G: the linear transformation matrix that links the visibilities to
-                uniformly sampled sinusoids
-    :param a_ri: the visibility measurements
-    :param K: number of Diracs
-    :param M: the Fourier series expansion is between -M and M
-    :param noise_level: level of noise (ell_2 norm) in the measurements
-    :param max_ini: maximum number of initialisations
-    :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-    :return:
+
+    Parameters
+    ----------
+    G:
+        the linear transformation matrix that links the visibilities to
+        uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
     """
     num_bands = a_ri.shape[1]  # number of bands considered
     L = 2 * M + 1  # length of the (complex-valued) b vector for each band
@@ -1256,6 +1235,7 @@ def dirac_recon_ri_half_multiband_parallel(G, a_ri, K, M, max_ini=100):
 def dirac_recon_ri_multiband_inner(c_ri_half, a_ri, num_bands, rhs, rhs_bl, K, M,
                                    D1, D2, D_coef, mtx_shrink, Tbeta_ri,
                                    G, GtG, max_iter):
+    ''' Inner loop of the `dirac_recon_ri_multiband` function '''
     min_error = float('inf')
     # size of various matrices / vectors
     L = 2 * M + 1  # length of the (complex-valued) b vector
@@ -1349,15 +1329,24 @@ def dirac_recon_ri_half_parallel(G, a_ri, K, M, max_ini=100):
     Here we enforce hermitian symmetry in the annihilating filter coefficients so that
     roots on the unit circle are encouraged.
     We use parallel implementation when stop_cri == 'max_iter'
-    :param G: the linear transformation matrix that links the visibilities to
-                uniformly sampled sinusoids
-    :param a_ri: the visibility measurements
-    :param K: number of Diracs
-    :param M: the Fourier series expansion is between -M and M
-    :param noise_level: level of noise (ell_2 norm) in the measurements
-    :param max_ini: maximum number of initialisations
-    :param stop_cri: stopping criterion, either 'mse' or 'max_iter'
-    :return:
+
+    Parameters
+    ----------
+    G: 
+        the linear transformation matrix that links the visibilities to
+        uniformly sampled sinusoids
+    a_ri: 
+        the visibility measurements
+    K: 
+        number of Diracs
+    M: 
+        the Fourier series expansion is between -M and M
+    noise_level: 
+        level of noise (ell_2 norm) in the measurements
+    max_ini: 
+        maximum number of initialisations
+    stop_cri: 
+        stopping criterion, either 'mse' or 'max_iter'
     """
     L = 2 * M + 1  # length of the (complex-valued) b vector
     a_ri = a_ri.flatten('F')
@@ -1415,6 +1404,8 @@ def dirac_recon_ri_half_parallel(G, a_ri, K, M, max_ini=100):
 
 def dirac_recon_ri_inner(c_ri_half, a_ri, rhs, rhs_bl, K, M,
                          D1, D2, D_coef, mtx_shrink, Tbeta_ri, G, max_iter):
+    ''' inner loop of the `dirac_recon_ri_half_parallel` function '''
+
     min_error = float('inf')
     # size of various matrices / vectors
     L = 2 * M + 1  # length of the (complex-valued) b vector
@@ -1502,13 +1493,23 @@ def make_G(p_mic_x, p_mic_y, omega_bands, sound_speed, M, signal_type='visibilit
     """
     reconstruct point sources on the circle from the visibility measurements
     from multi-bands.
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param omega_bands: mid-band (ANGULAR) frequencies [radian/sec]
-    :param sound_speed: speed of sound
-    :param signal_type: The type of the signal a, possible values are 'visibility' 
-                        for covariance matrix and 'raw' for microphone inputs
-    :return:
+
+    Parameters
+    ----------
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    omega_bands: 
+        mid-band (ANGULAR) frequencies [radian/sec]
+    sound_speed: 
+        speed of sound
+    signal_type: 
+        The type of the signal a, possible values are 'visibility' for
+        covariance matrix and 'raw' for microphone inputs
+
+    Returns
+    -------
     The list of mapping matrices from measurements to sinusoids
     """
     
@@ -1553,23 +1554,38 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
     """
     reconstruct point sources on the circle from the visibility measurements
     from multi-bands.
-    :param a: the measured visibilities in a matrix form, where the second dimension
-              corresponds to different subbands
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param omega_bands: mid-band (ANGULAR) frequencies [radian/sec]
-    :param sound_speed: speed of sound
-    :param K: number of point sources
-    :param M: the Fourier series expansion is between -M to M
-    :param noise_level: noise level in the measured visibilities
-    :param max_ini: maximum number of random initialisation used
-    :param update_G: update the linear mapping that links the uniformly sampled
-                sinusoids to the visibility or not.
-    :param verbose: whether output intermediate results for debugging or not
-    :param signal_type: The type of the signal a, possible values are 'visibility' for covariance matrix
-        and 'raw' for microphone inputs
-    :param kwargs: possible optional input: G_iter: number of iterations for the G updates
-    :return:
+
+    Parameters
+    ----------
+    a: 
+        the measured visibilities in a matrix form, where the second dimension
+        corresponds to different subbands
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    omega_bands: 
+        mid-band (ANGULAR) frequencies [radian/sec]
+    sound_speed: 
+        speed of sound
+    K: 
+        number of point sources
+    M: 
+        the Fourier series expansion is between -M to M
+    noise_level: 
+        noise level in the measured visibilities
+    max_ini: 
+        maximum number of random initialisation used
+    update_G: 
+        update the linear mapping that links the uniformly sampled sinusoids to
+        the visibility or not.
+    verbose: 
+        whether output intermediate results for debugging or not
+    signal_type: 
+        The type of the signal a, possible values are 'visibility' for
+        covariance matrix and 'raw' for microphone inputs
+    kwargs: 
+        possible optional input: G_iter: number of iterations for the G updates
     """
 
     p_mic_x = np.squeeze(p_mic_x)
@@ -1720,23 +1736,38 @@ def pt_src_recon(a, p_mic_x, p_mic_y, omega_band, sound_speed,
                  stop_cri='mse', update_G=False, verbose=False, signal_type='visibility', **kwargs):
     """
     reconstruct point sources on the circle from the visibility measurements
-    :param a: the measured visibilities
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param omega_band: mid-band (ANGULAR) frequency [radian/sec]
-    :param sound_speed: speed of sound
-    :param K: number of point sources
-    :param M: the Fourier series expansion is between -M to M
-    :param noise_level: noise level in the measured visibilities
-    :param max_ini: maximum number of random initialisation used
-    :param stop_cri: either 'mse' or 'max_iter'
-    :param update_G: update the linear mapping that links the uniformly sampled
-                sinusoids to the visibility or not.
-    :param verbose: whether output intermediate results for debugging or not
-    :param signal_type: The type of the signal a, possible values are 'visibility' for covariance matrix
-        and 'raw' for microphone inputs
-    :param kwargs: possible optional input: G_iter: number of iterations for the G updates
-    :return:
+
+    Parameters
+    ----------
+    a: 
+        the measured visibilities
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    omega_band: 
+        mid-band (ANGULAR) frequency [radian/sec]
+    sound_speed: 
+        speed of sound
+    K: 
+        number of point sources
+    M: 
+        the Fourier series expansion is between -M to M
+    noise_level: 
+        noise level in the measured visibilities
+    max_ini: 
+        maximum number of random initialisation used
+    stop_cri: 
+        either 'mse' or 'max_iter'
+    update_G: 
+        update the linear mapping that links the uniformly sampled sinusoids to
+        the visibility or not.
+    verbose: 
+        whether output intermediate results for debugging or not
+    signal_type: 
+        The type of the signal a, possible values are 'visibility' for
+        covariance matrix and 'raw' for microphone inputs
+    kwargs: possible optional input: G_iter: number of iterations for the G updates
     """
     assert M >= K
     num_mic = p_mic_x.size
@@ -1798,22 +1829,37 @@ def pt_src_recon_rotate(a, p_mic_x, p_mic_y, K, M, noise_level, max_ini=50,
     """
     reconstruct point sources on the circle from the visibility measurements.
     Here we apply random rotations to the coordiantes.
-    :param a: the measured visibilities
-    :param p_mic_x: a vector that contains microphones' x-coordinates
-    :param p_mic_y: a vector that contains microphones' y-coordinates
-    :param K: number of point sources
-    :param M: the Fourier series expansion is between -M to M
-    :param noise_level: noise level in the measured visibilities
-    :param max_ini: maximum number of random initialisation used
-    :param stop_cri: either 'mse' or 'max_iter'
-    :param update_G: update the linear mapping that links the uniformly sampled
-                sinusoids to the visibility or not.
-    :param num_rotation: number of random rotations
-    :param verbose: whether output intermediate results for debugging or not
-    :param signal_type: The type of the signal a, possible values are 'visibility' for covariance matrix
-        and 'raw' for microphone inputs
-    :param kwargs: possible optional input: G_iter: number of iterations for the G updates
-    :return:
+
+    Parameters
+    ----------
+    a: 
+        the measured visibilities
+    p_mic_x: 
+        a vector that contains microphones' x-coordinates
+    p_mic_y: 
+        a vector that contains microphones' y-coordinates
+    K: 
+        number of point sources
+    M: 
+        the Fourier series expansion is between -M to M
+    noise_level: 
+        noise level in the measured visibilities
+    max_ini: 
+        maximum number of random initialisation used
+    stop_cri: 
+        either 'mse' or 'max_iter'
+    update_G: 
+        update the linear mapping that links the uniformly sampled sinusoids to
+        the visibility or not.
+    num_rotation: 
+        number of random rotations
+    verbose: 
+        whether output intermediate results for debugging or not
+    signal_type: 
+        The type of the signal a, possible values are 'visibility' for
+        covariance matrix and 'raw' for microphone inputs
+    kwargs: 
+        possible optional input: G_iter: number of iterations for the G updates
     """
     assert M >= K
     num_mic = p_mic_x.size

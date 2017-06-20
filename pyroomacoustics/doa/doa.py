@@ -32,10 +32,37 @@ tol = 1e-14
 
 class ModeVector(object):
     '''
-    This class fakes a very large look-up table of mode vectors
+    This is a class for look-up tables of mode vectors. This look-up table
+    is an outer product of three vectors running along candidate locations, time,
+    and frequency. When the grid becomes large, the look-up table might be
+    too large to store in memory. In that case, this class allows to only compute
+    the outer product elements when needed, only keeping the three vectors in memory.
+    When the table is small, a `precompute` option can be set to True to compute
+    the whole table in advance.
     '''
 
     def __init__(self, L, fs, nfft, c, grid, mode='far', precompute=False):
+        '''
+        The constructor
+
+        Parameters
+        ----------
+        L: ndarray
+            contains the locations of the sensors in the columns of the array
+        fs: int
+            the sampling frequency of the input signal
+        nfft: int
+            the FFT length
+        c: float
+            the speed of sound
+        grid: pyroomacoustcs.doa.Grid object
+            the underlying grid on which to evaluate the mode vectors
+        mode: string, optional
+            specify if the mode vectors are far- or near-field
+        precompute: bool
+            if True, the whole look-up table is computed in advance
+            (default False)
+        '''
 
         if (nfft % 2 == 1):
             raise ValueError('Signal length must be even.')
@@ -119,34 +146,36 @@ class DOA(object):
     creating an object (SRP, MUSIC, CSSM, WAVES, or TOPS), run locate_source to
     apply the corresponding algorithm.
 
-    :param L: Microphone array positions. Each column should correspond to the 
-    cartesian coordinates of a single microphone.
-    :type L: numpy array
-    :param fs: Sampling frequency.
-    :type fs: float
-    :param nfft: FFT length.
-    :type nfft: int
-    :param c: Speed of sound. Default: 343 m/s
-    :type c: float
-    :param num_src: Number of sources to detect. Default: 1
-    :type num_src: int
-    :param mode: 'far' or 'near' for far-field or near-field detection 
-    respectively. Default: 'far'
-    :type mode: str
-    :param r: Candidate distances from the origin. Default: np.ones(1)
-    :type r: numpy array
-    :param azimuth: Candidate azimuth angles (in radians) with respect to x-axis.
-    Default: np.linspace(-180.,180.,30)*np.pi/180
-    :type azimuth: numpy array
-    :param colatitude: Candidate elevation angles (in radians) with respect to z-axis.
-    Default is x-y plane search: np.pi/2*np.ones(1)
-    :type colatitude: numpy array
-    :param n_grid: If azimuth and colatitude are not specified, we will create a grid with
-    so many points. Default is 360.
-    :type n_grid: int
-    :param dim: The dimension of the problem. Set dim=2 to find sources on the circle (x-y plane).
-    Set dim=3 to search on the whole sphere.
-    :type dim: int
+    Parameters
+    ----------
+    L: numpy array
+        Microphone array positions. Each column should correspond to the 
+        cartesian coordinates of a single microphone.
+    fs: float
+        Sampling frequency.
+    nfft: int
+        FFT length.
+    c: float
+        Speed of sound. Default: 343 m/s
+    num_src: int
+        Number of sources to detect. Default: 1
+    mode: str
+        'far' or 'near' for far-field or near-field detection 
+        respectively. Default: 'far'
+    r: numpy array
+        Candidate distances from the origin. Default: np.ones(1)
+    azimuth: numpy array
+        Candidate azimuth angles (in radians) with respect to x-axis.
+        Default: np.linspace(-180.,180.,30)*np.pi/180
+    colatitude: numpy array
+        Candidate elevation angles (in radians) with respect to z-axis.
+        Default is x-y plane search: np.pi/2*np.ones(1)
+    n_grid: int
+        If azimuth and colatitude are not specified, we will create a grid with
+        so many points. Default is 360.
+    dim: int
+        The dimension of the problem. Set dim=2 to find sources on the circle (x-y plane).
+        Set dim=3 to search on the whole sphere.
     """
 
     __metaclass__ = ABCMeta
@@ -262,24 +291,26 @@ class DOA(object):
         """
         Locate source(s) using corresponding algorithm.
 
-        :param X: Set of signals in the frequency (RFFT) domain for current 
-        frame. Size should be M x F x S, where M should correspond to the 
-        number of microphones, F to nfft/2+1, and S to the number of snapshots 
-        (user-defined). It is recommended to have S >> M.
-        :type X: numpy array
-        :param num_src: Number of sources to detect. Default is value given to 
-        object constructor.
-        :type num_src: int
-        :param freq_range: Frequency range on which to run DoA: [fmin, fmax].
-        :type freq_range: list of floats, length 2
-        :param freq_bins: List of individual frequency bins on which to run 
-        DoA. 
-        If defined by user, it will **not** take into consideration freq_range 
-        or freq_hz.
-        :type freq_bins: list of int
-        :param freq_hz: List of individual frequencies on which to run DoA. If 
-        defined by user, it will **not** take into consideration freq_range.
-        :type freq_hz: list of floats
+        Parameters
+        ----------
+        X: numpy array
+            Set of signals in the frequency (RFFT) domain for current 
+            frame. Size should be M x F x S, where M should correspond to the 
+            number of microphones, F to nfft/2+1, and S to the number of snapshots 
+            (user-defined). It is recommended to have S >> M.
+        num_src: int
+            Number of sources to detect. Default is value given to 
+            object constructor.
+        freq_range: list of floats, length 2
+            Frequency range on which to run DoA: [fmin, fmax].
+        freq_bins: list of int
+            freq_bins: List of individual frequency bins on which to run 
+            DoA. 
+            If defined by user, it will **not** take into consideration freq_range 
+            or freq_hz.
+        freq_hz: list of floats
+            List of individual frequencies on which to run DoA. If 
+            defined by user, it will **not** take into consideration freq_range.
         """
         # check validity of inputs
         if num_src is not None and num_src != self.num_src:
@@ -337,18 +368,20 @@ class DOA(object):
         """
         Generate polar plot of DoA results.
 
-        :param azimuth_ref: True direction of sources (in radians).
-        :type azimuth_ref: numpy array
-        :param alpha_ref: Estimated amplitude of sources.
-        :type alpha_ref: numpy array
-        :param save_fig: Whether or not to save figure as pdf.
-        :type save_fig: bool
-        :param file_name: Name of file (if saved). Default is 
-        'polar_recon_dirac.pdf'
-        :type file_name: str
-        :param plt_dirty_img: Whether or not to plot spatial spectrum or 
-        'dirty image' in the case of FRI.
-        :type plt_dirty_img: bool
+        Parameters
+        ----------
+        azimuth_ref: numpy array
+            True direction of sources (in radians).
+        alpha_ref: numpy array
+            Estimated amplitude of sources.
+        save_fig: bool
+            Whether or not to save figure as pdf.
+        file_name: str
+            Name of file (if saved). Default is 
+            'polar_recon_dirac.pdf'
+        plt_dirty_img: bool
+            Whether or not to plot spatial spectrum or 
+            'dirty image' in the case of FRI.
         """
 
         if self.dim != 2:
@@ -482,9 +515,64 @@ class DOA(object):
 
 # ------------------Miscellaneous Functions---------------------#
 
+def circ_dist(azimuth1, azimuth2, r=1.):
+    ''' 
+    Returns the shortest distance between two points on a circle
+
+    Parameters
+    ----------
+    azimuth1:
+        azimuth of point 1
+    azimuth2:
+        azimuth of point 2
+    r: optional
+        radius of the circle (Default 1)
+    '''
+    return np.arccos(np.cos(azimuth1 - azimuth2))
+
+
+def great_circ_dist(r, colatitude1, azimuth1, colatitude2, azimuth2):
+    """
+    calculate great circle distance for points located on a sphere
+
+    Parameters
+    ----------
+    r: radius of the sphere
+    colatitude1: colatitude of point 1
+    azimuth1: azimuth of point 1
+    colatitude2: colatitude of point 2
+    azimuth2: azimuth of point 2
+    
+    Returns 
+    -------
+    float or ndarray
+        great-circle distance
+    """
+    d_azimuth = np.abs(azimuth1 - azimuth2)
+    dist = r * np.arctan2(np.sqrt((np.sin(colatitude2) * np.sin(d_azimuth)) ** 2 +
+                                  (np.sin(colatitude1) * np.cos(colatitude2) -
+                                   np.cos(colatitude1) * np.sin(colatitude2) * np.cos(d_azimuth)) ** 2),
+                          np.cos(colatitude1) * np.cos(colatitude2) +
+                          np.sin(colatitude1) * np.sin(colatitude2) * np.cos(d_azimuth))
+    return dist
+
 def spher2cart(r, azimuth, colatitude):
     """
     Convert a spherical point to cartesian coordinates.
+
+    Parameters
+    ----------
+    r:
+        radius
+    azimuth:
+        azimuth
+    colatitude:
+        colatitude
+
+    Returns
+    -------
+    ndarray
+        An ndarray containing the Cartesian coordinates of the points its columns
     """
     # convert to cartesian
     x = r * np.cos(azimuth) * np.sin(colatitude)
@@ -499,10 +587,20 @@ def polar_distance(x1, x2):
     closest and provides the pairing matrix index: x1(index(1,:)) should be as
     close as possible to x2(index(2,:)). The function outputs the average of 
     the absolute value of the differences abs(x1(index(1,:))-x2(index(2,:))).
-    :param x1: vector 1
-    :param x2: vector 2
-    :return: d: minimum distance between d
-             index: the permutation matrix
+
+    Parameters
+    ----------
+    x1: 
+        vector 1
+    x2: 
+        vector 2
+
+    Returns
+    -------
+    d:
+        minimum distance between d
+    index:
+        the permutation matrix
     """
     x1 = np.reshape(x1, (1, -1), order='F')
     x2 = np.reshape(x2, (1, -1), order='F')

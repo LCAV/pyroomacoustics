@@ -1,5 +1,5 @@
-pyroomacoustics.beamforming module
-==================================
+pyroomacoustics\.beamforming module
+===================================
 
 .. automodule:: pyroomacoustics.beamforming
     :members:

@@ -15,6 +15,7 @@
 import sys
 import os
 
+'''
 class Mock(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -30,14 +31,21 @@ class Mock(object):
             return type(name, (), {})
         else:
             return Mock()
+'''
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 
+import mock
+
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'scipy.spatial', 'c_package',
         'scikits.audiolab','scikits.samplerate','scipy.stats',
         'scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot',
-        'numpy.lib', 'numpy.lib.stride_tricks']
+        'numpy.lib', 'numpy.lib.stride_tricks', 'matplotlib.axes',
+        'matplotlib.transforms', 'matplotlib.collections', 'matplotlib.scale',
+        'matplotlib.tri.triangulation', 'matplotlib.colors', 'matplotlib.cm',
+        'matplotlib.patches', 'matplotlib.cbook', 'matplotlib.projections',
+        'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg']
 for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
+    sys.modules[mod_name] = mock.Mock()
 
 
 # If extensions (or modules to document with autodoc) are in another directory,

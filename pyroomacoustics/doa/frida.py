@@ -9,53 +9,65 @@ from .tools_fri_doa_plane import pt_src_recon_multiband, extract_off_diag, cov_m
     make_GtG_and_inv
 
 class FRIDA(DOA):
+    '''
+    Implements the FRI-based direction of arrival finding algorithm [FRIDA]_.
+
+    .. note:: Run locate_sources() to apply the CSSM algorithm.
+
+    Parameters
+    ----------
+    L: ndarray
+        Contains the locations of the microphones in the columns
+    fs: int or float
+        Sampling frequency
+    nfft: int
+        FFT size
+    max_four: int
+        Maximum order of the Fourier or spherical harmonics expansion
+    c: float, optional
+        Speed of sound
+    num_src: int, optional
+        The number of sources to recover (default 1)
+    G_iter: int
+        Number of mapping matrix refinement iterations in recovery algorithm (default 1)
+    max_ini: int, optional
+        Number of random initializations to use in recovery algorithm (default 5)
+    n_rot: int, optional
+        Number of random rotations to apply before recovery algorithm (default 10)
+    noise_level: float, optional
+        Noise level in the visibility measurements, if available (default 1e-10)
+    stopping: str, optional
+        Stopping criteria for the recovery algorithm. Can be max iterations or noise level (default max_iter)
+    stft_noise_floor: float
+        The noise floor in the STFT measurements, if available (default 0)
+    stft_noise_margin: float
+        When this, along with stft_noise_floor is set, we only pick frames with at least
+        stft_noise_floor * stft_noise_margin power
+    signal_type: str
+        Which type of measurements to use:
+
+        - 'visibility': Cross correlation measurements
+        - 'raw': Microphone signals
+    use_lu: bool, optional
+        Whether to use LU decomposition for efficiency
+    verbose: bool, optional
+        Whether to output intermediate result for debugging purposes
+    symb: bool, optional
+        Whether enforce the symmetry on the reconstructed uniform samples of sinusoids b
+
+    References
+    ----------
+
+    .. [FRIDA] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanić, and M. Vetterli, *FRIDA:
+        FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
+        pp 3186-3190, 2017
+    '''
+
     def __init__(self, L, fs, nfft, max_four=None, c=343.0, num_src=1,
                  G_iter=None, max_ini=5, n_rot=1, max_iter=50, noise_level=1e-10,
                  low_rank_cleaning=False, stopping='max_iter',
                  stft_noise_floor=0., stft_noise_margin=1.5, signal_type='visibility',
                  use_lu=True, verbose=False, symb=True, use_cache=False, **kwargs):
-        '''
-        Parameters
-        ----------
-
-        L: ndarray
-            Contains the locations of the microphones in the columns
-        fs: int or float
-            Sampling frequency
-        nfft: int
-            FFT size
-        max_four: int
-            Maximum order of the Fourier or spherical harmonics expansion
-        c: float, optional
-            Speed of sound
-        num_src: int, optional
-            The number of sources to recover (default 1)
-        G_iter: int
-            Number of mapping matrix refinement iterations in recovery algorithm (default 1)
-        max_ini: int, optional
-            Number of random initializations to use in recovery algorithm (default 5)
-        n_rot: int, optional
-            Number of random rotations to apply before recovery algorithm (default 10)
-        noise_level: float, optional
-            Noise level in the visibility measurements, if available (default 1e-10)
-        stopping: str, optional
-            Stopping criteria for the recovery algorithm. Can be max iterations or noise level (default max_iter)
-        stft_noise_floor: float
-            The noise floor in the STFT measurements, if available (default 0)
-        stft_noise_margin: float
-            When this, along with stft_noise_floor is set, we only pick frames with at least
-            stft_noise_floor * stft_noise_margin power
-        signal_type: str
-            Which type of measurements to use:
-                'visibility': Cross correlation measurements
-                'raw': Microphone signals
-        use_lu: bool, optional
-            Whether to use LU decomposition for efficiency
-        verbose: bool, optional
-            Whether to output intermediate result for debugging purposes
-        symb: bool, optional
-            Whether enforce the symmetry on the reconstructed uniform samples of sinusoids b
-        '''
 
         DOA.__init__(self, L, fs, nfft, c=c, num_src=num_src, mode='far', **kwargs)
 

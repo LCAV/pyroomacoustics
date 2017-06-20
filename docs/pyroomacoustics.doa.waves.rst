@@ -1,7 +1,7 @@
-pyroomacoustics\.parameters module
+pyroomacoustics\.doa\.waves module
 ==================================
 
-.. automodule:: pyroomacoustics.parameters
+.. automodule:: pyroomacoustics.doa.waves
     :members:
     :undoc-members:
     :show-inheritance:

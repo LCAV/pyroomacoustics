@@ -9,29 +9,16 @@ from scipy.spatial import ConvexHull, SphericalVoronoi
 from abc import ABCMeta, abstractmethod
 
 from .detect_peaks import detect_peaks
-
-def great_circ_dist(r, colatitude1, azimuth1, colatitude2, azimuth2):
-    """
-    calculate great circle distance for points located on a sphere
-    :param r: radius of the sphere
-    :param colatitude1: colatitude of point 1
-    :param azimuth1: azimuth of point 1
-    :param colatitude2: colatitude of point 2
-    :param azimuth2: azimuth of point 2
-    :return: great-circle distance
-    """
-    d_azimuth = np.abs(azimuth1 - azimuth2)
-    dist = r * np.arctan2(np.sqrt((np.sin(colatitude2) * np.sin(d_azimuth)) ** 2 +
-                                  (np.sin(colatitude1) * np.cos(colatitude2) -
-                                   np.cos(colatitude1) * np.sin(colatitude2) * np.cos(d_azimuth)) ** 2),
-                          np.cos(colatitude1) * np.cos(colatitude2) +
-                          np.sin(colatitude1) * np.sin(colatitude2) * np.cos(d_azimuth))
-    return dist
-
+from . import doa
 
 class Grid:
     '''
     This is an abstract class with attributes and methods for grids
+
+    Parameters
+    ----------
+    n_points: int
+        the number of points on the grid
     '''
 
     __metaclass__ = ABCMeta
@@ -73,19 +60,18 @@ class Grid:
 
 
 class GridCircle(Grid):
+    '''
+    Creates a grid on the circle.
+
+    Parameters
+    ----------
+    n_points: int, optional
+        The number of uniformly spaced points in the grid.
+    azimuth: ndarray, optional
+        An array of azimuth (in radians) to use for grid locations. Overrides n_points.
+    '''
 
     def __init__(self, n_points=360, azimuth=None):
-        '''
-        Creates a grid on the circle.
-
-        Parameters
-        ----------
-        n_points: int, optional
-            The number of uniformly spaced points in the grid.
-        azimuth: ndarray, optional
-            An array of azimuth (in radians) to use for grid locations. Overrides n_points.
-        '''
-
         if azimuth is not None:
 
             if azimuth.ndim != 1:
@@ -153,26 +139,25 @@ class GridCircle(Grid):
 
 
 class GridSphere(Grid):
+    '''
+    This function computes nearly equidistant points on the sphere
+    using the fibonacci method
+
+    Parameters
+    ----------
+    n_points: int
+        The number of points to sample
+    spherical_points: ndarray, optional
+        A 2 x n_points array of spherical coordinates with azimuth in
+        the top row and colatitude in the second row. Overrides n_points.
+
+    References
+    ----------
+    http://lgdv.cs.fau.de/uploads/publications/spherical_fibonacci_mapping.pdf
+    http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    '''
 
     def __init__(self, n_points=1000, spherical_points=None):
-        '''
-        This function computes nearly equidistant points on the sphere
-        using the fibonacci method
-
-        Parameters
-        ----------
-        n_points: int
-            The number of points to sample
-        spherical_points: ndarray, optional
-            A 2 x n_points array of spherical coordinates with azimuth in
-            the top row and colatitude in the second row. Overrides n_points.
-
-        References
-        ----------
-        http://lgdv.cs.fau.de/uploads/publications/spherical_fibonacci_mapping.pdf
-        http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
-        '''
-
         if spherical_points is not None:
 
             if spherical_points.ndim != 2 or spherical_points.shape[0] != 2:
@@ -270,7 +255,7 @@ class GridSphere(Grid):
 
                 phi2, theta2 = self.spherical[:,v]
 
-                d = great_circ_dist(1, theta1, phi1, theta2, phi2)
+                d = doa.great_circ_dist(1, theta1, phi1, theta2, phi2)
 
                 dist.append(d)
 

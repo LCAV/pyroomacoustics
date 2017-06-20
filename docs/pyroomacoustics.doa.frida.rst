@@ -1,7 +1,7 @@
-pyroomacoustics\.parameters module
+pyroomacoustics\.doa\.frida module
 ==================================
 
-.. automodule:: pyroomacoustics.parameters
+.. automodule:: pyroomacoustics.doa.frida
     :members:
     :undoc-members:
     :show-inheritance:

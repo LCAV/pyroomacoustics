@@ -1,7 +1,7 @@
-pyroomacoustics\.acoustics module
+pyroomacoustics\.doa\.tops module
 =================================
 
-.. automodule:: pyroomacoustics.acoustics
+.. automodule:: pyroomacoustics.doa.tops
     :members:
     :undoc-members:
     :show-inheritance:

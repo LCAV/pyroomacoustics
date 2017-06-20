@@ -1,7 +1,7 @@
-pyroomacoustics\.parameters module
+pyroomacoustics\.doa\.music module
 ==================================
 
-.. automodule:: pyroomacoustics.parameters
+.. automodule:: pyroomacoustics.doa.music
     :members:
     :undoc-members:
     :show-inheritance:

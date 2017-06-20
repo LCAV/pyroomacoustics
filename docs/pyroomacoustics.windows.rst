@@ -1,5 +1,5 @@
-pyroomacoustics.windows module
-==============================
+pyroomacoustics\.windows module
+===============================
 
 .. automodule:: pyroomacoustics.windows
     :members:
