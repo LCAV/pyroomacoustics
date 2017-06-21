@@ -19,7 +19,7 @@ from os import path
 
 # build C extension for image source model
 src_dir = 'pyroomacoustics/c_package/'
-files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
+files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c', 'room.h']
 
 libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
