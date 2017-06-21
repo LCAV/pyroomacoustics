@@ -16,7 +16,7 @@ import sys
 import os
 
 # mock modules for compilation without installing all packages
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
+MOCK_MODULES = ['numpy', 'numpy.fft', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'scipy.spatial', 'c_package',
         'scikits.audiolab','scikits.samplerate','scipy.stats',
         'scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot',
