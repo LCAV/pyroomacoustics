@@ -1,14 +1,6 @@
 pyroomacoustics package
 =======================
 
-Module contents
----------------
-
-.. automodule:: pyroomacoustics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
@@ -38,3 +30,10 @@ Submodules
    pyroomacoustics.wall
    pyroomacoustics.windows
 
+Module contents
+---------------
+
+.. automodule:: pyroomacoustics
+    :members:
+    :undoc-members:
+    :show-inheritance:

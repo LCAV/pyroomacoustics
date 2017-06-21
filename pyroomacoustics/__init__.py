@@ -94,7 +94,7 @@ __version__
 
 '''
 
-__version__ = '0.1.0'
+from .version import __version__
 
 from . import c_package
 

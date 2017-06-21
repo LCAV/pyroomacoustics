@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-from pyroomacoustics import __version__
+# import version from file
+with open('pyroomacoustics/version.py') as f:
+    exec(f.read())
 
 try:
     from setuptools import setup
@@ -54,7 +56,7 @@ setup_kwargs = dict(
 
         # You can just specify the packages manually here if your project is
         # simple. Or you can use find_packages().
-        packages=['pyroomacoustics', 'pyroomacoustics.c_package'],
+        packages=['pyroomacoustics', 'pyroomacoustics.c_package', 'pyroomacoustics.doa'],
 
         # Libroom C extension
         ext_modules=[libroom_ext],

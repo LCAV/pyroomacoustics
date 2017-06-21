@@ -1,14 +1,6 @@
 pyroomacoustics\.doa package
 ============================
 
-Module contents
----------------
-
-.. automodule:: pyroomacoustics.doa
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Submodules
 ----------
 
@@ -24,5 +16,13 @@ Submodules
    pyroomacoustics.doa.srp
    pyroomacoustics.doa.tools_fri_doa_plane
    pyroomacoustics.doa.tops
+   pyroomacoustics.doa.utils
    pyroomacoustics.doa.waves
 
+Module contents
+---------------
+
+.. automodule:: pyroomacoustics.doa
+    :members:
+    :undoc-members:
+    :show-inheritance:
