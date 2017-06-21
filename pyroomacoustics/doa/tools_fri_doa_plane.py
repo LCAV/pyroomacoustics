@@ -7,7 +7,7 @@ from scipy import linalg
 import scipy.special
 import scipy.optimize
 from functools import partial
-from joblib import Parallel, delayed
+import joblib as jl
 import os
 
 thread_num = 1
@@ -1213,12 +1213,6 @@ def dirac_recon_ri_half_multiband_parallel(G, a_ri, K, M, max_ini=100):
     # generate all the random initialisations
     c_ri_half_all = np.random.randn(sz_coef, max_ini)
 
-    '''
-    res_all = Parallel(n_jobs=thread_num)(
-        delayed(partial_dirac_recon)(c_ri_half_all[:, loop][:, np.newaxis])
-        for loop in range(max_ini))
-    '''
-
     res_all = []
     for loop in range(max_ini):
         res_all.append(
@@ -1391,8 +1385,8 @@ def dirac_recon_ri_half_parallel(G, a_ri, K, M, max_ini=100):
     # generate all the random initialisations
     c_ri_half_all = np.random.randn(sz_coef, max_ini)
 
-    res_all = Parallel(n_jobs=thread_num)(
-        delayed(partial_dirac_recon)(c_ri_half_all[:, loop][:, np.newaxis])
+    res_all = jl.Parallel(n_jobs=thread_num)(
+        jl.delayed(partial_dirac_recon)(c_ri_half_all[:, loop][:, np.newaxis])
         for loop in range(max_ini))
 
     # find the one with smallest error
@@ -1658,22 +1652,6 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
 
         # use least square to reconstruct amplitudes
         if signal_type == 'visibility':
-            '''the original implementation
-            partial_build_mtx_amp = partial(build_mtx_amp_ri, phi_k=phik_recon)
-            amp_mtx_ri = \
-                linalg.block_diag(
-                    *Parallel(n_jobs=thread_num)(
-                        delayed(partial_build_mtx_amp)(
-                            p_mic_x_normalised[:, band_count],
-                            p_mic_y_normalised[:, band_count])
-                        for band_count in range(num_bands))
-                )
-
-            alphak_recon = sp.optimize.nnls(amp_mtx_ri, a_ri.flatten('F'))[0]
-
-            error_loop = linalg.norm(a_ri.flatten('F') - np.dot(amp_mtx_ri, alphak_recon))
-            '''
-            '''new implementation'''
             error_loop = 0
             alphak_recon = []
             for band_count in range(num_bands):
@@ -1701,8 +1679,8 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
             partial_build_mtx_amp = partial(build_mtx_raw_amp, phi_k=phik_recon)
             amp_mtx = \
                 linalg.block_diag(
-                    *Parallel(n_jobs=thread_num)(
-                        delayed(partial_build_mtx_amp)(
+                    *jl.Parallel(n_jobs=thread_num)(
+                        jl.delayed(partial_build_mtx_amp)(
                             p_mic_x_normalised[:, band_count],
                             p_mic_y_normalised[:, band_count])
                         for band_count in range(num_bands))
