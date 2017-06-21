@@ -14,9 +14,9 @@
 
 import sys
 import os
-import mock
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
+# mock modules for compilation without installing all packages
+autodoc_mock_imports = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'scipy.spatial', 'c_package',
         'scikits.audiolab','scikits.samplerate','scipy.stats',
         'scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot',
@@ -25,9 +25,6 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'matplotlib.tri.triangulation', 'matplotlib.colors', 'matplotlib.cm',
         'matplotlib.patches', 'matplotlib.cbook', 'matplotlib.projections',
         'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',]
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
-
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
