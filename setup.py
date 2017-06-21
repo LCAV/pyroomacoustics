@@ -46,7 +46,7 @@ setup_kwargs = dict(
 
         url='https://github.com/LCAV/pyroomacoustics',
 
-        license='GPL3',
+        license='MIT',
 
         # You can just specify the packages manually here if your project is
         # simple. Or you can use find_packages().
@@ -80,7 +80,7 @@ setup_kwargs = dict(
             'Topic :: Software Development :: Build Tools',
 
             # Pick your license as you wish (should match "license" above)
-            'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+            'License :: OSI Approved :: MIT License',
 
             # Specify the Python versions you support here. In particular, ensure
             # that you indicate whether you support Python 2, Python 3 or both.

@@ -4,8 +4,27 @@ Pyroomacoustics
 .. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
     :target: https://travis-ci.org/LCAV/pyroomacoustics
 .. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=latest
-    :target: http://pyroomacoustics.readthedocs.io/en/latest/?badge=latest
+    :target: http://pyroomacoustics.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation Status
+
+Summary
+-------
+
+Pyroomacoustics is a software package aimed at the rapid development
+and testing of audio array processing algorithms. The content of the package
+can be divided into three main components: an intuitive Python object-oriented
+interface to quickly construct different simulation scenarios involving
+multiple sound sources and microphones in 2D and 3D rooms; a fast C
+implementation of the image source model for general polyhedral rooms to
+efficiently generate room impulse responses and simulate the propagation
+between sources and receivers; and finally, reference implementations of
+popular algorithms for beamforming, direction finding, and adaptive filtering.
+Together, they form a package with the potential to speed up the time to market
+of new algorithms by significantly reducing the implementation overhead in the
+performance evaluation step.
+
+Room Acoustics Simulation
+`````````````````````````
 
 Consider the following scenario.
 
@@ -24,13 +43,14 @@ Consider the following scenario.
 Faced with this difficult situation, **pyroomacoustics** can save the day by simulating
 the environment of the Christ Church cathedral!
 
-Pyroomacoustics is a pure python package for audio signal processing for indoor
-applications. It was developped as a fast prototyping platform for beamforming
-algorithms in indoor scenarios. At the core of the package is a room impulse
-response generator based on the image source model that can handle
+At the core of the package is a room impulse response generator based on the
+image source model that can handle
 
 * Convex and non-convex rooms
 * 2D/3D rooms
+
+Both a pure python implementation and a C accelerator are included for maximum
+speed and compatibility.
 
 The philosophy of the package is to abstract all necessary elements of
 an experiment using object oriented programming concept. Each of these elements
@@ -51,6 +71,23 @@ effectively simulating the propagation of sound between sources and microphones.
 At the input of the microphone composing the beamformer, an STFT (short time
 Fourier transform) engine allows to quickly process the signals through the
 beamformer and evaluate the ouput.
+
+Reference Implementations
+`````````````````````````
+
+In addition to its core image source model simulation, **pyroomacoustics**
+also contains a number of reference implementations of popular audio processing
+algorithms for
+
+* beamforming
+* direction of arrival finding
+* adaptive filtering
+
+We use an object-oriented approach that allows to abstract the details of
+specific algorithms, making them easy to compare. Each algorithm is still
+finely tunable through optional parameters. In general, we have tried to
+pre-set good values for the tuning parameters so that a run with default value
+will in general produce reasonable results.
 
 Quick Install
 -------------
@@ -86,7 +123,7 @@ Example
     room1.addMicrophoneArray(pra.Beamformer(R, room1.fs))
 
     # Now compute the delay and sum weights for the beamformer
-    room1.micArray.rakeDelayAndSumWeights(room1.sources[0][:1])
+    room1.mic_array.rakeDelayAndSumWeights(room1.sources[0][:1])
 
     # plot the room and resulting beamformer
     room1.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
@@ -98,6 +135,8 @@ Authors
 * Robin Scheibler
 * Ivan Dokmanić
 * Sidney Barthe
+* Eric Bezzam
+* Hanjie Pan
 
 How to contribute
 -----------------
@@ -111,6 +150,7 @@ Academic publications
 This package was developped to support academic publications. The package contains implementations
 for the acoustic beamformers introduced in the following papers.
 
+* H\. Pan, R. Scheibler, I. Dokmanic, E. Bezzam and M. Vetterli. *FRIDA: FRI-based DOA estimation for arbitrary array layout*, ICASSP 2017, New Orleans, USA, 2017.
 * I\. Dokmanic, R. Scheibler and M. Vetterli. *Raking the Cocktail Party*, in IEEE Journal of Selected Topics in Signal Processing, vol. 9, num. 5, p. 825 - 836, 2015.
 * R\. Scheibler, I. Dokmanic and M. Vetterli. *Raking Echoes in the Time Domain*, ICASSP 2015, Brisbane, Australia, 2015. 
 
@@ -119,7 +159,7 @@ License
 
 ::
 
-  Copyright (c) 2014-2017, LCAV
+  Copyright (c) 2014-2017 EPFL-LCAV
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
