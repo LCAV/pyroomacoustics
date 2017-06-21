@@ -4,7 +4,7 @@ Routines to perform grid search on the sphere
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.spatial import ConvexHull, SphericalVoronoi
+import scipy.spatial as sp #import ConvexHull, SphericalVoronoi
 
 from abc import ABCMeta, abstractmethod
 
@@ -208,7 +208,7 @@ class GridSphere(Grid):
         # triangulation of the point set, which is what we are looking for.
 
         # Now we also want to compute the convex hull
-        self.hull = ConvexHull(self.cartesian.T)
+        self.hull = sp.ConvexHull(self.cartesian.T)
 
         # and create an adjacency list
         adjacency = [ set() for pt in range(self.n_points) ]
@@ -371,7 +371,7 @@ class GridSphere(Grid):
             s = 1.05
             ax.scatter(s*self.x[id], s*self.y[id], s*self.z[id], c='k', marker='o')
 
-        voronoi = SphericalVoronoi(self.cartesian.T)
+        voronoi = sp.SphericalVoronoi(self.cartesian.T)
         voronoi.sort_vertices_of_regions()
 
         if self.values is not None:
