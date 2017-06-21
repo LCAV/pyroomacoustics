@@ -3,8 +3,8 @@ Pyroomacoustics
 
 .. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
     :target: https://travis-ci.org/LCAV/pyroomacoustics
-.. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=latest
-    :target: http://pyroomacoustics.readthedocs.io/en/stable/?badge=stable
+.. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=stable
+    :target: http://pyroomacoustics.readthedocs.io/en/stable/
     :alt: Documentation Status
 
 Summary
