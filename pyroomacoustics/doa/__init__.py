@@ -68,7 +68,7 @@ Utilities
 ---------
 
 :py:obj:`pyroomacoustics.doa.algorithms`
-    a dictionary containing all the DOA objects subclass availables indexed by
+    a dictionary containing all the DOA object subclasses availables indexed by
     keys ``['MUSIC', 'SRP', 'CSSM', 'WAVES', 'TOPS', 'FRIDA']``
 
 References

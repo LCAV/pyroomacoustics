@@ -1,11 +1,20 @@
 pyroomacoustics package
 =======================
 
+Module contents
+---------------
+
+.. automodule:: pyroomacoustics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
+    pyroomacoustics.adaptive
     pyroomacoustics.c_package
     pyroomacoustics.doa
 
@@ -30,10 +39,3 @@ Submodules
    pyroomacoustics.wall
    pyroomacoustics.windows
 
-Module contents
----------------
-
-.. automodule:: pyroomacoustics
-    :members:
-    :undoc-members:
-    :show-inheritance:

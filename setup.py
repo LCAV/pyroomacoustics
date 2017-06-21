@@ -50,7 +50,12 @@ setup_kwargs = dict(
 
         # You can just specify the packages manually here if your project is
         # simple. Or you can use find_packages().
-        packages=['pyroomacoustics', 'pyroomacoustics.c_package', 'pyroomacoustics.doa'],
+        packages=[
+            'pyroomacoustics', 
+            'pyroomacoustics.c_package', 
+            'pyroomacoustics.doa', 
+            'pyroomacoustics.adaptive'
+            ],
 
         # Libroom C extension
         ext_modules=[libroom_ext],

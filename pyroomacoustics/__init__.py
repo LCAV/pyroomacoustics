@@ -37,7 +37,7 @@ Use the built-in ``help`` function to view a function's docstring::
   >>> help(pra.stft)
   ... # doctest: +SKIP
 
-Available subpackages
+Available submodules
 ---------------------
 :py:obj:`pyroomacoustics.acoustics`
     Acoustics and psychoacoustics routines, mel-scale, critcal bands, etc.
@@ -47,9 +47,6 @@ Available subpackages
 
 :py:obj:`pyroomacoustics.bss`
     Blind source separation.
-
-:py:obj:`pyroomacoustics.doa`
-    Direction of arrival finding algorithms
 
 :py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
@@ -87,6 +84,14 @@ Available subpackages
 :py:obj:`pyroomacoustics.windows`
     Tapering windows for spectral analysis.
 
+Available subpackages
+---------------------
+:py:obj:`pyroomacoustics.doa`
+    Direction of arrival finding algorithms
+
+:py:obj:`pyroomacoustics.adaptive`
+    Adaptive filter algorithms
+
 Utilities
 ---------
 __version__
@@ -113,3 +118,4 @@ from .acoustics import *
 from .recognition import *
 
 from . import doa
+from . import adaptive
