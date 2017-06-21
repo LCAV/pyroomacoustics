@@ -18,19 +18,13 @@ from codecs import open
 from os import path
 
 # build C extension for image source model
-src_dir = 'pyroomacoustics/c_package/'
-files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c', 'room.h']
+src_dir = 'pyroomacoustics/c_package'
+files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
 
 libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + f for f in files],
                     include_dirs=[src_dir])
-
-libroom_lib = ('pyroomacoustics.c_package.libroom', {
-    'sources': [src_dir + f for f in files],
-    'extra_compile_args': ['-Wall', '-O3', '-std=c99'],
-    'include_dirs':[src_dir]
-    })
 
 here = path.abspath(path.dirname(__file__))
 
@@ -101,7 +95,8 @@ try:
     # Try to build everything first
     setup(**setup_kwargs)
 
-except:
+except Exception as e:
+    print("Error during setup. Error({0}): {1}".format(e.errno, e.strerror))
     # Retry without the C module
     print("Error. Probably building C extension failed. Retrying without.")
     setup_kwargs.pop('ext_modules')
