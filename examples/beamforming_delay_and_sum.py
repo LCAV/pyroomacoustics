@@ -7,10 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 
-room_size = [4,6]
-src_pos = [2.5, 4.5]
-mic_pos = [2, 1.5]
-
 # Create a 4 by 6 metres shoe box room
 room = pra.ShoeBox([4,6])
 
@@ -19,11 +15,10 @@ room.add_source([2.5, 4.5])
 
 # Create a linear array beamformer with 4 microphones
 # with angle 0 degrees and inter mic distance 10 cm
-R = pra.linear_2D_array(mic_pos, 4, 0, 0.04) 
+R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
 room.add_microphone_array(pra.Beamformer(R, room.fs))
 
 # Now compute the delay and sum weights for the beamformer
-room.mic_array.far_field_weights(np.arctan2(src_pos[0]-mic_pos[0], src_pos[1]-mic_pos[1]))
 room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
 
 # plot the room and resulting beamformer
