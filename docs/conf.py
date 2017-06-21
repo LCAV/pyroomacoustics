@@ -16,7 +16,7 @@ import sys
 import os
 
 # mock modules for compilation without installing all packages
-autodoc_mock_imports = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'scipy.spatial', 'c_package',
         'scikits.audiolab','scikits.samplerate','scipy.stats',
         'scipy.fftpack','scipy.linalg', 'scipy.signal', 'matplotlib.pyplot',
@@ -24,7 +24,17 @@ autodoc_mock_imports = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'matplotlib.transforms', 'matplotlib.collections', 'matplotlib.scale',
         'matplotlib.tri.triangulation', 'matplotlib.colors', 'matplotlib.cm',
         'matplotlib.patches', 'matplotlib.cbook', 'matplotlib.projections',
-        'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',]
+        'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',
+        'mpl_toolkits', 'mpl_toolkits.mplot3d', 'joblib',]
+
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return MagicMock()
+
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
