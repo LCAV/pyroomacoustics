@@ -1,2 +1,4 @@
 sphinx>=1.6.2
 numpydoc
+mock>=2.0
+sphinx_rtd_theme

@@ -27,7 +27,10 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
         'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',
         'mpl_toolkits', 'mpl_toolkits.mplot3d', 'joblib',]
 
-from unittest.mock import MagicMock
+try:
+    from unittest.mock import MagicMock
+except:
+    from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
