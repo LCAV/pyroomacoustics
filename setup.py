@@ -9,7 +9,7 @@ try:
     from setuptools import setup
     from setuptools import Extension
 except ImportError:
-    print("import error")
+    print("Setuptools unavailable. Falling back to distutils.")
     from distutils.core import setup
     from distutils.extension import Extension
 
@@ -37,7 +37,7 @@ setup_kwargs = dict(
 
         version=__version__,
 
-        description='A simple framework for room acoustics and signal processing in Python.',
+        description='A simple framework for room acoustics and audio processing in Python.',
         long_description=long_description,
 
         author='Laboratory for Audiovisual Communications, EPFL',
@@ -62,7 +62,9 @@ setup_kwargs = dict(
 
         install_requires=[
             'numpy',
-            'scipy',
+            'scipy>=0.18.0',
+            'matplotlib',
+            'joblib',
             ],
 
         test_suite='nose.collector',
@@ -76,8 +78,12 @@ setup_kwargs = dict(
             'Development Status :: 4 - Beta',
 
             # Indicate who your project is intended for
-            'Intended Audience :: Developers',
-            'Topic :: Software Development :: Build Tools',
+            'Intended Audience :: Science/Research',
+            'Intended Audience :: Information Technology',
+            'Topic :: Scientific/Engineering :: Information Analysis',
+            'Topic :: Scientific/Engineering :: Physics',
+            'Topic :: Multimedia :: Sound/Audio :: Speech',
+            'Topic :: Multimedia :: Sound/Audio :: Analysis',
 
             # Pick your license as you wish (should match "license" above)
             'License :: OSI Approved :: MIT License',
@@ -93,17 +99,15 @@ setup_kwargs = dict(
             ],
 
         # What does your project relate to?
-        keywords='room acoustics signal processing',
+        keywords='room acoustics signal processing doa beamforming adaptive',
 )
 
 try:
     # Try to build everything first
     setup(**setup_kwargs)
-
-except Exception as e:
-    print("Error during setup. Error({0}): {1}".format(e.errno, e.strerror))
+except:
     # Retry without the C module
-    print("Error. Probably building C extension failed. Retrying without.")
+    print("Error. Probably building C extension failed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
     setup(**setup_kwargs)
     

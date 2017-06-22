@@ -1,1 +1,2 @@
 include pyroomacoustics/c_package/*.h pyroomacoustics/c_package/*.c
+include requirements.txt
