@@ -196,6 +196,7 @@ class DFT(object):
             self.x[:,] = irfft(self.X, axis=0)
         # apply window if needed
         if self.synthesis_window is not None:
+            print('orly?')
             np.multiply(self.synthesis_window, self.x[:,], self.x[:,])
 
         return self.x

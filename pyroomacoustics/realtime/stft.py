@@ -95,11 +95,12 @@ class STFT(object):
             # The input buffer, float32 for speed!
             self.fft_in_buffer = np.zeros(self.nfft, dtype=np.float32)
             #  a number of useful views on the input buffer
-            self.x_p = self.fft_in_buffer[self.zf:self.zf+self.n_state]  # State buffer
+            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state]  # Location of state
             self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop]
             self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state]
 
-            self.y_p = np.zeros(self.zb, dtype=np.float32)  # prev reconstructed samples
+            self.x_p = np.zeros(self.n_state, dtype=np.float32)  # State buffer
+            self.y_p = np.zeros(self.nfft - self.hop, dtype=np.float32)  # prev reconstructed samples
             self.X = np.zeros(self.nbin, dtype=np.complex64)       # current frame in STFT domain
             self.out = np.zeros(self.hop, dtype=np.float32)
 
@@ -108,11 +109,12 @@ class STFT(object):
             # The input buffer, float32 for speed!
             self.fft_in_buffer = np.zeros((self.nfft, self.D), dtype=np.float32)
             #  a number of useful views on the input buffer
-            self.x_p = self.fft_in_buffer[self.zf:self.zf+self.n_state,:]  # State buffer
+            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state,:]  # Location of state
             self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop,:]
             self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state,:]
 
-            self.y_p = np.zeros((self.zb, self.D), dtype=np.float32)  # prev reconstructed samples
+            self.x_p = np.zeros((self.n_state, self.D), dtype=np.float32)  # State buffer
+            self.y_p = np.zeros((self.nfft - self.hop, self.D), dtype=np.float32)  # prev reconstructed samples
             self.X = np.zeros((self.nbin, self.D), dtype=np.complex64)       # current frame in STFT domain
             self.out = np.zeros((self.hop,self.D), dtype=np.float32)
 
@@ -216,14 +218,15 @@ class STFT(object):
         # if self.D > 1 and x_n.shape[1]!=self.D:
         #     raise ValueError('Invalid input dimensions.')
 
-        if x_n.ndim == 1:
-            self.fresh_samples[:] = x_n[:]
-        else:
-            self.fresh_samples[:,:] = x_n[:,:]
+        self.fresh_samples[:,] = x_n[:,]  # introduce new samples
+
+        self.x_p[:,] = self.old_samples   # save next state
 
         # apply DFT to current frame
         self.X[:] = self.dft.analysis(self.fft_in_buffer)
-        self.x_p[:] = self.old_samples
+
+        # shift backwards in the buffer the state
+        self.fft_in_state[:,] = self.x_p[:,]
 
         # self.num_frames += 1
 
@@ -252,20 +255,18 @@ class STFT(object):
         self.dft.synthesis(self.X)
 
         # reconstruct output
-        if self.D==1:
-            self.out[:] = self.dft.x[0:self.hop]
+        L = self.y_p.shape[0]  # length of output state vector
 
-            if self.zb > 0:
-                self.out[:self.zb] += self.y_p
-                # update state variables
-                self.y_p[:] = self.dft.x[-self.zb:]
-        else:
-            self.out = self.dft.x[0:self.hop,:]
+        self.out[:,] = self.dft.x[0:self.hop,]  # fresh output samples
 
-            if self.zb > 0:
-                self.out[:self.zb,:] += self.y_p[:,:]
-                # update state variables
-                self.y_p[:,:] = self.dft.x[-self.zb:,:]
+        # add state from previous frames when overlap is used
+        if L > 0:
+            m = np.minimum(self.hop, L)
+            self.out[:m,] += self.y_p[:m,]
+            # update state variables
+            self.y_p[:-self.hop,] = self.y_p[self.hop:,]  # shift out left
+            self.y_p[-self.hop:,] = 0.
+            self.y_p[:,] += self.dft.x[-L:,]
 
         return self.out
 
