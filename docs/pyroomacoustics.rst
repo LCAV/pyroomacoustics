@@ -15,8 +15,8 @@ Subpackages
 .. toctree::
 
     pyroomacoustics.adaptive
-    pyroomacoustics.c_package
     pyroomacoustics.doa
+    pyroomacoustics.realtime
 
 Submodules
 ----------
@@ -38,4 +38,3 @@ Submodules
    pyroomacoustics.utilities
    pyroomacoustics.wall
    pyroomacoustics.windows
-

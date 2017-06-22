@@ -92,6 +92,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.adaptive`
     Adaptive filter algorithms
 
+:py:obj:`pyroomacoustics.realtime`
+    Block frequency domain processing tools
+
 Utilities
 ---------
 __version__

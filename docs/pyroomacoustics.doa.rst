@@ -26,3 +26,4 @@ Submodules
    pyroomacoustics.doa.tops
    pyroomacoustics.doa.utils
    pyroomacoustics.doa.waves
+
