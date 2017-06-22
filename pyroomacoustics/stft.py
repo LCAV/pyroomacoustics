@@ -85,8 +85,8 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
 
 def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     '''
-    Parameters:
-    -----------
+    Parameters
+    ----------
     x: 
         input signal
     L: 
@@ -102,8 +102,8 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     zp_front: 
         zero padding to apply at the beginning of the frame
 
-    Returns:
-    --------
+    Returns
+    -------
     The STFT of x
     '''
 
@@ -172,9 +172,15 @@ def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 # frequencies
 def freqvec(N, fs, centered=False):
     '''
-    N: FFT length
-    fs: sampling rate of the signal
-    shift: False if the DC is at the beginning, True if the DC is centered
+    Compute the vector of frequencies corresponding to DFT bins.
+    Parameters
+    ----------
+    N: int
+        FFT length
+    fs: int
+        sampling rate of the signal
+    shift: int
+        False if the DC is at the beginning, True if the DC is centered
     '''
 
     # Create a centered vector. The (1-N%2) is to correct for even/odd length

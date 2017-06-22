@@ -59,7 +59,6 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
-    'numpydoc',
 ]
 
 numpydoc_show_class_members = False

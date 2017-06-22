@@ -6,16 +6,12 @@ class Buffer:
     '''
     A simple buffer class with amortized cost
 
-    Supported operations
-    --------------------
-    push(val)
-        Add a new value at the end of the buffer
-    top(n)
-        Returns an array of n newest values from newest to oldest
-    flush(n)
-        Removes the n oldest values in the buffer
-    size()
-        Returns the number of elements in the buffer
+    Parameters
+    ----------
+    length: int
+        buffer length
+    dtype: numpy.type
+        data type
     '''
 
     def __init__(self, length=20, dtype=np.float64):
@@ -81,8 +77,25 @@ class Buffer:
 class Powers:
     '''
     This class allows to store all powers of a small number
-    and get them a la numpy
+    and get them 'a la numpy' with the bracket operator.
     There is automatic increase when new values are requested
+
+    Parameters
+    ----------
+    a: float
+        the number
+    length: int
+        the number of integer powers
+    dtype: numpy.type, optional
+        the data type (typically np.float32 or np.float64)
+
+    Example
+    -------
+
+        >>> an = Powers(0.5)
+        >>> print(an[4])
+        0.0625
+
     '''
 
     def __init__(self, a, length=20, dtype=np.float64):
@@ -114,7 +127,18 @@ class Powers:
 
 class CoinFlipper:
     '''
-    This class efficiently generates large number of coin flips
+    This class efficiently generates large number of coin flips.
+    Because each call to ``numpy.random.rand`` is a little bit costly,
+    it is more efficient to generate many values at once.
+    This class does this and stores them in advance. It generates
+    new fresh numbers when needed.
+
+    Parameters
+    ----------
+    p: float, 0 < p < 1
+        probability to output a 1
+    length: int
+        the number of flips to precompute
     '''
 
     def __init__(self, p, length=10000):
@@ -125,10 +149,12 @@ class CoinFlipper:
         self.dirty_coins = 0
 
     def fresh_flips(self, n):
+        ''' Generates n binary random values now '''
 
         return np.random.random(n) < self.p
 
     def flip_all(self):
+        ''' Regenerates all the used up values '''
 
         remaining = self.length - self.dirty_coins
         self.buffer[:self.dirty_coins] = self.fresh_flips(self.dirty_coins)
@@ -136,6 +162,8 @@ class CoinFlipper:
 
 
     def flip(self, n):
+        ''' Get n random binary values from the buffer '''
+
 
         # If more flips than computed are requested
         # increase buffer size and flip again

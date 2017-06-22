@@ -181,11 +181,13 @@ class MicrophoneArray(object):
         do not use the same sampling frequency, down/up-sampling
         is done here.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
 
-        signals: An ndarray with as many lines as there are microphones.
-        Fs: the sampling frequency of the signals.
+        signals:
+            An ndarray with as many lines as there are microphones.
+        Fs: 
+            the sampling frequency of the signals.
         '''
 
         if signals.shape[0] != self.M:
