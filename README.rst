@@ -147,8 +147,9 @@ If you would like to contribute, please clone the
 Academic publications
 ---------------------
 
-This package was developped to support academic publications. The package contains implementations
-for the acoustic beamformers introduced in the following papers.
+This package was developped to support academic publications. The package
+contains implementations for doa algorithm and acoustic beamformers introduced
+in the following papers.
 
 * H\. Pan, R. Scheibler, I. Dokmanic, E. Bezzam and M. Vetterli. *FRIDA: FRI-based DOA estimation for arbitrary array layout*, ICASSP 2017, New Orleans, USA, 2017.
 * I\. Dokmanic, R. Scheibler and M. Vetterli. *Raking the Cocktail Party*, in IEEE Journal of Selected Topics in Signal Processing, vol. 9, num. 5, p. 825 - 836, 2015.
