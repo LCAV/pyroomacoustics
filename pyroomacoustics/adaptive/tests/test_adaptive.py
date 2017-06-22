@@ -1,10 +1,4 @@
 
-'''
-Adaptive Filters Example
-========================
-
-In this example, we will run adaptive filters for system identification.
-'''
 from __future__ import division, print_function
 
 from unittest import TestCase
