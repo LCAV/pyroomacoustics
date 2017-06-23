@@ -6,16 +6,7 @@ from __future__ import division
 
 import numpy as np
 from .dft import DFT
-import warnings
 
-try:
-    import matplotlib as mpl
-    matplotlib_available = True
-except ImportError:
-    matplotlib_available = False
-
-if matplotlib_available:
-    import matplotlib.pyplot as plt
 
 class STFT(object):
     """
@@ -25,8 +16,6 @@ class STFT(object):
     -----------
     N : int
         number of samples per frame
-    fs : float
-        Sampling frequency.
     hop : int
         hop size
     analysis_window : numpy array
@@ -38,11 +27,10 @@ class STFT(object):
     transform: str, optional
         which FFT package to use: 'numpy', 'pyfftw', or 'mkl'
     """
-    def __init__(self, N, fs, hop=None, analysis_window=None, 
+    def __init__(self, N, hop=None, analysis_window=None, 
         synthesis_window=None, channels=1, transform='numpy'):
         # initialize parameters
         self.N = N          # number of samples per frame
-        self.fs = fs
         self.D = channels         # number of channels
         if hop is not None: # hop size
             self.hop = hop  
@@ -69,8 +57,7 @@ class STFT(object):
         self.transform = transform
         self.nfft = self.N
         self.nbin = self.nfft // 2 + 1
-        self.freq = np.linspace(0,self.fs/2,self.nbin)
-        self.dft = DFT(nfft=self.nfft,fs=self.fs,D=self.D,
+        self.dft = DFT(nfft=self.nfft,D=self.D,
                 analysis_window=self.analysis_window,
                 synthesis_window=self.synthesis_window,
                 transform=self.transform)
@@ -125,7 +112,6 @@ class STFT(object):
         """
         self.num_frames = 0
         self.nbin = self.nfft // 2 + 1
-        self.freq = np.linspace(0,self.fs/2,self.nbin)
 
         if self.D==1:
             self.fft_in_buffer[:] = 0.
@@ -136,7 +122,7 @@ class STFT(object):
             self.X[:,:] = 0.
             self.y_p[:,:] = 0.
 
-        self.dft = DFT(nfft=self.nfft,fs=self.fs,D=self.D,
+        self.dft = DFT(nfft=self.nfft,D=self.D,
             analysis_window=self.analysis_window,
             synthesis_window=self.synthesis_window,
             transform=self.transform)

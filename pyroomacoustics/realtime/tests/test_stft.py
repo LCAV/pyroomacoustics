@@ -16,6 +16,7 @@ and with and without filtering.
 tol = 1e-6
 np.random.seed(0)
 D = 4
+transform = 'numpy'   # 'numpy', 'pyfftw', or 'mkl'
 
 # filter to apply
 h_len = 99
@@ -24,7 +25,6 @@ h /= np.linalg.norm(h, axis=0)
 
 # test signal (noise)
 x = np.random.randn(100000, D)
-fs = 8000  # dummy sampling frequency
 
 # convolved signal
 y = np.zeros((x.shape[0] + h_len - 1, x.shape[1]))
@@ -43,7 +43,8 @@ def no_overlap_no_filter(D):
     hop = block_size  # no overlap
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, fs, hop=hop, channels=D)
+    stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        transform=transform)
 
     # collect the processed blocks
     processed_x = np.zeros(x_local.shape)
@@ -80,7 +81,8 @@ def no_overlap_with_filter(D):
     hop = block_size  # no overlap
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, fs, hop=hop, channels=D)
+    stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        transform=transform)
     
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
@@ -119,7 +121,8 @@ def with_half_overlap_no_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, fs, hop=hop, analysis_window=window, channels=D)
+    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
+        channels=D, transform=transform)
 
     # collect the processed blocks
     processed_x = np.zeros(x_local.shape)
@@ -157,7 +160,8 @@ def with_half_overlap_with_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, fs, hop=hop, analysis_window=window, channels=D)
+    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
+        channels=D, transform=transform)
 
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)

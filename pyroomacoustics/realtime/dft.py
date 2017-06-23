@@ -13,11 +13,6 @@ from numpy.fft import rfft
 from numpy.fft import irfft
 import warnings
 
-try:
-    import matplotlib as mpl
-    matplotlib_available = True
-except ImportError:
-    matplotlib_available = False
 
 try:
     import pyfftw
@@ -31,8 +26,6 @@ try:
 except ImportError:
     mkl_available = False
 
-if matplotlib_available:
-    import matplotlib.pyplot as plt
 
 class DFT(object):
     """
@@ -45,25 +38,21 @@ class DFT(object):
         FFT size.
     D: int
         Number of channels. Default is 1.
-    fs: float
-        Sampling frequency.
     analysis_window: numpy array
         Window to be applied before DFT.
     synthesis_window: numpy array
         Window to be applied after inverse DFT.
     transform: str
-        'fftw' or 'numpy' to use the appropriate library..
+        which FFT package to use: 'numpy', 'pyfftw', or 'mkl'
 
     """
 
-    def __init__(self, nfft, D=1, fs=1.0, analysis_window=None, synthesis_window=None, transform='numpy'):
+    def __init__(self, nfft, D=1, analysis_window=None, synthesis_window=None, transform='numpy'):
 
         self.nfft = nfft
         self.D = D
         
         self.nbin = self.nfft//2+1
-        self.fs = float(fs)
-        self.freq = np.linspace(0,self.fs/2,self.nbin)
         self.X = np.squeeze(np.zeros((self.nbin,self.D),dtype='complex64'))
         self.x = np.squeeze(np.zeros((self.nfft,self.D),dtype='float32'))
 
