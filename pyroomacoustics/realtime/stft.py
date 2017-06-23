@@ -55,7 +55,7 @@ class STFT(object):
 
         # create DFT object
         self.transform = transform
-        self.nfft = self.N
+        self.nfft = self.N   # differ when there is zero-padding
         self.nbin = self.nfft // 2 + 1
         self.dft = DFT(nfft=self.nfft,D=self.D,
                 analysis_window=self.analysis_window,
