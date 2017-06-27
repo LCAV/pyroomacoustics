@@ -57,6 +57,10 @@ class BlockLMS(NLMS):
         the length of the filter
     mu: float, optional
         the step size (default 0.5)
+    L: int, optional
+        block size (default is 1)
+    nlms: bool, optional
+        whether or not to normalize as in NLMS (default is False)
     '''
     
     def __init__(self, length, mu=0.01, L=1, nlms=False):

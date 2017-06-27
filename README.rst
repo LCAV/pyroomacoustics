@@ -31,19 +31,19 @@ Consider the following scenario.
   Suppose, for example, you wanted to produce a radio crime drama, and it
   so happens that, according to the scriptwriter, the story line absolutely must culminate
   in a satanic mass that quickly degenerates into a violent shootout, all taking place
-  right around the altar of the higly reverberant acoustic environment of Oxford's
+  right around the altar of the highly reverberant acoustic environment of Oxford's
   Christ Church cathedral. To ensure that it sounds authentic, you asked the Dean of
   Christ Church for permission to record the final scene inside the cathedral, but
   somehow he fails to be convinced of the artistic merit of your production, and declines
   to give you permission. But recorded in a conventional studio, the scene sounds flat.
-  So what do you do ?
+  So what do you do?
 
   -- Schnupp, Nelken, and King, *Auditory Neuroscience*, 2010
 
 Faced with this difficult situation, **pyroomacoustics** can save the day by simulating
 the environment of the Christ Church cathedral!
 
-At the core of the package is a room impulse response generator based on the
+At the core of the package is a room impulse response (RIR) generator based on the
 image source model that can handle
 
 * Convex and non-convex rooms
@@ -57,7 +57,7 @@ an experiment using object oriented programming concept. Each of these elements
 is represented using a class and an experiment can be designed by combining
 these elements just as one would do in a real experiment.
 
-Let's imagine we want to simulate a delay and sum beamformer that uses a linear
+Let's imagine we want to simulate a delay-and-sum beamformer that uses a linear
 array with four microphones in a shoe box shaped room that contains only one
 source of sound. First, we create a room object, to which we add a microphone
 array object, and a sound source object. Then, the room object has methods
@@ -66,11 +66,11 @@ the microphone array class and has different methods to compute the weights, for
 example delay-and-sum weights. See the example below to get an idea of what the
 code looks like.
 
-The `Room` class allows in addition to process sound samples emitted by sources,
+The `Room` class also allows one to process sound samples emitted by sources,
 effectively simulating the propagation of sound between sources and microphones.
-At the input of the microphone composing the beamformer, an STFT (short time
+At the input of the microphones composing the beamformer, an STFT (short time
 Fourier transform) engine allows to quickly process the signals through the
-beamformer and evaluate the ouput.
+beamformer and evaluate the output.
 
 Reference Implementations
 `````````````````````````
@@ -80,13 +80,12 @@ also contains a number of reference implementations of popular audio processing
 algorithms for
 
 * beamforming
-* direction of arrival finding
+* direction of arrival (DOA) finding
 * adaptive filtering
 
-We use an object-oriented approach that allows to abstract the details of
-specific algorithms, making them easy to compare. Each algorithm is still
-finely tunable through optional parameters. In general, we have tried to
-pre-set good values for the tuning parameters so that a run with default value
+We use an object-oriented approach to abstract the details of
+specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
+pre-set values for the tuning parameters so that a run with the default values
 will in general produce reasonable results.
 
 Quick Install
@@ -147,8 +146,8 @@ If you would like to contribute, please clone the
 Academic publications
 ---------------------
 
-This package was developped to support academic publications. The package
-contains implementations for doa algorithm and acoustic beamformers introduced
+This package was developed to support academic publications. The package
+contains implementations for DOA algorithms and acoustic beamformers introduced
 in the following papers.
 
 * H\. Pan, R. Scheibler, I. Dokmanic, E. Bezzam and M. Vetterli. *FRIDA: FRI-based DOA estimation for arbitrary array layout*, ICASSP 2017, New Orleans, USA, 2017.

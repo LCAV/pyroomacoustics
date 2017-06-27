@@ -2,7 +2,6 @@ from __future__ import division, print_function
 import scipy.linalg as la
 import numpy as np
 
-from .util import hankel_stride_trick
 
 class AdaptiveFilter:
     '''

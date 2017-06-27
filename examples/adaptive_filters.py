@@ -58,7 +58,7 @@ for i in range(n_samples):
 plt.plot(w)
 for algo in adfilt.values():
     plt.plot(algo['filter'].w)
-plt.title('Orignal and reconstructed filters')
+plt.title('Original and reconstructed filters')
 plt.legend(['groundtruth'] + list(adfilt))
 
 plt.figure()
