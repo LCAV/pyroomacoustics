@@ -2,7 +2,6 @@ from __future__ import division, print_function
 
 import numpy as np
 from scipy import signal
-import sounddevice as sd
 
 from .physics import calculate_speed_of_sound
 
@@ -90,10 +89,16 @@ class DelayCalibration:
 
 if __name__ == "__main__":
 
-    sd.default.device = (2,2)
-    sd.default.channels = (1,2)
-    dc = DelayCalibration(48000, mls_bits=16, pad_time=0.5, repeat=1, temperature=25.6, humidity=30.)
+    try:
+        import sounddevice as sd
 
-    delays = dc.run(ch_out=[0,1])
+        sd.default.device = (2,2)
+        sd.default.channels = (1,2)
+        dc = DelayCalibration(48000, mls_bits=16, pad_time=0.5, repeat=1, temperature=25.6, humidity=30.)
 
-    print(delays)
+        delays = dc.run(ch_out=[0,1])
+
+        print(delays)
+    except:
+        raise ImportError('Sounddevice package must be installed to run that script.')
+
