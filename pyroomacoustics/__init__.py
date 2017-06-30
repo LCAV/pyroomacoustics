@@ -123,3 +123,4 @@ from .recognition import *
 from . import doa
 from . import adaptive
 from . import realtime
+from . import experimental
