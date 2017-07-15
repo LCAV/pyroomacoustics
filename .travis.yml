@@ -40,7 +40,7 @@ script:
 deploy:
   # pypi
   - provider: pypi
-    server: https://pypi.python.org/pypi
+    server: https://upload.pypi.org/legacy
     on:
       branch: pypi-release
       tags: true
