@@ -51,7 +51,7 @@ class RLS(AdaptiveFilter):
 
         AdaptiveFilter.reset(self)
         
-        if self.delta == 0:
+        if self.delta <= 0:
             raise ValueError('Delta should be a positive constant.')
         else:
             self.P = np.eye(self.length, dtype=self.dtype)/self.delta
