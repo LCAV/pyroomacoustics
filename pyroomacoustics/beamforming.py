@@ -181,13 +181,11 @@ class MicrophoneArray(object):
         do not use the same sampling frequency, down/up-sampling
         is done here.
 
-        Parameters
-        ----------
+        Parameters:
+        -----------
 
-        signals:
-            An ndarray with as many lines as there are microphones.
-        Fs: 
-            the sampling frequency of the signals.
+        signals: An ndarray with as many lines as there are microphones.
+        Fs: the sampling frequency of the signals.
         '''
 
         if signals.shape[0] != self.M:
@@ -842,9 +840,14 @@ class Beamformer(MicrophoneArray):
         A = np.concatenate((H[:,:tau+1], H[:,tau+kappa:]), axis=1)
         b = np.zeros((A.shape[1],1))
         b[tau,0] = 1
-
+        
         # We first assume the sample are uncorrelated
-        K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+        if interferer is not None:
+            K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+
+        # Avoid second term if Interferer is absent
+        else:
+            K_nq = R_n
 
         # causal response construction
         C = la.cho_factor(K_nq, overwrite_a=True, check_finite=False)
@@ -937,7 +940,13 @@ class Beamformer(MicrophoneArray):
 
         # We first assume the sample are uncorrelated
         R_xx = np.dot(H[:, :L], H[:, :L].T)
-        K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+        
+        if interferer is not None:
+            K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+
+        # Avoid second term if Interferer is absent
+        else:
+            K_nq = R_n
 
         # Compute the TD filters
         C = la.cho_factor(R_xx + K_nq, check_finite=False)
