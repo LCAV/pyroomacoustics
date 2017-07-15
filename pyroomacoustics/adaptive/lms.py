@@ -56,7 +56,7 @@ class BlockLMS(NLMS):
     length: int
         the length of the filter
     mu: float, optional
-        the step size (default 0.5)
+        the step size (default 0.01)
     L: int, optional
         block size (default is 1)
     nlms: bool, optional
