@@ -256,14 +256,24 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     '''
     A function to build the channel matrix for many sources and microphones
 
-    mics is a dim-by-M ndarray where each column is the position of a microphone
-    sources is a list of SoundSource objects
-    Lg is the length of the beamforming filters
-    Fs is the sampling frequency
-    epsilon determines how long the sinc is let to decay. Defaults to epsilon=5e-3
-    unit_damping determines if the wall damping parameters are used or not. Default to false.
+    Parameters
+    ----------
+    mics: ndarray
+        a dim-by-M ndarray where each column is the position of a microphone
+    sources: list of pyroomacoustics.SoundSource
+        list of sound sources for which we want to build the matrix
+    Lg: int
+        the length of the beamforming filters
+    Fs: int
+        the sampling frequency
+    epsilon: float, optional
+        minimum decay of the sinc before truncation. Defaults to epsilon=5e-3
+    unit_damping: bool, optional
+        determines if the wall damping parameters are used or not. Default to false.
 
-    returns the RIR matrix H =
+    Returns
+    -------
+    the function returns the RIR matrix H =
 
     ::
 
