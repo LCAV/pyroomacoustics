@@ -66,6 +66,7 @@ setup_kwargs = dict(
             'scipy>=0.18.0',
             'matplotlib',
             'joblib',
+            'samplerate',
             ],
 
         test_suite='nose.collector',

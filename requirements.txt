@@ -2,3 +2,4 @@ numpy
 scipy>=0.18.0
 matplotlib
 joblib
+samplerate
