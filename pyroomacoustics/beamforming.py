@@ -6,7 +6,6 @@ from __future__ import division
 
 import numpy as np
 import scipy.linalg as la
-import samplerate
 
 from .parameters import constants
 from . import utilities as u
@@ -198,12 +197,18 @@ class MicrophoneArray(object):
             raise NameError('The signals should be a 2D array.')
 
         if Fs != self.Fs:
-            Fs_ratio = self.Fs / float(Fs)
-            newL = int(Fs_ratio * signals.shape[1]) - 1
-            self.signals = np.zeros((self.M, newL))
-            # samplerate resample function considers columns as channels (hence the transpose)
-            for m in range(self.M):
-                self.signals[m] = samplerate.resample(signals[m], Fs_ratio, 'sinc_best')
+            try:
+                import samplerate
+
+                Fs_ratio = self.Fs / float(Fs)
+                newL = int(Fs_ratio * signals.shape[1]) - 1
+                self.signals = np.zeros((self.M, newL))
+                # samplerate resample function considers columns as channels (hence the transpose)
+                for m in range(self.M):
+                    self.signals[m] = samplerate.resample(signals[m], Fs_ratio, 'sinc_best')
+            except ImportError:
+                raise ImportError('The samplerate package must be installed for resampling of the signals.')
+
         else:
             self.signals = signals
 
