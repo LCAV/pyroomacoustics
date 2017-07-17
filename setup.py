@@ -56,6 +56,7 @@ setup_kwargs = dict(
             'pyroomacoustics.doa', 
             'pyroomacoustics.adaptive',
             'pyroomacoustics.realtime',
+            'pyroomacoustics.experimental',
             ],
 
         # Libroom C extension
