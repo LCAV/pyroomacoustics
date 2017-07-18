@@ -42,7 +42,7 @@ def exponential_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
     om1 = 2 * np.pi * (f_lo * fs)
     om2 = 2 * np.pi * (f_hi * fs)
 
-    sweep = 0.95 * np.sin(om1*N*Ts / np.log(om2/om1) * (np.exp(n/N*np.log(om2/om1)) - 1))
+    sweep = np.sin(om1*N*Ts / np.log(om2/om1) * (np.exp(n/N*np.log(om2/om1)) - 1))
 
     if not ascending:
         sweep = sweep[::-1]
@@ -79,7 +79,7 @@ def linear_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
     om1 = 2 * np.pi * f_lo * fs
     om2 = 2 * np.pi * f_hi * fs
 
-    sweep = 0.95 * np.sin(2 * np.pi * 0.5 * (f1 + (f2 - f1) * n / N) * n / fs)
+    sweep = np.sin(2 * np.pi * 0.5 * (f1 + (f2 - f1) * n / N) * n / fs)
 
     if not ascending:
         sweep = sweep[::-1]

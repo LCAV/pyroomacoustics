@@ -5,7 +5,6 @@ from scipy import linalg as la
 
 try:
     import mkl_fft as fft
-    print('Using mkl')
 except ImportError:
     import numpy.fft as fft
 
