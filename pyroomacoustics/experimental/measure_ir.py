@@ -1,6 +1,5 @@
 
-import numpy as np
-
+import numpy as np 
 try:
     import sounddevice as sd
     sounddevice_available = True
@@ -17,7 +16,7 @@ class SweepType(Enum):
     linear = 'linear'
 
 def measure_ir(sweep_length=1., sweep_type=SweepType.exponential, 
-        fs=48000, f_lo=0.01, f_hi=0.99, 
+        fs=48000, f_lo=0., f_hi=None, 
         volume=0.9, pre_delay=0., post_delay=0.1, fade_in_out=0.,
         dev_in=None, dev_out=None, channels_input_mapping=None, channels_output_mapping=None,
         ascending=False, deconvolution=True, plot=True):
@@ -33,9 +32,9 @@ def measure_ir(sweep_length=1., sweep_type=SweepType.exponential,
     fs: int, optional
         sampling frequency (default 48 kHz)
     f_lo: float, optional
-        lowest frequency in the sweep as a ratio of fs
+        lowest frequency in the sweep
     f_hi: float, optional
-        highest frequency in the sweep as a ratio of fs
+        highest frequency in the sweep, can be a negative offset from fs/2
     volume: float, optional
         multiply the sweep by this number before playing (default 0.9)
     pre_delay: float, optional
@@ -126,12 +125,22 @@ def measure_ir(sweep_length=1., sweep_type=SweepType.exponential,
 
         if h is not None:
             plt.figure()
+            plt.subplot(1,2,1)
             plt.plot(np.arange(h.shape[0]) / fs, h)
-            plt.title('Deconvolved IR')
+            plt.title('Impulse Response')
+            plt.subplot(1,2,2)
+            freq = np.arange(h.shape[0] // 2 + 1) * fs / h.shape[0]
+            plt.plot(freq, 20.*np.log10(np.abs(np.fft.rfft(h, axis=0))))
+            plt.title('Frequency content')
             
         plt.figure()
+        plt.subplot(1,2,1)
         plt.plot(np.arange(recorded_signal.shape[0]) / fs, recorded_signal)
         plt.title('Recorded signal')
+        plt.subplot(1,2,2)
+        freq = np.arange(recorded_signal.shape[0] // 2 + 1) * fs / recorded_signal.shape[0]
+        plt.plot(freq, 20.*np.log10(np.abs(np.fft.rfft(recorded_signal, axis=0))))
+        plt.title('Frequency content')
 
         plt.show()
 
@@ -151,39 +160,47 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(prog='measure_ir', description='Measures an impulse response by playing a sweep and recording it using the sounddevice package.')
     parser.add_argument('-l', '--length', type=float, default=1.,
-        help='length of the sweep in seconds')
-    parser.add_argument('-t', '--type', type=str, default=SweepType.exponential, choices=[SweepType.exponential, SweepType.linear],
-        help='type of sweep to use linear or exponential (default)')
+            help='length of the sweep in seconds')
+    parser.add_argument('-t', '--type', type=str, default=SweepType.linear.value, 
+            choices=[SweepType.exponential.value, SweepType.linear.value],
+            help='type of sweep to use linear or exponential (default)')
+    parser.add_argument('-f', '--file', type=str,
+            help='name of file where to save the recorded signals (without extension)')
     parser.add_argument('-r', '--fs', type=int, default=48000,
-        help='sampling frequency (default 48 kHz)')
-    parser.add_argument('--f-lo', type=float, default=0.01,
-        help='lowest frequency in the sweep as a ratio of fs')
-    parser.add_argument('--f-hi', type=float, default=0.99,
-        help='highest frequency in the sweep as a ratio of fs')
+            help='sampling frequency (default 48 kHz)')
+    parser.add_argument('--f-lo', type=float, default=0.,
+            help='lowest frequency in the sweep')
+    parser.add_argument('--f-hi', type=float, default=None,
+            help='highest frequency in the sweep, can be a negative offset from fs/2')
     parser.add_argument('-v', '--volume', type=float, default=0.9,
-        help='multiply the sweep by this number before playing (default 0.9)')
+            help='multiply the sweep by this number before playing (default 0.9)')
     parser.add_argument('--pre-delay', type=float, default=0.,
-        help='delay in second before playing sweep')
-    parser.add_argument('--post-delay', type=float, default=0.1,
-        help='delay in second before stopping recording after playing the sweep')
+            help='delay in second before playing sweep')
+    parser.add_argument('--post-delay', type=float, default=0.5,
+            help='delay in second before stopping recording after playing the sweep')
     parser.add_argument('--fading', type=float, default=0.,
-        help='length in seconds of the fade in and out of the sweep (default 0.)')
+            help='length in seconds of the fade in and out of the sweep (default 0.)')
     parser.add_argument('--dev-in', type=int, default=None,
             help='input device number')
     parser.add_argument('--dev-out', type=int, default=None,
             help='output device number')
     parser.add_argument('--ch-in', dest='channels_input_mapping', action='append', type=int,
-        help='List of channel numbers (starting with 1) to record.')
+            help='List of channel numbers (starting with 1) to record.')
     parser.add_argument('--ch-out', dest='channels_output_mapping', action='append', type=int,
-        help='List of channel numbers (starting with 1) where the columns of data shall be played back on. Must have the same length as number of channels in data (except if data is mono, in which case the signal is played back on all given output channels). Each channel number may only appear once in mapping.')
+            help='List of channel numbers (starting with 1) where the columns of data shall be played back on. Must have the same length as number of channels in data (except if data is mono, in which case the signal is played back on all given output channels). Each channel number may only appear once in mapping.')
     parser.add_argument('--asc', action='store_true',
-        help='wether the sweep is from high to low (default) or low to high frequencies')
+            help='wether the sweep is from high to low (default) or low to high frequencies')
     parser.add_argument('--deconv', action='store_true',
-        help='if True, apply deconvolution to the recorded signal to remove the sweep (default 0.)')
+            help='if True, apply deconvolution to the recorded signal to remove the sweep (default 0.)')
     parser.add_argument('-p', '--plot', action='store_true',
-        help='plot the resulting signal')
+            help='plot the resulting signal')
 
     args = parser.parse_args()
+
+    if args.type == SweepType.exponential.value:
+        args.type = SweepType.exponential
+    elif args.type == SweepType.linear.value:
+        args.type = SweepType.linear
 
     kwargs = dict(
             sweep_length=args.length,
@@ -204,6 +221,13 @@ if __name__ == '__main__':
             plot=args.plot,
             )
 
-    measure_ir(**kwargs)
+    signals = measure_ir(**kwargs)
 
+    if args.file is not None:
+        from scipy.io import wavfile
+        if args.deconv:
+            wavfile.write(args.file + '.wav', args.fs, signals[0])
+            wavfile.write(args.file + '.ir.wav', args.fs, signals[1])
+        else:
+            wavfile.write(args.file + '.wav', args.fs, signals)
 
