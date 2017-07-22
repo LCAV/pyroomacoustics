@@ -16,7 +16,7 @@ def window(signal, n_win):
 
     return sig_copy
 
-def exponential_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
+def exponential_sweep(T, fs, f_lo=0., f_hi=None, fade=None, ascending=False):
     '''
     Exponential sine sweep
 
@@ -35,24 +35,37 @@ def exponential_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
     ascending: bool, optional
     '''
 
+    if f_hi is None:
+        f_hi = fs / 2
+    elif f_hi < 0.:
+        f_hi = fs / 2 + f_hi
+    elif f_hi > fs / 2:
+        f_hi = fs / 2
+
+    if f_lo < 1.:
+        f_lo = 1.
+
+    if f_lo > f_hi:
+        raise ValueError('Error: need 0. <= f_lo < f_hi <= fs/2')
+
     Ts = 1./fs   # Sampling period in [s]
     N = np.floor(T/Ts)  # number of samples
     n  = np.arange(0, N, dtype='float64')  # Sample index
 
-    om1 = 2 * np.pi * (f_lo * fs)
-    om2 = 2 * np.pi * (f_hi * fs)
+    om1 = 2 * np.pi * f_lo
+    om2 = 2 * np.pi * f_hi
 
     sweep = np.sin(om1*N*Ts / np.log(om2/om1) * (np.exp(n/N*np.log(om2/om1)) - 1))
 
     if not ascending:
         sweep = sweep[::-1]
 
-    if fade:
+    if fade is not None and fade > 0.:
         sweep = window(sweep, int(fs * fade))
 
     return sweep
 
-def linear_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
+def linear_sweep(T, fs, f_lo=0., f_hi=None, fade=None, ascending=False):
     '''
     Linear sine sweep
 
@@ -71,20 +84,35 @@ def linear_sweep(T, fs, f_lo=0., f_hi=1., fade=None, ascending=False):
     ascending: bool, optional
     '''
 
+    if f_hi is None:
+        f_hi = fs / 2
+    elif f_hi < 0.:
+        f_hi = fs / 2 + f_hi
+    elif f_hi > fs / 2:
+        f_hi = fs / 2
+
+    if f_lo < 0.:
+        f_lo = 0.
+
+    if f_lo > f_hi:
+        raise ValueError('Error: need 0. <= f_lo < f_hi <= fs/2')
+
+    print(f_lo, f_hi)
+
     Ts = 1./fs   # Sampling period in [s]
 
-    N = np.floor(T/Ts)
+    N = np.floor(T/Ts)  # number of samples
     n  = np.arange(0, N, dtype='float64')  # Sample index
 
-    om1 = 2 * np.pi * f_lo * fs
-    om2 = 2 * np.pi * f_hi * fs
+    t = n * Ts  # time vector
+    rate = (f_hi - f_lo) / T  # rate of change of frequency
 
-    sweep = np.sin(2 * np.pi * 0.5 * (f1 + (f2 - f1) * n / N) * n / fs)
+    sweep = np.sin(2 * np.pi * (f_lo + 0.5 * rate * t) * t)
 
     if not ascending:
         sweep = sweep[::-1]
 
-    if fade:
+    if fade is not None and fade > 0.:
         sweep = window(sweep, int(fs * fade))
 
     return sweep
