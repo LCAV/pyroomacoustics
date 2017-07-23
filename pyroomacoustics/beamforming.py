@@ -111,7 +111,7 @@ def spiral_2D_array(center, M, radius=1., divi=3, angle=None):
     :param angle: the angle offset of the spiral (default random)
     :return:
     '''
-    num_seg = np.ceil(M / divi)
+    num_seg = int(np.ceil(M / divi))
 
     pos_array_norm = np.linspace(0, radius, num=M, endpoint=False)
 
@@ -197,35 +197,53 @@ class MicrophoneArray(object):
             raise NameError('The signals should be a 2D array.')
 
         if Fs != self.Fs:
-            from scikits.samplerate import resample
-            Fs_ratio = self.Fs/float(Fs)
-            newL = int(Fs_ratio*signals.shape[1])-1
-            self.signals = np.zeros((self.M, newL))
-            # scikits.samplerate resample function considers columns as channels (hence the transpose)
-            for m in range(self.M):
-                self.signals[m] = resample(signals[m], Fs_ratio, 'sinc_best')
+            try:
+                import samplerate
+
+                Fs_ratio = self.Fs / float(Fs)
+                newL = int(Fs_ratio * signals.shape[1]) - 1
+                self.signals = np.zeros((self.M, newL))
+                # samplerate resample function considers columns as channels (hence the transpose)
+                for m in range(self.M):
+                    self.signals[m] = samplerate.resample(signals[m], Fs_ratio, 'sinc_best')
+            except ImportError:
+                raise ImportError('The samplerate package must be installed for resampling of the signals.')
+
         else:
             self.signals = signals
 
 
-    def to_wav(self, filename, mono=False, norm=False, type=float):
-        '''Save all the signals to wav files.'''
+    def to_wav(self, filename, mono=False, norm=False, bitdepth=float):
+        '''
+        Save all the signals to wav files.
+
+        Parameters
+        ----------
+        filename: str
+            the name of the file
+        mono: bool, optional
+            if true, records only the center channel floor(M / 2) (default `False`)
+        norm: bool, optional
+            if true, normalize the signal to fit in the dynamic range (default `False`)
+        bitdepth: int, optional
+            the format of output samples [np.int8/16/32/64 or np.float (default)]
+        '''
         from scipy.io import wavfile
 
         if mono is True:
-            signal = self.signals[self.M/2]
+            signal = self.signals[self.M // 2]
         else:
             signal = self.signals.T  # each column is a channel
 
-        if type is float:
+        if bitdepth is float:
             bits = None
-        elif type is np.int8:
+        elif bitdepth is np.int8:
             bits = 8
-        elif type is np.int16:
+        elif bitdepth is np.int16:
             bits = 16
-        elif type is np.int32:
+        elif bitdepth is np.int32:
             bits = 32
-        elif type is np.int64:
+        elif bitdepth is np.int64:
             bits = 64
         else:
             raise NameError('No such type.')
@@ -242,25 +260,28 @@ class MicrophoneArray(object):
 class Beamformer(MicrophoneArray):
 
     '''
-    Beamformer class.
-
     At some point, in some nice way, the design methods
     should also go here. Probably with generic arguments.
+
+    Parameters
+    ----------
+    R: numpy.ndarray
+        Mics positions
+    Fs: int
+        Sampling frequency
+    N: int, optional
+        Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.
+    Lg: int, optional
+        Length of time-domain filters. Default to N.
+    hop: int, optional
+        Hop length for frequency domain processing. Default to N/2.
+    zpf: int, optional
+        Front zero padding length for frequency domain processing. Default is 0.
+    zpb: int, optional
+        Zero padding length for frequency domain processing. Default is 0.
     '''
 
     def __init__(self, R, Fs, N=1024, Lg=None, hop=None, zpf=0, zpb=0):
-        '''
-        Parameters:
-        -----------
-        R        Mics positions
-        Fs       Sampling frequency
-        N=1024   Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.
-        Lg=N     Length of time-domain filters. Default to N.
-        hop=N/2  Hop length for frequency domain processing. Default to N/2.
-        zpf=0    Front zero padding length for frequency domain processing. Default is 0.
-        zpb=0    Zero padding length for frequency domain processing. Default is 0.
-
-        '''
         MicrophoneArray.__init__(self, R, Fs)
 
         # only support even length (in freq)
@@ -279,12 +300,12 @@ class Beamformer(MicrophoneArray):
         self.zpb = int(zpb)
         self.L = self.N - self.zpf - self.zpb
         if hop is None:
-            self.hop = self.L/2
+            self.hop = self.L // 2
         else:
             self.hop = hop
 
         # for now only support equally spaced frequencies
-        self.frequencies = np.arange(0, self.N/2+1)/float(self.N)*float(self.Fs)
+        self.frequencies = np.arange(0, self.N // 2+1) / self.N * float(self.Fs)
 
         # weights will be computed later, the array is of shape (M, N/2+1)
         self.weights = None
@@ -299,7 +320,14 @@ class Beamformer(MicrophoneArray):
         return Beamformer(newR, self.Fs, self.Lg, self.N, hop=self.hop, zpf=self.zpf, zpb=self.zpb)
 
     def filters_from_weights(self, non_causal=0.):
-        ''' Compute time-domain filters from frequency domain weights.'''
+        '''
+        Compute time-domain filters from frequency domain weights.
+
+        Parameters
+        ----------
+        non_causal: float, optional
+            ratio of filter coefficients used for non-causal part
+        '''
 
         if self.weights is None:
             raise NameError('Weights must be defined.')
@@ -310,7 +338,7 @@ class Beamformer(MicrophoneArray):
 
             # go back to time domain and shift DC to center
             tw = np.fft.irfft(np.conj(self.weights), axis=1, n=self.N)
-            self.filters[:, :self.N] = np.concatenate((tw[:, -self.N/2:], tw[:, :self.N/2]), axis=1)
+            self.filters[:, :self.N] = np.concatenate((tw[:, -self.N//2:], tw[:, :self.N//2]), axis=1)
 
         elif self.N > self.Lg:
 
@@ -324,7 +352,7 @@ class Beamformer(MicrophoneArray):
                 # create partial Fourier matrix
                 k = np.arange(self.N)[:, np.newaxis]
                 l = np.concatenate((np.arange(self.N-Lgm, self.N), np.arange(Lgp)))
-                F = np.exp(-2j*np.pi*k*l/float(self.N))
+                F = np.exp(-2j*np.pi*k*l / self.N)
 
                 self.filters[i] = np.real(np.linalg.lstsq(F, w)[0])
 
@@ -337,7 +365,7 @@ class Beamformer(MicrophoneArray):
         #self.weights = np.conj(np.fft.rfft(self.filters, n=self.N, axis=1))
 
         # quick hack to be able to use MKL acceleration package from anaconda
-        self.weights = np.zeros((self.M, self.N/2+1), dtype=np.complex128)
+        self.weights = np.zeros((self.M, self.N//2+1), dtype=np.complex128)
         for m in range(self.M):
             self.weights[m] = np.conj(np.fft.rfft(self.filters[m], n=self.N))
 
@@ -684,6 +712,7 @@ class Beamformer(MicrophoneArray):
         plt.xlabel('Time [s]')
         plt.ylabel('Filter amplitude')
         plt.axis('tight')
+        plt.tight_layout(pad=0.1)
 
     def far_field_weights(self, phi):
         '''
@@ -713,7 +742,7 @@ class Beamformer(MicrophoneArray):
             self.weights[:,i] = 1.0/self.M/(K+1) * np.sum(W, axis=1)
 
 
-    def rake_one_forcing_weights(self, source, interferer, R_n=None, ff=False, attn=True):
+    def rake_one_forcing_weights(self, source, interferer=None, R_n=None, ff=False, attn=True):
 
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
@@ -734,7 +763,7 @@ class Beamformer(MicrophoneArray):
 
             self.weights[:, i] = sumcols(mdot(R_nq_inv, A_s, D))[:, 0]
 
-    def rake_max_sinr_weights(self, source, interferer, R_n=None,
+    def rake_max_sinr_weights(self, source, interferer=None, R_n=None,
                            rcond=0., ff=False, attn=True):
         '''
         This method computes a beamformer focusing on a number of specific sources
@@ -766,7 +795,7 @@ class Beamformer(MicrophoneArray):
             K_inv = np.linalg.pinv(a_bad.dot(H(a_bad)) + R_n + rcond * np.eye(A_bad.shape[0]))
             self.weights[:, i] = (K_inv.dot(a_good) / mdot(H(a_good), K_inv, a_good))[:, 0]
 
-    def rake_max_udr_weights(self, source, interferer, R_n=None, ff=False, attn=True):
+    def rake_max_udr_weights(self, source, interferer=None, R_n=None, ff=False, attn=True):
         
         if source.images.shape[1] == 1:
             self.rake_max_sinr_weights(source.images, interferer.images, R_n=R_n, ff=ff, attn=attn)
@@ -792,25 +821,56 @@ class Beamformer(MicrophoneArray):
 
             self.weights[:, i] = np.linalg.inv(H(C)).dot(v[:, 0])
 
-    def rake_max_udr_filters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+    def rake_max_udr_filters(self, source, interferer=None, R_n=None, delay=0.03, epsilon=5e-3):
         '''
-        Compute directly the time-domain filters for a UDR maximizing beamformer.
-        '''
+        Compute directly the time-domain filters maximizing the
+        Useful-to-Detrimental Ratio (UDR).
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1]/2
+        This beamformer is not practical. It maximizes the UDR ratio in the time
+        domain directly without imposing flat response towards the source of
+        interest. This results in severe distortion of the desired signal.
+
+        Parameters
+        ----------
+        source: pyroomacoustics.SoundSource
+            the desired source
+        interferer: pyroomacoustics.SoundSource, optional
+            the interfering source
+        R_n: ndarray, optional
+            the noise covariance matrix, it should be (M * Lg)x(M * Lg) where M
+            is the number of sensors and Lg the filter length
+        delay: float, optional
+            the signal delay introduced by the beamformer (default 0.03 s)
+        epsilon: float
+        '''
+        if delay > self.Lg / self.Fs:
+            print('Warning: filter length shorter than beamformer delay')
+
+
+        if R_n is None:
+            R_n = np.zeros((self.M * self.Lg, self.M * self.Lg))
+
+        if interferer is not None:
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1] // 2
+        else:
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1]
 
         # Delay of the system in samples
-        kappa = int(delay*self.Fs)
+        kappa = int(delay * self.Fs)
         precedence = int(0.030*self.Fs)
 
         # the constraint
-        n = np.minimum(L, kappa+precedence)
+        n = int(np.minimum(L, kappa+precedence))
         Hnc = H[:, :kappa]
         Hpr = H[:, kappa:n]
-        Hc = H[:, n:L]
         A = np.dot(Hpr, Hpr.T)
-        B = np.dot(Hnc, Hnc.T) + np.dot(Hc, Hc.T) + np.dot(H[:, L:], H[:, L:].T) + R_n
+        B = np.dot(Hnc, Hnc.T) + np.dot(H[:, L:], H[:, L:].T) + R_n
+
+        if interferer is not None:
+            Hc = H[:, n:L]
+            B += np.dot(Hc, Hc.T) 
 
         # solve the problem
         SINR, v = la.eigh(A, b=B, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
@@ -823,16 +883,26 @@ class Beamformer(MicrophoneArray):
         return SINR[0]
 
 
-    def rake_perceptual_filters(self, source, interferer, R_n, delay=0.03, d_relax=0.035, epsilon=5e-3):
+    def rake_perceptual_filters(self, source, interferer=None, R_n=None, delay=0.03, d_relax=0.035, epsilon=5e-3):
         '''
         Compute directly the time-domain filters for a perceptually motivated beamformer.
         The beamformer minimizes noise and interference, but relaxes the response of the
         filter within the 30 ms following the delay.
         '''
 
+        if delay > self.Lg / self.Fs:
+            print('Warning: filter length shorter than beamformer delay')
+
+        if R_n is None:
+            R_n = np.zeros((self.M * self.Lg, self.M * self.Lg))
+
         # build the channel matrix
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1] // 2
+        if interferer is not None:
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1] // 2
+        else:
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1]
 
         # Delay of the system in samples
         tau = int(delay*self.Fs)
@@ -844,7 +914,9 @@ class Beamformer(MicrophoneArray):
         b[tau,0] = 1
 
         # We first assume the sample are uncorrelated
-        K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+        K_nq = R_n
+        if interferer is not None:
+            K_nq += np.dot(H[:, L:], H[:, L:].T)
 
         # causal response construction
         C = la.cho_factor(K_nq, overwrite_a=True, check_finite=False)
