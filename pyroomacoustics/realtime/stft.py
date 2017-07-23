@@ -228,15 +228,19 @@ class STFT(object):
             np.multiply(self.X, self.H, self.X)
 
 
-    def synthesis(self):
+    def synthesis(self, X=None):
         """
         Transform to time domain and reconstruct output with overlap-and-add.
 
         Returns
         -------
         numpy array
-            Reconstructed array of samples of length [self.hop]
+            Reconstructed array of samples of length <self.hop> (Optional)
         """
+
+        if X is not None:
+            self.X[:] = X
+
         # apply IDFT to current frame
         self.dft.synthesis(self.X)
 
