@@ -96,14 +96,16 @@ class PointCloud:
             return int(ref)
 
     def fromEDM(self, D, labels=None, method='mds'):
-        ''' Compute the position of markers from their Euclidean Distance Matrix
+        '''
+        Compute the position of markers from their Euclidean Distance Matrix
+
         Parameters
         ----------
-        D : square 2D ndarray
+        D: square 2D ndarray
             Euclidean Distance Matrix (matrix containing squared distances between points
-        labels : list, optional
+        labels: list, optional
             A list of human friendly labels for the markers (e.g. 'east', 'west', etc)
-        method : str, optional 
+        method: str, optional 
             The method to use
             * 'mds' for multidimensional scaling (default)
             * 'tri' for trilateration
@@ -191,8 +193,8 @@ class PointCloud:
         and x2 lies above x-axis, keeping the relative position to each other.
         The z-axis is defined according to right hand rule by default.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         refs : list of 3 ints or str
             The index or label of three markers used to define (origin, x-axis, y-axis)
         left_hand : bool, optional (default False)

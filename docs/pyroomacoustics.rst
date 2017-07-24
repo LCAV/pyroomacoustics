@@ -16,6 +16,7 @@ Subpackages
 
     pyroomacoustics.adaptive
     pyroomacoustics.doa
+    pyroomacoustics.experimental
     pyroomacoustics.realtime
 
 Submodules

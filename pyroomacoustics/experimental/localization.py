@@ -113,8 +113,8 @@ def tdoa(x1, x2, interp=1, fs=44100, phat=True):
     
     Knapp, C., & Carter, G. C. (1976). The generalized correlation method for estimation of time delay. 
     
-    Argument
-    --------
+    Parameters
+    ----------
     x1 : nd-array
         The signal of the reference microphone
     x2 : nd-array
