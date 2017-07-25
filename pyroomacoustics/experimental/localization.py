@@ -90,7 +90,7 @@ def tdoa_loc(R, tdoa, c, x0=None):
 
     return loc
 
-def tdoa(x1, x2, interp=1, fs=44100, phat=True):
+def tdoa(x1, x2, interp=1, fs=1, phat=True):
     '''
     This function computes the time difference of arrival (TDOA)
     of the signal at the two microphones. This in turns is used to infer
@@ -153,7 +153,7 @@ def tdoa(x1, x2, interp=1, fs=44100, phat=True):
     cc = fft.irfft(X1*np.conj(X2), n=interp*n)
 
     # maximum possible delay given distance between microphones
-    t_max = n / 2 + 1
+    t_max = n // 2 + 1
 
     # reorder the cross-correlation coefficients
     cc = np.concatenate((cc[-t_max:],cc[:t_max]))

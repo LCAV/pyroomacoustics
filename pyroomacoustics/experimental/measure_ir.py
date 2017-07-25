@@ -65,7 +65,7 @@ def measure_ir(sweep_length=1., sweep_type=SweepType.exponential,
 
     Returns
     -------
-    Returns the impulse response if `deconvolution == True` and the recorded signal if not
+        Returns the impulse response if `deconvolution == True` and the recorded signal if not
     '''
 
     if not sounddevice_available:
