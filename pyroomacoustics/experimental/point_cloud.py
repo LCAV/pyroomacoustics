@@ -357,6 +357,8 @@ class PointCloud:
                 elif self.dim == 3:
                     axes.text(self.X[0,i]+eps, self.X[1,i]+eps, self.X[2,i]+eps, self.labels[i], None)
 
+        return axes
+
 
 
 
