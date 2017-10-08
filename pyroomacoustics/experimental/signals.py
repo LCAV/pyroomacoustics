@@ -97,8 +97,6 @@ def linear_sweep(T, fs, f_lo=0., f_hi=None, fade=None, ascending=False):
     if f_lo > f_hi:
         raise ValueError('Error: need 0. <= f_lo < f_hi <= fs/2')
 
-    print(f_lo, f_hi)
-
     Ts = 1./fs   # Sampling period in [s]
 
     N = np.floor(T/Ts)  # number of samples
