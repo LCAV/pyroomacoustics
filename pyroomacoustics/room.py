@@ -699,7 +699,7 @@ class Room(object):
             raise ValueError('There is no microphone in the room.')
 
         # compute RIR if necessary
-        if len(self.rir) == 0 or recompute_rir:
+        if self.rir is None or len(self.rir) == 0 or recompute_rir:
             self.compute_rir()
 
         # number of mics and sources
