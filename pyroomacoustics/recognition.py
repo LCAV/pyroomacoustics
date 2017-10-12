@@ -4,18 +4,16 @@ from __future__ import division, print_function
 import numpy as np
 import os
 from scipy.stats import multivariate_normal
+import sys
+import struct
 
 try:
-    from scikits.audiolab import Sndfile, play
-    have_sk_audiolab = True
-except ImportError:
-    have_sk_audiolab = False
+    import sounddevice as sd
+    have_sounddevice = True
+except:
+    have_sounddevice = False
 
-try:
-    from scikits.samplerate import resample
-    have_sk_samplerate = True
-except ImportError:
-    have_sk_samplerate = False
+from samplerate import resample
 
 from .stft import stft
 from .acoustics import mfcc
@@ -381,8 +379,107 @@ class HMM:
     def viterbi(self):
         x=1
 
+def _read_nist_wav(filename):
+    '''
+    A custom implementation of wav reader that let's read the NIST files from TIMIT
+
+    Decode wav header and create numpy array out of raw data.
+
+    Parameters
+    ----------
+    filename: str
+        the name of the file to decode
+    '''
+    _byte_format = { 2 : np.int16, 4 : np.int32 }  # helper
+
+    # get raw data
+    f = open(filename, 'rb')
+    file_data = f.read()
+    f.close()
+
+    file_type = file_data[:8].decode()
+    if file_type != 'NIST_1A\n':
+        raise ValueError('Format might be wrong. We need a NIST_1A file.')
+
+    # separate  header/data
+    header_size = int(file_data[8:16].decode())
+    header = file_data[16:header_size].decode()
+    data = file_data[header_size:]
+
+
+    # extract all the key/values for all fields of the header
+    fields = [line.split() for line in header.split('\n')]
+
+    header_dict = dict()
+    for field in fields:
+        if len(field) != 3:
+            continue
+
+        key = field[0]
+        t = field[1][1]
+
+        if t == 'i':
+            val = int(field[2])
+        elif t == 's':
+            val = field[2]
+        elif t == 'r':
+            val = float(field[2])
+        else:
+            raise ValueError('Unknown type field for NIST header')
+
+        header_dict[key] = val
+
+    # extract parameters from header
+    nch = header_dict['channel_count']
+    fs = header_dict['sample_rate']
+    bytes_per_sample = header_dict['sample_n_bytes']
+    try:
+        dt = _byte_format[bytes_per_sample]
+    except KeyError:
+        raise ValueError("Currently we only support 16 or 32 bits files. Sorry")
+
+    # Build the array
+    array = np.frombuffer(data, dtype=_byte_format[bytes_per_sample])
+    if nch > 1:
+        array = array.reshape((-1,nch))
+
+    return fs, array
+
 
 class Word:
+    '''
+    A class used for words of the TIMIT corpus
+
+    Attributes
+    ----------
+    word: str
+        The spelling of the word
+    boundaries: list
+        The limits of the word within the sentence
+    samples: array_like
+        A view on the sentence samples containing the word
+    fs: int
+        The sampling frequency
+    phonems: list
+        A list of phones contained in the word
+    features: array_like
+        A feature array (e.g. MFCC coefficients)
+
+    Parameters
+    ----------
+    word: str
+        The spelling of the word
+    boundaries: list
+        The limits of the word within the sentence
+    data: array_like
+        The nd-array that contains all the samples of the sentence
+    fs: int
+        The sampling frequency
+    phonems: list, optional
+        A list of phones contained in the word
+
+    '''
+
 
     def __init__(self, word, boundaries, data, fs, phonems=None):
 
@@ -413,10 +510,10 @@ class Word:
 
     def play(self):
         ''' Play the sound sample '''
-        if have_sk_audiolab and have_sk_samplerate:
-            play(np.array(resample(self.samples, 44100./self.fs, 'sinc_best'), dtype=np.float64))
+        if have_sounddevice:
+            sd.play(self.samples, samplerate=self.fs)
         else:
-            print('Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.')
+            print('Warning: sounddevice package is required to play audiofiles.')
 
     def mfcc(self, frame_length=1024, hop=512):
         ''' compute the mel-frequency cepstrum coefficients of the word samples '''
@@ -424,6 +521,46 @@ class Word:
 
 
 class Sentence:
+    '''
+    Create the sentence object
+
+    Parameters
+    ----------
+    path: (string)
+        the path to the particular sample
+
+    Attributes
+    ----------
+    speaker: str
+        Speaker initials
+    id: str
+        a digit to disambiguate identical initials
+    sex: str
+        Speaker gender (M or F)
+    dialect: str
+        Speaker dialect region number:
+
+        1. New England
+        2. Northern
+        3. North Midland
+        4. South Midland
+        5. Southern
+        6. New York City
+        7. Western
+        8. Army Brat (moved around)
+    fs: int
+        sampling frequency
+    samples: array_like (n_samples,)
+        the audio track
+    text: str
+        the text of the sentence
+    words: list
+        list of Word objects forming the sentence
+    phonems: list
+        List of phonems contained in the sentence. Each element is a
+        dictionnary containing a 'bnd' with the limits of the phonem and 'name'
+        that is the phonem transcription.
+    '''
 
     def __init__(self, path):
         '''
@@ -432,9 +569,6 @@ class Sentence:
         path: (string)
             the path to the particular sample
         '''
-
-        if not have_sk_audiolab:
-            raise ValueError('scikits.audiolab module is required to read the TIMIT database.')
 
         path, ext = os.path.splitext(path)
 
@@ -447,9 +581,8 @@ class Sentence:
         self.id = t[-1]
 
         # Read in the wav file
-        f = Sndfile(path + '.WAV', 'r')
-        self.data = f.read_frames(f.nframes)
-        self.fs = f.samplerate
+        self.fs, self.data = _read_nist_wav(path + '.WAV')
+        self.samples = self.data
 
         # Read the sentence text
         f = open(path + '.TXT', 'r')
@@ -531,10 +664,11 @@ class Sentence:
         return s
 
     def play(self):
-        if have_sk_audiolab and have_sk_samplerate:
-            play(np.array(resample(self.data, 44100./self.fs, 'sinc_best'), dtype=np.float64))
+        ''' Play the sound sample '''
+        if have_sounddevice:
+            sd.play(self.data, samplerate=self.fs)
         else:
-            print('Warning: scikits.audiolab and scikits.samplerate are required to play audiofiles.')
+            print('Warning: sounddevice package is required to play audiofiles.')
 
     def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
 
@@ -576,7 +710,7 @@ class TimitCorpus:
     '''
     TimitCorpus class
 
-    Attributes
+    Parameters
     ----------
     basedir : (string)
         The location of the TIMIT database
@@ -664,7 +798,7 @@ class TimitCorpus:
 
                             # Now add the words to the word corpus
                             for w in self.sentence_corpus[d][-1].words:
-                                if not self.word_corpus[d].has_key(w.word):
+                                if not w.word in self.word_corpus[d]:
                                     self.word_corpus[d][w.word] = [w]
                                 else:
                                     self.word_corpus[d][w.word].append(w)
