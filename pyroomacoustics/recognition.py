@@ -13,8 +13,6 @@ try:
 except:
     have_sounddevice = False
 
-from samplerate import resample
-
 from .stft import stft
 from .acoustics import mfcc
 
