@@ -724,6 +724,12 @@ class TimitCorpus:
     def __init__(self, basedir):
         ''' Initialize basic attributes of the class '''
 
+        if not os.path.exists(basedir):
+            raise ValueError('The directory ''{}'' does not exist.'.format(basedir))
+
+        if not os.path.exists(basedir + '/TEST') or not os.path.exists(basedir + '/TRAIN'):
+            raise ValueError('The directory ''{}'' does not contain sub-directories TEST and TRAIN'.format(basedir))
+
         self.basedir = basedir
         self.directories = ['TEST','TRAIN']
         self.sentence_corpus = None
