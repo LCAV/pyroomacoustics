@@ -1002,8 +1002,12 @@ class Beamformer(MicrophoneArray):
         response beamformer.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
-        L = H.shape[1] // 2
+        if interferer is not None:
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1] // 2
+        else:
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            L = H.shape[1]
 
         # the constraint vector
         kappa = int(delay*self.Fs)
@@ -1011,7 +1015,10 @@ class Beamformer(MicrophoneArray):
 
         # We first assume the sample are uncorrelated
         R_xx = np.dot(H[:, :L], H[:, :L].T)
-        K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
+        K_nq = R_n
+
+        if interferer is not None:
+            K_nq += np.dot(H[:, L:], H[:, L:].T) 
 
         # Compute the TD filters
         C = la.cho_factor(R_xx + K_nq, check_finite=False)
