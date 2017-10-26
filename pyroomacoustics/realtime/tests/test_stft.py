@@ -15,35 +15,36 @@ and with and without filtering.
 # test parameters
 tol = 1e-6
 np.random.seed(0)
-D = 4
+nchannels = 4
 transform = 'numpy'   # 'numpy', 'pyfftw', or 'mkl'
 
 # filter to apply
 h_len = 99
-h = np.ones((h_len, D))
+h = np.ones((h_len, nchannels))
 h /= np.linalg.norm(h, axis=0)
 
 # test signal (noise)
-x = np.random.randn(100000, D)
+x = np.random.randn(100000, nchannels)
 
 # convolved signal
 y = np.zeros((x.shape[0] + h_len - 1, x.shape[1]))
 for i in range(x.shape[1]):
     y[:,i] = fftconvolve(x[:,i], h[:,i])
 
-def no_overlap_no_filter(D):
+def no_overlap_no_filter(nchannels):
 
-    if D == 1:
+    if nchannels == 1:
         x_local = x[:,0]
     else:
-        x_local = x[:,:D]
+        x_local = x[:,:nchannels]
 
     # parameters
     block_size = 512  # make sure the FFT size is a power of 2
     hop = block_size  # no overlap
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        channels=nchannels, 
         transform=transform)
 
     # collect the processed blocks
@@ -65,15 +66,15 @@ def no_overlap_no_filter(D):
 
     return error
 
-def no_overlap_with_filter(D):
-    if D == 1:
+def no_overlap_with_filter(nchannels):
+    if nchannels == 1:
         x_local = x[:,0]
         y_local = y[:,0]
         h_local = h[:,0]
     else:
-        x_local = x[:,:D]
-        y_local = y[:,:D]
-        h_local = h[:,:D]
+        x_local = x[:,:nchannels]
+        y_local = y[:,:nchannels]
+        h_local = h[:,:nchannels]
 
 
     # parameters
@@ -81,7 +82,8 @@ def no_overlap_with_filter(D):
     hop = block_size  # no overlap
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        channels=nchannels, 
         transform=transform)
     
     # setup the filter
@@ -108,12 +110,12 @@ def no_overlap_with_filter(D):
 
     return error
 
-def with_half_overlap_no_filter(D):
+def with_half_overlap_no_filter(nchannels):
 
-    if D == 1:
+    if nchannels == 1:
         x_local = x[:,0]
     else:
-        x_local = x[:,:D]
+        x_local = x[:,:nchannels]
 
     # parameters
     block_size = 512  # make sure the FFT size is a power of 2
@@ -121,8 +123,9 @@ def with_half_overlap_no_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
-        channels=D, transform=transform)
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        analysis_window=window, 
+        channels=nchannels, transform=transform)
 
     # collect the processed blocks
     processed_x = np.zeros(x_local.shape)
@@ -143,16 +146,16 @@ def with_half_overlap_no_filter(D):
 
     return error
 
-def with_half_overlap_with_filter(D):
+def with_half_overlap_with_filter(nchannels):
 
-    if D == 1:
+    if nchannels == 1:
         x_local = x[:,0]
         y_local = y[:,0]
         h_local = h[:,0]
     else:
-        x_local = x[:,:D]
-        y_local = y[:,:D]
-        h_local = h[:,:D]
+        x_local = x[:,:nchannels]
+        y_local = y[:,:nchannels]
+        h_local = h[:,:nchannels]
 
     # parameters
     block_size = 512 - h_len + 1  # make sure the FFT size is a power of 2
@@ -160,8 +163,9 @@ def with_half_overlap_with_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
-        channels=D, transform=transform)
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        analysis_window=window, 
+        channels=nchannels, transform=transform)
 
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
@@ -195,7 +199,7 @@ class TestSTFT(TestCase):
         self.assertTrue(error < tol)
 
     def test_no_overlap_no_filter_multichannel(self):
-        error = no_overlap_no_filter(D)
+        error = no_overlap_no_filter(nchannels)
         self.assertTrue(error < tol)
 
     def test_no_overlap_with_filter_mono(self):
@@ -203,7 +207,7 @@ class TestSTFT(TestCase):
         self.assertTrue(error < tol)
 
     def test_no_overlap_with_filter_multichannel(self):
-        error = no_overlap_with_filter(D)
+        error = no_overlap_with_filter(nchannels)
         self.assertTrue(error < tol)
 
     def test_with_half_overlap_no_filter_mono(self):
@@ -211,7 +215,7 @@ class TestSTFT(TestCase):
         self.assertTrue(error < tol)
 
     def test_with_half_overlap_no_filter_multichannel(self):
-        error = with_half_overlap_no_filter(D)
+        error = with_half_overlap_no_filter(nchannels)
         self.assertTrue(error < tol)
 
     def test_with_half_overlap_with_filter_mono(self):
@@ -219,7 +223,7 @@ class TestSTFT(TestCase):
         self.assertTrue(error < tol)
 
     def test_with_half_overlap_with_filter_multichannel(self):
-        error = with_half_overlap_with_filter(D)
+        error = with_half_overlap_with_filter(nchannels)
         self.assertTrue(error < tol)
 
 if __name__ == "__main__":
@@ -227,23 +231,23 @@ if __name__ == "__main__":
     error = no_overlap_no_filter(1)
     print('no overlap, no filter, mono:', error)
 
-    error = no_overlap_no_filter(D)
+    error = no_overlap_no_filter(nchannels)
     print('no overlap, no filter, multichannel:', error)
 
     error = no_overlap_with_filter(1)
     print('no overlap, with filter, mono:', error)
 
-    error = no_overlap_with_filter(D)
+    error = no_overlap_with_filter(nchannels)
     print('no overlap, with filter, multichannel:', error)
 
     error = with_half_overlap_no_filter(1)
     print('with half overlap, no filter, mono:', error)
 
-    error = with_half_overlap_no_filter(D)
+    error = with_half_overlap_no_filter(nchannels)
     print('with half overlap, no filter, multichannel:', error)
 
     error = with_half_overlap_with_filter(1)
     print('with half overlap, with filter, mono:', error)
 
-    error = with_half_overlap_with_filter(D)
+    error = with_half_overlap_with_filter(nchannels)
     print('with half overlap, with filter, multichannel:', error)
