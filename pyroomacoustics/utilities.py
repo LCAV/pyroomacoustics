@@ -39,8 +39,8 @@ def normalize(signal, bits=None):
 
     # if one wants to scale for bits allocated
     if bits is not None:
-        s *= 2 ** (bits - 1)
-        s = clip(signal, 2 ** (bits - 1) - 1, -2 ** (bits - 1))
+        s *= 2 ** (bits - 1) - 1
+        s = clip(s, 2 ** (bits - 1) - 1, -2 ** (bits - 1))
 
     return s
 

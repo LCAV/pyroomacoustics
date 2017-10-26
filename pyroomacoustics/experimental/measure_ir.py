@@ -6,16 +6,15 @@ try:
 except ImportError:
     sounddevice_available = False
 
-from enum import Enum
-
 from .signals import exponential_sweep, linear_sweep
 from .deconvolution import wiener_deconvolve
 
-class SweepType(Enum):
-    exponential = 'exponential'
-    linear = 'linear'
+_sweep_types = {
+        'exponential': exponential_sweep,
+        'linear': linear_sweep,
+        }
 
-def measure_ir(sweep_length=1., sweep_type=SweepType.exponential, 
+def measure_ir(sweep_length=1., sweep_type='exponential',
         fs=48000, f_lo=0., f_hi=None, 
         volume=0.9, pre_delay=0., post_delay=0.1, fade_in_out=0.,
         dev_in=None, dev_out=None, channels_input_mapping=None, channels_output_mapping=None,
@@ -73,10 +72,7 @@ def measure_ir(sweep_length=1., sweep_type=SweepType.exponential,
 
     N = int(sweep_length * fs) + 1
 
-    if sweep_type == SweepType.exponential:
-       sweep_func = exponential_sweep
-    elif sweep_type == SweepType.linear:
-       sweep_func = linear_sweep
+    sweep_func = _sweep_types[sweep_type]
 
     sweep = sweep_func(sweep_length, fs, f_lo=f_lo, f_hi=f_hi, fade=fade_in_out, ascending=ascending)
 
@@ -161,8 +157,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='measure_ir', description='Measures an impulse response by playing a sweep and recording it using the sounddevice package.')
     parser.add_argument('-l', '--length', type=float, default=1.,
             help='length of the sweep in seconds')
-    parser.add_argument('-t', '--type', type=str, default=SweepType.linear.value, 
-            choices=[SweepType.exponential.value, SweepType.linear.value],
+    parser.add_argument('-t', '--type', type=str, default='exponential', 
+            choices=_sweep_types.keys(),
             help='type of sweep to use linear or exponential (default)')
     parser.add_argument('-f', '--file', type=str,
             help='name of file where to save the recorded signals (without extension)')
@@ -191,16 +187,14 @@ if __name__ == '__main__':
     parser.add_argument('--asc', action='store_true',
             help='wether the sweep is from high to low (default) or low to high frequencies')
     parser.add_argument('--deconv', action='store_true',
-            help='if True, apply deconvolution to the recorded signal to remove the sweep (default 0.)')
+            help='if True, apply deconvolution to the recorded signal to remove the sweep (default False)')
     parser.add_argument('-p', '--plot', action='store_true',
             help='plot the resulting signal')
 
     args = parser.parse_args()
 
-    if args.type == SweepType.exponential.value:
-        args.type = SweepType.exponential
-    elif args.type == SweepType.linear.value:
-        args.type = SweepType.linear
+    if args.type not in _sweep_types:
+        raise ValueError('Sweep must be exponential or linear')
 
     kwargs = dict(
             sweep_length=args.length,

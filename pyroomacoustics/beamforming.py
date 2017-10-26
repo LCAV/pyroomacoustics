@@ -213,7 +213,7 @@ class MicrophoneArray(object):
             self.signals = signals
 
 
-    def to_wav(self, filename, mono=False, norm=False, bitdepth=float):
+    def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
         '''
         Save all the signals to wav files.
 
@@ -235,7 +235,9 @@ class MicrophoneArray(object):
         else:
             signal = self.signals.T  # each column is a channel
 
-        if bitdepth is float:
+        float_types = [float, np.float, np.float32, np.float64]
+
+        if bitdepth in float_types:
             bits = None
         elif bitdepth is np.int8:
             bits = 8
@@ -248,11 +250,11 @@ class MicrophoneArray(object):
         else:
             raise NameError('No such type.')
 
-        if norm is True:
-            from utilities import normalize
+        if norm:
+            from .utilities import normalize
             signal = normalize(signal, bits=bits)
 
-        signal = np.array(signal, dtype=type)
+        signal = np.array(signal, dtype=bitdepth)
 
         wavfile.write(filename, self.Fs, signal)
 
