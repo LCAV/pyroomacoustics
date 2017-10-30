@@ -2,7 +2,7 @@
 # Date: Feb 15, 2016
 from __future__ import division, print_function, absolute_import
 
-from pyroomacoustics.doa.utils import polar_distance
+from .utils import polar_distance
 
 """Direction of Arrival (DoA) estimation."""
 
