@@ -7,14 +7,9 @@ from __future__ import division
 
 import sys
 import numpy as np
-from scipy.signal import correlate as correlate
-import matplotlib.pyplot as plt
-
-from numpy.lib.stride_tricks import as_strided
+from numpy.lib.stride_tricks import as_strided as _as_strided
 
 # a routine for long convolutions using overlap add method
-
-
 def overlap_add(in1, in2, L):
 
     # set the shortest sequence as the filter
@@ -50,6 +45,8 @@ def overlap_add(in1, in2, L):
 # Nicely plot the spectrogram
 def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
                 vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
+
+    import matplotlib.pyplot as plt
 
     plt.imshow(
         20 * np.log10(np.abs(Z[:N // 2 + 1, :])),
@@ -118,7 +115,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     # reshape
     new_strides = (hop * x.strides[0], x.strides[0])
     new_shape = ((len(x) - L) // hop + 1, L)
-    y = as_strided(x, shape=new_shape, strides=new_strides)
+    y = _as_strided(x, shape=new_shape, strides=new_strides)
 
     # add the zero-padding
     y = np.concatenate(

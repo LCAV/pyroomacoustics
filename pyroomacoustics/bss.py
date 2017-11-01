@@ -1,6 +1,6 @@
 
 import numpy as np
-from scipy.signal import fftconvolve, correlate
+from scipy.signal import fftconvolve
 
 def trinicon(signals):
     '''
