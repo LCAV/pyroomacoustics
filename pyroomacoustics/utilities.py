@@ -373,6 +373,8 @@ def fractional_delay_filter_bank(delays):
     is proportional to the maximum delay.
     '''
 
+    delays = np.array(delays)
+
     # constants and lengths
     N = delays.shape[0]
     L = constants.get('frac_delay_length')

@@ -1,68 +1,84 @@
+from __future__ import division
 
 import numpy as np
 
-def phat(x1, x2):
+try:
+    import mkl_fft as fft
+except:
+    from numpy import fft
+
+def tdoa(signal, reference, interp=1, phat=False, fs=1, t_max=None):
+    '''
+    Estimates the shift of array signal with respect to reference
+    using generalized cross-correlation
+
+    Parameters
+    ----------
+    signal: array_like
+        The array whose tdoa is measured
+    reference: array_like
+        The reference array
+    interp: int, optional
+        The interpolation factor for the output array, default 1.
+    phat: bool, optional
+        Apply the PHAT weighting (default False)
+    fs: int or float, optional
+        The sampling frequency of the input arrays, default=1
+
+    Returns
+    -------
+    The estimated delay between the two arrays
+    '''
+
+    signal = np.array(signal)
+    reference = np.array(reference)
+
+    N1 = signal.shape[0]
+    N2 = reference.shape[0]
+
+    r_12 = correlate(signal, reference, interp=interp, phat=phat)
+
+    delay = (np.argmax(np.abs(r_12)) / interp  - (N2 - 1) ) / fs
+
+    return delay
+
+def correlate(x1, x2, interp=1, phat=False):
+    '''
+    Compute the cross-correlation between x1 and x2
+
+    Parameters
+    ----------
+    x1,x2: array_like
+        The data arrays
+    interp: int, optional
+        The interpolation factor for the output array, default 1.
+    phat: bool, optional
+        Apply the PHAT weighting (default False)
+
+    Returns
+    -------
+    The cross-correlation between the two arrays
+    '''
 
     N1 = x1.shape[0]
     N2 = x2.shape[0]
 
     N = N1 + N2 - 1
 
-    X1 = np.fft.rfft(x1, n=N)
-    X1 /= np.abs(X1)
+    X1 = fft.rfft(x1, n=N)
+    X2 = fft.rfft(x2, n=N)
 
-    X2 = np.fft.rfft(x2, n=N)
-    X2 /= np.abs(X2)
+    if phat:
+        eps1 = np.mean(np.abs(X1)) * 1e-10
+        X1 /= (np.abs(X1) + eps1)
+        eps2 = np.mean(np.abs(X2)) * 1e-10
+        X2 /= (np.abs(X2) + eps2)
 
-    r_12 = np.fft.irfft(X1*np.conj(X2), n=N)
+    m = np.minimum(N1, N2)
 
-    '''
-    import matplotlib.pyplot as plt 
-    plt.figure()
-    plt.plot(r_12)
-    plt.show()
-    '''
+    out = fft.irfft(X1*np.conj(X2), n=int(N*interp))
 
-    i = np.argmax(np.abs(r_12))
-
-    if i < N1:
-        return i
-    else:
-        return i - N1 - N2 + 1
-
-def correlation(x1, x2):
-
-    N1 = x1.shape[0]
-    N2 = x2.shape[0]
-
-    N = N1 + N2 - 1
-
-    x1_p = np.zeros(N)
-    x1_p[:N1] = x1
-    x2_p = np.zeros(N)
-    x2_p[:N2] = x2
-
-    X1 = np.fft.fft(x1_p)
-
-    X2 = np.fft.fft(x2_p)
-
-    r_12 = np.real(np.fft.ifft(X1*np.conj(X2)))
-
-    '''
-    import matplotlib.pyplot as plt 
-    plt.figure()
-    plt.plot(np.real(r_12))
-    plt.plot(np.imag(r_12))
-    plt.show()
-    '''
-
-    i = np.argmax(r_12)
-
-    if i < N1:
-        return i
-    else:
-        return i - N1 - N2 + 1
-
+    return np.concatenate([out[-interp*(N2-1):], out[:(interp*N1)]])
 
 def delay_estimation(x1, x2, L):
     '''
@@ -70,11 +86,11 @@ def delay_estimation(x1, x2, L):
     L is the block length used for phat
     '''
 
-    K = np.minimum(x1.shape[0], x2.shape[0])/L
+    K = int(np.minimum(x1.shape[0], x2.shape[0]) / L)
 
     delays = np.zeros(K)
     for k in range(K):
-        delays[k] = phat(x1[k*L:(k+1)*L], x2[k*L:(k+1)*L])
+        delays[k] = tdoa(x1[k*L:(k+1)*L], x2[k*L:(k+1)*L], phat=True)
 
     return int(np.median(delays))
 
