@@ -45,7 +45,7 @@ def test_room_is_inside():
     assert room.is_inside([3,2,0], include_borders=True)
     assert not room.is_inside([3,2,0], include_borders=False)
 
-    assert room.is_inside([1,4,3], include_borders=True)
+    assert not room.is_inside([1,4,3], include_borders=True)
     assert not room.is_inside([1,4,3], include_borders=False)
 
     assert not room.is_inside([2,2,7])
