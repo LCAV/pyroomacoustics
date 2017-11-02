@@ -3,19 +3,30 @@ import numpy as np
 import os
 import platform
 
+from scipy.stats import binom as _binom
+from scipy.stats import norm as _norm
+
 from .stft import stft
 
-def median(x, axis=-1, keepdims=False):
+def median(x, alpha=None, axis=-1, keepdims=False):
     '''
     Computes 95% confidence interval for the median.
 
-    :arg x: (ndarray 1D)
+    Parameters
+    ----------
+    x: array_like
+        the data array
+    alpha: float, optional
+        the confidence level of the interval, confidence intervals are only computed
+        when this argument is provided
+    axis: int, optional
+        the axis of the data on which to operate, by default the last axis
 
     :returns: A tuple (m, [le, ue]). The confidence interval is [m-le, m+ue].
     '''
 
     # place the axis on which to compute median in first position
-    xsw = np.swapaxes(x, axis, 0)
+    xsw = np.moveaxis(x, axis, 0)
 
     # sort the array
     xsw = np.sort(xsw, axis=0)
@@ -23,47 +34,53 @@ def median(x, axis=-1, keepdims=False):
 
     if n % 2 == 1:
         # if n is odd, take central element
-        m = xsw[n/2,];
+        m = xsw[n//2,];
     else:
         # if n is even, average the two central elements
-        m = 0.5*(xsw[n/2,] + xsw[n/2+1,]);
+        m = 0.5*(xsw[n//2-1,] + xsw[n//2,]);
 
-    # This table is taken from the Performance Evaluation lecture notes by J-Y Le Boudec
-    # available at: http://perfeval.epfl.ch/lectureNotes.htm
-    CI = [[1,6],  [1,7],  [1,7],  [2,8],  [2,9],  [2,10], [3,10], [3,11], [3,11],[4,12], \
-          [4,12], [5,13], [5,14], [5,15], [6,15], [6,16], [6,16], [7,17], [7,17],[8,18], \
-          [8,19], [8,20], [9,20], [9,21], [10,21],[10,22],[10,22],[11,23],[11,23], \
-          [12,24],[12,24],[13,25],[13,26],[13,27],[14,27],[14,28],[15,28],[15,29], \
-          [16,29],[16,30],[16,30],[17,31],[17,31],[18,32],[18,32],[19,33],[19,34], \
-          [19,35],[20,35],[20,36],[21,36],[21,37],[22,37],[22,38],[23,39],[23,39], \
-          [24,40],[24,40],[24,40],[25,41],[25,41],[26,42],[26,43],[26,44],[27,44]];
-    CI = np.array(CI)
+    if alpha is None:
+        if keepdims:
+            m = np.moveaxis(m[np.newaxis,], 0, axis)
+        return m
 
-    # Table assumes indexing starting at 1, adjust to indexing from 0
-    CI -= 1
-
-    if n < 6:
-        # If we have less than 6 samples, we cannot have a confidence interval
-        ci = np.zeros((2,) + m.shape)
-    elif n <= 70:
-        # For 6 <= n <= 70, we use exact values from the table
-        j = CI[n-6,0]
-        k = CI[n-6,1]
-        ci = np.array([xsw[j,]-m ,xsw[k,]-m])
     else:
-        # For 70 < n, we use the approximation for large sets
-        j = np.floor(0.5*n - 0.98*np.sqrt(n))
-        k = np.ceil(0.5*n + 1 + 0.98*np.sqrt(n))
-        ci = np.array([xsw[j,]-m,xsw[k,]-m])
+        # bound for using the large n approximation
+        clt_bound = max(10 / alpha, 10 / (2 - alpha))
 
-    if keepdims:
-        m = np.swapaxes(m[np.newaxis,], 0, axis)
-        if axis < 0:
-            ci = np.swapaxes(ci[:,np.newaxis,], 1, axis)
+        if n < clt_bound:
+            # Get the bounds of the CI from the binomial distribution
+            b = _binom(n, 0.5)
+            j,k = int(b.ppf(alpha/2)-1), int(b.ppf(1 - alpha/2)-1)
+
+            if b.cdf(k) - b.cdf(j) < 1 - alpha:
+                k += 1
+
+            # sanity check
+            assert b.cdf(k) - b.cdf(j) >= 1 - alpha
+
+            if j < 0:
+                raise ValueError('Warning: Sample size is too small. No confidence interval found.')
+            else:
+                ci = np.array([xsw[j,]-m, xsw[k,]-m])
+
         else:
-            ci = np.swapaxes(ci[:,np.newaxis,], 1, axis+1)
+            # we use the Normal approximation for large sets
+            norm = _norm()
+            eta = norm.ppf(1 - alpha / 2)
+            j = int(np.floor(0.5*n - 0.5 * eta * np.sqrt(n))) - 1
+            k = int(np.ceil(0.5*n + 0.5 * eta * np.sqrt(n)))
+            ci = np.array([xsw[j,]-m,xsw[k,]-m])
 
-    return m, ci
+        if keepdims:
+            m = np.moveaxis(m[np.newaxis,], 0, axis)
+            if axis < 0:
+                ci = np.moveaxis(ci[:,np.newaxis,], 1, axis)
+            else:
+                ci = np.moveaxis(ci[:,np.newaxis,], 1, axis+1)
+
+
+        return m, ci
 
 
 # Simple mean squared error function
