@@ -969,39 +969,101 @@ class Room(object):
                 
         return False
 
-    def is_inside(self, p, includeBorders = True):
+    def get_bbox(self):
+        ''' Returns a bounding box for the room '''
+
+        lower = np.amin(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
+        upper = np.amax(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
+
+        return np.c_[lower, upper]
+
+    def is_inside(self, p, include_borders = True):
         '''
         Checks if the given point is inside the room.
         
-        :arg p: (np.array dim 2 or 3) point to be tested
-        :arg includeBorders: (bool) set true if a point on the wall must be considered inside the room
+        Parameters
+        ----------
+        p: array_like, length 2 or 3
+            point to be tested
+        include_borders: bool, optional
+            set true if a point on the wall must be considered inside the room
         
-        :returns: (bool) True if the given point is inside the room, False otherwise.
+        Returns
+        -------
+            True if the given point is inside the room, False otherwise.
         '''
         
         p = np.array(p)
         if (self.dim != p.shape[0]):
             raise ValueError('Dimension of room and p must match.')
-        
-        # Compute p0, which is a point outside the room at x coordinate xMin-1
-        # (where xMin is the minimum x coordinate among the corners of the walls)
-        if (self.dim == 2):
-            p0 = np.array([np.amin(np.array([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[1]])
-        if (self.dim == 3):
-            p0 = np.array([np.amin(np.concatenate([wall.corners[0, :] for wall in self.walls]).flatten())-1, p[1], p[2]])
-        
-        limitCase = False
-        count = 0
-        for i in range(len(self.walls)):
-            intersects, borderOfWall, borderOfSegment = self.walls[i].intersects(p0, p)
-            if borderOfSegment:
-                limitCase = True
-            if intersects:
-                count += 1
-        if ((not limitCase and count % 2 == 1) or (limitCase and includeBorders)):
-            return True
-        else:
-            return False
+
+        # The method works as follows: we pick a reference point *outside* the room and
+        # draw a line between the point to check and the reference.
+        # If the point to check is inside the room, the line will intersect an odd
+        # number of walls. If it is outside, an even number.
+        # Unfortunately, there are a lot of corner cases when the line intersects
+        # precisely on a corner of the room for example, or is aligned with a wall.
+
+
+        # To avoid all these corner cases, we will do a randomized test.
+        # We will pick a point at random outside the room so that the probability
+        # a corner case happen is virtually zero. If the test raises a corner
+        # case, we will repeat the test with a different reference point.
+
+        # get the bounding box
+        bbox = self.get_bbox()
+        bbox_center = np.mean(bbox, axis=1)
+        bbox_max_dist = np.linalg.norm(bbox[:,1] - bbox[:,0]) / 2
+
+        # re-run until we get a non-ambiguous result
+        max_iter = 5
+        it = 0
+        while it < max_iter:
+
+            # Get random point outside the bounding box
+            random_vec = np.random.randn(self.dim)
+            random_vec /= np.linalg.norm(random_vec)
+            p0 = bbox_center + 2 * bbox_max_dist * random_vec
+
+            ambiguous = False  # be optimistic
+            is_on_border = False  # we have to know if the point is on the boundary
+            count = 0  # wall intersection counter
+            for i in range(len(self.walls)):
+                intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
+
+                # this flag is True when p is on the wall
+                if border_of_segment:
+                    is_on_border = True
+                elif border_of_wall:
+                    # the intersection is on a corner of the room
+                    # but the point to check itself is *not* on the wall
+                    # then things get tricky
+                    ambiguous = True
+
+                # count the wall intersections
+                if intersects:
+                    count += 1
+
+            # start over when ambiguous
+            if ambiguous:
+                it += 1
+                continue
+
+            else:
+                if is_on_border and not include_borders:
+                    return False
+                elif count % 2 == 1 or (is_on_border and include_borders):
+                    return True
+                else:
+                    return False
+
+        # We should never reach this
+        raise ValueError(
+                ''' 
+                Error could not determine if point is in or out in maximum number of iterations.
+                This is most likely a bug, please report it.
+                '''
+                )
 
 
 # Room 3D
