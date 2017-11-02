@@ -1052,7 +1052,9 @@ class Room(object):
             else:
                 if is_on_border and not include_borders:
                     return False
-                elif count % 2 == 1 or (is_on_border and include_borders):
+                elif is_on_border and include_borders:
+                    return True
+                elif count % 2 == 1:
                     return True
                 else:
                     return False

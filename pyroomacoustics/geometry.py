@@ -196,7 +196,7 @@ def intersection_segment_plane(a1, a2, p, normal):
         raise NameError('utilities.intersectionSegmentPlane input error : p is a ndarray of size 3')
     if (normal.shape[0] != 3):
         raise NameError('utilities.intersectionSegmentPlane input error : normal is a ndarray of size 3')
-    
+
     u = a2-a1
     w = a1-p
     denom = np.dot(normal, u)
@@ -210,7 +210,7 @@ def intersection_segment_plane(a1, a2, p, normal):
         if(s<0 or s>1):
             return None, False
         else:
-            if (s==0 or s==1):
+            if abs(s) < eps or abs(s - 1) < eps:
                 limitCase = True
             else:
                 limitCase = False

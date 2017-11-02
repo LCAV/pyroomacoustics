@@ -1,7 +1,10 @@
 
+import numpy as np
 import pyroomacoustics as pra
 
 def test_room_is_inside():
+    # fix the seed for repeatable testing
+    np.random.seed(0)
 
     # This was a problematic case
     # if the source is placed at the same height as one of the corners
@@ -15,41 +18,50 @@ def test_room_is_inside():
     room = pra.Room.from_corners(floorplan)
     room.add_source(source_loc)
 
-    assert room.is_inside([0,0], include_borders=True)
-    assert not room.is_inside([0,0], include_borders=False)
+    for i in range(100):
+        # because the test is randomized, let's check many times
 
-    assert room.is_inside([3,0], include_borders=True)
-    assert not room.is_inside([3,0], include_borders=False)
+        assert room.is_inside([0,0], include_borders=True)
+        assert not room.is_inside([0,0], include_borders=False)
 
-    assert room.is_inside([0,1], include_borders=True)
-    assert not room.is_inside([0,1], include_borders=False)
+        assert room.is_inside([3,0], include_borders=True)
+        assert not room.is_inside([3,0], include_borders=False)
+
+        assert room.is_inside([1,4], include_borders=True)
+        assert not room.is_inside([1,4], include_borders=False)
+
+        assert room.is_inside([0,1], include_borders=True)
+        assert not room.is_inside([0,1], include_borders=False)
 
     # now test in 3D
     room.extrude(4.)
 
-    assert room.is_inside([2, 3, 1.7])
+    for i in range(100):
+        # because the test is randomized, let's check many times
 
-    assert not room.is_inside([0.5, 4, 1.8])
+        assert room.is_inside([2, 3, 1.7])
 
-    assert not room.is_inside([0.5, 4, 1.8])
+        assert not room.is_inside([0.5, 4, 1.8])
 
-    assert room.is_inside([0,0,0], include_borders=True)
-    assert not room.is_inside([0,0,0], include_borders=False)
+        assert not room.is_inside([0.5, 4, 1.8])
 
-    assert room.is_inside([3,0,0], include_borders=True)
-    assert not room.is_inside([3,0,0], include_borders=False)
+        assert room.is_inside([0,0,0], include_borders=True)
+        assert not room.is_inside([0,0,0], include_borders=False)
 
-    assert room.is_inside([0,1,0], include_borders=True)
-    assert not room.is_inside([0,1,0], include_borders=False)
+        assert room.is_inside([3,0,0], include_borders=True)
+        assert not room.is_inside([3,0,0], include_borders=False)
 
-    assert room.is_inside([3,2,0], include_borders=True)
-    assert not room.is_inside([3,2,0], include_borders=False)
+        assert room.is_inside([0,1,0], include_borders=True)
+        assert not room.is_inside([0,1,0], include_borders=False)
 
-    assert not room.is_inside([1,4,3], include_borders=True)
-    assert not room.is_inside([1,4,3], include_borders=False)
+        assert room.is_inside([3,2,0], include_borders=True)
+        assert not room.is_inside([3,2,0], include_borders=False)
 
-    assert not room.is_inside([2,2,7])
-    assert not room.is_inside([2,2,-7])
+        assert room.is_inside([1,4,3], include_borders=True)
+        assert not room.is_inside([1,4,3], include_borders=False)
+
+        assert not room.is_inside([2,2,7])
+        assert not room.is_inside([2,2,-7])
 
 if __name__ == '__main__':
 
