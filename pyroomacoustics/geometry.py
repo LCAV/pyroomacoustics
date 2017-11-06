@@ -199,15 +199,24 @@ def intersection_segment_plane(a1, a2, p, normal):
 
     u = a2-a1
     w = a1-p
+
+    # this is the length ||a1 - a2|| and p projected on the normal direction
     denom = np.dot(normal, u)
 
     if(abs(denom) < eps):
+        # line segment is parallel to the plane,
+        # Even if both points are in the plane, there is not a single proper
+        # intersection and hence we fail the test
         return None, False
 
     else:
+        # this is the distance between a1 and p projected on the normal direction
         num = -np.dot(normal, w)
         s = num/denom
-        if(s<0 or s>1):
+
+        if s < -eps or s > 1 + eps:
+            # in this case, both points are on the same side of the plane
+            # hence, no intersections
             return None, False
         else:
             if abs(s) < eps or abs(s - 1) < eps:
