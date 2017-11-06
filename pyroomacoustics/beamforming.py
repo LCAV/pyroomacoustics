@@ -162,19 +162,22 @@ class MicrophoneArray(object):
 
     '''Microphone array class.'''
 
-    def __init__(self, R, Fs):
+    def __init__(self, R, fs):
+
+        R = np.array(R)
+
         self.dim = R.shape[0]   # are we in 2D or in 3D
         self.M = R.shape[1]     # number of microphones
         self.R = R              # array geometry
 
-        self.Fs = Fs            # sampling frequency of microphones
+        self.fs = fs            # sampling frequency of microphones
 
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
 
 
-    def record(self, signals, Fs):
+    def record(self, signals, fs):
         '''
         This simulates the recording of the signals by the microphones.
         In particular, if the microphones and the room simulation
@@ -186,7 +189,7 @@ class MicrophoneArray(object):
 
         signals:
             An ndarray with as many lines as there are microphones.
-        Fs: 
+        fs:
             the sampling frequency of the signals.
         '''
 
@@ -196,16 +199,16 @@ class MicrophoneArray(object):
         if signals.ndim != 2:
             raise NameError('The signals should be a 2D array.')
 
-        if Fs != self.Fs:
+        if fs != self.fs:
             try:
                 import samplerate
 
-                Fs_ratio = self.Fs / float(Fs)
-                newL = int(Fs_ratio * signals.shape[1]) - 1
+                fs_ratio = self.fs / float(fs)
+                newL = int(fs_ratio * signals.shape[1]) - 1
                 self.signals = np.zeros((self.M, newL))
                 # samplerate resample function considers columns as channels (hence the transpose)
                 for m in range(self.M):
-                    self.signals[m] = samplerate.resample(signals[m], Fs_ratio, 'sinc_best')
+                    self.signals[m] = samplerate.resample(signals[m], fs_ratio, 'sinc_best')
             except ImportError:
                 raise ImportError('The samplerate package must be installed for resampling of the signals.')
 
@@ -256,7 +259,7 @@ class MicrophoneArray(object):
 
         signal = np.array(signal, dtype=bitdepth)
 
-        wavfile.write(filename, self.Fs, signal)
+        wavfile.write(filename, self.fs, signal)
 
 
 class Beamformer(MicrophoneArray):
@@ -269,7 +272,7 @@ class Beamformer(MicrophoneArray):
     ----------
     R: numpy.ndarray
         Mics positions
-    Fs: int
+    fs: int
         Sampling frequency
     N: int, optional
         Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.
@@ -283,8 +286,8 @@ class Beamformer(MicrophoneArray):
         Zero padding length for frequency domain processing. Default is 0.
     '''
 
-    def __init__(self, R, Fs, N=1024, Lg=None, hop=None, zpf=0, zpb=0):
-        MicrophoneArray.__init__(self, R, Fs)
+    def __init__(self, R, fs, N=1024, Lg=None, hop=None, zpf=0, zpb=0):
+        MicrophoneArray.__init__(self, R, fs)
 
         # only support even length (in freq)
         if N % 2 is 1:
@@ -307,7 +310,7 @@ class Beamformer(MicrophoneArray):
             self.hop = hop
 
         # for now only support equally spaced frequencies
-        self.frequencies = np.arange(0, self.N // 2+1) / self.N * float(self.Fs)
+        self.frequencies = np.arange(0, self.N // 2+1) / self.N * float(self.fs)
 
         # weights will be computed later, the array is of shape (M, N/2+1)
         self.weights = None
@@ -319,7 +322,7 @@ class Beamformer(MicrophoneArray):
         ''' Concatenates two beamformers together.'''
 
         newR = np.concatenate((self.R, y.R), axis=1)
-        return Beamformer(newR, self.Fs, self.Lg, self.N, hop=self.hop, zpf=self.zpf, zpb=self.zpb)
+        return Beamformer(newR, self.fs, self.Lg, self.N, hop=self.hop, zpf=self.zpf, zpb=self.zpb)
 
     def filters_from_weights(self, non_causal=0.):
         '''
@@ -542,7 +545,7 @@ class Beamformer(MicrophoneArray):
 
         plt.ylabel('Freq [kHz]')
         yticks = np.zeros(4)
-        f_0 = np.floor(self.Fs/8000.)
+        f_0 = np.floor(self.fs/8000.)
         for i in np.arange(1, 5):
             yticks[i-1] = np.argmin(np.abs(freq - 1000.*i*f_0))
         #yticks = np.array(plt.getp(plt.gca(), 'yticks'), dtype=np.int)
@@ -708,7 +711,7 @@ class Beamformer(MicrophoneArray):
 
             plt.subplot(2, 1, 2)
 
-        plt.plot(np.arange(self.Lg)/float(self.Fs), self.filters.T)
+        plt.plot(np.arange(self.Lg)/float(self.fs), self.filters.T)
 
         plt.title('Beamforming filters')
         plt.xlabel('Time [s]')
@@ -845,7 +848,7 @@ class Beamformer(MicrophoneArray):
             the signal delay introduced by the beamformer (default 0.03 s)
         epsilon: float
         '''
-        if delay > self.Lg / self.Fs:
+        if delay > self.Lg / self.fs:
             print('Warning: filter length shorter than beamformer delay')
 
 
@@ -853,15 +856,15 @@ class Beamformer(MicrophoneArray):
             R_n = np.zeros((self.M * self.Lg, self.M * self.Lg))
 
         if interferer is not None:
-            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
             L = H.shape[1] // 2
         else:
-            H = build_rir_matrix(self.R, (source,), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
             L = H.shape[1]
 
         # Delay of the system in samples
-        kappa = int(delay * self.Fs)
-        precedence = int(0.030*self.Fs)
+        kappa = int(delay * self.fs)
+        precedence = int(0.030*self.fs)
 
         # the constraint
         n = int(np.minimum(L, kappa+precedence))
@@ -892,7 +895,7 @@ class Beamformer(MicrophoneArray):
         filter within the 30 ms following the delay.
         '''
 
-        if delay > self.Lg / self.Fs:
+        if delay > self.Lg / self.fs:
             print('Warning: filter length shorter than beamformer delay')
 
         if R_n is None:
@@ -900,15 +903,15 @@ class Beamformer(MicrophoneArray):
 
         # build the channel matrix
         if interferer is not None:
-            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
             L = H.shape[1] // 2
         else:
-            H = build_rir_matrix(self.R, (source,), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
             L = H.shape[1]
 
         # Delay of the system in samples
-        tau = int(delay*self.Fs)
-        kappa = int(d_relax*self.Fs)
+        tau = int(delay*self.fs)
+        kappa = int(d_relax*self.fs)
 
         # the constraint
         A = np.concatenate((H[:,:tau+1], H[:,tau+kappa:]), axis=1)
@@ -944,7 +947,7 @@ class Beamformer(MicrophoneArray):
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
         L = H.shape[1]/2
 
         # We first assume the sample are uncorrelated
@@ -966,14 +969,14 @@ class Beamformer(MicrophoneArray):
         while forcing a distortionless response towards the source.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
         L = H.shape[1]/2
 
         # We first assume the sample are uncorrelated
         K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
 
         # constraint
-        kappa = int(delay*self.Fs)
+        kappa = int(delay*self.fs)
         A = H[:, :L]
         b = np.zeros((L, 1))
         b[kappa, 0] = 1
@@ -1002,11 +1005,11 @@ class Beamformer(MicrophoneArray):
         response beamformer.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.Fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
         L = H.shape[1] // 2
 
         # the constraint vector
-        kappa = int(delay*self.Fs)
+        kappa = int(delay*self.fs)
         h = H[:, kappa]
 
         # We first assume the sample are uncorrelated
@@ -1041,14 +1044,14 @@ class Beamformer(MicrophoneArray):
         i_dmp = 1./(4*np.pi*dist_mat)
 
         # compute offset needed for decay of sinc by epsilon
-        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.Fs*epsilon)
+        offset = np.maximum(s_dmp.max(), i_dmp.max())/(np.pi*self.fs*epsilon)
         t_min = np.minimum(s_time.min(), i_time.min())
         t_max = np.maximum(s_time.max(), i_time.max())
 
         # adjust timing
         s_time -= t_min - offset
         i_time -= t_min - offset
-        Lh = np.ceil((t_max - t_min + 2*offset)*float(self.Fs))
+        Lh = np.ceil((t_max - t_min + 2*offset)*float(self.fs))
 
         # the channel matrix
         K = sources.images.shape[1]
@@ -1062,15 +1065,15 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build constraint matrix
-            hs = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.Fs, Lh)[:, ::-1]
+            hs = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.fs, Lh)[:, ::-1]
             As[r*Lg+off:r*Lg+Lh+off, :] = hs.T
 
             # build interferer RIR matrix
-            hx = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.Fs, Lh).sum(axis=0)
+            hx = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, :L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = u.low_pass_dirac(i_time[r, :, np.newaxis], i_dmp[r, :, np.newaxis], self.Fs, Lh).sum(axis=0)
+            hq = u.low_pass_dirac(i_time[r, :, np.newaxis], i_dmp[r, :, np.newaxis], self.fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, L:] = u.convmtx(hq, Lg).T
 
         ones = np.ones((K, 1))
