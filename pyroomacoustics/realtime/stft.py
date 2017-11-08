@@ -5,6 +5,7 @@
 from __future__ import division
 
 import numpy as np
+from numpy.lib.stride_tricks import as_strided as _as_strided
 from .dft import DFT
 
 
@@ -188,21 +189,12 @@ class STFT(object):
     def analysis(self, x_n):
         """
         Transform new samples to STFT domain for analysis.
+
         Parameters
         -----------
         x_n : numpy array
-            [self.hop] new samples.
-        Returns
-        -----------
-        self.X : numpy array 
-            Frequency spectrum of given frame.
+            [self.hop] new samples
         """
-
-        # check for valid input - already done by self.dft
-        # if x_n.shape[0]!=self.hop:
-        #     raise ValueError('Invalid input dimensions.')
-        # if self.D > 1 and x_n.shape[1]!=self.D:
-        #     raise ValueError('Invalid input dimensions.')
 
         self.fresh_samples[:,] = x_n[:,]  # introduce new samples
 
@@ -214,7 +206,55 @@ class STFT(object):
         # shift backwards in the buffer the state
         self.fft_in_state[:,] = self.x_p[:,]
 
-        # self.num_frames += 1
+
+    def analysis_multiple(self, x):
+        """
+        Apply STFT analysis to multiple frames.
+
+        Parameters
+        -----------
+        x : numpy array
+            New samples.
+        Returns
+        -----------
+        mX : numpy array
+            Multple frames in the STFT domain.
+
+        """
+
+        new_strides = (self.hop * x.strides[0], x.strides[0])
+        # new_shape = ((len(x) - self.N) // self.hop + 1, self.N)
+        new_shape = (x.shape[0]//self.hop, self.N)
+
+        if self.D > 1:
+            mX = np.zeros((new_shape[0],self.nbin,self.D), dtype=np.complex64)
+            if x.shape[1] != self.D:
+                raise ValueError("Incorrect number of channels.")
+        else:
+            mX = np.zeros((new_shape[0],self.nbin), dtype=np.complex64)
+            if len(x.shape) > 1:
+                raise ValueError("Incorrect number of channels.")
+
+        dft = DFT(nfft=self.nfft,D=new_shape[0],
+            analysis_window=self.analysis_window,
+            synthesis_window=self.synthesis_window,
+            transform=self.transform)
+        if self.D > 1:
+            for c in range(self.D):
+                y = _as_strided(x[:,c], shape=new_shape, strides=new_strides)
+                y = np.concatenate((np.zeros((y.shape[0], self.zf)), y, 
+                    np.zeros((y.shape[0], self.zb))), axis=1)
+                
+                mX[:,:,c] = dft.analysis(y.T).T
+        else:
+            y = _as_strided(x, shape=new_shape, strides=new_strides)
+            y = np.concatenate((np.zeros((y.shape[0], self.zf)), y, 
+                np.zeros((y.shape[0], self.zb))), axis=1)
+
+            mX = dft.analysis(y.T).T
+
+        return mX
+
 
     def process(self):
         """
@@ -226,6 +266,43 @@ class STFT(object):
         """
         if self.H is not None:
             np.multiply(self.X, self.H, self.X)
+
+
+    def process_multiple(self, mX):
+        """
+        Filter multiple frames in the STFT domain.
+
+        Parameters
+        -----------
+        mX : numpy array
+            Multiple frames in the STFT domain. Array of shape FxBxC where
+            F is the number of frames, B is the number of frequency bins,
+            and C is the number of channels.
+        Returns
+        -----------
+        mX : numpy array
+            Multple frames in the STFT domain (filtered).
+
+        """
+
+        if mX.shape[1] != self.nbin:
+            raise ValueError('Invalid number of frequency bins!')
+        if self.D > 1:
+            if len(mX.shape) < 3:
+                raise ValueError('Invalid number of channels!')
+            if mX.shape[2] != self.D:
+                raise ValueError('Invalid number of channels!')
+
+        if self.H is not None:
+            if self.D == 1:
+                mH = np.tile(self.H,(mX.shape[0],1))
+            else:
+                mH = np.tile(self.H,(mX.shape[0],1,1))
+
+            np.multiply(mX, mH, mX)
+
+        return mX
+
 
 
     def synthesis(self, X=None):
@@ -259,6 +336,48 @@ class STFT(object):
             self.y_p[:,] += self.dft.x[-L:,]
 
         return self.out
+
+    def synthesis_multiple(self, mX):
+        """
+        Apply STFT analysis to multiple frames.
+
+        Parameters
+        -----------
+        mX : numpy array
+            Multiple STFT domain frames. Array of shape FxBxC where
+            F is the number of frames, B is the number of frequency bins,
+            and C is the number of channels.
+        Returns
+        -----------
+        x_r : numpy array
+            Recovered signal.
+
+        """
+
+        if mX.shape[1] != self.nbin:
+            raise ValueError('Invalid number of frequency bins!')
+        if self.D > 1:
+            if len(mX.shape) < 3:
+                raise ValueError('Invalid number of channels!')
+            if mX.shape[2] != self.D:
+                raise ValueError('Invalid number of channels!')
+
+        num_blocks = mX.shape[0]
+
+        if self.D > 1:
+            x_r = np.zeros((num_blocks*self.hop,self.D), dtype=np.float32)
+        else:
+            x_r = np.zeros(num_blocks*self.hop, dtype=np.float32)
+        
+
+        # back to time domain
+        n = 0
+        for b in range(num_blocks):
+
+            x_r[n:n+self.hop,] = self.synthesis(mX[b,:,])
+            n += self.hop
+
+        return x_r
 
 
     def get_prev_samples(self):
