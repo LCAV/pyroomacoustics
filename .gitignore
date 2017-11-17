@@ -3,6 +3,7 @@
 *.o
 *.vim
 *.DS_Store
+*.wav
 build/
 docs/_build
 dist/
