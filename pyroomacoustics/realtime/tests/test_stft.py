@@ -83,7 +83,7 @@ def no_overlap_with_filter(D):
 
     # Create the STFT object
     stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
-        transform=transform, num_frames=1)
+        transform=transform)
     
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
@@ -125,8 +125,7 @@ def with_half_overlap_no_filter(D):
     stft = pra.realtime.STFT(block_size, hop=hop, 
         analysis_window=window, 
         channels=D, 
-        transform=transform, 
-        num_frames=1)
+        transform=transform)
 
     # collect the processed blocks
     processed_x = np.zeros(x_local.shape)
@@ -167,8 +166,7 @@ def with_half_overlap_with_filter(D):
     stft = pra.realtime.STFT(block_size, hop=hop, 
         analysis_window=window, 
         channels=D, 
-        transform=transform,
-        num_frames=1)
+        transform=transform)
 
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
