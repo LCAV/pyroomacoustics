@@ -9,7 +9,8 @@ import pyroomacoustics as pra
 We create a signal, a simple filter and compute their convolution.
 
 Then we test STFT block procesing with and without overlap,
-and with and without filtering.
+and with and without filtering. Simulating a case of real-time
+block processing.
 '''
 
 # test parameters
@@ -82,7 +83,7 @@ def no_overlap_with_filter(D):
 
     # Create the STFT object
     stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
-        transform=transform)
+        transform=transform, num_frames=1)
     
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
@@ -121,8 +122,11 @@ def with_half_overlap_no_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
-        channels=D, transform=transform)
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        analysis_window=window, 
+        channels=D, 
+        transform=transform, 
+        num_frames=1)
 
     # collect the processed blocks
     processed_x = np.zeros(x_local.shape)
@@ -160,8 +164,11 @@ def with_half_overlap_with_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
-        channels=D, transform=transform)
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        analysis_window=window, 
+        channels=D, 
+        transform=transform,
+        num_frames=1)
 
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)

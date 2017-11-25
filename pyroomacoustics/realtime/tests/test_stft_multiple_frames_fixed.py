@@ -11,6 +11,10 @@ We create a signal, a simple filter and compute their convolution.
 
 Then we test STFT block procesing on multiple frames with and without overlap,
 and with and without filtering.
+
+The optional parameter 'num_frames' is given to the STFT constructor so that 
+memory is allocated specifically for a particular input size [num_frames*hop].
+Otherwise an error will be raised.
 '''
 
 # test parameters
@@ -32,6 +36,34 @@ y = np.zeros((x.shape[0] + h_len - 1, x.shape[1]))
 for i in range(x.shape[1]):
     y[:,i] = fftconvolve(x[:,i], h[:,i])
 
+
+def incorrect_input_size(D):
+
+    if D == 1:
+        x_local = x[:,0]
+    else:
+        x_local = x[:,:D]
+
+    # parameters
+    block_size = 512
+    hop = block_size
+
+    # create STFT object
+    num_frames = 100
+    stft = pra.realtime.STFT(block_size, hop=hop,
+        channels=D, 
+        transform=transform,
+        num_frames=num_frames)
+
+    try:  # passing more frames than 'num_frames'
+        stft.analysis(x_local)
+        computed = False
+    except:
+        computed = True
+
+    return computed
+
+
 def no_overlap_no_filter(D):
 
     if D == 1:
@@ -44,17 +76,18 @@ def no_overlap_no_filter(D):
     hop = block_size
 
     # create STFT object
+    num_frames = 100
     stft = pra.realtime.STFT(block_size, hop=hop,
         channels=D, 
-        transform=transform)
+        transform=transform,
+        num_frames=num_frames)
 
     # multiple frames all at once
-    stft.analysis(x_local)
+    stft.analysis(x_local[:num_frames*hop,])
     x_r = stft.synthesis()
 
     n = x_r.shape[0]
     return np.max(np.abs(x_local[:n,] - x_r[:n,]))
-    return 0
 
 
 def no_overlap_with_filter(D):
@@ -73,14 +106,17 @@ def no_overlap_with_filter(D):
     hop = block_size  # no overlap
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
-        transform=transform)
+    num_frames = 100
+    stft = pra.realtime.STFT(block_size, hop=hop,
+        channels=D, 
+        transform=transform,
+        num_frames=num_frames)
     
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
 
     # multiple frames all at once
-    stft.analysis(x_local)
+    stft.analysis(x_local[:num_frames*hop,])
     stft.process()
     y_r = stft.synthesis()
 
@@ -103,20 +139,23 @@ def half_overlap_no_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # create STFT object
+    num_frames = 100
     stft = pra.realtime.STFT(block_size, hop=hop, 
         analysis_window=window, 
         channels=D, 
-        transform=transform)
+        transform=transform,
+        num_frames=num_frames)
 
     # multiple frames all at once
-    stft.analysis(x_local[:100*hop,])
+    stft.analysis(x_local[:num_frames*hop,])
     x_r = stft.synthesis()
 
     # if D==1:
     #     import matplotlib.pyplot as plt
     #     plt.figure()
-    #     plt.plot(x_local)
+    #     plt.plot(x_local[:num_frames*hop,])
     #     plt.plot(x_r)
+    #     # plt.plot(np.abs(x_local[:num_frames*hop,]-x_r))
     #     plt.show()
 
     n = x_r.shape[0]
@@ -143,14 +182,18 @@ def half_overlap_with_filter(D):
     window = pra.hann(block_size)  # the analysis window
 
     # Create the STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, 
-        channels=D, transform=transform)
+    num_frames = 100
+    stft = pra.realtime.STFT(block_size, hop=hop, 
+        analysis_window=window, 
+        channels=D, 
+        transform=transform,
+        num_frames=num_frames)
 
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
 
     # multiple frames all at once
-    stft.analysis(x_local)
+    stft.analysis(x_local[:num_frames*hop,])
     stft.process()
     y_r = stft.synthesis()
 
@@ -168,7 +211,15 @@ def half_overlap_with_filter(D):
 
 
 
-class TestSTFTMultple(TestCase):
+class TestSTFTMultpleFixed(TestCase):
+
+    def test_incorrect_input_check_mono(self):
+        result = incorrect_input_size(1)
+        self.assertTrue(result)
+
+    def test_incorrect_input_check_stereo(self):
+        result = incorrect_input_size(D)
+        self.assertTrue(result)
 
     def test_no_overlap_no_filter_mono(self):
         error = no_overlap_no_filter(1)
@@ -204,6 +255,12 @@ class TestSTFTMultple(TestCase):
 
 
 if __name__ == "__main__":
+
+    result = incorrect_input_size(1)
+    print('incorrect input size, mono:', result)
+
+    result = incorrect_input_size(D)
+    print('incorrect input size, multichannel:', result)
 
     error = no_overlap_no_filter(1)
     print('no overlap, no filter, mono:', error)
