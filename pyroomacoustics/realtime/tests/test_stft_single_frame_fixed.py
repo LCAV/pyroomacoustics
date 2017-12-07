@@ -13,8 +13,8 @@ Then we test STFT block procesing on multiple frames with and without overlap,
 and with and without filtering.
 
 The optional parameter 'num_frames' is given to the STFT constructor so that 
-memory is allocated specifically for a particular input size [num_frames*hop].
-Otherwise an error will be raised.
+memory is allocated specifically for a particular input size. Otherwise an 
+error will be raised.
 '''
 
 # test parameters
@@ -30,7 +30,7 @@ h /= np.linalg.norm(h, axis=0)
 
 # test signal (noise)
 x = np.random.randn(100000, D)
-num_frames = 100
+num_frames = 0    # only passing [hop] samples (real-time case), set to 0
 
 # convolved signal
 y = np.zeros((x.shape[0] + h_len - 1, x.shape[1]))
@@ -55,7 +55,7 @@ def incorrect_input_size(D):
         transform=transform,
         num_frames=num_frames)
 
-    try:  # passing more frames than 'num_frames'
+    try:  # passing more frames than 'hop'
         stft.analysis(x_local)
         computed = False
     except:
@@ -81,13 +81,32 @@ def no_overlap_no_filter(D):
         transform=transform,
         num_frames=num_frames)
 
-    # multiple frames all at once
-    corr_num_samples = (num_frames-1)*hop + block_size
-    stft.analysis(x_local[:corr_num_samples,])
-    x_r = stft.synthesis()
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
 
-    n = x_r.shape[0]
-    return np.max(np.abs(x_local[:n,] - x_r[:n,]))
+    # process the signals while full blocks are available
+    n = 0
+    while  x_local.shape[0] - n > hop:
+
+        # go to frequency domain
+        stft.analysis(x_local[n:n+hop,])
+
+        # copy processed block in the output buffer
+        processed_x[n:n+hop,] = stft.synthesis()
+
+        n += hop
+
+    # if D==1:
+    #     import matplotlib.pyplot as plt
+    #     plt.figure()
+    #     plt.plot(x_local)
+    #     plt.plot(processed_x)
+    #     plt.show()
+
+    # last hop samples not processed since didn't get full frame
+    processed_x = processed_x[(block_size-hop):-hop]
+    n = processed_x.shape[0]
+    return np.max(np.abs(x_local[:n,] - processed_x[:n,]))
 
 
 def no_overlap_with_filter(D):
@@ -110,19 +129,38 @@ def no_overlap_with_filter(D):
         channels=D, 
         transform=transform,
         num_frames=num_frames)
-    
+
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
+    
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
 
-    # multiple frames all at once
-    corr_num_samples = (num_frames-1)*hop + block_size
-    stft.analysis(x_local[:corr_num_samples,])
-    stft.process()
-    y_r = stft.synthesis()
+    # process the signals while full blocks are available
+    n = 0
+    while  x_local.shape[0] - n > hop:
 
-    # compute error
-    n = y_r.shape[0]
-    return np.max(np.abs(y_local[:n,] - y_r[:n,]))
+        # go to frequency domain
+        stft.analysis(x_local[n:n+hop,])
+
+        stft.process()  # apply the filter
+
+        # copy processed block in the output buffer
+        processed_x[n:n+hop,] = stft.synthesis()
+
+        n += hop
+
+    # if D==1:
+    #     import matplotlib.pyplot as plt
+    #     plt.figure()
+    #     plt.plot(y_local)
+    #     plt.plot(processed_x)
+    #     plt.show()
+
+    # last hop samples not processed since didn't get full frame
+    processed_x = processed_x[(block_size-hop):-hop]
+    n = processed_x.shape[0]
+    return np.max(np.abs(y_local[:n,] - processed_x))
 
 
 
@@ -145,24 +183,32 @@ def half_overlap_no_filter(D):
         transform=transform,
         num_frames=num_frames)
 
-    # multiple frames all at once
-    corr_num_samples = (num_frames-1)*hop + block_size
-    stft.analysis(x_local[:corr_num_samples,])
-    x_r = stft.synthesis()
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
+
+    # process the signals while full blocks are available
+    n = 0
+    while  x_local.shape[0] - n > hop:
+
+        # go to frequency domain
+        stft.analysis(x_local[n:n+hop,])
+
+        # copy processed block in the output buffer
+        processed_x[n:n+hop,] = stft.synthesis()
+
+        n += hop
 
     # if D==1:
     #     import matplotlib.pyplot as plt
     #     plt.figure()
-    #     plt.plot(x_local[:num_frames*hop,])
-    #     plt.plot(x_r)
-    #     # plt.plot(np.abs(x_local[:num_frames*hop,]-x_r))
+    #     plt.plot(x_local)
+    #     plt.plot(processed_x[(block_size-hop):-hop])
     #     plt.show()
 
-    n = x_r.shape[0]
-    error = np.max(np.abs(x_local[block_size-hop:n-hop,] 
-        - x_r[block_size-hop:n-hop,]))
-
-    return error 
+    # first [block_size-hop] samples not processed since need to accumulate full frame
+    processed_x = processed_x[(block_size-hop):-hop]
+    n = processed_x.shape[0]
+    return np.max(np.abs(x_local[:n,] - processed_x[:n,]))
 
 
 def half_overlap_with_filter(D):
@@ -191,23 +237,34 @@ def half_overlap_with_filter(D):
     # setup the filter
     stft.set_filter(h_local, zb=h_len - 1)
 
-    # multiple frames all at once
-    corr_num_samples = (num_frames-1)*hop + block_size
-    stft.analysis(x_local[:corr_num_samples,])
-    stft.process()
-    y_r = stft.synthesis()
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
+
+    # process the signals while full blocks are available
+    n = 0
+    while  x_local.shape[0] - n > hop:
+
+        # go to frequency domain
+        stft.analysis(x_local[n:n+hop,])
+
+        stft.process()  # apply the filter
+
+        # copy processed block in the output buffer
+        processed_x[n:n+hop,] = stft.synthesis()
+
+        n += hop
 
     # if D==1:
     #     import matplotlib.pyplot as plt
     #     plt.figure()
-    #     plt.plot(x_local)
-    #     plt.plot(y_r)
+    #     plt.plot(y_local)
+    #     plt.plot(processed_x[(block_size-hop):-hop])
     #     plt.show()
 
-    # compute error
-    n = y_r.shape[0]
-    return np.max(np.abs(y_local[block_size:n-block_size,] 
-        - y_r[block_size:n-block_size,]))
+    # last hop samples not processed since didn't get full frame
+    processed_x = processed_x[(block_size-hop):-hop]
+    n = processed_x.shape[0]
+    return np.max(np.abs(y_local[:n,] - processed_x))
 
 
 
