@@ -51,16 +51,12 @@ class STFT(object):
         if hop is not None:             # hop size --> number of input samples
             self.hop = hop  
         else:
-            self.hop = self.N/2
+            self.hop = self.N
         self.hop = int(np.floor(self.hop))
 
         # analysis and synthesis window
         self.analysis_window = analysis_window
         self.synthesis_window = synthesis_window
-
-        if analysis_window is None and synthesis_window is None and self.hop==N/2:
-            # default to hanning (analysis) and rectangular (synthesis) window
-            self.analysis_window = np.hanning(self.num_samples)
 
         # prepare variables for DFT object
         self.transform = transform
@@ -301,7 +297,7 @@ class STFT(object):
                         %d samples.' % (self.hop, x_shape[0]))
 
             # multi-frame case
-            # need at least [num_samples+hop*num_frames] samples
+            # need [num_samples+hop*num_frames] samples
             else:
                 if x_shape[0]!=(self.hop*(self.num_frames-1)+self.num_samples):
                     raise ValueError('Input must be of length %d; received %d \
