@@ -364,6 +364,8 @@ class STFT(object):
         elif num_frames==0:
             self._analysis_single(x)
 
+        return self.X
+
 
     def _analysis_single(self, x_n):
         """
@@ -485,6 +487,8 @@ class STFT(object):
             self._process_multiple()
         elif num_frames==0:
             self._process_single()
+
+        return self.X
 
 
     def _process_single(self):
