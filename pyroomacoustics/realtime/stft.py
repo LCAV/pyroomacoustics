@@ -26,9 +26,13 @@ class STFT(object):
         window applied to the block before synthesis
     channels : int
         number of signals
-    transform: str, optional
-        which FFT package to use: 'numpy', 'pyfftw', or 'mkl'
 
+    transform (optional) : str
+        which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
+    streaming (optional) : bool
+        whether (True, default) or not (False) to "stitch" samples between 
+        repeated calls of 'analysis' and 'synthesis' if we are receiving a 
+        continuous stream of samples.
     num_frames (optional) : int
         Number of frames to be processed. If set, this will be strictly enforced
         as the STFT block will allocate memory accordingly. If not set, there
@@ -41,8 +45,9 @@ class STFT(object):
         2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
            frame must contain [N] samples.
     """
+
     def __init__(self, N, hop=None, analysis_window=None, 
-        synthesis_window=None, channels=1, transform='numpy',
+        synthesis_window=None, channels=1, transform='numpy', streaming=True,
         **kwargs):
 
         # initialize parameters
@@ -51,8 +56,7 @@ class STFT(object):
         if hop is not None:             # hop size --> number of input samples
             self.hop = hop  
         else:
-            self.hop = self.N
-        self.hop = int(np.floor(self.hop))
+            self.hop = self.num_samples
 
         # analysis and synthesis window
         self.analysis_window = analysis_window
@@ -62,8 +66,6 @@ class STFT(object):
         self.transform = transform
         self.nfft = self.num_samples   # differ when there is zero-padding
         self.nbin = self.nfft // 2 + 1
-
-        self.fft_out_buffer = np.zeros(self.nbin, dtype=np.complex64)
 
         # initialize filter + zero padding --> use set_filter
         self.zf = 0
@@ -83,6 +85,7 @@ class STFT(object):
             self.num_frames = 0
 
         # allocate all the required buffers
+        self.streaming = streaming
         self._make_buffers()
 
 
@@ -103,63 +106,47 @@ class STFT(object):
                        analysis_window=self.analysis_window,
                        synthesis_window=self.synthesis_window,
                        transform=self.transform)
+        """
+        Need to "squeeze" in case num_channels=1 as the FFTW package can only
+        take 1D array for 1D DFT.
+        """
+        # The input buffer, float32 for speed!
+        self.fft_in_buffer = np.squeeze(np.zeros((self.nfft, self.num_channels), 
+            dtype=np.float32))
+        #  a number of useful views on the input buffer
+        self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state,]
+        self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:\
+                                            self.zf+self.n_state+self.hop,]
+        self.old_samples = self.fft_in_buffer[self.zf+self.hop:
+                                            self.zf+self.hop+self.n_state,]
 
-        # need this distinction for mono and multi for FFTW package
-        if self.num_channels==1:  
+        # state buffer
+        self.x_p = np.squeeze(np.zeros((self.n_state, self.num_channels), 
+            dtype=np.float32))
+        # prev reconstructed samples
+        self.y_p = np.squeeze(np.zeros((self.n_state_out, self.num_channels), 
+            dtype=np.float32))
+        # output samples
+        self.out = np.squeeze(np.zeros((self.hop,self.num_channels), 
+            dtype=np.float32))
 
-            # The input buffer, float32 for speed!
-            self.fft_in_buffer = np.zeros(self.nfft, dtype=np.float32)
-            #  a number of useful views on the input buffer
-            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state]  # Location of state
-            self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop]
-            self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state]
-
-            self.x_p = np.zeros(self.n_state, dtype=np.float32)  # State buffer
-            self.y_p = np.zeros(self.n_state_out, dtype=np.float32)  # prev reconstructed samples
-            self.out = np.zeros(self.hop, dtype=np.float32)
-
-            if self.fixed_input:
-                if self.num_frames==0:
-                    self.X = np.zeros((self.nbin), dtype=np.complex64) 
-                else:
-                    self.X = np.zeros((self.num_frames,self.nbin), dtype=np.complex64)
-                    self.dft_multi = DFT(nfft=self.nfft,D=self.num_frames,
-                                        analysis_window=self.analysis_window,
-                                        synthesis_window=self.synthesis_window,
-                                        transform=self.transform)
-
+        # if fixed number of frames to process
+        if self.fixed_input:
+            if self.num_frames==0:
+                self.X = np.squeeze(np.zeros((self.nbin,self.num_channels), 
+                    dtype=np.complex64))
             else:
-                self.X = None
-                self.dft_multi = None
-            
-
-        else:
-
-            # The input buffer, float32 for speed!
-            self.fft_in_buffer = np.zeros((self.nfft, self.num_channels), dtype=np.float32)
-            #  a number of useful views on the input buffer
-            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state,:]  # Location of state
-            self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop,:]
-            self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state,:]
-
-            self.x_p = np.zeros((self.n_state, self.num_channels), dtype=np.float32)  # State buffer
-            self.y_p = np.zeros((self.n_state_out, self.num_channels), dtype=np.float32)  # prev reconstructed samples
-            self.out = np.zeros((self.hop,self.num_channels), dtype=np.float32)
-
-
-            if self.fixed_input:
-                if self.num_frames==0:
-                    self.X = np.zeros((self.nbin,self.num_channels), dtype=np.complex64)
-                else:
-                    self.X = np.zeros((self.num_frames,self.nbin,self.num_channels), 
-                        dtype=np.complex64)
-                    self.dft_multi = DFT(nfft=self.nfft,D=self.num_frames,
-                                        analysis_window=self.analysis_window,
-                                        synthesis_window=self.synthesis_window,
-                                        transform=self.transform)
-            else:
-                self.X = None
-                self.dft_multi = None
+                self.X = np.squeeze(
+                    np.zeros((self.num_frames,self.nbin,self.num_channels), 
+                    dtype=np.complex64))
+                # DFT object for multiple frames
+                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
+                                    analysis_window=self.analysis_window,
+                                    synthesis_window=self.synthesis_window,
+                                    transform=self.transform)
+        else: # we will allocate these on-the-fly
+            self.X = None
+            self.dft_frames = None
 
 
     def reset(self):
@@ -261,109 +248,105 @@ class STFT(object):
 
 
 
-
     def analysis(self, x):
-
         """
         Parameters
         -----------
         x  : 2D numpy array, [samples, channels]
-            Time-domain signal. If 'fixed_input' is set to True during object
-            construction, the number of samples in each channel of x must be 
-            [hop*num_frames]. Otherwise, num_frames will be set as the number of
-            samples in x (num_samples) divided by 'hop': num_samples//hop (for 
-            an integer value).
-
+            Time-domain signal.
         """
 
         # ----check correct number of channels
-        x_shape = x.shape   # [#samples, #channels]
+        x_shape = x.shape
         if self.num_channels > 1:
             if len(x_shape) < 1:   # received mono
-                raise ValueError("Incorrect number of channels.")
+                raise ValueError("Received 1-channel signal. \
+                    Expecting %d channels." % (self.num_channels))
             if x_shape[1] != self.num_channels:
-                raise ValueError("Incorrect number of channels.")
+                raise ValueError("Incorrect number of channels.\
+                    Received %d, expecting %d." % (x_shape[1], 
+                    self.num_channels))
         else:   # expecting mono
-            if len(x.shape) > 1:    # received multi-channel, expecting mono
-                raise ValueError("Incorrect number of channels.")
+            if len(x_shape) > 1:    # received multi-channel
+                raise ValueError("Received %d channels; expecting 1D mono \
+                    signal." % (x_shape[1]))
 
         # ----check number of frames
-        if self.fixed_input:
+        if self.streaming:  # need integer multiple of hops
 
-            # "real-time" case of receiving [hop] samples at a time
-            if self.num_frames == 0:
-                if x_shape[0] != self.hop:
-                    raise ValueError('Input must be of length %d; received \
-                        %d samples.' % (self.hop, x_shape[0]))
-
-            # multi-frame case
-            # need [num_samples+hop*num_frames] samples
+            if self.fixed_input:
+                if x_shape[0] != self.num_frames*self.hop:
+                    raise ValueError(\
+                        'Input must be of length %d; received %d samples.' \
+                        % (self.num_frames*self.hop, x_shape[0]))
             else:
+                self.num_frames = int(np.ceil(x_shape[0]/self.hop))
+                extra_samples = (self.num_frames*self.hop)-x_shape[0]
+                if extra_samples:
+                    warnings.warn("Received %d samples. Appending  %d zeros \
+                        for integer multiple of hops." % (x_shape[0],
+                            extra_samples))
+                    x = np.concatenate((x, 
+                            np.squeeze(
+                                np.zeros((extra_samples,self.num_channels)))
+                            ))
+
+        # non-streaming
+        # need at least num_samples for last frame
+        # e.g.[hop|hop|...|hop|num_samples]
+        else:
+
+            if self.fixed_input:
                 if x_shape[0]!=(self.hop*(self.num_frames-1)+self.num_samples):
                     raise ValueError('Input must be of length %d; received %d \
                         samples.' % ((self.hop*(self.num_frames-1)+
                         self.num_samples), x_shape[0]))
-
-            num_frames = self.num_frames
-
-        else:
-
-            # "real-time" case of receiving [hop] samples at a time
-            if x_shape[0] == self.hop:
-
-                num_frames = 0
-                self.num_frames = 0
-                if self.num_channels == 1:
-                    self.X = np.zeros((self.nbin), dtype=np.complex64) 
+            else:
+                if x_shape[0] < self.num_samples:
+                    # raise ValueError('Not enough samples. Received %d; need \
+                    #     at least %d.' % (x_shape[0],self.num_samples))
+                    extra_samples = self.num_samples - x_shape[0]
+                    warnings.warn("Not enough samples. Received %d; \
+                        appending %d zeros full valid frame." % (x_shape[0],
+                            extra_samples))
+                    x = np.concatenate((x, 
+                            np.squeeze(
+                                np.zeros((extra_samples,self.num_channels)))
+                            ))
+                    self.num_frames = 1
                 else:
-                    self.X = np.zeros((self.nbin,self.num_channels), 
-                        dtype=np.complex64)
 
-            # multi-frame case
-            # need at least [num_samples] samples for complete frame
-            elif x_shape[0] >= self.num_samples:   
+                    # calculate num_frames and append zeros if necessary
+                    self.num_frames = \
+                        int(np.ceil((x_shape[0]-self.num_samples)/self.hop) + 1)
+                    extra_samples = ((self.num_frames-1)*self.hop+
+                        self.num_samples)-x_shape[0]
+                    if extra_samples:
+                        warnings.warn("Received %d samples. Appending  %d \
+                            zeros for integer multiple of hops." % (x_shape[0],
+                                extra_samples))
+                        x = np.concatenate((x, 
+                                np.squeeze(
+                                    np.zeros((extra_samples,self.num_channels)))
+                                ))
 
-                # need at least `num_samples` for the last frame (hence the +1) 
-                # but moving at `hop` steps
-                # e.g. [hop|hop|...|hop|num_samples]
-                num_frames = (x_shape[0]-self.num_samples)//self.hop + 1
-                self.num_frames = num_frames
-
-                if self.num_channels == 1:
-                    self.X = np.zeros((num_frames,self.nbin), 
-                        dtype=np.complex64)
-                else:
-                    self.X = np.zeros((num_frames,self.nbin,self.num_channels), 
-                        dtype=np.complex64)
-                self.dft_multi = DFT(nfft=self.nfft,D=self.num_frames,
+                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
                     analysis_window=self.analysis_window,
                     synthesis_window=self.synthesis_window,
                     transform=self.transform)
 
+        # ----allocate memory if necessary
+        if not self.fixed_input:
+            self.X = np.squeeze(np.zeros((self.num_frames,self.nbin,
+                    self.num_channels), dtype=np.complex64))
 
-            # don't accept samples if between (hop,num_samples) or less than 
-            # [hop]
-            else:
-
-                if x_shape[0] < self.hop:
-                    warnings.warn("Not enough samples for 'analysis'. \
-                        Received %d samples, need at least %d." % (x.shape[0], 
-                        self.hop))
-                elif x_shape[0] > self.hop:
-                    warnings.warn("Not enough samples for 'analysis'. \
-                        Received %d samples, need at least %d." % (x.shape[0], 
-                        self.num_samples))
-                else:
-                    warnings.warn("Unexpected input. Received %d samples." % \
-                        (x.shape[0], self.num_samples))
-                return
-
-        # use appropriate function
-        if num_frames > 0:
-            self._analysis_multiple(x)
-        elif num_frames==0:
-            self._analysis_single(x)
-
+        # ----use appropriate function
+        if self.streaming:
+            self._analysis_streaming(x)
+        else:
+            self.reset()
+            self._analysis_non_streaming(x)
+                
         return self.X
 
 
@@ -388,7 +371,29 @@ class STFT(object):
         self.fft_in_state[:,] = self.x_p[:,]
 
 
-    def _analysis_multiple(self, x):
+    def _analysis_streaming(self, x):
+
+        if self.num_frames==1:
+            self._analysis_single(x)
+        else:
+            n = 0
+            for k in range(self.num_frames):
+                # introduce new samples
+                self.fresh_samples[:,] = x[n:n+self.hop,]  
+                # save next state
+                self.x_p[:,] = self.old_samples   
+
+                # apply DFT to current frame
+                self.X[k,] = self.dft.analysis(self.fft_in_buffer)
+
+                # shift backwards in the buffer the state
+                self.fft_in_state[:,] = self.x_p[:,]
+
+                n += self.hop
+            
+
+
+    def _analysis_non_streaming(self, x):
         """
         Apply STFT analysis to multiple frames.
 
@@ -401,7 +406,7 @@ class STFT(object):
         mX : numpy array
             Multple frames in the STFT domain.
 
-        """ 
+        """
 
         ## ----- STRIDED WAY
         new_strides = (x.strides[0],self.hop * x.strides[0])
@@ -414,14 +419,61 @@ class STFT(object):
                 y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
                                     np.zeros((self.zb,self.num_frames))))
 
-                self.X[:,:,c] = self.dft_multi.analysis(y).T
+                if self.num_frames==1:
+                    self.X[:,c] = self.dft_frames.analysis(y[:,0]).T
+                else:
+                    self.X[:,:,c] = self.dft_frames.analysis(y).T
         else:
 
             y = _as_strided(x, shape=new_shape, strides=new_strides)
             y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
                                 np.zeros((self.zb,self.num_frames))))
 
-            self.X[:] = self.dft_multi.analysis(y).T
+            if self.num_frames==1:
+                self.X[:] = self.dft_frames.analysis(y[:,0]).T
+            else:
+                self.X[:] = self.dft_frames.analysis(y).T
+
+
+    def _check_input_frequency_dimensions(X):
+        """
+        Ensure that given frequency data is valid, i.e. number of channels and
+        number of frequency bins.
+
+        If fixed_input=True, ensure expected number of frames. Otherwise, infer 
+        from given data.
+
+        Axis order of X should be : [frames, frequencies, channels]
+        """
+
+        # check number of frames and correct number of bins
+        X_shape = X.shape
+        if len(X_shape)==1:  # single channel, one frame
+            num_frames = 1
+        elif len(X_shape)==2 and self.num_channels>1: # multi-channel, one frame
+            num_frames = 1
+        elif len(X_shape)==2 and self.num_channels==1: # single channel, multiple frames
+            num_frames = X_shape[0]
+        elif len(X_shape)==3 and self.num_channels>1: # multi-channel, multiple frames
+            num_frames = X_shape[0]
+        else:
+            raise ValueError("Invalid input shape.")
+
+        # check number of bins
+        if X_shape[1]!=self.nbin:
+            raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                % (self.nbin,X_shape[0]))
+
+        # check number of frames, if fixed input size
+        if self.fixed_input:
+            if num_frames != self.num_frames:
+                raise ValueError('Input must have %d frames!', 
+                    self.num_frames)
+            self.X[:] = X  # reset if size is alright
+        else:
+            self.X = X
+            self.num_frames = num_frames
+
 
 
     def process(self, X=None):
@@ -448,45 +500,14 @@ class STFT(object):
             warnings.warn("No filter is set! Exiting...")
             return
 
-        # check number of frames and correct number of bins
         if X is not None:
-            X_shape = X.shape
-            if len(X_shape)==1:  # single channel, one frame
-                num_frames = 0
-            elif len(X_shape)==2 and self.num_channels>1: # multi-channel, one frame
-                num_frames = 0
-            elif len(X_shape)==2 and self.num_channels==1: # single channel, multiple frames
-                num_frames = X_shape[1]
-            elif len(X_shape)==3 and self.num_channels>1: # multi-channel, multiple frames
-                num_frames = X_shape[1]
-            else:
-                raise ValueError("Invalid input shape.")
-
-            # check number of bins
-            if X_shape[0]!=self.nbin:
-                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
-                    % (self.nbin,X_shape[0]))
-
-            # check number of frames, if fixed input size
-            if self.fixed_input:
-                if num_frames != self.num_frames:
-                    raise ValueError('Input must have %d frames!', 
-                        self.num_frames)
-                self.X[:] = X
-            else:
-                self.X = X
-                self.num_frames = num_frames
-
-
-        else:
-            num_frames = self.num_frames
-
+            self._check_input_frequency_dimensions(X)
 
         # use appropriate function
-        if num_frames > 0:
-            self._process_multiple()
-        elif num_frames==0:
+        if self.num_frames==1:
             self._process_single()
+        elif self.num_frames>1:
+            self._process_multiple()
 
         return self.X
 
@@ -502,9 +523,7 @@ class STFT(object):
             if self.num_channels == 1:
                 self.H_multi = np.tile(self.H,(self.num_frames,1))
             else:
-
                 self.H_multi = np.tile(self.H,(self.num_frames,1,1))
-                # self.H_multi = np.swapaxes(self.H_multi,0,1)
 
         np.multiply(self.X, self.H_multi, self.X)
 
@@ -533,37 +552,17 @@ class STFT(object):
 
         """
 
-        # check number of frames
         if X is not None:
-            X_shape = X.shape
-            if len(X_shape)==1:  # single channel, one frame
-                num_frames = 0
-            elif len(X_shape)==2 and self.num_channels>1: # multi-channel, one frame
-                num_frames = 0
-            elif len(X_shape)==2 and self.num_channels==1: # single channel, multiple frames
-                num_frames = X_shape[0]
-            elif len(X_shape)==3 and self.num_channels>1: # multi-channel, multiple frames
-                num_frames = X_shape[0]
-            else:
-                raise ValueError("Invalid input shape.")
-
-            if self.fixed_input:
-                if num_frames != self.num_frames:
-                    raise ValueError('Input must have %d frames!', self.num_frames)
-            else:
-                self.num_frames = num_frames
-        else:
-            num_frames = self.num_frames
+            self._check_input_frequency_dimensions(X)
 
         # use appropriate function
-        if num_frames > 0:
-            return self._synthesis_multiple(X)
-        elif num_frames==0:
-            return self._synthesis_single(X)
+        if self.num_frames==1:
+            return self._synthesis_single()
+        elif self.num_frames>1:
+            return self._synthesis_multiple()
 
 
-
-    def _synthesis_single(self, X=None):
+    def _synthesis_single(self):
         """
         Transform to time domain and reconstruct output with overlap-and-add.
 
@@ -573,9 +572,6 @@ class STFT(object):
             Reconstructed array of samples of length <self.hop> (Optional)
         """
 
-        if X is not None:
-            self.X[:] = X
-
         # apply IDFT to current frame
         self.dft.synthesis(self.X)
 
@@ -583,25 +579,16 @@ class STFT(object):
 
 
 
-    def _synthesis_multiple(self, X=None):
+    def _synthesis_multiple(self):
         """
         Apply STFT analysis to multiple frames.
 
-        Parameters
-        -----------
-        mX : numpy array
-            Multiple STFT domain frames. Array of shape FxBxC where
-            F is the number of frames, B is the number of frequency bins,
-            and C is the number of channels.
         Returns
         -----------
         x_r : numpy array
             Recovered signal.
 
         """
-
-        if X is not None:
-            self.X[:] = X
 
         # synthesis + overlap and add
         if self.num_channels > 1:
@@ -623,13 +610,13 @@ class STFT(object):
 
             # treat number of frames as the multiple channels for DFT
             if not self.fixed_input:
-                self.dft_multi = DFT(nfft=self.nfft,D=self.num_frames,
+                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
                     analysis_window=self.analysis_window,
                     synthesis_window=self.synthesis_window,
                     transform=self.transform)
 
             # back to time domain
-            mx = self.dft_multi.synthesis(self.X.T)
+            mx = self.dft_frames.synthesis(self.X.T)
 
             # overlap and add
             n = 0
@@ -658,9 +645,3 @@ class STFT(object):
 
         return self.out
 
-
-    def get_prev_samples(self):
-        """
-        Get reconstructed previous samples.
-        """
-        return self.y_p
