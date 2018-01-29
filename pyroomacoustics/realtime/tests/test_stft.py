@@ -309,7 +309,8 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False,
     return error
 
 
-def call_all_tests(num_frames, fixed_memory, streaming, overlap=True):
+def call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=True, 
+    overlap=True):
 
     error = no_overlap_no_filter(1, num_frames, fixed_memory,
         streaming)
@@ -555,10 +556,10 @@ if __name__ == "__main__":
     print()
 
     print("---ONE FRAME, STREAMING, NOT FIXED MEMORY")
-    call_all_tests(num_frames=1, fixed_memory=False, streaming=True)
+    call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=True)
 
     print("---MULTIPLE FRAMES, STREAMING, NOT FIXED MEMORY")
-    call_all_tests(num_frames=50, fixed_memory=False, streaming=True)
+    call_all_stft_tests(num_frames=50, fixed_memory=False, streaming=True)
 
     print("---ONE FRAME, STREAMING, FIXED MEMORY")
     num_frames = 1
@@ -566,7 +567,8 @@ if __name__ == "__main__":
     print('incorrect input size, mono              :', result)
     result = incorrect_input_size(D, num_frames)
     print('incorrect input size, multichannel      :', result)
-    call_all_tests(num_frames=num_frames, fixed_memory=True, streaming=True)
+    call_all_stft_tests(num_frames=num_frames, fixed_memory=True, 
+        streaming=True)
 
     print("---MULTIPLE FRAME, STREAMING, FIXED MEMORY")
     num_frames=50
@@ -574,21 +576,22 @@ if __name__ == "__main__":
     print('incorrect input size, mono              :', result)
     result = incorrect_input_size(D, num_frames)
     print('incorrect input size, multichannel      :', result)
-    call_all_tests(num_frames=num_frames, fixed_memory=True, streaming=True)
+    call_all_stft_tests(num_frames=num_frames, fixed_memory=True, 
+        streaming=True)
 
     print("---ONE FRAME, NON-STREAMING, NOT FIXED MEMORY")
-    call_all_tests(num_frames=1, fixed_memory=False, streaming=False, 
+    call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=False, 
         overlap=False)
 
     print("---MULTIPLE FRAMES, NON-STREAMING, NOT FIXED MEMORY")
-    call_all_tests(num_frames=50, fixed_memory=False, streaming=False)
+    call_all_stft_tests(num_frames=50, fixed_memory=False, streaming=False)
 
     print("---ONE FRAME, NON-STREAMING, FIXED MEMORY")
-    call_all_tests(num_frames=1, fixed_memory=True, streaming=False, 
+    call_all_stft_tests(num_frames=1, fixed_memory=True, streaming=False, 
         overlap=False)
 
     print("---MULTIPLE FRAMES, NON-STREAMING, FIXED MEMORY")
-    call_all_tests(num_frames=50, fixed_memory=True, streaming=False)
+    call_all_stft_tests(num_frames=50, fixed_memory=True, streaming=False)
 
 
 
