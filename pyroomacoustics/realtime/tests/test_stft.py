@@ -309,32 +309,40 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False,
     return error
 
 
-def call_all_tests(num_frames, fixed_memory, streaming):
+def call_all_tests(num_frames, fixed_memory, streaming, overlap=True):
 
     error = no_overlap_no_filter(1, num_frames, fixed_memory,
         streaming)
-    print('no overlap, no filter, mono:', error)
-    error = no_overlap_no_filter(D, num_frames, fixed_memory,
-        streaming)
-    print('no overlap, no filter, multichannel:', error)
+    print('no overlap, no filter, mono             : %0.0f dB' 
+        % (20*np.log10(error)))
+    error = no_overlap_no_filter(D, num_frames, fixed_memory, streaming)
+    print('no overlap, no filter, multichannel     : %0.0f dB' 
+        % (20*np.log10(error)))
     error = no_overlap_with_filter(1, num_frames, fixed_memory,
         streaming)
-    print('no overlap, with filter, mono:', error)
+    print('no overlap, with filter, mono           : %0.0f dB' 
+        % (20*np.log10(error)))
     error = no_overlap_with_filter(D, num_frames, fixed_memory,
         streaming)
-    print('no overlap, with filter, multichannel:', error)
-    error = with_half_overlap_no_filter(1, num_frames, fixed_memory,
-        streaming)
-    print('with half overlap, no filter, mono:', error)
-    error = with_half_overlap_no_filter(D, num_frames, fixed_memory,
-        streaming)
-    print('with half overlap, no filter, multichannel:', error)
-    error = with_half_overlap_with_filter(1, num_frames, 
-        fixed_memory, streaming)
-    print('with half overlap, with filter, mono:', error)
-    error = with_half_overlap_with_filter(D, num_frames, 
-        fixed_memory, streaming)
-    print('with half overlap, with filter, multichannel:', error)
+    print('no overlap, with filter, multichannel   : %0.0f dB' 
+        % (20*np.log10(error)))
+    if overlap:
+        error = with_half_overlap_no_filter(1, num_frames, fixed_memory,
+            streaming)
+        print('half overlap, no filter, mono           : %0.0f dB' 
+            % (20*np.log10(error)))
+        error = with_half_overlap_no_filter(D, num_frames, fixed_memory,
+            streaming)
+        print('half overlap, no filter, multichannel   : %0.0f dB' 
+            % (20*np.log10(error)))
+        error = with_half_overlap_with_filter(1, num_frames, 
+            fixed_memory, streaming)
+        print('half overlap, with filter, mono         : %0.0f dB' 
+            % (20*np.log10(error)))
+        error = with_half_overlap_with_filter(D, num_frames, 
+            fixed_memory, streaming)
+        print('half overlap, with filter, multichannel : %0.0f dB' 
+            % (20*np.log10(error)))
     print()
 
 
@@ -538,6 +546,13 @@ class TestSTFT(TestCase):
 if __name__ == "__main__":
 
     print()
+    print("TEST INFO")
+    print("-------------------------------------------------------------")
+    print("Max error in dB for randomnly generated signal of %d samples."
+        % len(x))
+    print("Multichannel corresponds to %d channels." % D)
+    print("-------------------------------------------------------------")
+    print()
 
     print("---ONE FRAME, STREAMING, NOT FIXED MEMORY")
     call_all_tests(num_frames=1, fixed_memory=False, streaming=True)
@@ -548,43 +563,29 @@ if __name__ == "__main__":
     print("---ONE FRAME, STREAMING, FIXED MEMORY")
     num_frames = 1
     result = incorrect_input_size(1, num_frames)
-    print('incorrect input size, mono:', result)
+    print('incorrect input size, mono              :', result)
     result = incorrect_input_size(D, num_frames)
-    print('incorrect input size, multichannel:', result)
+    print('incorrect input size, multichannel      :', result)
     call_all_tests(num_frames=num_frames, fixed_memory=True, streaming=True)
 
     print("---MULTIPLE FRAME, STREAMING, FIXED MEMORY")
     num_frames=50
     result = incorrect_input_size(1, num_frames)
-    print('incorrect input size, mono:', result)
+    print('incorrect input size, mono              :', result)
     result = incorrect_input_size(D, num_frames)
-    print('incorrect input size, multichannel:', result)
+    print('incorrect input size, multichannel      :', result)
     call_all_tests(num_frames=num_frames, fixed_memory=True, streaming=True)
 
     print("---ONE FRAME, NON-STREAMING, NOT FIXED MEMORY")
-    error = no_overlap_no_filter(1, streaming=False)
-    print('no overlap, no filter, mono:', error)
-    error = no_overlap_no_filter(D, streaming=False)
-    print('no overlap, no filter, multichannel:', error)
-    error = no_overlap_with_filter(1, streaming=False)
-    print('no overlap, with filter, mono:', error)
-    error = no_overlap_with_filter(D, streaming=False)
-    print('no overlap, with filter, multichannel:', error)
-    print()
+    call_all_tests(num_frames=1, fixed_memory=False, streaming=False, 
+        overlap=False)
 
     print("---MULTIPLE FRAMES, NON-STREAMING, NOT FIXED MEMORY")
     call_all_tests(num_frames=50, fixed_memory=False, streaming=False)
 
     print("---ONE FRAME, NON-STREAMING, FIXED MEMORY")
-    error = no_overlap_no_filter(1, fixed_memory=True, streaming=False)
-    print('no overlap, no filter, mono:', error)
-    error = no_overlap_no_filter(D, fixed_memory=True, streaming=False)
-    print('no overlap, no filter, multichannel:', error)
-    error = no_overlap_with_filter(1, fixed_memory=True, streaming=False)
-    print('no overlap, with filter, mono:', error)
-    error = no_overlap_with_filter(D, fixed_memory=True, streaming=False)
-    print('no overlap, with filter, multichannel:', error)
-    print()
+    call_all_tests(num_frames=1, fixed_memory=True, streaming=False, 
+        overlap=False)
 
     print("---MULTIPLE FRAMES, NON-STREAMING, FIXED MEMORY")
     call_all_tests(num_frames=50, fixed_memory=True, streaming=False)
