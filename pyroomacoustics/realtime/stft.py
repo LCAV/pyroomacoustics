@@ -30,7 +30,7 @@ class STFT(object):
     transform (optional) : str
         which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
     streaming (optional) : bool
-        whether (True, default) or not (False) to "stitch" samples between 
+        whether (True) or not (False, default) to "stitch" samples between 
         repeated calls of 'analysis' and 'synthesis' if we are receiving a 
         continuous stream of samples.
     num_frames (optional) : int
@@ -47,7 +47,7 @@ class STFT(object):
     """
 
     def __init__(self, N, hop=None, analysis_window=None, 
-        synthesis_window=None, channels=1, transform='numpy', streaming=True,
+        synthesis_window=None, channels=1, transform='numpy', streaming=False,
         **kwargs):
 
         # initialize parameters
@@ -260,16 +260,15 @@ class STFT(object):
         x_shape = x.shape
         if self.num_channels > 1:
             if len(x_shape) < 1:   # received mono
-                raise ValueError("Received 1-channel signal. \
-                    Expecting %d channels." % (self.num_channels))
+                raise ValueError("Received 1-channel signal. Expecting %d channels." \
+                    % (self.num_channels))
             if x_shape[1] != self.num_channels:
-                raise ValueError("Incorrect number of channels.\
-                    Received %d, expecting %d." % (x_shape[1], 
-                    self.num_channels))
+                raise ValueError("Incorrect number of channels. Received %d, expecting %d." \
+                    % (x_shape[1], self.num_channels))
         else:   # expecting mono
             if len(x_shape) > 1:    # received multi-channel
-                raise ValueError("Received %d channels; expecting 1D mono \
-                    signal." % (x_shape[1]))
+                raise ValueError("Received %d channels; expecting 1D mono signal." \
+                    % (x_shape[1]))
 
         # ----check number of frames
         if self.streaming:  # need integer multiple of hops
@@ -283,8 +282,8 @@ class STFT(object):
                 self.num_frames = int(np.ceil(x_shape[0]/self.hop))
                 extra_samples = (self.num_frames*self.hop)-x_shape[0]
                 if extra_samples:
-                    warnings.warn("Received %d samples. Appending  %d zeros \
-                        for integer multiple of hops." % (x_shape[0],
+                    warnings.warn("Received %d samples. Appending  %d zeros for integer multiple of hops." \
+                        % (x_shape[0],
                             extra_samples))
                     x = np.concatenate((x, 
                             np.squeeze(
@@ -298,16 +297,16 @@ class STFT(object):
 
             if self.fixed_input:
                 if x_shape[0]!=(self.hop*(self.num_frames-1)+self.num_samples):
-                    raise ValueError('Input must be of length %d; received %d \
-                        samples.' % ((self.hop*(self.num_frames-1)+
-                        self.num_samples), x_shape[0]))
+                    raise ValueError('Input must be of length %d; received %d samples.' 
+                        % ((self.hop*(self.num_frames-1)+ self.num_samples), 
+                        x_shape[0]))
             else:
                 if x_shape[0] < self.num_samples:
                     # raise ValueError('Not enough samples. Received %d; need \
                     #     at least %d.' % (x_shape[0],self.num_samples))
                     extra_samples = self.num_samples - x_shape[0]
-                    warnings.warn("Not enough samples. Received %d; \
-                        appending %d zeros full valid frame." % (x_shape[0],
+                    warnings.warn("Not enough samples. Received %d; appending %d zeros full valid frame." \
+                        % (x_shape[0],
                             extra_samples))
                     x = np.concatenate((x, 
                             np.squeeze(
@@ -322,23 +321,21 @@ class STFT(object):
                     extra_samples = ((self.num_frames-1)*self.hop+
                         self.num_samples)-x_shape[0]
                     if extra_samples:
-                        warnings.warn("Received %d samples. Appending  %d \
-                            zeros for integer multiple of hops." % (x_shape[0],
-                                extra_samples))
+                        warnings.warn("Received %d samples. Appending %d zeros for integer multiple of hops." \
+                            % (x_shape[0], extra_samples))
                         x = np.concatenate((x, 
                                 np.squeeze(
                                     np.zeros((extra_samples,self.num_channels)))
                                 ))
 
-                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
-                    analysis_window=self.analysis_window,
-                    synthesis_window=self.synthesis_window,
-                    transform=self.transform)
-
         # ----allocate memory if necessary
         if not self.fixed_input:
             self.X = np.squeeze(np.zeros((self.num_frames,self.nbin,
                     self.num_channels), dtype=np.complex64))
+            self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
+                    analysis_window=self.analysis_window,
+                    synthesis_window=self.synthesis_window,
+                    transform=self.transform)
 
         # ----use appropriate function
         if self.streaming:
@@ -372,6 +369,10 @@ class STFT(object):
 
 
     def _analysis_streaming(self, x):
+        """
+        STFT analysis for streaming case in which we expect
+        [num_frames*hop] samples
+        """
 
         if self.num_frames==1:
             self._analysis_single(x)
@@ -390,22 +391,45 @@ class STFT(object):
                 self.fft_in_state[:,] = self.x_p[:,]
 
                 n += self.hop
-            
+
+            # ## ----- STRIDED WAY
+            # #USE PREVIOUS SAMPLES!
+            # # print(self.old_samples.shape)
+            # # print(x.shape)
+            # x = np.concatenate((self.old_samples,x))
+            # # print(x.shape)
+            # new_strides = (x.strides[0],self.hop * x.strides[0])
+            # new_shape = (self.num_samples,self.num_frames)
+
+            # if self.num_channels > 1:
+            #     for c in range(self.num_channels):
+
+            #         y = _as_strided(x[:,c], shape=new_shape, strides=new_strides)
+            #         y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
+            #                             np.zeros((self.zb,self.num_frames))))
+            #         self.X[:,:,c] = self.dft_frames.analysis(y).T
+
+            #         # store last frame
+            #         self.fft_in_buffer[:,c] = y[:,-1]
+            #         # self.fft_in_state[:,c] = self.old_samples[:,c]
+
+            # else:
+
+            #     y = _as_strided(x, shape=new_shape, strides=new_strides)
+            #     y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
+            #                         np.zeros((self.zb,self.num_frames))))
+            #     self.X[:] = self.dft_frames.analysis(y).T
+
+            #     # store last frame
+            #     self.fft_in_buffer[:] = y[:,-1]
+            #     # self.fft_in_state[:] = self.old_samples[:]
+
 
 
     def _analysis_non_streaming(self, x):
         """
-        Apply STFT analysis to multiple frames.
-
-        Parameters
-        -----------
-        x : numpy array
-            New samples.
-        Returns
-        -----------
-        mX : numpy array
-            Multple frames in the STFT domain.
-
+        STFT analysis for non-streaming case in which we expect
+        [(num_frames-1)*hop+num_samples] samples
         """
 
         ## ----- STRIDED WAY
