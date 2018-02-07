@@ -4,7 +4,7 @@ import numpy as np
 from scipy import linalg as la
 
 try:
-    import mkl_fft as fft
+    import mkl_fft._numpy_fft as fft
 except ImportError:
     import numpy.fft as fft
 

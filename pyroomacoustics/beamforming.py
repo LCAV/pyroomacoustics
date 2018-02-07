@@ -521,7 +521,7 @@ class Beamformer(MicrophoneArray):
 
         H_abs = np.abs(resp)**2
         H_abs /= H_abs.max()
-        H_abs = 10*np.log10(H_abs)
+        H_abs = 10*np.log10(H_abs + 1e-10)
 
         p_min = 0
         p_max = 100

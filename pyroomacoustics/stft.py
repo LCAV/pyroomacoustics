@@ -119,14 +119,15 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
 
     # add the zero-padding
     y = np.concatenate(
-        (np.zeros(
-            (y.shape[0], zp_front)), y, np.zeros(
-            (y.shape[0], zp_back))), axis=1)
+            (
+                np.zeros( (y.shape[0], zp_front), dtype=x.dtype), 
+                y, 
+                np.zeros( (y.shape[0], zp_back), dtype=x.dtype)
+            ), axis=1)
 
     # apply window if needed
     if (win is not None):
-        y = win * y
-        # y = np.expand_dims(win, 0)*y
+        y = win.astype(x.dtype) * y
 
     # transform along rows
     Z = transform(y, axis=1)

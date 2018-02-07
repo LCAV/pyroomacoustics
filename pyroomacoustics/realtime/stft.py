@@ -422,6 +422,8 @@ class STFT(object):
 
             self.X[:] = self.dft_multi.analysis(y.T)
 
+        return self.X
+
 
     def process(self, X=None):
 

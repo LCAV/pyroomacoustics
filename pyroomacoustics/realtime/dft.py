@@ -21,7 +21,7 @@ except ImportError:
     pyfftw_available = False
 
 try:
-    import mkl_fft  # https://github.com/LCAV/mkl_fft
+    import mkl_fft._numpy_fft as mkl_fft  # https://github.com/IntelPython/mkl_fft
     mkl_available = True
 except ImportError:
     mkl_available = False
