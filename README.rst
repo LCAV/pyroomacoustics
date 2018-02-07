@@ -151,8 +151,12 @@ contains implementations for DOA algorithms and acoustic beamformers introduced
 in the following papers.
 
 * H\. Pan, R. Scheibler, I. Dokmanic, E. Bezzam and M. Vetterli. *FRIDA: FRI-based DOA estimation for arbitrary array layout*, ICASSP 2017, New Orleans, USA, 2017.
-* I\. Dokmanic, R. Scheibler and M. Vetterli. *Raking the Cocktail Party*, in IEEE Journal of Selected Topics in Signal Processing, vol. 9, num. 5, p. 825 - 836, 2015.
-* R\. Scheibler, I. Dokmanic and M. Vetterli. *Raking Echoes in the Time Domain*, ICASSP 2015, Brisbane, Australia, 2015. 
+* I\. Dokmanić, R. Scheibler and M. Vetterli. *Raking the Cocktail Party*, in IEEE Journal of Selected Topics in Signal Processing, vol. 9, num. 5, p. 825 - 836, 2015.
+* R\. Scheibler, I. Dokmanić and M. Vetterli. *Raking Echoes in the Time Domain*, ICASSP 2015, Brisbane, Australia, 2015. 
+
+If you use this package in your own research, please cite `our paper describing it <https://arxiv.org/abs/1710.04196>`_.
+
+  R. Scheibler, E. Bezzam, I. Dokmanić, *Pyroomacoustics: A Python package for audio room simulations and array processing algorithms*, Proc. IEEE ICASSP, Calgary, CA, 2018.
 
 License
 -------
