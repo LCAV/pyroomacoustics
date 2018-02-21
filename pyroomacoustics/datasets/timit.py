@@ -15,6 +15,8 @@ URL: https://catalog.ldc.upenn.edu/ldc93s1
 import os
 import numpy as np
 
+from pyroomacoustics import stft
+
 try:
     import sounddevice as sd
     have_sounddevice = True

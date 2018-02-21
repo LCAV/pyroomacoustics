@@ -179,7 +179,7 @@ class CMUArcticSentence(object):
     def play(self):
         ''' Play the sound sample '''
         if have_sounddevice:
-            sd.play(self.data, samplerate=self.fs)
+            sd.play(self.data, samplerate=self.fs, blocking=True)
         else:
             print('Warning: sounddevice package is required to play audiofiles.')
 
@@ -192,15 +192,9 @@ class CMUArcticSentence(object):
             return
 
         sns.set_style('white')
-        X = stft(self.data, L=L, hop=hop, zp_back=zpb, transform=np.fft.rfft, win=np.hanning(L+zpb))
-        X = 10*np.log10(np.abs(X)**2).T
+        plt.specgram(self.data, NFFT=L, Fs=self.fs, noverlap=L-hop, pad_to=L+zpb)
 
-        plt.imshow(X, origin='lower', aspect='auto')
-
-        ticks = []
-        ticklabels = []
-
-        plt.xticks(ticks, ticklabels, rotation=-45)
-        plt.yticks([],[])
-        plt.tick_params(axis='both', which='major', labelsize=14)
+        plt.title(self.text)
+        plt.xlabel('Time [s]')
+        plt.ylabel('Frequency [Hz]')
 
