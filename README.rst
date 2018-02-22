@@ -156,7 +156,9 @@ in the following papers.
 
 If you use this package in your own research, please cite `our paper describing it <https://arxiv.org/abs/1710.04196>`_.
 
-  R. Scheibler, E. Bezzam, I. Dokmanić, *Pyroomacoustics: A Python package for audio room simulations and array processing algorithms*, Proc. IEEE ICASSP, Calgary, CA, 2018.
+::
+
+  R. Scheibler, E. Bezzam, I. Dokmanić, Pyroomacoustics: A Python package for audio room simulations and array processing algorithms, Proc. IEEE ICASSP, Calgary, CA, 2018.
 
 License
 -------
