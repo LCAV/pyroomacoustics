@@ -181,7 +181,7 @@ class FRIDA(DOA):
                 w, vl = la.eig(R)
                 order = np.argsort(w)
                 sig = order[-self.num_src:]
-                sigma = (np.trace(R) - np.sum(w[sig])) / (R.shape[0] - self.num_src)
+                sigma = np.abs(w).min()  # estimate the noise by minimum statistics
                 Rhat = np.dot(vl[:, sig], np.dot(np.diag(w[sig] - sigma), np.conj(vl[:, sig].T)))
             else:
                 Rhat = R
