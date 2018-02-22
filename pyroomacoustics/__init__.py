@@ -124,3 +124,4 @@ from . import doa
 from . import adaptive
 from . import realtime
 from . import experimental
+from . import datasets
