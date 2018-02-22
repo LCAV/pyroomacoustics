@@ -5,4 +5,4 @@ them easier to use.
 '''
 
 from .timit import Word, Sentence, TimitCorpus
-from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence
+from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence, cmu_arctic_speakers

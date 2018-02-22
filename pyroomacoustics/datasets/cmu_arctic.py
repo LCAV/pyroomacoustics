@@ -29,7 +29,7 @@ except:
 from .utils import download_uncompress_tar_bz2
 
 # The speakers codes and attributes
-speakers_info = {
+cmu_arctic_speakers = {
         'aew' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
         'ahw' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
         'aup' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Indian?' },
@@ -57,7 +57,7 @@ speaker_dir = 'cmu_us_{}_arctic'
 # Download info
 url_base = 'http://festvox.org/cmu_arctic/packed/{}.tar.bz2'.format(speaker_dir)
 
-for speaker, info in speakers_info.items():
+for speaker, info in cmu_arctic_speakers.items():
     info['dir'] = os.path.join(corpus_dir, speaker_dir.format(speaker))
     info['url'] = url_base.format(speaker)
 
@@ -73,7 +73,7 @@ class CMUArcticCorpus(object):
         # by default use all speakers
         self.speakers = speakers
         if self.speakers is None:
-            self.speakers = speakers_info.keys()
+            self.speakers = cmu_arctic_speakers.keys()
 
         # this is where the speakers directories should be
         self.basedir = os.path.join(self.basedir, corpus_dir)
@@ -92,7 +92,7 @@ class CMUArcticCorpus(object):
             # check the directory exists and download otherwise
             if not os.path.exists(sdir):
                 if download:
-                    url = speakers_info[speaker]['url']
+                    url = cmu_arctic_speakers[speaker]['url']
                     print('Download', url, 'into', self.basedir, '...')
                     download_uncompress_tar_bz2(url, self.basedir)
                 else:
@@ -113,7 +113,7 @@ class CMUArcticCorpus(object):
 
                     text = line.split('"')[1]
 
-                    self.sentences.append(CMUArcticSentence(path, tag, text, speaker, speakers_info[speaker]))
+                    self.sentences.append(CMUArcticSentence(path, tag, text, speaker, cmu_arctic_speakers[speaker]))
 
 
 
