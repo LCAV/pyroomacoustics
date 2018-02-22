@@ -1,14 +1,6 @@
 pyroomacoustics\.adaptive package
 =================================
 
-Module contents
----------------
-
-.. automodule:: pyroomacoustics.adaptive
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Submodules
 ----------
 
@@ -20,3 +12,11 @@ Submodules
    pyroomacoustics.adaptive.rls
    pyroomacoustics.adaptive.subband_lms
    pyroomacoustics.adaptive.util
+
+Module contents
+---------------
+
+.. automodule:: pyroomacoustics.adaptive
+    :members:
+    :undoc-members:
+    :show-inheritance:
