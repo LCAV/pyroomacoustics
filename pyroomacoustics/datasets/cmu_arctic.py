@@ -62,8 +62,24 @@ for speaker, info in cmu_arctic_speakers.items():
     info['url'] = url_base.format(speaker)
 
 class CMUArcticCorpus(object):
+    '''
+    This class will load the CMU ARCTIC corpus in a
+    structure amenable to be processed.
 
-    def __init__(self, basedir=None, download=False, speakers=None):
+    Parameters
+    ----------
+    basedir: str, optional
+        The directory where the CMU ARCTIC corpus is located/downloaded. By
+        default, this is the current directory.
+    download: bool, optional
+        If the corpus does not exist, download it.
+    speakers: list of str, optional
+        A list of the CMU ARCTIC speakers labels. If provided, only
+        those speakers are loaded. By default, all speakers are loaded.
+    '''
+
+
+    def __init__(self, basedir=None, download=False, speakers=None, cache=False):
 
         # default base directory is the current one
         self.basedir = basedir
