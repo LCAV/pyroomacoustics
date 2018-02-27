@@ -1,7 +1,8 @@
 from __future__ import division, print_function
 
 import numpy as np
-import pyroomacoustics as pra
+# import pyroomacoustics as pra
+from pyroomacoustics.stft import STFT
 import time
 import warnings
 
@@ -28,7 +29,7 @@ print("Averaging computation time over %d cases of %d channels of %d samples (%0
 print()
 print("----- SINGLE FRAME AT A TIME -----")
 print("realtime.stft (not fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+stft = STFT(block_size, hop=hop, channels=num_mic,
     streaming=True, analysis_window=win)
 start = time.time()
 for k in range(num_times):
@@ -46,7 +47,7 @@ print("Error [dB] : %0.3f" % err_dB)
 
 
 print("realtime.stft (fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic, num_frames=1, streaming=True, analysis_window=win)
+stft = STFT(block_size, hop=hop, channels=num_mic, num_frames=1, streaming=True, analysis_window=win)
 start = time.time()
 for k in range(num_times):
 
@@ -82,7 +83,7 @@ print("Error [dB] : %0.3f" % err_dB)
 
 warnings.filterwarnings("ignore") # to avoid warning of appending zeros to be printed
 print("realtime.stft (not fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+stft = STFT(block_size, hop=hop, channels=num_mic,
     analysis_window=win, streaming=False)
 start = time.time()
 for k in range(num_times):
@@ -100,7 +101,7 @@ warnings.filterwarnings("default")
 
 print("realtime.stft (fixed) : ", end="")
 num_frames = (len(signals)-block_size)//hop + 1
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+stft = STFT(block_size, hop=hop, channels=num_mic,
     num_frames=num_frames, analysis_window=win, streaming=False)
 start = time.time()
 for k in range(num_times):
