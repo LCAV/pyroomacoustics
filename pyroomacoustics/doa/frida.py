@@ -178,11 +178,11 @@ class FRIDA(DOA):
 
             # impose low rank constraint
             if self.low_rank_cleaning:
-                w, vl = la.eig(R)
-                order = np.argsort(w)
-                sig = order[-self.num_src:]
-                sigma = np.abs(w).min()  # estimate the noise by minimum statistics
-                Rhat = np.dot(vl[:, sig], np.dot(np.diag(w[sig] - sigma), np.conj(vl[:, sig].T)))
+                w, vl = la.eigh(R)
+                w = np.abs(w)
+                k = self.num_src
+                sigma = w.min()  # estimate the noise by minimum statistics
+                Rhat = np.dot(vl[:,-k:] * (w[None,-k:] - sigma), np.conj(vl[:,-k:].T))
             else:
                 Rhat = R
 
