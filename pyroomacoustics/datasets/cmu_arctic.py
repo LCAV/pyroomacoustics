@@ -40,28 +40,32 @@ except:
     have_sounddevice = False
 
 from .utils import download_uncompress_tar_bz2
+from .base import Meta, AudioSample, CorpusBase
 
 # The speakers codes and attributes
 cmu_arctic_speakers = {
-        'aew' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
-        'ahw' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
-        'aup' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Indian?' },
-        'awb' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Scottish' },
-        'axb' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'Indian?' },
-        'bdl' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US' },
+        'aew' : { 'sex' : 'male', '  lang' : 'English', 'accent' : 'US' },
+        'ahw' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
+        'aup' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Indian' },
+        'awb' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Scottish' },
+        'axb' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'Indian' },
+        'bdl' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
         'clb' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US' },
-        'eey' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US?' },
-        'fem' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
-        'gka' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Indian?' },
-        'jmk' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Canadian' },
-        'ksp' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'Indian' },
-        'ljm' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US?' },
-        'lnh' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US?' },
-        'rms' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US' },
-        'rxr' : { 'sex' : 'male', 'lang' : 'English', 'accent' : 'US?' },
-        'slp' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'Indian?' },
+        'eey' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US' },
+        'fem' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
+        'gka' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Indian' },
+        'jmk' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Canadian' },
+        'ksp' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Indian' },
+        'ljm' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US' },
+        'lnh' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US' },
+        'rms' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
+        'rxr' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
+        'slp' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'Indian' },
         'slt' : { 'sex' : 'female', 'lang' : 'English', 'accent' : 'US' },
         }
+
+# The sentences in the database
+cmu_arctic_sentences = {}
 
 # Directory structure
 corpus_dir = 'CMU_ARCTIC'
@@ -74,7 +78,7 @@ for speaker, info in cmu_arctic_speakers.items():
     info['dir'] = os.path.join(corpus_dir, speaker_dir.format(speaker))
     info['url'] = url_base.format(speaker)
 
-class CMUArcticCorpus(object):
+class CMUArcticCorpus(CorpusBase):
     '''
     This class will load the CMU ARCTIC corpus in a
     structure amenable to be processed.
@@ -97,61 +101,39 @@ class CMUArcticCorpus(object):
         default, this is the current directory.
     download: bool, optional
         If the corpus does not exist, download it.
-    speakers: list of str, optional
+    speaker: str or list of str, optional
         A list of the CMU ARCTIC speakers labels. If provided, only
         those speakers are loaded. By default, all speakers are loaded.
+    sex: str or list of str, optional
+        Can be 'female' or 'male'
+    lang: str or list of str, optional
+        The language, only 'English' is available here
+    accent: str of list of str, optional
+        The accent of the speaker
     '''
 
 
-    def __init__(self, basedir=None, download=False, speakers=None, build=True):
+    def __init__(self, basedir=None, download=False, build=True, **kwargs):
+
+        # initialize
+        super(CorpusBase, self).__init__()
 
         # default base directory is the current one
         self.basedir = basedir
         if basedir is None:
             self.basedir = '.'
 
-        # by default use all speakers
-        self.speakers = speakers
-        if self.speakers is None:
-            self.speakers = list(cmu_arctic_speakers.keys())
-
         # this is where the speakers directories should be
         self.basedir = os.path.join(self.basedir, corpus_dir)
 
-        # this should contain all the sentences
-        self.sentences = []
-        
-        if build:
-            self.build_corpus()
+        # if no speaker is specified, use all the speakers
+        if 'speaker' not in kwargs:
+            kwargs['speaker'] = list(cmu_arctic_speakers.keys())
 
-    def build_corpus(self, sex=None, lang=None, accent=None):
-        '''
-        Build the corpus with some filters (sex, lang, accent)
-        '''
-
-        # make sure these are lists
-        if sex is not None and not isinstance(sex, list):
-            sex = [sex]
-
-        if lang is not None and not isinstance(lang, list):
-            lang = [lang]
-
-        if accent is not None and not isinstance(accent, list):
-            accent = [accent]
-
-        # the matching formula
-        def match(s):
-            return (
-                    (sex is None or s['sex'] in sex)
-                    and (lang is None or s['lang'] in lang)
-                    and (accent is None or s['accent'] in accent)
-                    )
-
-        # first, we need to remove the speakers that do not match the filters
-        for spkr in self.speakers:
-            speaker = cmu_arctic_speakers[spkr]
-            if not match(speaker):
-                self.speakers.remove(spkr)
+        # we need this to know which speakers to download
+        speakers = kwargs['speaker']
+        if not isinstance(speakers, list):
+            speakers = [speakers]
 
         # check everything requested is there or download
         if not os.path.exists(self.basedir):
@@ -160,7 +142,7 @@ class CMUArcticCorpus(object):
             else:
                 raise ValueError('Corpus directory does not exist. Create or set download option.')
 
-        # now crawl the speakers directories
+        # now crawl the speakers directories, download when necessary
         for speaker in self.speakers:
             sdir = os.path.join(self.basedir, speaker_dir.format(speaker))
 
@@ -172,6 +154,41 @@ class CMUArcticCorpus(object):
                     download_uncompress_tar_bz2(url, self.basedir)
                 else:
                     raise ValueError('Missing speaker directory. Please download.')
+
+        # now, we populate the sentence data structure containing the list
+        # of all distinct sentences spoken in the database
+        for speaker in self.speakers:
+            # Now crawl the directory to get all the data
+            sdir = os.path.join(self.basedir, speaker_dir.format(speaker))
+
+            all_files = []
+
+            with open(os.path.join(sdir, 'etc/txt.done.data'), 'r') as f:
+                for line in f.readlines():
+                    # extract the file path
+                    tag = line.split(' ')[1]
+                    path = os.path.join(sdir, 'wav/' + tag + '.wav')
+                    text = line.split('"')[1]
+
+                    if tag not in cmu_arctic_sentences:
+                        cmu_arctic_sentences[tag] = { 
+                                'text': text, 
+                                'versions' : { speaker : path } 
+                                }
+                    else:
+                        cmu_arctic_speakers[tag]['versions'][speaker] = path
+
+        if build:
+            self.build_corpus(**kwargs)
+
+    def build_corpus(self, **kwargs):
+        '''
+        Build the corpus with some filters (sex, lang, accent, sentence_tag, sentence)
+        '''
+
+        # if no speaker is specified, use all the speakers
+        if 'speaker' not in kwargs:
+            kwargs['speaker'] = list(cmu_arctic_speakers.keys())
 
         for speaker in self.speakers:
             # Now crawl the directory to get all the data
@@ -187,9 +204,15 @@ class CMUArcticCorpus(object):
 
                     text = line.split('"')[1]
 
+                    meta = Meta(speaker=speaker, tag=tag, text=text, **cmu_arctic_speakers[speaker])
+
+                    if meta.match(kwargs):
+                        sentence = CMUArcticSentence(path, meta)
+
                     self.sentences.append(CMUArcticSentence(path, tag, text, speaker, cmu_arctic_speakers[speaker]))
 
-    def filter(self, sex=None, lang=None, accent=None, speakers=None):
+
+    def filter(self, **kwargs):
         '''
         Filter the corpus and selects sentences that match the criterias provided
 
@@ -198,69 +221,16 @@ class CMUArcticCorpus(object):
         are used.
         '''
 
-        # make sure these are lists
-        if sex is not None and not isinstance(sex, list):
-            sex = [sex]
-
-        if lang is not None and not isinstance(lang, list):
-            lang = [lang]
-
-        if accent is not None and not isinstance(accent, list):
-            accent = [accent]
-
-        if speakers is None:
-            speakers = self.speakers
-        elif not isinstance(speakers, list):
-            speakers = [speakers]
-
         # first, create the new empty corpus
-        new_corpus = CMUArcticCorpus(speakers=[], basedir=self.basedir, build=False)
-
-        # the matching formula
-        new_speakers = set()
-        def match(s):
-            q = ( (sex is None or s.sex in sex)
-                    and (lang is None or s.lang in lang)
-                    and (accent is None or s.accent in accent)
-                    and (s.speaker in speakers) )
-            # sneaky keep track of the speakers
-            if q:
-                new_speakers.add(s.speaker)
-            return q
+        new_corpus = CMUArcticCorpus(basedir=self.basedir, build=False, speaker=[])
 
         # finally, add all the sentences
-        new_corpus.sentences = list(filter(match, self.sentences))
-
-        # finally update the list of speakers
-        new_corpus.speakers = list(new_speakers)
+        map(lambda s : new_corpus.add_sample(s, **kwargs), new_corpus.samples)
 
         return new_corpus
 
-    def info(self):
 
-        attr = ['sex', 'lang', 'accent', 'speaker']
-
-        info = {}
-        for a in attr:
-            info[a] = set()
-
-        for s in self.sentences:
-            for a in attr:
-                info[a].add(s.__getattribute__(a))
-
-        return info
-        
-    def __getitem__(self, r):
-        return self.sentences[r]
-
-    def __len__(self):
-        return len(self.sentences)
-        
-
-
-
-
-class CMUArcticSentence(object):
+class CMUArcticSentence(AudioSample):
     '''
     Create the sentence object
 
@@ -268,36 +238,30 @@ class CMUArcticSentence(object):
     ----------
     path: str
         the path to the audio file
-    tag: str
-        the sentence tag in the CMU ARCTIC database
-    text: str
-        The text spoken in the sample
-    speaker: str
-        The speaker name
-    speaker_info: dict
-        A dictionary with info such as sex, lang, accent, etc
+    meta: pyroomacoustics.datasets.Meta
+        A structure containing the sample metadata
 
     Attributes
     ----------
-    speaker: str
-        Speaker initials
-    sex: str
-        Speaker gender (M or F)
-    lang: str
-        Speaker language region number:
-    accent: str
-        Speaker accent
+    data: array_like
+        The actual audio signal
     fs: int
         sampling frequency
-    samples: array_like (n_samples,)
-        the audio track
-    tag: str
+    meta.speaker: str
+        Speaker initials
+    meta.sex: str
+        Speaker gender (M or F)
+    meta.lang: str
+        Speaker language region number:
+    meta.accent: str
+        Speaker accent
+    meta.tag: str
         The sentence tag
-    text: str
+    meta.text: str
         the text of the sentence
     '''
 
-    def __init__(self, path, tag, text, speaker, speaker_info):
+    def __init__(self, path, meta):
         '''
         Create the sentence object
 
@@ -305,42 +269,21 @@ class CMUArcticSentence(object):
             the path to the particular sample
         '''
 
-        # extract the attributes
-        self.tag = tag
-        self.text = text
-        self.lang = speaker_info['lang']
-        self.accent = speaker_info['accent']
-        self.sex = speaker_info['sex']
-        self.speaker = speaker
-
         # Read in the wav file
-        self.fs, self.data = wavfile.read(path)
-        self.samples = self.data
+        fs, data = wavfile.read(path)
+        
+        # initialize the parent object
+        AudioSample.__init__(self, data, fs, meta)
 
 
     def __str__(self):
-        s = '{} ({}, {}/{}): ''{}'''.format(self.speaker, self.sex, self.lang, self.accent, self.text)
+        ''' String representation '''
+        template = '{speaker} ({sex}, {lang}/{accent}); {tag}: ''{text}'''
+        s = template.format(**self.meta.as_dict())
         return s
 
-    def play(self):
-        ''' Play the sound sample '''
-        if have_sounddevice:
-            sd.play(self.data, samplerate=self.fs, blocking=True)
-        else:
-            print('Warning: sounddevice package is required to play audiofiles.')
-
-    def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
-
-        try:
-            import matplotlib.pyplot as plt
-            import seaborn as sns
-        except ImportError:
-            return
-
-        sns.set_style('white')
-        plt.specgram(self.data, NFFT=L, Fs=self.fs, noverlap=L-hop, pad_to=L+zpb)
-
+    def plot(self, **kwargs):
+        ''' Plot the spectrogram '''
+        AudioSample.plot(**kwargs)
         plt.title(self.text)
-        plt.xlabel('Time [s]')
-        plt.ylabel('Frequency [Hz]')
 
