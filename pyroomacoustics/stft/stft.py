@@ -4,6 +4,7 @@
 """Class for real-time STFT analysis and processing."""
 from __future__ import division
 
+import sys
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
 import warnings
@@ -305,7 +306,7 @@ class STFT(object):
                     # raise ValueError('Not enough samples. Received %d; need \
                     #     at least %d.' % (x_shape[0],self.num_samples))
                     extra_samples = self.num_samples - x_shape[0]
-                    warnings.warn("Not enough samples. Received %d; appending %d zeros full valid frame." \
+                    warnings.warn("Not enough samples. Received %d; appending %d zeros for full valid frame." \
                         % (x_shape[0],
                             extra_samples))
                     x = np.concatenate((x, 
@@ -459,7 +460,7 @@ class STFT(object):
                 self.X[:] = self.dft_frames.analysis(y).T
 
 
-    def _check_input_frequency_dimensions(X):
+    def _check_input_frequency_dimensions(self, X):
         """
         Ensure that given frequency data is valid, i.e. number of channels and
         number of frequency bins.
@@ -484,9 +485,14 @@ class STFT(object):
             raise ValueError("Invalid input shape.")
 
         # check number of bins
-        if X_shape[1]!=self.nbin:
-            raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
-                % (self.nbin,X_shape[0]))
+        if num_frames == 1:
+            if X_shape[0]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
+        else:
+            if X_shape[1]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
 
         # check number of frames, if fixed input size
         if self.fixed_input:
@@ -668,4 +674,162 @@ class STFT(object):
             self.y_p[:,] += x[-self.n_state_out:,]
 
         return self.out
+
+
+" ---------------------------------------------------------------------------- "
+" --------------- One-shot functions to avoid creating object. --------------- "
+" ---------------------------------------------------------------------------- "
+# Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
+
+def analysis(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
+    '''
+    Parameters
+    ----------
+    x: 
+        input signal
+    L: 
+        frame size
+    hop: 
+        shift size between frames
+    transform: 
+        the transform routine to apply (default FFT)
+    win: 
+        the window to apply (default None)
+    zp_back: 
+        zero padding to apply at the end of the frame
+    zp_front: 
+        zero padding to apply at the beginning of the frame
+
+    Returns
+    -------
+    The STFT of x
+    '''
+
+    # the transform size
+    N = L + zp_back + zp_front
+
+    # window needs to be same size as transform
+    if (win is not None and len(win) != N):
+        print('Window length need to be equal to frame length + zero padding.')
+        sys.exit(-1)
+
+    # reshape
+    new_strides = (hop * x.strides[0], x.strides[0])
+    new_shape = ((len(x) - L) // hop + 1, L)
+    y = _as_strided(x, shape=new_shape, strides=new_strides)
+
+    # add the zero-padding
+    y = np.concatenate(
+        (np.zeros(
+            (y.shape[0], zp_front)), y, np.zeros(
+            (y.shape[0], zp_back))), axis=1)
+
+    # apply window if needed
+    if (win is not None):
+        y = win * y
+        # y = np.expand_dims(win, 0)*y
+
+    # transform along rows
+    Z = transform(y, axis=1)
+
+    # apply transform
+    return Z
+
+
+# inverse STFT
+def synthesis(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
+
+    # the transform size
+    N = L + zp_back + zp_front
+
+    # window needs to be same size as transform
+    if (win is not None and len(win) != N):
+        print('Window length need to be equal to frame length + zero padding.')
+        sys.exit(-1)
+
+    # inverse transform
+    iX = transform(X, axis=1)
+    if (iX.dtype == 'complex128'):
+        iX = np.real(iX)
+
+    # apply synthesis window if necessary
+    if (win is not None):
+        iX *= win
+
+    # create output signal
+    x = np.zeros(X.shape[0] * hop + (L - hop) + zp_back + zp_front)
+
+    # overlap add
+    for i in range(X.shape[0]):
+        x[i * hop:i * hop + N] += iX[i]
+
+    return x
+
+
+# a routine for long convolutions using overlap add method
+def overlap_add(in1, in2, L):
+
+    # set the shortest sequence as the filter
+    if (len(in1) > len(in2)):
+        x = in1
+        h = in2
+    else:
+        h = in1
+        x = in2
+
+    # filter length
+    M = len(h)
+
+    # FFT size
+    N = L + M - 1
+
+    # frequency domain filter (zero-padded)
+    H = np.fft.rfft(h, N)
+
+    # prepare output signal
+    ylen = int(np.ceil(len(x) / float(L)) * L + M - 1)
+    y = np.zeros(ylen)
+
+    # overlap add
+    i = 0
+    while (i < len(x)):
+        y[i:i + N] += np.fft.irfft(np.fft.rfft(x[i:i + L], N) * H, N)
+        i += L
+
+    return y[:len(x) + M - 1]
+
+
+def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
+                vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
+
+    import matplotlib.pyplot as plt
+
+    plt.imshow(
+        20 * np.log10(np.abs(Z[:N // 2 + 1, :])),
+        aspect='auto',
+        origin='lower',
+        vmin=vmin, vmax=vmax, cmap=cmap, interpolation=interpolation)
+
+    # label y axis correctly
+    plt.ylabel('Freq [Hz]')
+    yticks = plt.getp(plt.gca(), 'yticks')
+    plt.setp(plt.gca(), 'yticklabels', np.round(yticks / float(N) * fs))
+    if (fdiv is not None):
+        tick_lbls = np.arange(0, fs / 2, fdiv)
+        tick_locs = tick_lbls * N / fs
+        plt.yticks(tick_locs, tick_lbls)
+
+    # label x axis correctly
+    plt.xlabel('Time [s]')
+    xticks = plt.getp(plt.gca(), 'xticks')
+    plt.setp(plt.gca(), 'xticklabels', xticks / float(fs) * hop)
+    if (tdiv is not None):
+        unit = float(hop) / fs
+        length = unit * Z.shape[1]
+        tick_lbls = np.arange(0, int(length), tdiv)
+        tick_locs = tick_lbls * fs / hop
+        plt.xticks(tick_locs, tick_lbls)
+
+    if colorbar is True:
+        plt.colorbar(orientation='horizontal')
 
