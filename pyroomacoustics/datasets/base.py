@@ -33,13 +33,19 @@ class Meta(object):
         the attributes of the object
         '''
         for key, val in kwargs.items():
-            attr = self.meta.__getattribute__(key)
-            if attr == val or attr in val:
+            attr = self.__getattribute__(key)
+            if attr != val and not (isinstance(val, list) and attr in val):
                 return False
         return True
 
     def as_dict(self):
         return self.__dict__.copy()
+
+    def __str__(self):
+        return str(self.as_dict())
+
+    def __repr__(self):
+        return self.as_dict()
 
 
 class SampleBase(object):
@@ -123,16 +129,7 @@ class CorpusBase(object):
     def add_sample(self, sample, **kwargs):
         ''' 
         Add a sample to the list and keep track of the metadata.
-        
-        If keyword arguments are given they are used to match
-        the metadata. The sample is only added if the keywords are
-        matching.
         '''
-
-        # check if the keyword arguments are matching
-        if not sample.meta.match(**kwargs):
-            return
-
         # keep track of the metadata going in the corpus
         for key, val in sample.meta.__dict__.items():
             if key not in self.info:
@@ -141,12 +138,30 @@ class CorpusBase(object):
 
         # add the sample to the list
         self.samples.append(sample)
+
+        '''
+        import pdb
+        pdb.set_trace()
+        '''
+
+    def add_sample_matching(self, sample, **kwargs):
+        '''
+        If keyword arguments are given they are used to match
+        the metadata. The sample is only added if the keywords are
+        matching.
+        '''
+        # check if the keyword arguments are matching
+        if sample.meta.match(**kwargs):
+            self.add_sample(sample)
         
     def __getitem__(self, r):
         return self.samples[r]
 
     def __len__(self):
         return len(self.samples)
+
+    def __str__(self):
+        s = '\n'.join(*self.samples)
 
 
 

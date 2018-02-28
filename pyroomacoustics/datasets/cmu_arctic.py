@@ -68,15 +68,10 @@ cmu_arctic_speakers = {
 cmu_arctic_sentences = {}
 
 # Directory structure
-corpus_dir = 'CMU_ARCTIC'
 speaker_dir = 'cmu_us_{}_arctic'
 
 # Download info
 url_base = 'http://festvox.org/cmu_arctic/packed/{}.tar.bz2'.format(speaker_dir)
-
-for speaker, info in cmu_arctic_speakers.items():
-    info['dir'] = os.path.join(corpus_dir, speaker_dir.format(speaker))
-    info['url'] = url_base.format(speaker)
 
 class CMUArcticCorpus(CorpusBase):
     '''
@@ -88,10 +83,10 @@ class CMUArcticCorpus(CorpusBase):
     basedir: str, option
         The directory where the CMU ARCTIC corpus is located/downloaded. By
         default, this is the current directory.
-    speakers: list of str, optional
-        A list of the CMU ARCTIC speakers labels. If provided, only
-        those speakers are loaded. By default, all speakers are loaded.
-    sentences: list of CMUArcticSentence
+    info: dict
+        A dictionary whose keys are the labels of metadata fields attached to the samples.
+        The values are lists of all distinct values the field takes.
+    samples: list of CMUArcticSentence
         The list of all utterances in the corpus
 
     Parameters
@@ -116,15 +111,12 @@ class CMUArcticCorpus(CorpusBase):
     def __init__(self, basedir=None, download=False, build=True, **kwargs):
 
         # initialize
-        super(CorpusBase, self).__init__()
+        CorpusBase.__init__(self)
 
         # default base directory is the current one
         self.basedir = basedir
         if basedir is None:
             self.basedir = '.'
-
-        # this is where the speakers directories should be
-        self.basedir = os.path.join(self.basedir, corpus_dir)
 
         # if no speaker is specified, use all the speakers
         if 'speaker' not in kwargs:
@@ -143,13 +135,13 @@ class CMUArcticCorpus(CorpusBase):
                 raise ValueError('Corpus directory does not exist. Create or set download option.')
 
         # now crawl the speakers directories, download when necessary
-        for speaker in self.speakers:
+        for speaker in speakers:
             sdir = os.path.join(self.basedir, speaker_dir.format(speaker))
 
             # check the directory exists and download otherwise
             if not os.path.exists(sdir):
                 if download:
-                    url = cmu_arctic_speakers[speaker]['url']
+                    url = url_base.format(speaker)
                     print('Download', url, 'into', self.basedir, '...')
                     download_uncompress_tar_bz2(url, self.basedir)
                 else:
@@ -157,7 +149,7 @@ class CMUArcticCorpus(CorpusBase):
 
         # now, we populate the sentence data structure containing the list
         # of all distinct sentences spoken in the database
-        for speaker in self.speakers:
+        for speaker in speakers:
             # Now crawl the directory to get all the data
             sdir = os.path.join(self.basedir, speaker_dir.format(speaker))
 
@@ -170,13 +162,17 @@ class CMUArcticCorpus(CorpusBase):
                     path = os.path.join(sdir, 'wav/' + tag + '.wav')
                     text = line.split('"')[1]
 
+                    # now shorten the tag for internal use
+                    tag = tag[-5:]
+
+                    # add the dict of sentences
                     if tag not in cmu_arctic_sentences:
                         cmu_arctic_sentences[tag] = { 
                                 'text': text, 
-                                'versions' : { speaker : path } 
+                                'paths' : { speaker : path } 
                                 }
                     else:
-                        cmu_arctic_speakers[tag]['versions'][speaker] = path
+                        cmu_arctic_sentences[tag]['paths'][speaker] = path
 
         if build:
             self.build_corpus(**kwargs)
@@ -186,31 +182,18 @@ class CMUArcticCorpus(CorpusBase):
         Build the corpus with some filters (sex, lang, accent, sentence_tag, sentence)
         '''
 
-        # if no speaker is specified, use all the speakers
-        if 'speaker' not in kwargs:
-            kwargs['speaker'] = list(cmu_arctic_speakers.keys())
+        # Check all the sentences
+        for tag, info in cmu_arctic_sentences.items():
 
-        for speaker in self.speakers:
-            # Now crawl the directory to get all the data
-            sdir = os.path.join(self.basedir, speaker_dir.format(speaker))
+            # And all speakers for each sentence
+            for speaker, path in info['paths'].items():
 
-            all_files = []
+                # This is the metadata for this sample
+                meta = Meta(speaker=speaker, tag=tag, text=info['text'], **cmu_arctic_speakers[speaker])
 
-            with open(os.path.join(sdir, 'etc/txt.done.data'), 'r') as f:
-                for line in f.readlines():
-                    # extract the file path
-                    tag = line.split(' ')[1]
-                    path = os.path.join(sdir, 'wav/' + tag + '.wav')
-
-                    text = line.split('"')[1]
-
-                    meta = Meta(speaker=speaker, tag=tag, text=text, **cmu_arctic_speakers[speaker])
-
-                    if meta.match(kwargs):
-                        sentence = CMUArcticSentence(path, meta)
-
-                    self.sentences.append(CMUArcticSentence(path, tag, text, speaker, cmu_arctic_speakers[speaker]))
-
+                # it there is a match, add it
+                if meta.match(**kwargs):
+                    self.add_sample(CMUArcticSentence(path, meta))
 
     def filter(self, **kwargs):
         '''
@@ -225,7 +208,8 @@ class CMUArcticCorpus(CorpusBase):
         new_corpus = CMUArcticCorpus(basedir=self.basedir, build=False, speaker=[])
 
         # finally, add all the sentences
-        map(lambda s : new_corpus.add_sample(s, **kwargs), new_corpus.samples)
+        for s in self.samples:
+            new_corpus.add_sample_matching(s, **kwargs)
 
         return new_corpus
 
