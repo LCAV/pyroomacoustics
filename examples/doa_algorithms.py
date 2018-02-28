@@ -86,7 +86,7 @@ for signal in mic_signals:
 ################################
 # Compute the STFT frames needed
 X = np.array([ 
-    pra.stft(signal, nfft, nfft // 2, transform=np.fft.rfft).T 
+    pra.stft.analysis(signal, nfft, nfft // 2, transform=np.fft.rfft).T 
     for signal in mic_signals ])
 
 ##############################################

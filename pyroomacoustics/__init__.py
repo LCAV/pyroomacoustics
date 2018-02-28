@@ -34,7 +34,7 @@ Code snippets are indicated by three greater-than signs::
 
 Use the built-in ``help`` function to view a function's docstring::
 
-  >>> help(pra.stft)
+  >>> help(pra.stft.STFT)
   ... # doctest: +SKIP
 
 Available submodules
@@ -68,9 +68,6 @@ Available submodules
 
 :py:obj:`pyroomacoustics.soundsource`
     Abstraction for a sound source.
- 
-:py:obj:`pyroomacoustics.stft`
-    STFT processing engine.
 
 :py:obj:`pyroomacoustics.sync`
     A few routines to help synchronize signals.
@@ -92,8 +89,8 @@ Available subpackages
 :py:obj:`pyroomacoustics.adaptive`
     Adaptive filter algorithms
 
-:py:obj:`pyroomacoustics.realtime`
-    Block frequency domain processing tools
+:py:obj:`pyroomacoustics.stft`
+    Frequency domain processing tools
 
 Utilities
 ---------
@@ -110,7 +107,6 @@ from .room import *
 from .beamforming import *
 from .soundsource import *
 from .parameters import *
-from .stft import *
 from .utilities import *
 from .windows import *
 from .sync import *
