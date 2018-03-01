@@ -1,8 +1,55 @@
 '''
-Base class for some data corpus and the samples it contains
-'''
+Base class for some data corpus and the samples it contains.
+The general idea is to create a sample object with an attribute
+containing all metadata. Corpus objects that have a collection
+of samples can then be created and can be filtered according
+to the values in the metadata.
 
-from collections import namedtuple
+Example
+-------
+
+::
+
+    # Prepare a few artificial samples
+    samples = [
+        {
+            'data' : 0.99,
+            'metadata' : { 'speaker' : 'alice', 'sex' : 'female', 'age' : 37, 'number' : 'one' },
+        },
+        {
+            'data' : 2.1,
+            'metadata' : { 'speaker' : 'alice', 'sex' : 'female', 'age' : 37, 'number' : 'two' },
+        },
+        {
+            'data' : 1.02,
+            'metadata' : { 'speaker' : 'bob', 'sex' : 'male', 'age' : 48, 'number' : 'one' },
+        },
+        {
+            'data' : 2.07,
+            'metadata' : { 'speaker' : 'bob', 'sex' : 'male', 'age' : 48, 'number' : 'two' },
+        },
+        ]
+
+    corpus = CorpusBase()
+    for s in samples:
+        new_sample = SampleBase(s['data'], **s['metadata'])
+        corpus.add_sample(new_sample)
+
+    # Then, it possible to display summary info about the corpus
+    print(corpus)
+
+    # The number of samples in the corpus is given by ``len``
+    print('Number of samples:', len(corpus))
+
+    # And we can access samples with the slice operator
+    print('Sample #2:')
+    print(corpus[2])
+
+    # We can obtain a new corpus with only male subject
+    corpus_male_only = corpus.filter(sex='male')
+    print(corpus_male_only)
+  
+'''
 
 class Meta(object):
     '''
@@ -29,8 +76,11 @@ class Meta(object):
 
     def match(self, **kwargs):
         '''
-        This is a method that will return True if all keyword arguments match
-        the attributes of the object
+        The key/value pairs given by the keyword arguments are compared
+        to the attribute/value pairs of the object. If the values all
+        match, True is returned. Otherwise False is returned. If a keyword
+        argument has no attribute counterpart, an error is raised. Attributes
+        that do not have a keyword argument counterpart are ignored.
         '''
         for key, val in kwargs.items():
             attr = self.__getattribute__(key)
@@ -39,13 +89,17 @@ class Meta(object):
         return True
 
     def as_dict(self):
+        ''' Returns all the attribute/value pairs of the object as a dictionary '''
         return self.__dict__.copy()
 
     def __str__(self):
-        return str(self.as_dict())
+        r = 'Metadata:\n'
+        for attr, val in self.__dict__.items():
+            r += '    {} : {}\n'.format(attr, val)
+        return r[:-1]  # remove the trailing '\n'
 
     def __repr__(self):
-        return self.as_dict()
+        return self.__dict__.__repr__()
 
 
 class SampleBase(object):
@@ -63,15 +117,25 @@ class SampleBase(object):
         dot operator
     '''
 
-    def __init__(self, data, metadata):
+    def __init__(self, data, **kwargs):
         ''' Dummy init method '''
         self.data = data
-        self.meta = metadata
+        self.meta = Meta(**kwargs)
+
+    def __str__(self):
+        r = 'Data : ' + self.data.__str__() + '\n'
+        r += self.meta.__str__()
+        return r
 
 
 class AudioSample(SampleBase):
     '''
-    We add some method specific to display and listen to audio samples
+    We add some methods specific to display and listen to audio samples.
+    The sampling frequency of the samples is an extra parameter.
+
+    For multichannel audio, we assume the same format used by 
+    ```scipy.io.wavfile <https://docs.scipy.org/doc/scipy-0.14.0/reference/io.html#module-scipy.io.wavfile>`_``,
+    that is ``data`` is then a 2D array with each column being a channel.
 
     Attributes
     ----------
@@ -83,22 +147,32 @@ class AudioSample(SampleBase):
         An object containing the sample metadata. They can be accessed using the
         dot operator
     '''
-    def __init__(self, data, fs, metadata):
-        self.data = data
+    def __init__(self, data, fs, **kwargs):
+        SampleBase.__init__(self, data, **kwargs)
         self.fs = fs
-        self.meta = metadata
 
-    def play(self):
-        ''' Play the sound sample '''
+    def play(self, **kwargs):
+        '''
+        Play the sound sample. This function uses the 
+        ```sounddevice <https://python-sounddevice.readthedocs.io>`_`` package for playback.
+
+        It takes the same keyword arguments as 
+        ```sounddevice.play <https://python-sounddevice.readthedocs.io/en/0.3.10/#sounddevice.play>`_``.
+        '''
         try:
             import sounddevice as sd
         except ImportError as e:
             print('Warning: sounddevice package is required to play audiofiles.')
             return
 
-        sd.play(self.data, samplerate=self.fs, blocking=True)
+        sd.play(self.data, samplerate=self.fs, **kwargs)
 
-    def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
+    def plot(self, NFFT=512, noverlap=384, **kwargs):
+        '''
+        Plot the spectrogram of the audio sample. 
+
+        It takes the same keyword arguments as ``matplotlib.pyplot.specgram``.
+        '''
 
         try:
             import matplotlib.pyplot as plt
@@ -106,9 +180,21 @@ class AudioSample(SampleBase):
             print('Warning: matplotlib is required for plotting')
             return
 
-        plt.specgram(self.data, NFFT=L, Fs=self.fs, noverlap=L-hop, pad_to=L+zpb)
-        plt.xlabel('Time [s]')
-        plt.ylabel('Frequency [Hz]')
+        # Handle single channel case
+        if self.data.ndim == 1:
+            data = self.data[:,None]
+
+        nchannels = data.shape[1]
+
+        # Try to have a square looking plot
+        pcols = int(np.ceil(np.sqrt(nchannels)))
+        prows = int(np.ceil(nchannels / pcols))
+
+        for c in range(nchannels):
+            plt.specgram(data[:,c], NFFT=NFFT, Fs=self.fs, noverlap=noverlap, **kwargs)
+            plt.xlabel('Time [s]')
+            plt.ylabel('Frequency [Hz]')
+            plt.title('Channel {}'.format(c+1))
 
 
 class CorpusBase(object):
@@ -120,39 +206,60 @@ class CorpusBase(object):
     ----------
     samples: list
         A list of all the Samples in the dataset
-
+    info: dict
+        This dictionary keeps track of all the fields
+        in the metadata. The keys of the dictionary are
+        the metadata field names. The values are again dictionaries,
+        but with the keys being the possible values taken by the 
+        metadata and the associated value, the number of samples
+        with this value in the corpus.
     '''
     def __init__(self):
         self.samples = []
         self.info = {}
 
-    def add_sample(self, sample, **kwargs):
+    def add_sample(self, sample):
         ''' 
-        Add a sample to the list and keep track of the metadata.
+        Add a sample to the Corpus and keep track of the metadata.
         '''
         # keep track of the metadata going in the corpus
         for key, val in sample.meta.__dict__.items():
             if key not in self.info:
-                self.info[key] = set()
-            self.info[key].add(val)
+                self.info[key] = {}
+
+            if val not in self.info[key]:
+                self.info[key][val] = 1
+            else:
+                self.info[key][val] += 1
 
         # add the sample to the list
         self.samples.append(sample)
 
-        '''
-        import pdb
-        pdb.set_trace()
-        '''
-
     def add_sample_matching(self, sample, **kwargs):
         '''
-        If keyword arguments are given they are used to match
-        the metadata. The sample is only added if the keywords are
-        matching.
+        The sample is added to the corpus only if all the keyword arguments
+        match the metadata of the sample.  The match is operated by
+        ``pyroomacoustics.datasets.Meta.match``.
         '''
         # check if the keyword arguments are matching
         if sample.meta.match(**kwargs):
             self.add_sample(sample)
+
+    def filter(self, **kwargs):
+        '''
+        Filter the corpus and selects samples that match the criterias provided
+
+        The criterias can be strings or list of strings, for the latter any string
+        in the list is matched. If speakers are not specified, then all the speakers
+        are used.
+        '''
+
+        new_corpus = CorpusBase()
+
+        for s in self.samples:
+            new_corpus.add_sample_matching(s, **kwargs)
+
+        return new_corpus
         
     def __getitem__(self, r):
         return self.samples[r]
@@ -161,7 +268,14 @@ class CorpusBase(object):
         return len(self.samples)
 
     def __str__(self):
-        s = '\n'.join(*self.samples)
+        r = 'The dataset contains {} samples.\n'.format(len(self))
+        for field, values in self.info.items():
+            r += '  {} ({}) :\n'.format(field, len(values))
+            for value, number in values.items():
+                r += '      * {} occurs {} times\n'.format(value, number)
+        return r[:-1]  # remove trailing '\n'
+
+
 
 
 

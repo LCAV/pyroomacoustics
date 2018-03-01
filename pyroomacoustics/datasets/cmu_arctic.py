@@ -44,7 +44,7 @@ from .base import Meta, AudioSample, CorpusBase
 
 # The speakers codes and attributes
 cmu_arctic_speakers = {
-        'aew' : { 'sex' : 'male', '  lang' : 'English', 'accent' : 'US' },
+        'aew' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
         'ahw' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'US' },
         'aup' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Indian' },
         'awb' : { 'sex' : 'male',   'lang' : 'English', 'accent' : 'Scottish' },
@@ -192,8 +192,10 @@ class CMUArcticCorpus(CorpusBase):
                 meta = Meta(speaker=speaker, tag=tag, text=info['text'], **cmu_arctic_speakers[speaker])
 
                 # it there is a match, add it
+                # The reason we do the match before creating the Sentence object is that
+                # we don't want to read the file from disk if there is no match
                 if meta.match(**kwargs):
-                    self.add_sample(CMUArcticSentence(path, meta))
+                    self.add_sample(CMUArcticSentence(path, **meta.as_dict()))
 
     def filter(self, **kwargs):
         '''
@@ -222,8 +224,8 @@ class CMUArcticSentence(AudioSample):
     ----------
     path: str
         the path to the audio file
-    meta: pyroomacoustics.datasets.Meta
-        A structure containing the sample metadata
+    **kwargs:
+        metadata as a list of keyword arguments
 
     Attributes
     ----------
@@ -231,21 +233,9 @@ class CMUArcticSentence(AudioSample):
         The actual audio signal
     fs: int
         sampling frequency
-    meta.speaker: str
-        Speaker initials
-    meta.sex: str
-        Speaker gender (M or F)
-    meta.lang: str
-        Speaker language region number:
-    meta.accent: str
-        Speaker accent
-    meta.tag: str
-        The sentence tag
-    meta.text: str
-        the text of the sentence
     '''
 
-    def __init__(self, path, meta):
+    def __init__(self, path, **kwargs):
         '''
         Create the sentence object
 
@@ -257,7 +247,7 @@ class CMUArcticSentence(AudioSample):
         fs, data = wavfile.read(path)
         
         # initialize the parent object
-        AudioSample.__init__(self, data, fs, meta)
+        AudioSample.__init__(self, data, fs, **kwargs)
 
 
     def __str__(self):
