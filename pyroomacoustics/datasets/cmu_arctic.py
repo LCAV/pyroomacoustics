@@ -40,7 +40,7 @@ except:
     have_sounddevice = False
 
 from .utils import download_uncompress_tar_bz2
-from .base import Meta, AudioSample, CorpusBase
+from .base import Meta, AudioSample, Dataset
 
 # The speakers codes and attributes
 cmu_arctic_speakers = {
@@ -73,7 +73,7 @@ speaker_dir = 'cmu_us_{}_arctic'
 # Download info
 url_base = 'http://festvox.org/cmu_arctic/packed/{}.tar.bz2'.format(speaker_dir)
 
-class CMUArcticCorpus(CorpusBase):
+class CMUArcticCorpus(Dataset):
     '''
     This class will load the CMU ARCTIC corpus in a
     structure amenable to be processed.
@@ -86,7 +86,7 @@ class CMUArcticCorpus(CorpusBase):
     info: dict
         A dictionary whose keys are the labels of metadata fields attached to the samples.
         The values are lists of all distinct values the field takes.
-    samples: list of CMUArcticSentence
+    sentences: list of CMUArcticSentence
         The list of all utterances in the corpus
 
     Parameters
@@ -111,12 +111,15 @@ class CMUArcticCorpus(CorpusBase):
     def __init__(self, basedir=None, download=False, build=True, **kwargs):
 
         # initialize
-        CorpusBase.__init__(self)
+        Dataset.__init__(self)
+
+        # we give a meaningful alias to the sample list from the base class
+        self.sentences = self.samples
 
         # default base directory is the current one
         self.basedir = basedir
         if basedir is None:
-            self.basedir = '.'
+            self.basedir = './CMU_ARCTIC'
 
         # if no speaker is specified, use all the speakers
         if 'speaker' not in kwargs:
@@ -258,6 +261,11 @@ class CMUArcticSentence(AudioSample):
 
     def plot(self, **kwargs):
         ''' Plot the spectrogram '''
-        AudioSample.plot(**kwargs)
-        plt.title(self.text)
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print('Warning: matplotlib is required for plotting')
+            return
+        AudioSample.plot(self, **kwargs)
+        plt.title(self.meta.text)
 

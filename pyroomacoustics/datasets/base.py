@@ -1,9 +1,18 @@
 '''
 Base class for some data corpus and the samples it contains.
 The general idea is to create a sample object with an attribute
-containing all metadata. Corpus objects that have a collection
+containing all metadata. Dataset objects that have a collection
 of samples can then be created and can be filtered according
 to the values in the metadata.
+
+Many of the functions with ``match`` or ``filter`` will take an
+arbitrary number of keyword arguments. The keys should match some
+metadata in the samples. Then there are three ways that match occurs
+between a ``key/value`` pair and an ``attribute`` sharing the same key.
+
+1. ``value == attribute``
+2. ``value`` is a list and ``attribute in value == True``
+3. ``value`` is a callable (a function) and ``value(attribute) == True``
 
 Example
 -------
@@ -30,9 +39,9 @@ Example
         },
         ]
 
-    corpus = CorpusBase()
+    corpus = Dataset()
     for s in samples:
-        new_sample = SampleBase(s['data'], **s['metadata'])
+        new_sample = Sample(s['data'], **s['metadata'])
         corpus.add_sample(new_sample)
 
     # Then, it possible to display summary info about the corpus
@@ -48,6 +57,10 @@ Example
     # We can obtain a new corpus with only male subject
     corpus_male_only = corpus.filter(sex='male')
     print(corpus_male_only)
+
+    # Only retain speakers above 40 years old
+    corpus_older = corpus.filter(age=lambda a : a > 40)
+    print(corpus_older)
   
 '''
 
@@ -81,11 +94,29 @@ class Meta(object):
         match, True is returned. Otherwise False is returned. If a keyword
         argument has no attribute counterpart, an error is raised. Attributes
         that do not have a keyword argument counterpart are ignored.
+
+        There are three ways to match an attribute with keyword=value:
+        1. ``value == attribute``
+        2. ``value`` is a list and ``attribute in value == True``
+        3. ``value`` is a callable (a function) and ``value(attribute) == True``
         '''
         for key, val in kwargs.items():
             attr = self.__getattribute__(key)
+            if callable(val) and val(attr):
+                continue
+            if isinstance(val, list) and attr in val:
+                continue
+            if attr == val:
+                continue
+            return False
+            '''
+            if (not (callable(val) val(attr))
+                    and not (isinstance(val, list) and attr in val)
+                    and attr != val):
+                return False
             if attr != val and not (isinstance(val, list) and attr in val):
                 return False
+            '''
         return True
 
     def as_dict(self):
@@ -102,7 +133,7 @@ class Meta(object):
         return self.__dict__.__repr__()
 
 
-class SampleBase(object):
+class Sample(object):
     '''
     The base class for a dataset sample. The idea is that different
     corpus will have different attributes for the samples. They
@@ -128,7 +159,7 @@ class SampleBase(object):
         return r
 
 
-class AudioSample(SampleBase):
+class AudioSample(Sample):
     '''
     We add some methods specific to display and listen to audio samples.
     The sampling frequency of the samples is an extra parameter.
@@ -148,7 +179,7 @@ class AudioSample(SampleBase):
         dot operator
     '''
     def __init__(self, data, fs, **kwargs):
-        SampleBase.__init__(self, data, **kwargs)
+        Sample.__init__(self, data, **kwargs)
         self.fs = fs
 
     def play(self, **kwargs):
@@ -174,6 +205,7 @@ class AudioSample(SampleBase):
         It takes the same keyword arguments as ``matplotlib.pyplot.specgram``.
         '''
 
+        import numpy as np
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -197,7 +229,7 @@ class AudioSample(SampleBase):
             plt.title('Channel {}'.format(c+1))
 
 
-class CorpusBase(object):
+class Dataset(object):
     '''
     The base class for a data corpus. It has basically a list of
     samples and a filter function
@@ -220,7 +252,7 @@ class CorpusBase(object):
 
     def add_sample(self, sample):
         ''' 
-        Add a sample to the Corpus and keep track of the metadata.
+        Add a sample to the Dataset and keep track of the metadata.
         '''
         # keep track of the metadata going in the corpus
         for key, val in sample.meta.__dict__.items():
@@ -254,7 +286,7 @@ class CorpusBase(object):
         are used.
         '''
 
-        new_corpus = CorpusBase()
+        new_corpus = Dataset()
 
         for s in self.samples:
             new_corpus.add_sample_matching(s, **kwargs)
