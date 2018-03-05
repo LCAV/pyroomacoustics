@@ -374,8 +374,8 @@ class TimitCorpus:
         import warnings
         warnings.warn("This interface for TIMIT is deprecated "
                     + "and will be replaced soon to match the "
-                    + "Dataset base classe and the CMUArcticCorpus "
-                    + "interface.", DeprecationWarning)
+                    + "Dataset base class and the CMUArcticCorpus "
+                    + "interface.", FutureWarning)
 
         if not os.path.exists(basedir):
             raise ValueError('The directory ''{}'' does not exist.'.format(basedir))
