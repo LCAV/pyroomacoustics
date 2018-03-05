@@ -138,7 +138,12 @@ class CMUArcticCorpus(Dataset):
                 raise ValueError('Corpus directory does not exist. Create or set download option.')
 
         # remove invalid speaker keys
+        n_speakers = len(speakers)
         speakers = [speaker for speaker in speakers if speaker in cmu_arctic_speakers.keys()]
+        if n_speakers != len(speakers):
+            import warnings
+            warnings.warn('Some invalid speakers were removed from the list.', RuntimeWarning)
+
 
         # now crawl the speakers directories, download when necessary
         for speaker in speakers:
