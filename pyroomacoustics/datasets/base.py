@@ -307,10 +307,9 @@ class Dataset(object):
 
     def head(self, n=5):
         ''' Print n samples from the dataset '''
-        print(self)
-        print('The first', n, 'samples:')
+        print('The first', n, '/', len(self.samples), 'samples:')
         for sample in self.samples[:n]:
-            print('  ', sample)
+            print(sample)
 
     def __str__(self):
         r = 'The dataset contains {} samples.\n'.format(len(self))
