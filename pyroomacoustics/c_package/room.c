@@ -229,12 +229,14 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
 {
   wall_t *wall;
   int wi, mic;
-  int visible_mics[room->n_microphones];
+  int *visible_mics;
   int dir;
   image_source_t new_is;
 
+
   // Check the visibility of the source from the different microphones
   int any_visible = 0;
+  visible_mics = (int *)malloc(sizeof(int) * room->n_microphones);
   for (mic = 0 ; mic < room->n_microphones ; mic++)
   {
     visible_mics[mic] = is_visible_dfs(room, room->microphones + mic * room->dim, is);
@@ -280,6 +282,9 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
     // Run the DFS recursion
     image_sources_dfs(room, &new_is, max_order - 1);
   }
+
+  // free allocated resources
+  free(visible_mics);
 
 }
 

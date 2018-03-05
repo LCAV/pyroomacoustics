@@ -46,16 +46,21 @@ visible_opposite_side = [0, 0, 1, 0, 0, 0, 0]
 visible_middle = [1, 1, 1, 1, 1, 1, 1]
 visible_outside = [0, 0, 0, 0, 0, 0, 0]
 
-class TestVisibilityURoom(TestCase):
+def test_sources():
+    assert np.allclose(images_found, sources)
 
-    def test_sources(self):
-        self.assertTrue(np.allclose(images_found, sources))
+def test_visibility_oppositeSide():
+    assert all(visibilities[0] == visible_opposite_side)
 
-    def test_visibility_oppositeSide(self):
-        self.assertTrue(all(visibilities[0] == visible_opposite_side))
+def test_visibility_middle():
+    assert all(visibilities[1] == visible_middle)
 
-    def test_visibility_middle(self):
-        self.assertTrue(all(visibilities[1] == visible_middle))
+def test_visibility_outside():
+    assert all(visibilities[2] == visible_outside)
 
-    def test_visibility_outside(self):
-        self.assertTrue(all(visibilities[2] == visible_outside))
+if __name__ == '__main__':
+    test_sources()
+    test_visibility_oppositeSide()
+    test_visibility_middle()
+    test_visibility_outside()
+

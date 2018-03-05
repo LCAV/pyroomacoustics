@@ -620,25 +620,27 @@ class Room(object):
                 c_room.n_microphones = ctypes.c_int(mic.shape[1])
                 c_room.microphones = mic.ctypes.data_as(c_float_p)
 
-                src = np.array(source.position, dtype=np.float32)
+                source_position = source.position.astype(np.float32)
 
                 if isinstance(self, ShoeBox):
 
                     # create absorption list in correct order for shoebox algorithm
                     absorption_list_shoebox = np.array([self.absorption_dict[d] for d in self.wall_names], dtype=np.float32)
-                    room_dim = np.array(self.shoebox_dim, dtype=np.float32)
+                    shoebox_dim = self.shoebox_dim.astype(np.float32)
 
                     # Call the dedicated C routine for shoebox room
                     libroom.image_source_shoebox(
-                            ctypes.byref(c_room), 
-                            src.ctypes.data_as(c_float_p), 
-                            room_dim.ctypes.data_as(c_float_p),
-                            absorption_list_shoebox.ctypes.data_as(c_float_p),
-                            self.max_order
-                            )
+                            c_room,
+                            source_position,
+                            shoebox_dim,
+                            absorption_list_shoebox,
+                            self.max_order)
                 else:
                     # Call the general image source generator
-                    libroom.image_source_model(ctypes.byref(c_room), src.ctypes.data_as(c_float_p), self.max_order)
+                    libroom.image_source_model(
+                            c_room,
+                            source_position,
+                            self.max_order)
 
                 # Recover all the arrays as ndarray from the c struct
                 n_sources = c_room.n_sources
@@ -662,7 +664,7 @@ class Room(object):
                     self.visibility.append(is_visible.copy())
 
                     # free the C malloc'ed memory
-                    libroom.free_sources(ctypes.byref(c_room))
+                    libroom.free_sources(c_room)
 
                     # We need to check that microphones are indeed in the room
                     for m in range(self.mic_array.R.shape[1]):
@@ -825,7 +827,7 @@ class Room(object):
                 )
 
         return c_room
-        
+
     def check_visibility_for_all_images(self, source, p, use_libroom=True):
         '''
         Checks visibility from a given point for all images of the given source.

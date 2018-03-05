@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import numpy
 
 # import version from file
 with open('pyroomacoustics/version.py') as f:
@@ -19,12 +20,12 @@ from os import path
 
 # build C extension for image source model
 src_dir = 'pyroomacoustics/c_package'
-files = ['wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
+files = ['libroom.c', 'wall.c', 'linalg.c', 'room.c', 'is_list.c', 'shoebox.c']
 
 libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + '/' + f for f in files],
-                    include_dirs=[src_dir])
+                    include_dirs=[src_dir,numpy.get_include()])
 
 here = path.abspath(path.dirname(__file__))
 
