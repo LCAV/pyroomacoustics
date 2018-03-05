@@ -371,6 +371,12 @@ class TimitCorpus:
     def __init__(self, basedir):
         ''' Initialize basic attributes of the class '''
 
+        import warnings
+        warnings.warn("This interface for TIMIT is deprecated "
+                    + "and will be replaced soon to match the "
+                    + "Dataset base class and the CMUArcticCorpus "
+                    + "interface.", FutureWarning)
+
         if not os.path.exists(basedir):
             raise ValueError('The directory ''{}'' does not exist.'.format(basedir))
 

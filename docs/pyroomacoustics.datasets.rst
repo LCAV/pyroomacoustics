@@ -6,6 +6,7 @@ Submodules
 
 .. toctree::
 
+   pyroomacoustics.datasets.base
    pyroomacoustics.datasets.cmu_arctic
    pyroomacoustics.datasets.timit
    pyroomacoustics.datasets.utils

@@ -11,14 +11,28 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-`0.1.15`_ - 2018-06-23
-----------------------
+Added
+~~~~~
+
+- Base classes for Dataset and Sample in ``pyroomacoustics.datasets``
+- Methods to filter datasets according to the metadata of samples
+- Deprecation warning for the TimitCorpus interface
 
 Changed
 ~~~~~~~
 
--  Fix bug in install from pip causing error upon import of datasets
--  Add list of speakers from CMU ARCTIC
+- Add list of speakers and sentences from CMU ARCTIC
+- CMUArcticDatabase basedir is now the top directory where CMU_ARCTIC database
+  should be saved. Not the directory above as it previously was.
+
+
+`0.1.15`_ - 2018-06-23
+----------------------
+
+Bugfix
+~~~~~~
+
+- Added ``pyroomacoustics.datasets`` to list of sub-packages in ``setup.py``
 
 `0.1.14`_ - 2018-06-20
 ----------------------
@@ -35,6 +49,6 @@ Changed
 -  Moved TIMIT corpus wrapper from ``pyroomacoustics.recognition`` module to sub-package
    ``pyroomacoustics.datasets.timit``
 
-.. _Unreleased: https://github.com/olivierlacan/keep-a-changelog/compare/v0.1.14...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.14...HEAD
 .. _0.1.15: https://github.com/LCAV/pyroomacoustics/compare/v0.1.14...v0.1.15
 .. _0.1.14: https://github.com/LCAV/pyroomacoustics/compare/v0.1.13...v0.1.14
