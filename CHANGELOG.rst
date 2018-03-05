@@ -24,8 +24,7 @@ Changed
 - Add list of speakers and sentences from CMU ARCTIC
 - CMUArcticDatabase basedir is now the top directory where CMU_ARCTIC database
   should be saved. Not the directory above as it previously was.
-- :py:obj:`pyroomacoustics.c_package.libroom` is now a proper package.
-  It can be imported.
+- Libroom C extension is now a proper package. It can be imported.
 - Libroom C extension now compiles on windows with python>=3.5.
 
 
