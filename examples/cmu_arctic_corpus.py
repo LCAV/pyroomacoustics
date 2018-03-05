@@ -26,11 +26,8 @@ if __name__ == '__main__':
     # Download the corpus, be patient
     corpus = pra.datasets.CMUArcticCorpus(download=True, speaker=['bdl'])
 
-    # the corpus is split between train and test
-    # let's pick a sentence from each
-    print('A couple of samples:')
-    print(corpus.sentences[0])
-    print(corpus.sentences[100])
+    # print dataset info and 10 sentences
+    corpus.head(n=10)
 
     # let's find all the sentences from male speakers in the training set
     keyword = 'what'

@@ -64,6 +64,12 @@ Example
   
 '''
 
+from itertools import islice
+
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(islice(iterable, n))
+
 class Meta(object):
     '''
     A simple class that will take a dictionary as input
@@ -299,12 +305,33 @@ class Dataset(object):
     def __len__(self):
         return len(self.samples)
 
+    def head(self, n=5):
+        ''' Print n samples from the dataset '''
+        print(self)
+        print('The first', n, 'samples:')
+        for sample in self.samples[:n]:
+            print('  ', sample)
+
     def __str__(self):
         r = 'The dataset contains {} samples.\n'.format(len(self))
+        r += 'Metadata attributes are:\n'
         for field, values in self.info.items():
+
             r += '  {} ({}) :\n'.format(field, len(values))
-            for value, number in values.items():
-                r += '      * {} occurs {} times\n'.format(value, number)
+
+            # for attributes with lots of values, we just print a few
+            if len(values) > 6:
+                short_list = take(6, values.items())
+                for value, number in short_list[:3]:
+                    r += '      * {} occurs {} times\n'.format(value, number)
+                r += '      ...\n'
+                for value, number in short_list[3:]:
+                    r += '      * {} occurs {} times\n'.format(value, number)
+
+            else:
+                for value, number in values.items():
+                    r += '      * {} occurs {} times\n'.format(value, number)
+
         return r[:-1]  # remove trailing '\n'
 
 
