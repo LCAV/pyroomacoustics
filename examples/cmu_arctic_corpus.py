@@ -27,6 +27,7 @@ if __name__ == '__main__':
     corpus = pra.datasets.CMUArcticCorpus(download=True, speaker=['bdl'])
 
     # print dataset info and 10 sentences
+    print(corpus)
     corpus.head(n=10)
 
     # let's find all the sentences from male speakers in the training set

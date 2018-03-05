@@ -210,11 +210,13 @@ class CMUArcticCorpus(Dataset):
 
     def filter(self, **kwargs):
         '''
-        Filter the corpus and selects sentences that match the criterias provided
+        Filter the corpus and selects samples that match the criterias provided
+        The arguments to the keyword can be 1) a string, 2) a list of strings, 3)
+        a function. There is a match if one of the following is True.
 
-        The criterias can be strings or list of strings, for the latter any string
-        in the list is matched. If speakers are not specified, then all the speakers
-        are used.
+        1. ``value == attribute``
+        2. ``value`` is a list and ``attribute in value == True``
+        3. ``value`` is a callable (a function) and ``value(attribute) == True``
         '''
 
         # first, create the new empty corpus

@@ -4,7 +4,7 @@ Base class for some data corpus and the samples it contains.
 
 from itertools import islice
 
-def take(n, iterable):
+def _take(n, iterable):
     "Return first n items of the iterable as a list"
     return list(islice(iterable, n))
 
@@ -16,16 +16,6 @@ class Meta(object):
 
     The parameters can be any set of keyword arguments.
     They will all be transformed into attribute of the object.
-
-    Methods:
-    --------
-    match:
-        This method takes any number of keyword arguments
-        and will return True if they all match exactly similarly
-        named attributes of the object. If some keys are missing,
-        an error will be raised. Omitted keys will be ignored.
-    as_dict:
-        Returns a dictionary representation of the object
     '''
     def __init__(self, **attr):
         for key, val in attr.items():
@@ -129,10 +119,10 @@ class AudioSample(Sample):
     def play(self, **kwargs):
         '''
         Play the sound sample. This function uses the 
-        ```sounddevice <https://python-sounddevice.readthedocs.io>`_`` package for playback.
+        `sounddevice <https://python-sounddevice.readthedocs.io>`_ package for playback.
 
         It takes the same keyword arguments as 
-        ```sounddevice.play <https://python-sounddevice.readthedocs.io/en/0.3.10/#sounddevice.play>`_``.
+        `sounddevice.play <https://python-sounddevice.readthedocs.io/en/0.3.10/#sounddevice.play>`_.
         '''
         try:
             import sounddevice as sd
@@ -146,7 +136,8 @@ class AudioSample(Sample):
         '''
         Plot the spectrogram of the audio sample. 
 
-        It takes the same keyword arguments as ``matplotlib.pyplot.specgram``.
+        It takes the same keyword arguments as
+        `matplotlib.pyplot.specgram <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.specgram.html>`_.
         '''
 
         import numpy as np
@@ -224,10 +215,12 @@ class Dataset(object):
     def filter(self, **kwargs):
         '''
         Filter the corpus and selects samples that match the criterias provided
+        The arguments to the keyword can be 1) a string, 2) a list of strings, 3)
+        a function. There is a match if one of the following is True.
 
-        The criterias can be strings or list of strings, for the latter any string
-        in the list is matched. If speakers are not specified, then all the speakers
-        are used.
+        1. ``value == attribute``
+        2. ``value`` is a list and ``attribute in value == True``
+        3. ``value`` is a callable (a function) and ``value(attribute) == True``
         '''
 
         new_corpus = Dataset()
@@ -258,7 +251,7 @@ class Dataset(object):
 
             # for attributes with lots of values, we just print a few
             if len(values) > 6:
-                short_list = take(6, values.items())
+                short_list = _take(6, values.items())
                 for value, number in short_list[:3]:
                     r += '      * {} occurs {} times\n'.format(value, number)
                 r += '      ...\n'
