@@ -9,6 +9,9 @@ The TIMIT corpus transcriptions have been hand verified. Test and training subse
 Unfortunately, this is a proprietary dataset. A licensed can be obtained for $125 to $250 depending on your
 status (academic or otherwise).
 
+**Deprecation Warning:** The interface of TimitCorpus will change in the near
+future to match that of :py:obj:`pyroomacoustics.datasets.cmu_arctic.CMUArcticCorpus`
+
 URL: https://catalog.ldc.upenn.edu/ldc93s1
 '''
 

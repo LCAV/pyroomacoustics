@@ -86,14 +86,19 @@ Available submodules
 
 Available subpackages
 ---------------------
-:py:obj:`pyroomacoustics.doa`
-    Direction of arrival finding algorithms
 
 :py:obj:`pyroomacoustics.adaptive`
     Adaptive filter algorithms
 
+:py:obj:`pyroomacoustics.datasets`
+    Wrappers around a few popular speech datasets
+
+:py:obj:`pyroomacoustics.doa`
+    Direction of arrival finding algorithms
+
 :py:obj:`pyroomacoustics.realtime`
     Block frequency domain processing tools
+
 
 Utilities
 ---------
