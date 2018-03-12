@@ -16,6 +16,7 @@ Added
 
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
+- Added util for downloading tar.gz datasets.
 
 =======
 Changed
