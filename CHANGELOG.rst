@@ -16,6 +16,7 @@ Added
 
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
+- Added util for downloading tar.gz datasets.
 
 
 `0.1.18`_ - 2018-04-24
