@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixed issue #22 on github. Added INCREF before returning Py_None in C extension.
 
 `0.1.16`_ - 2018-03-06
 ----------------------

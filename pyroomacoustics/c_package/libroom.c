@@ -32,6 +32,7 @@ py_check_visibility_all(PyObject *self, PyObject *args)
 
   PyBuffer_Release(&arg1);
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -109,6 +110,7 @@ py_image_source_model(PyObject *dummy, PyObject *args)
 
   /* return something */
   Py_DECREF(arr2);
+  Py_INCREF(Py_None);
   return Py_None;
 
 fail:
@@ -258,6 +260,7 @@ py_image_source_shoebox(PyObject *self, PyObject *args)
   Py_DECREF(arr3);
   Py_DECREF(arr4);
 
+  Py_INCREF(Py_None);
   return Py_None;
 
 fail:
@@ -296,6 +299,7 @@ py_free_sources(PyObject *self, PyObject *args)
 
   PyBuffer_Release(&arg1);
 
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
