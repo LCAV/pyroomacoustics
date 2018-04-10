@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 
 try:
-    import mkl_fft as fft
+    import mkl_fft._numpy_fft as fft
 except:
     from numpy import fft
 
