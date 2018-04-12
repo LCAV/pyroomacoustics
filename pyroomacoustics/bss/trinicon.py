@@ -2,25 +2,62 @@
 import numpy as np
 from scipy.signal import fftconvolve
 
-def trinicon(signals):
+def trinicon(signals, w0=None,
+        filter_length=2048, block_length=None, n_blocks=8,
+        return_filters=False):
     '''
     Implementation of the TRINICON Blind Source Separation algorithm as described in
 
-    Aichner, R., Buchner, H., Yan, F., & Kellermann, W. (2006). 
-    A real-time blind source separation scheme and its application to reverberant and noisy acoustic environments. 
-    Signal Processing, 86(6), 1260-1277. doi:10.1016/j.sigpro.2005.06.022
+    R. Aichner, H. Buchner, F. Yan, and W. Kellermann  *A real-time
+    blind source separation scheme and its application to reverberant and noisy
+    acoustic environments*,  Signal Processing, 86(6), 1260-1277.
+    doi:10.1016/j.sigpro.2005.06.022, 2006.
 
     Specifically, adaptation of the pseudo-code from Table 1.
 
     The implementation is hard-coded for 2 output channels.
+
+    Parameters
+    ----------
+    signals: ndarray (nchannels, nsamples)
+        The microphone input signals (time domain)
+    w0: ndarray (nchannels, nsources, nsamples), optional
+        Optional initial value for the demixing filters
+    filter_length: int, optional
+        The length of the demixing filters
+    block_length: int, optional
+        Block length (default 2x filter_length)
+    n_blocks: int, optional
+        Number of blocks processed at once (default 8)
+    return_filters: bool
+        If true, the function will return the demixing matrix too
+
+    Returns
+    -------
+    Returns an (nsources, nsamples) array. Also returns
+    the demixing matrix (nchannels, nsources, nsamples)
+    if ``return_values`` keyword is True.
     '''
 
     P = signals.shape[0] # number of microphones
     Q = 2                # number of output channels
 
-    K = 8                # Number of successive blocks processed at the same time
-    L = 4096             # Filter length
-    N = 2*L              # Block length
+
+    # the filters
+    if w0 is None:
+        L = filter_length
+        w = np.zeros((P,Q,L))
+        w[:P//2,0,L//2] = 1
+        w[P//2:,1,L//2] = 1
+    else:
+        w = w0.copy()
+        L = w0.shape[2]
+
+    K = n_blocks         # Number of successive blocks processed at the same time
+    if block_length is None:  # Block length
+        N = 2*L
+    else:
+        N = block_length
     alpha_on = K         # online overlap factor
     alpha_off = 1        # offline overlap factor (not used here)
 
@@ -32,12 +69,7 @@ def trinicon(signals):
     mu = 0.0010          # offline update step size
     lambd_a = 0.2        # online forgetting factor
 
-    # the filters
-    w = np.zeros((P,Q,L))
-    w[:P/2,0,L/2] = 1
-    w[P/2:,1,L/2] = 1
-
-    hop = K*L/alpha_on
+    hop = K * L // alpha_on
 
     # pad with zeros to have a whole number of online blocks
     if signals.shape[1] % hop != 0:
@@ -119,4 +151,7 @@ def trinicon(signals):
         # next block
         m += 1
 
-    return y
+    if return_filters:
+        return y, w
+    else:
+        return y

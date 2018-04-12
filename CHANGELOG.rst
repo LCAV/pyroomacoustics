@@ -11,7 +11,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-- Nothing yet
+- Moved Trinicon blind source separation algorithm to ``bss`` subpackage.
+- Added AuxIVA (independent vector analysis) to ``bss`` subpackage.
 
 `0.1.17`_ - 2018-03-23
 ----------------------
