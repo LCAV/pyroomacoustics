@@ -1,9 +1,7 @@
 '''
 Blind Source Separation using Independent Vector Analysis with Auxiliary Function
 
-Author: Robin Scheibler
-Year: 2018
-License: MIT
+2018 (c) Juan Azcarreta Ortiz, MIT License
 '''
 import numpy as np
 
@@ -16,15 +14,16 @@ f_contrasts = {
         'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
         }
 
-def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
-        f_contrast=None, f_contrast_args=[],
-        return_filters=False, callback=None):
+def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
+        n_components=3, f_contrast=None,
+        f_contrast_args=[], return_filters=False,
+        callback=None):
 
     '''
-    Implementation of AuxIVA algorithm for BSS presented in
+    Implementation of ILRMA algorithm for BSS presented in
 
-    N. Ono, *Stable and fast update rules for independent vector analysis based
-    on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
+    D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined Blind Source Separation
+    with Independent Low-Rank Matrix Analysis*, in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
 
     Parameters
     ----------
@@ -53,14 +52,14 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     the demixing matrix (nfrequencies, nchannels, nsources)
     if ``return_values`` keyword is True.
     '''
-
-    n_frames, n_freq, n_chan = X.shape
+    X = np.transpose(X, (1, 0, 2))
+    n_freq, n_frames, n_chan = X.shape
 
     # default to determined case
     if n_src is None:
         n_src = X.shape[2]
 
-    # for now, only supports determined case
+    # Only supports determined case
     assert n_chan == n_src
 
     # initialize the demixing matrices
@@ -73,16 +72,25 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         f_contrast = f_contrasts['norm']
         f_contrast_args = [1, 1]
 
+    # initialize the nonnegative matrixes with random values
+    T = abs(np.array(np.random.rand(n_freq, n_components, n_src)))
+    V = abs(np.array(np.random.rand(n_components, n_frames, n_src)))
+    Y = np.zeros((n_freq, n_frames, n_src), dtype=X.dtype)
+    R = np.zeros((n_freq, n_frames, n_src))
     I = np.eye(n_src, n_src)
-    Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
-    V = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
-    r = np.zeros((n_frames, n_src))
-    G_r = np.zeros((n_frames, n_src))
+    U = np.zeros((n_freq, n_src, n_frames, n_chan))
+
+    def NMF(R, T, V, n_src):
+        for n in range(0, n_src - 1):
+            R[:, :, n] = np.dot(T[:, :, n], V[:, :, n])
+
+    NMF(R, T, V, n_src)
+    P = np.power(abs(Y), 2.)
 
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[:,f,:] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
+            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
 
     for epoch in range(n_iter):
 
@@ -97,15 +105,25 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # simple loop as a start
         # shape: (n_frames, n_src)
-        r[:,:] = np.sqrt(np.sum(np.abs(Y * np.conj(Y)), axis=1))
+        for s in range(n_src):
+            T[:, :, s] = np.multiply(T[:, :, s], np.power(np.divide(np.dot(np.multiply(P[:, :, s],
+                        np.power(R[:,:,s], -2.)), V[:,:,s].transpose()), np.dot(np.power(R[:,:,s], -1.),
+                        np.transpose(V[:,:,s]))), 0.5))
 
-        # Apply derivative of contrast function
-        G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
+            T[T < 0.0001] = 0.0001
 
-        # Compute Auxiliary Variable
-        for f in range(n_freq):
-            for s in range(n_src):
-                V[f,s,:,:] =  (np.dot(G_r[None,:,s] * X[:,f,:].T, np.conj(X[:,f,:]))) / X.shape[0]
+            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
+
+            V[:, :, s] = np.multiply(V[:, :, s], np.power(np.divide(np.multiply(np.transpose(T[:, :, s]), P[:, :, s],
+                        np.power(R[:, :, s], -2.)), np.dot(np.transpose(T[:, :, s]), np.invert(R[:, :, s]))), 0.5))
+
+            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
+
+            # Compute Auxiliary Variable
+            for f in range(n_freq):
+                U[f,s,:,:] = np.transpose(np.dot(np.conjugate(X[:,f,:].T), np.multiply(X[:,f,:],
+                             np.dot(np.inv(R[:, f, s]), np.ones([1, n_chan]))))/n_frames)
+                w[f, s, :, :] = np.dot(W, U[f,s,:,:])
 
         # Update now the demixing matrix
         for f in range(n_freq):
