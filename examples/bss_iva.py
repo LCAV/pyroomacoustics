@@ -117,7 +117,7 @@ if __name__ == '__main__':
     X = np.moveaxis(X, 0, 2)
 
     # Run AuxIVA
-    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
+    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
 
     # run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
@@ -160,5 +160,3 @@ if __name__ == '__main__':
 
     def play(ch):
         sd.play(pra.normalize(y[ch]) * 0.75, samplerate=room.fs, blocking=True)
-
-
