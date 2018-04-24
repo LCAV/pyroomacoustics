@@ -31,12 +31,12 @@ import sounddevice as sd
 
 # We concatenate a few samples to make them long enough
 wav_files = [
-        ['examples/input_samples/cmu_arctic_us_axb_a0004.wav',
-            'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
-            'examples/input_samples/cmu_arctic_us_axb_a0006.wav',],
-        ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
-            'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
-            'examples/input_samples/cmu_arctic_us_aew_a0003.wav',]
+        ['input_samples/cmu_arctic_us_axb_a0004.wav',
+            'input_samples/cmu_arctic_us_axb_a0005.wav',
+            'input_samples/cmu_arctic_us_axb_a0006.wav',],
+        ['input_samples/cmu_arctic_us_aew_a0001.wav',
+            'input_samples/cmu_arctic_us_aew_a0002.wav',
+            'input_samples/cmu_arctic_us_aew_a0003.wav',]
         ]
 
 if __name__ == '__main__':
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     X = np.moveaxis(X, 0, 2)
 
     # Run AuxIVA
-    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
 
     # run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
