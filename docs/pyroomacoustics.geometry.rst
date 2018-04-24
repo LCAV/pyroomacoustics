@@ -1,5 +1,5 @@
-pyroomacoustics\.geometry module
-================================
+pyroomacoustics.geometry module
+===============================
 
 .. automodule:: pyroomacoustics.geometry
     :members:

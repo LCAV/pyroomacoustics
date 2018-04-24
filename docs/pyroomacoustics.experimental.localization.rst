@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental\.localization module
-==================================================
+pyroomacoustics.experimental.localization module
+================================================
 
 .. automodule:: pyroomacoustics.experimental.localization
     :members:

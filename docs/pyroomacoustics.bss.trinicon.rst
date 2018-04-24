@@ -1,7 +1,7 @@
-pyroomacoustics.adaptive.lms module
+pyroomacoustics.bss.trinicon module
 ===================================
 
-.. automodule:: pyroomacoustics.adaptive.lms
+.. automodule:: pyroomacoustics.bss.trinicon
     :members:
     :undoc-members:
     :show-inheritance:

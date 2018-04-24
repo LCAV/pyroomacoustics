@@ -1,5 +1,5 @@
-pyroomacoustics\.metrics module
-===============================
+pyroomacoustics.metrics module
+==============================
 
 .. automodule:: pyroomacoustics.metrics
     :members:

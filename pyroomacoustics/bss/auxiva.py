@@ -1,9 +1,7 @@
 '''
 Blind Source Separation using Independent Vector Analysis with Auxiliary Function
 
-Author: Robin Scheibler
-Year: 2018
-License: MIT
+2018 (c) Robin Scheibler, MIT License
 '''
 import numpy as np
 

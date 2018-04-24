@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental\.signals module
-=============================================
+pyroomacoustics.experimental.signals module
+===========================================
 
 .. automodule:: pyroomacoustics.experimental.signals
     :members:

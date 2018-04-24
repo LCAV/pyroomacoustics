@@ -1,5 +1,5 @@
-pyroomacoustics\.datasets\.base module
-======================================
+pyroomacoustics.datasets.base module
+====================================
 
 .. automodule:: pyroomacoustics.datasets.base
     :members:

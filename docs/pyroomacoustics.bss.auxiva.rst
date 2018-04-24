@@ -1,7 +1,7 @@
-pyroomacoustics.parameters module
+pyroomacoustics.bss.auxiva module
 =================================
 
-.. automodule:: pyroomacoustics.parameters
+.. automodule:: pyroomacoustics.bss.auxiva
     :members:
     :undoc-members:
     :show-inheritance:

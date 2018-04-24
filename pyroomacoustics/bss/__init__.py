@@ -6,10 +6,10 @@ Implementations of a few blind source separation (BSS) algorithms.
 
 AuxIVA
     | Independent Vector Analysis [1]_
-    | :py:mod:`pyroomacoustics.bss.trinicon`
+    | :py:mod:`pyroomacoustics.bss.auxiva`
 Trinicon
     | Time-domain BSS [2]_
-    | :py:mod:`pyroomacoustics.bss.auxiva`
+    | :py:mod:`pyroomacoustics.bss.trinicon`
 
 A few commonly used functions, such as projection back, can be found in
 :py:mod:`pyroomacoustics.bss.common`.

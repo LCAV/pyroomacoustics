@@ -1,5 +1,5 @@
-pyroomacoustics\.doa\.cssm module
-=================================
+pyroomacoustics.doa.cssm module
+===============================
 
 .. automodule:: pyroomacoustics.doa.cssm
     :members:

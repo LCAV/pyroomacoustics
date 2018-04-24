@@ -1,5 +1,5 @@
-pyroomacoustics\.acoustics module
-=================================
+pyroomacoustics.acoustics module
+================================
 
 .. automodule:: pyroomacoustics.acoustics
     :members:

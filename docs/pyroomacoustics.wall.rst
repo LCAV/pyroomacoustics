@@ -1,5 +1,5 @@
-pyroomacoustics\.wall module
-============================
+pyroomacoustics.wall module
+===========================
 
 .. automodule:: pyroomacoustics.wall
     :members:

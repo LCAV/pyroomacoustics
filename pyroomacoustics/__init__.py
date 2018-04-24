@@ -45,9 +45,6 @@ Available submodules
 :py:obj:`pyroomacoustics.beamforming`
     Microphone arrays and beamforming routines.
 
-:py:obj:`pyroomacoustics.bss`
-    Blind source separation.
-
 :py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
 
@@ -89,6 +86,9 @@ Available subpackages
 
 :py:obj:`pyroomacoustics.adaptive`
     Adaptive filter algorithms
+
+:py:obj:`pyroomacoustics.bss`
+    Blind source separation.
 
 :py:obj:`pyroomacoustics.datasets`
     Wrappers around a few popular speech datasets
