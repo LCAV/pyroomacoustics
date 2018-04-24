@@ -31,12 +31,12 @@ import sounddevice as sd
 
 # We concatenate a few samples to make them long enough
 wav_files = [
-        ['input_samples/cmu_arctic_us_axb_a0004.wav',
-            'input_samples/cmu_arctic_us_axb_a0005.wav',
-            'input_samples/cmu_arctic_us_axb_a0006.wav',],
-        ['input_samples/cmu_arctic_us_aew_a0001.wav',
-            'input_samples/cmu_arctic_us_aew_a0002.wav',
-            'input_samples/cmu_arctic_us_aew_a0003.wav',]
+        ['examples/input_samples/cmu_arctic_us_axb_a0004.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0006.wav',],
+        ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0003.wav',]
         ]
 
 if __name__ == '__main__':
