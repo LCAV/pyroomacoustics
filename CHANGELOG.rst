@@ -11,9 +11,25 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-- Moved Trinicon blind source separation algorithm to ``bss`` subpackage.
+- Nothing yet
+
+`0.1.18`_ - 2018-04-24
+----------------------
+
+Added
+~~~~~
+
 - Added AuxIVA (independent vector analysis) to ``bss`` subpackage.
 - Added BSS IVA example
+
+Changed
+~~~~~~~
+
+- Moved Trinicon blind source separation algorithm to ``bss`` subpackage.
+
+Bugfix
+~~~~~~
+
 - Correct a bug that causes 1st order sources to be generated for `max_order==0`
   in pure python code
 
@@ -70,7 +86,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...HEAD
+.. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18
 .. _0.1.17: https://github.com/LCAV/pyroomacoustics/compare/v0.1.16...v0.1.17
 .. _0.1.16: https://github.com/LCAV/pyroomacoustics/compare/v0.1.15...v0.1.16
 .. _0.1.15: https://github.com/LCAV/pyroomacoustics/compare/v0.1.14...v0.1.15
