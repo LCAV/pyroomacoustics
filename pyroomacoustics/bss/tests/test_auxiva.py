@@ -3,16 +3,24 @@ import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
+# We use several sound samples for each source to have a long enough length
 wav_files = [ 
-    'examples/input_samples/german_speech_8000.wav',
-    'examples/input_samples/singing_8000.wav',
-    ]
+        [
+            'examples/input_samples/cmu_arctic_us_axb_a0004.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0006.wav',
+            ],
+        [
+            'examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0003.wav',
+            ],
+        ]
 
-#def test_auxiva():
+def test_auxiva():
 
-if __name__ == '__main__':
     # STFT frame length
-    L = 1024
+    L = 256
 
     # Room 4m by 6m
     room_dim = [8, 9]
@@ -20,16 +28,17 @@ if __name__ == '__main__':
     # source location
     source = np.array([1, 4.5])
 
-    # create the room with sources and mics
+    # create an anechoic room with sources and mics
     room = pra.ShoeBox(
         room_dim,
-        fs=8000,
-        max_order=15,
-        absorption=0.45,
+        fs=16000,
+        max_order=0,
         sigma2_awgn=1e-8)
 
     # get signals
-    signals = [wavfile.read(f)[1].astype(np.float32) for f in wav_files]
+    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32) 
+        for f in source_files])
+        for source_files in wav_files ]
     delays = [1., 0.]
     locations = [[2.5,3], [2.5, 6]]
 
@@ -61,71 +70,30 @@ if __name__ == '__main__':
     # Mix down the recorded signals
     mics_signals = np.sum(separate_recordings, axis=0)
 
-    # Monitor Convergence
-    #####################
-
-    from mir_eval.separation import bss_eval_images
-    ref = np.moveaxis(separate_recordings, 1, 2)
-    SDR, SIR = [], []
-    def convergence_callback(Y):
-        global SDR, SIR
-        from mir_eval.separation import bss_eval_images
-        ref = np.moveaxis(separate_recordings, 1, 2)
-        y = np.array([pra.istft(Y[:,:,ch], L, L, 
-            transform=np.fft.irfft, zp_back=L) for ch in range(Y.shape[2])])
-        sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:,0], y[:,:ref.shape[1]])
-        SDR.append(sdr)
-        SIR.append(sir)
-
     # START BSS
     ###########
 
     # shape == (n_chan, n_frames, n_freq)
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_back=L) for ch in mics_signals])
+    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Run AuxIVA
-    Y = pra.bss.auxiva(X, n_iter=60, proj_back=True, callback=convergence_callback)
+    Y = pra.bss.auxiva(X, n_iter=20, proj_back=True)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_back=L) for ch in range(Y.shape[2])])
+    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
 
     # Compare SIR
     #############
-    sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:,0], y[:,:ref.shape[1]])
+    ref = np.moveaxis(separate_recordings, 1, 2)
+    y_aligned = y[:,L//2:ref.shape[1]+L//2]
 
-    print('SDR:', sdr)
-    print('SIR:', sir)
+    mse = np.mean((ref[:,:,0] - y_aligned)**2)
+    input_variance = np.var(np.concatenate(signals))
 
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.subplot(2,2,1)
-    plt.specgram(ref[0,:,0], NFFT=1024, Fs=room.fs)
-    plt.title('Reference 1')
+    print('Relative MSE (expect less than 1e-5):', mse / input_variance)
 
-    plt.subplot(2,2,2)
-    plt.specgram(ref[1,:,0], NFFT=1024, Fs=room.fs)
-    plt.title('Reference 2')
+    assert (mse / input_variance) < 1e-5
 
-    plt.subplot(2,2,3)
-    plt.specgram(y[perm[0],:], NFFT=1024, Fs=room.fs)
-    plt.title('Source 1')
-
-    plt.subplot(2,2,4)
-    plt.specgram(y[perm[1],:], NFFT=1024, Fs=room.fs)
-    plt.title('Source 2')
-
-    plt.figure()
-    a = np.array(SDR)
-    b = np.array(SIR)
-    plt.plot(np.arange(a.shape[0]) * 10, a, label='SDR')
-    plt.plot(np.arange(b.shape[0]) * 10, b, label='SIR')
-    plt.legend()
-
-    plt.show()
-
-    import sounddevice as sd
-    def play(ch):
-        sd.play(pra.normalize(y[ch]) * 0.75, samplerate=room.fs, blocking=True)
-
-
+if __name__ == '__main__':
+    test_auxiva()

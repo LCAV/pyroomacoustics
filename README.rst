@@ -81,12 +81,22 @@ algorithms for
 
 * beamforming
 * direction of arrival (DOA) finding
-* adaptive filtering
+* adaptive filtering (NLMS, RLS)
+* blind source separation (AuxIVA, Trinicon)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
 pre-set values for the tuning parameters so that a run with the default values
 will in general produce reasonable results.
+
+Datasets
+````````
+In an effort to simplify the use of datasets, we provide a few wrappers that
+allow to quickly load and sort through some popular speech corpora. At the
+moment we support the following.
+
+* `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_
+* `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
 
 Quick Install
 -------------
