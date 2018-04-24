@@ -160,5 +160,3 @@ if __name__ == '__main__':
 
     def play(ch):
         sd.play(pra.normalize(y[ch]) * 0.75, samplerate=room.fs, blocking=True)
-
-
