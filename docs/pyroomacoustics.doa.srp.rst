@@ -1,5 +1,5 @@
-pyroomacoustics\.doa\.srp module
-================================
+pyroomacoustics.doa.srp module
+==============================
 
 .. automodule:: pyroomacoustics.doa.srp
     :members:

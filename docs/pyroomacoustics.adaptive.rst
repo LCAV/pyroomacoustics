@@ -1,5 +1,5 @@
-pyroomacoustics\.adaptive package
-=================================
+pyroomacoustics.adaptive package
+================================
 
 Submodules
 ----------

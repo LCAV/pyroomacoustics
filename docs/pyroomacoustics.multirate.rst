@@ -1,5 +1,5 @@
-pyroomacoustics\.multirate module
-=================================
+pyroomacoustics.multirate module
+================================
 
 .. automodule:: pyroomacoustics.multirate
     :members:

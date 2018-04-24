@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental package
-=====================================
+pyroomacoustics.experimental package
+====================================
 
 Submodules
 ----------

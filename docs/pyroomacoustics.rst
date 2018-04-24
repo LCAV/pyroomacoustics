@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     pyroomacoustics.adaptive
+    pyroomacoustics.bss
     pyroomacoustics.datasets
     pyroomacoustics.doa
     pyroomacoustics.experimental
@@ -19,7 +20,6 @@ Submodules
 
    pyroomacoustics.acoustics
    pyroomacoustics.beamforming
-   pyroomacoustics.bss
    pyroomacoustics.geometry
    pyroomacoustics.metrics
    pyroomacoustics.multirate

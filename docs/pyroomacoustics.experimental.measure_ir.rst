@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental\.measure\_ir module
-=================================================
+pyroomacoustics.experimental.measure\_ir module
+===============================================
 
 .. automodule:: pyroomacoustics.experimental.measure_ir
     :members:

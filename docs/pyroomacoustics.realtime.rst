@@ -1,5 +1,5 @@
-pyroomacoustics\.realtime package
-=================================
+pyroomacoustics.realtime package
+================================
 
 Submodules
 ----------

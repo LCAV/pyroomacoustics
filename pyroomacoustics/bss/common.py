@@ -1,9 +1,7 @@
 '''
 Common Functions used in BSS algorithms
 
-Author: Robin Scheibler
-Year: 2018
-License: MIT
+2018 (c) Robin Scheibler, MIT License
 '''
 import numpy as np
 
@@ -17,16 +15,23 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
     ----------------------------
 
     The optimal filter `z` minimizes the squared error.
+    
+    .. math::
 
-    min E[|z^* y - x|^2]
+        \min E[|z^* y - x|^2]
 
     It should thus satsify the orthogonality condition
     and can be derived as follows
 
-    E[y^* (z^* y - x)] == 0
-    z^* E[|y|^2] - E[y^* x] == 0
-    z^* = E[y^* x] / E[|y|^2]
-    z = E[y x^*] / E[|y|^2]
+    .. math::
+
+        0 & = E[y^*\\, (z^* y - x)]
+
+        0 & = z^*\\, E[|y|^2] - E[y^* x]
+
+        z^* & = \\frac{E[y^* x]}{E[|y|^2]}
+
+        z & = \\frac{E[y x^*]}{E[|y|^2]}
 
     In practice, the expectations are replaced by the sample
     mean.

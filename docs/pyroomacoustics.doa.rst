@@ -1,5 +1,5 @@
-pyroomacoustics\.doa package
-============================
+pyroomacoustics.doa package
+===========================
 
 Submodules
 ----------

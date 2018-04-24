@@ -1,5 +1,5 @@
-pyroomacoustics\.recognition module
-===================================
+pyroomacoustics.recognition module
+==================================
 
 .. automodule:: pyroomacoustics.recognition
     :members:

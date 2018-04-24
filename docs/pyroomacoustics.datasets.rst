@@ -1,5 +1,5 @@
-pyroomacoustics\.datasets package
-=================================
+pyroomacoustics.datasets package
+================================
 
 Submodules
 ----------

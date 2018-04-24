@@ -1,5 +1,5 @@
-pyroomacoustics\.datasets\.timit module
-=======================================
+pyroomacoustics.datasets.timit module
+=====================================
 
 .. automodule:: pyroomacoustics.datasets.timit
     :members:

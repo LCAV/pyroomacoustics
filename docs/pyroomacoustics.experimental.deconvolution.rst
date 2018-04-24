@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental\.deconvolution module
-===================================================
+pyroomacoustics.experimental.deconvolution module
+=================================================
 
 .. automodule:: pyroomacoustics.experimental.deconvolution
     :members:

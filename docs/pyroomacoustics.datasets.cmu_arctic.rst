@@ -1,5 +1,5 @@
-pyroomacoustics\.datasets\.cmu\_arctic module
-=============================================
+pyroomacoustics.datasets.cmu\_arctic module
+===========================================
 
 .. automodule:: pyroomacoustics.datasets.cmu_arctic
     :members:

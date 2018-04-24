@@ -1,5 +1,5 @@
-pyroomacoustics\.adaptive\.util module
-======================================
+pyroomacoustics.adaptive.util module
+====================================
 
 .. automodule:: pyroomacoustics.adaptive.util
     :members:
