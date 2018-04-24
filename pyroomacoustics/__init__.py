@@ -120,7 +120,6 @@ from .utilities import *
 from .windows import *
 from .sync import *
 from .metrics import *
-from .bss import *
 from .multirate import *
 from .acoustics import *
 from .recognition import *
@@ -130,3 +129,4 @@ from . import adaptive
 from . import realtime
 from . import experimental
 from . import datasets
+from . import bss

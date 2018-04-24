@@ -4,7 +4,7 @@ import pyroomacoustics as pra
 from scipy.io import wavfile
 
 # We use several sound samples for each source to have a long enough length
-wav_files = [ 
+wav_files = [
         [
             'examples/input_samples/cmu_arctic_us_axb_a0004.wav',
             'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
@@ -36,7 +36,7 @@ def test_auxiva():
         sigma2_awgn=1e-8)
 
     # get signals
-    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32) 
+    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32)
         for f in source_files])
         for source_files in wav_files ]
     delays = [1., 0.]

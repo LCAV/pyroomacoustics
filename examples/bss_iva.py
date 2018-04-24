@@ -30,9 +30,9 @@ from mir_eval.separation import bss_eval_images
 import sounddevice as sd
 
 # We concatenate a few samples to make them long enough
-wav_files = [ 
+wav_files = [
         ['examples/input_samples/cmu_arctic_us_axb_a0004.wav',
-            'examples/input_samples/cmu_arctic_us_axb_a0005.wav', 
+            'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
             'examples/input_samples/cmu_arctic_us_axb_a0006.wav',],
         ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
             'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         sigma2_awgn=1e-8)
 
     # get signals
-    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32) 
+    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32)
         for f in source_files])
         for source_files in wav_files ]
     delays = [1., 0.]
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         global SDR, SIR
         from mir_eval.separation import bss_eval_images
         ref = np.moveaxis(separate_recordings, 1, 2)
-        y = np.array([pra.istft(Y[:,:,ch], L, L, 
+        y = np.array([pra.istft(Y[:,:,ch], L, L,
             transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
         sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
         SDR.append(sdr)
