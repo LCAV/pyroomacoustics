@@ -499,88 +499,96 @@ class Room(object):
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
 
-                # First, we will generate all the image sources
+                if self.max_order > 0:
 
-                # generate first order images
-                i, d, w = self.first_order_images(np.array(source.position))
-                images = [i]
-                damping = [d]
-                generators = [-np.ones(i.shape[1])]
-                wall_indices = [w]
+                    # generate first order images
+                    i, d, w = self.first_order_images(np.array(source.position))
+                    images = [i]
+                    damping = [d]
+                    generators = [-np.ones(i.shape[1])]
+                    wall_indices = [w]
 
-                # generate all higher order images up to max_order
-                o = 1
-                while o < self.max_order:
-                    # generate all images of images of previous order
-                    img = np.zeros((self.dim, 0))
-                    dmp = np.array([])
-                    gen = np.array([])
-                    wal = np.array([])
-                    for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
-                        i, d, w = self.first_order_images(si)
-                        img = np.concatenate((img, i), axis=1)
-                        dmp = np.concatenate((dmp, d * sd))
-                        gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
-                        wal = np.concatenate((wal, w))
+                    # generate all higher order images up to max_order
+                    o = 1
+                    while o < self.max_order:
+                        # generate all images of images of previous order
+                        img = np.zeros((self.dim, 0))
+                        dmp = np.array([])
+                        gen = np.array([])
+                        wal = np.array([])
+                        for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
+                            i, d, w = self.first_order_images(si)
+                            img = np.concatenate((img, i), axis=1)
+                            dmp = np.concatenate((dmp, d * sd))
+                            gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
+                            wal = np.concatenate((wal, w))
 
-                    # sort
-                    ordering = np.lexsort(img)
-                    img = img[:, ordering]
-                    dmp = dmp[ordering]
-                    gen = gen[ordering]
-                    wal = wal[ordering]
+                        # sort
+                        ordering = np.lexsort(img)
+                        img = img[:, ordering]
+                        dmp = dmp[ordering]
+                        gen = gen[ordering]
+                        wal = wal[ordering]
 
-                    if isinstance(self, ShoeBox):
-                        '''
-                        For shoebox rooms, we can remove duplicate
-                        image sources from different wall orderings
-                        '''
-                        diff = np.diff(img, axis=1)
-                        ui = np.ones(img.shape[1], 'bool')
-                        ui[1:] = (diff != 0).any(axis=0)
+                        if isinstance(self, ShoeBox):
+                            '''
+                            For shoebox rooms, we can remove duplicate
+                            image sources from different wall orderings
+                            '''
+                            diff = np.diff(img, axis=1)
+                            ui = np.ones(img.shape[1], 'bool')
+                            ui[1:] = (diff != 0).any(axis=0)
 
-                        # add to array of images
-                        images.append(img[:, ui])
-                        damping.append(dmp[ui])
-                        generators.append(gen[ui])
-                        wall_indices.append(wal[ui])
+                            # add to array of images
+                            images.append(img[:, ui])
+                            damping.append(dmp[ui])
+                            generators.append(gen[ui])
+                            wall_indices.append(wal[ui])
 
-                    else:
-                        '''
-                        But in general, we have to keep everything
-                        '''
-                        # add to array of images
-                        images.append(img)
-                        damping.append(dmp)
-                        generators.append(gen)
-                        wall_indices.append(wal)
+                        else:
+                            '''
+                            But in general, we have to keep everything
+                            '''
+                            # add to array of images
+                            images.append(img)
+                            damping.append(dmp)
+                            generators.append(gen)
+                            wall_indices.append(wal)
 
-                    # next order
-                    o += 1
+                        # next order
+                        o += 1
+
+                    o_len = np.array([x.shape[0] for x in generators])
+                    # correct the pointers for linear structure
+                    for o in np.arange(2, len(generators)):
+                        generators[o] += np.sum(o_len[0:o-1])
+
+                    # linearize the arrays
+                    images_lin = np.concatenate(images, axis=1)
+                    damping_lin = np.concatenate(damping)
+                    generators_lin = np.concatenate(generators)
+                    walls_lin = np.concatenate(wall_indices)
                     
-                o_len = np.array([x.shape[0] for x in generators])
-                # correct the pointers for linear structure
-                for o in np.arange(2, len(generators)):
-                    generators[o] += np.sum(o_len[0:o-1])
-                    
-                # linearize the arrays
-                images_lin = np.concatenate(images, axis=1)
-                damping_lin = np.concatenate(damping)
-                generators_lin = np.concatenate(generators)
-                walls_lin = np.concatenate(wall_indices)
-                
-                # store the corresponding orders in another array
-                ordlist = []
-                for o in range(len(generators)):
-                    ordlist.append((o+1)*np.ones(o_len[o]))
-                orders_lin = np.concatenate(ordlist)
+                    # store the corresponding orders in another array
+                    ordlist = []
+                    for o in range(len(generators)):
+                        ordlist.append((o+1)*np.ones(o_len[o]))
+                    orders_lin = np.concatenate(ordlist)
 
-                # add the direct source to the arrays
-                source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
-                source.damping = np.concatenate(([1], damping_lin))
-                source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
-                source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
-                source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
+                    # add the direct source to the arrays
+                    source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
+                    source.damping = np.concatenate(([1], damping_lin))
+                    source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
+                    source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
+                    source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
+
+                else:
+                    # when simulating free space, there is only the direct source
+                    source.images = np.array([source.position]).T
+                    source.damping = np.ones(1)
+                    source.generators = -np.ones(1, dtype=np.int)
+                    source.walls = -np.ones(1, dtype=np.int)
+                    source.orders = np.zeros(1, dtype=np.int)
 
                 # Then we will check the visibilty of the sources
                 # visibility is a list with first index for sources, and second for mics

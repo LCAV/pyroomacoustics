@@ -14,6 +14,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 - Moved Trinicon blind source separation algorithm to ``bss`` subpackage.
 - Added AuxIVA (independent vector analysis) to ``bss`` subpackage.
 - Added BSS IVA example
+- Correct a bug that causes 1st order sources to be generated for `max_order==0`
+  in pure python code
 
 `0.1.17`_ - 2018-03-23
 ----------------------
