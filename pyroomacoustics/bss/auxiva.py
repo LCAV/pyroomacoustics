@@ -100,7 +100,7 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         # Apply derivative of contrast function
         G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
-        # Compute Auxilliary Variable
+        # Compute Auxiliary Variable
         for f in range(n_freq):
             for s in range(n_src):
                 V[f,s,:,:] =  (np.dot(G_r[None,:,s] * X[:,f,:].T, np.conj(X[:,f,:]))) / X.shape[0]
@@ -122,4 +122,3 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         return Y, W
     else:
         return Y
-
