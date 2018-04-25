@@ -78,13 +78,12 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     Y = np.zeros((n_freq, n_frames, n_src), dtype=X.dtype)
     R = np.zeros((n_freq, n_frames, n_src))
     I = np.eye(n_src, n_src)
-    U = np.zeros((n_freq, n_src, n_frames, n_chan))
+    U = np.zeros((n_freq, n_src, n_chan, n_chan))
+    lambda_aux = np.zeros(n_src)
 
-    def NMF(R, T, V, n_src):
-        for n in range(0, n_src - 1):
-            R[:, :, n] = np.dot(T[:, :, n], V[:, :, n])
+    for n in range(0, n_src - 1):
+        R[:, :, n] = np.dot(T[:, :, n], V[:, :, n])
 
-    NMF(R, T, V, n_src)
     P = np.power(abs(Y), 2.)
 
     # Compute the demixed output
@@ -92,9 +91,9 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         for f in range(n_freq):
             Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
 
-    for epoch in range(n_iter):
+    demix(Y, X, W)
 
-        demix(Y, X, W)
+    for epoch in range(n_iter):
 
         if callback is not None and epoch % 10 == 0:
             if proj_back:
@@ -109,30 +108,29 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
             T[:, :, s] = np.multiply(T[:, :, s], np.power(np.divide(np.dot(np.multiply(P[:, :, s],
                         np.power(R[:,:,s], -2.)), V[:,:,s].transpose()), np.dot(np.power(R[:,:,s], -1.),
                         np.transpose(V[:,:,s]))), 0.5))
-
-            T[T < 0.0001] = 0.0001
-
-            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
-
-            V[:, :, s] = np.multiply(V[:, :, s], np.power(np.divide(np.multiply(np.transpose(T[:, :, s]), P[:, :, s],
-                        np.power(R[:, :, s], -2.)), np.dot(np.transpose(T[:, :, s]), np.invert(R[:, :, s]))), 0.5))
+            T[T < 0.001] = 0.001
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
-            # Compute Auxiliary Variable
+            V[:, :, s] = np.multiply(V[:, :, s], np.power(np.divide(np.dot(np.transpose(T[:, :, s]), np.multiply(P[:, :, s],
+                        np.power(R[:, :, s], -2.))), np.dot(np.transpose(T[:, :, s]), np.power(R[:, :, s], -1))), 0.5))
+            V[V < 0.001] = 0.001
+
+            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
+
+            # Compute Auxiliary Variable and update the demixing matrix
             for f in range(n_freq):
-                U[f,s,:,:] = np.transpose(np.dot(np.conjugate(X[:,f,:].T), np.multiply(X[:,f,:],
-                             np.dot(np.inv(R[:, f, s]), np.ones([1, n_chan]))))/n_frames)
-                w[f, s, :, :] = np.dot(W, U[f,s,:,:])
+                U[f, s, :, :] = np.transpose(np.dot(np.conjugate(X[f,:,:].T), np.multiply(X[f,:,:],
+                               np.dot(np.power(np.reshape(R[f, :, s], (n_frames, 1)), -1), np.ones([1, n_chan]))))/n_frames)
 
-        # Update now the demixing matrix
-        for f in range(n_freq):
-            for s in range(n_src):
-                WV = np.dot(np.conj(W[f,:,:].T), V[f,s,:,:])
-                W[f,:,s] = np.linalg.solve(WV, I[:,s])
-                W[f,:,s] /= np.inner(np.conj(W[f,:,s]), np.dot(V[f,s,:,:], W[f,:,s]))
+                W[f, s, :] = np.dot(np.linalg.inv(np.dot(W[f, :, :], U[f, s, :, :])), np.eye(n_src)[s].T)
+                W[f, s, :] = np.dot(W[f,s,:], np.power(np.dot(np.dot(np.conjugate(W[f, s, :]).T, U[f, s, :, :]), W[f, s, :]), 0.5))
 
     demix(Y, X, W)
+    P = np.power(abs(Y), 2.)
+
+    for s in range(n_src):
+        lambda_aux[n] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0))
 
     if proj_back:
         z = projection_back(Y, X[:,:,0])
