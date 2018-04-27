@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-- Nothing yet
+Changed
+~~~~~~~
+
+- Using now the built-in RIR generator in `examples/doa_algorithms.py`
 
 `0.1.18`_ - 2018-04-24
 ----------------------
