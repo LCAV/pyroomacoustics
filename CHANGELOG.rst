@@ -17,7 +17,6 @@ Added
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 
-=======
 Changed
 ~~~~~~~
 
