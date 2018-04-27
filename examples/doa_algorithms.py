@@ -53,6 +53,7 @@ from pyroomacoustics.doa import circ_dist
 
 # Location of original source
 azimuth = 61. / 180. * np.pi  # 60 degrees
+distance = 3.  # 3 meters
 
 #######################
 # algorithms parameters
@@ -62,32 +63,30 @@ fs = 16000  # sampling frequency
 nfft = 256  # FFT size
 freq_bins = np.arange(5, 60)  # FFT bins to use for estimation
 
-###########################################
-# We use a circular array with radius 15 cm 
-# and 12 microphones
-R = pra.circular_2D_array([0, 0], 12, 0., 0.15)
+# compute the noise variance
+sigma2 = 10**(-SNR / 10) / (4. * np.pi * distance)**2
 
-# propagation filter bank
-propagation_vector = -np.array([np.cos(azimuth), np.sin(azimuth)])
-delays = np.dot(R.T, propagation_vector) / c * fs  # in fractional samples
-filter_bank = pra.fractional_delay_filter_bank(delays)
+# Create an anechoic room
+room_dim = np.r_[10.,10.]
+aroom = pra.ShoeBox(room_dim, fs=fs, max_order=0, sigma2_awgn=sigma2)
 
-# we use a white noise signal for the source
-x = np.random.randn((nfft // 2 + 1) * nfft)
+# add the source
+source_location = room_dim / 2 + distance * np.r_[np.cos(azimuth), np.sin(azimuth)]
+source_signal = np.random.randn((nfft // 2 + 1) * nfft)
+aroom.add_source(source_location, signal=source_signal)
 
-# convolve the source signal with the fractional delay filters
-# to get the microphone input signals
-mic_signals = [ fftconvolve(x, filter, mode='same') for filter in filter_bank ]
+# We use a circular array with radius 15 cm # and 12 microphones
+R = pra.circular_2D_array(room_dim / 2, 12, 0., 0.15)
+aroom.add_microphone_array(pra.MicrophoneArray(R, fs=aroom.fs))
 
-# Now add the microphone noise
-for signal in mic_signals:
-    signal += np.random.randn(*signal.shape) * 10**(- SNR / 20)
+# run the simulation
+aroom.simulate()
 
 ################################
 # Compute the STFT frames needed
 X = np.array([ 
     pra.stft(signal, nfft, nfft // 2, transform=np.fft.rfft).T 
-    for signal in mic_signals ])
+    for signal in aroom.mic_array.signals ])
 
 ##############################################
 # Now we can test all the algorithms available
