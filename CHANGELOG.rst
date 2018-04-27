@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-- Nothing yet
+Added
+~~~~~
+
+- `notebooks` folder.
+- Demo IPython notebook (with WAV files) of several features of the package.
+
 
 `0.1.18`_ - 2018-04-24
 ----------------------
