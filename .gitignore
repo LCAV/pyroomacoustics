@@ -7,3 +7,4 @@ build/
 docs/_build
 dist/
 local_examples/
+*.ipynb_checkpoints
