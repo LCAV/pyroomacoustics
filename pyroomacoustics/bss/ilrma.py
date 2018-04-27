@@ -1,5 +1,5 @@
 '''
-Blind Source Separation using Independent Vector Analysis with Auxiliary Function
+Blind Source Separation using Independent Low-Rank Matrix Factorization (ILRM)
 
 2018 (c) Juan Azcarreta Ortiz, MIT License
 '''

@@ -30,4 +30,4 @@ References
 from .trinicon import trinicon
 from .auxiva import auxiva, f_contrasts
 from .common import projection_back
-from .ILRMA import ILRMA
+from .ilrma import ilrma

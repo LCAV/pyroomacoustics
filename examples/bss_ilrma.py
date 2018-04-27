@@ -1,13 +1,13 @@
 '''
-Blind Source Separation with Independent Vector Analysis
+Blind Source Separation with Independent Low-Rank Matrix Analysis (ILRMA)
 =======================================================
 
-Demonstrate how to do blind source separation (BSS) using the independent vector
-analysis technique. The method implemented is described in the following
-publication.
+Demonstrate how to do blind source separation (BSS) using the Independent
+Low-Rank Matrix Analysis technique. The method implemented is described
+in the following publication.
 
-    N. Ono, *Stable and fast update rules for independent vector analysis based
-    on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
+   D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined Blind Source Separation
+    with Independent Low-Rank Matrix Analysis*, in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
 
 It works in the STFT domain. The test files were extracted from the
 `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
@@ -117,7 +117,10 @@ if __name__ == '__main__':
     X = np.moveaxis(X, 0, 2)
 
     # Run AuxIVA
-    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+    # Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+
+    # Run ILRMA
+    Y = pra.bss.ILRMA(X, n_iter=30)
 
     # run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
