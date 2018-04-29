@@ -14,7 +14,7 @@ f_contrasts = {
         'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
         }
 
-def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
+def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         n_components=3, f_contrast=None,
         f_contrast_args=[], return_filters=False,
         callback=None):
@@ -80,11 +80,10 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     I = np.eye(n_src, n_src)
     U = np.zeros((n_freq, n_src, n_chan, n_chan))
     lambda_aux = np.zeros(n_src)
+    machine_epsilon = np.finfo(float).eps
 
-    for n in range(0, n_src - 1):
+    for n in range(0, n_src):
         R[:, :, n] = np.dot(T[:, :, n], V[:, :, n])
-
-    P = np.power(abs(Y), 2.)
 
     # Compute the demixed output
     def demix(Y, X, W):
@@ -92,8 +91,10 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
             Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
 
     demix(Y, X, W)
+    P = np.power(abs(Y), 2.)
 
     for epoch in range(n_iter):
+        print(epoch)
 
         if callback is not None and epoch % 10 == 0:
             if proj_back:
@@ -108,13 +109,13 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
             T[:, :, s] = np.multiply(T[:, :, s], np.power(np.divide(np.dot(np.multiply(P[:, :, s],
                         np.power(R[:,:,s], -2.)), V[:,:,s].transpose()), np.dot(np.power(R[:,:,s], -1.),
                         np.transpose(V[:,:,s]))), 0.5))
-            T[T < 0.001] = 0.001
+            T[T < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
             V[:, :, s] = np.multiply(V[:, :, s], np.power(np.divide(np.dot(np.transpose(T[:, :, s]), np.multiply(P[:, :, s],
                         np.power(R[:, :, s], -2.))), np.dot(np.transpose(T[:, :, s]), np.power(R[:, :, s], -1))), 0.5))
-            V[V < 0.001] = 0.001
+            V[V < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
@@ -123,14 +124,20 @@ def ILRMA(X, n_src=None, n_iter=20, proj_back=True, W0=None,
                 U[f, s, :, :] = np.transpose(np.dot(np.conjugate(X[f,:,:].T), np.multiply(X[f,:,:],
                                np.dot(np.power(np.reshape(R[f, :, s], (n_frames, 1)), -1), np.ones([1, n_chan]))))/n_frames)
 
-                W[f, s, :] = np.dot(np.linalg.inv(np.dot(W[f, :, :], U[f, s, :, :])), np.eye(n_src)[s].T)
+                W[f, s, :] = np.dot(np.linalg.inv(np.dot(W[f, :, :], U[f, s, :, :])), I[s, :])
                 W[f, s, :] = np.dot(W[f,s,:], np.power(np.dot(np.dot(np.conjugate(W[f, s, :]).T, U[f, s, :, :]), W[f, s, :]), 0.5))
 
-    demix(Y, X, W)
-    P = np.power(abs(Y), 2.)
+        demix(Y, X, W)
+        P = np.power(abs(Y), 2.)
 
-    for s in range(n_src):
-        lambda_aux[n] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0))
+        for s in range(n_src):
+            lambda_aux[s] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0))
+
+            W[:, s, :] = np.dot(W[:, s, :], np.power(lambda_aux[n], -1))
+
+            P[:, :, s] = np.dot(P[:, :, s], np.power(lambda_aux[s], -2))
+            R[:, :, s] = np.dot(R[:, :, s], np.power(lambda_aux[s], -2))
+            T[:, :, s] = np.dot(T[:, :, s], np.power(lambda_aux[s], -2))
 
     if proj_back:
         z = projection_back(Y, X[:,:,0])
