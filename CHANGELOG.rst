@@ -18,6 +18,10 @@ Added
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Added util for downloading tar.gz datasets.
 
+Changed
+~~~~~~~
+
+- Using now the built-in RIR generator in `examples/doa_algorithms.py`
 
 `0.1.18`_ - 2018-04-24
 ----------------------
