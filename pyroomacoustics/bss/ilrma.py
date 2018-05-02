@@ -15,8 +15,7 @@ f_contrasts = {
         }
 
 def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
-        n_components=3, f_contrast=None,
-        f_contrast_args=[], return_filters=False,
+        n_components=3,
         callback=None):
 
     '''
@@ -68,10 +67,6 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     else:
         W = W0.copy()
 
-    if f_contrast is None:
-        f_contrast = f_contrasts['norm']
-        f_contrast_args = [1, 1]
-
     # initialize the nonnegative matrixes with random values
     T = abs(np.array(np.random.rand(n_freq, n_components, n_src)))
     V = abs(np.array(np.random.rand(n_components, n_frames, n_src)))
@@ -94,7 +89,6 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     P = np.power(abs(Y), 2.)
 
     for epoch in range(n_iter):
-        print(epoch)
 
         if callback is not None and epoch % 10 == 0:
             if proj_back:
