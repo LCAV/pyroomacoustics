@@ -39,7 +39,7 @@ try:
 except:
     have_sounddevice = False
 
-from .utils import download_uncompress_tar_bz2
+from .utils import download_uncompress
 from .base import Meta, AudioSample, Dataset
 
 # The speakers codes and attributes
@@ -154,7 +154,7 @@ class CMUArcticCorpus(Dataset):
                 if download:
                     url = url_base.format(speaker)
                     print('Download', url, 'into', self.basedir, '...')
-                    download_uncompress_tar_bz2(url, self.basedir)
+                    download_uncompress(url, path=self.basedir)
                 else:
                     raise ValueError('Missing speaker directory. Please download.')
 

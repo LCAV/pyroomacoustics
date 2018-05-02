@@ -15,6 +15,7 @@ Changed
 ~~~~~~~
 
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
+- Improved the download/uncompress function for large datasets
 
 `0.1.18`_ - 2018-04-24
 ----------------------
