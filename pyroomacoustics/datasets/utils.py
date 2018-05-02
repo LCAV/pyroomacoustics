@@ -1,25 +1,40 @@
 
 import os, tarfile, bz2, requests
 
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
 
-def download_uncompress_tar_bz2(url, path='.'):
+def download_uncompress(url, path='.', compression=None):
+    '''
+    This functions download and uncompress on the fly a file
+    of type tar, tar.gz, tar.bz2.
 
-    # open the stream
-    r = requests.get(url, stream=True)
+    Parameters
+    ----------
+    url: str
+        The URL of the file
+    path: str, optional
+        The path where to uncompress the file
+    compression: str, optional
+        The compression type (one of 'bz2', 'gz', 'tar'), infered from url
+        if not provided
+    '''
 
-    tmp_file = 'temp_file.tar'
+    # infer compression from url
+    if compression is None:
+        compression = os.path.splitext(url)[1][1:]
 
-    # Download and uncompress at the same time.
-    chunk_size = 4 * 1024 * 1024  # wait for chunks of 4MB
-    with open(tmp_file, 'wb') as file:
-        decompress = bz2.BZ2Decompressor()
-        for chunk in r.iter_content(chunk_size=chunk_size):
-            file.write(decompress.decompress(chunk))
+    # check compression format and set mode
+    if compression in ['gz', 'bz2']:
+        mode = 'r|' + compression
+    elif compression == 'tar':
+        mode = 'r:'
+    else:
+        raise ValueError('The file must be of type tar/gz/bz2.')
 
-    # finally untar the file to final destination
-    tf = tarfile.open(tmp_file)
+    # download and untar/uncompress at the same time
+    stream = urlopen(url)
+    tf = tarfile.open(fileobj=stream, mode=mode)
     tf.extractall(path)
-
-    # remove the temporary file
-    os.unlink(tmp_file)
-
