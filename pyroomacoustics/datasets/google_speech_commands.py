@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Google's Speech Commands Dataset
 ======================
