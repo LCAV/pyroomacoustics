@@ -1,14 +1,20 @@
 '''
 Google's Speech Commands Dataset
 ======================
-The Speech Commands Dataset has 65,000 one-second long utterances of 30 short 
+The Speech Commands Dataset has 65'000 one-second long utterances of 30 short 
 words, by thousands of different people, contributed by members of the public
 through the AIY website. It’s released under a Creative Commons BY 4.0 license.
+
 More info about the dataset can be found at the link below:
+
 https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html
+
 AIY website for contributing recordings:
+
 https://aiyprojects.withgoogle.com/open_speech_recording
+
 Tutorial on creating a word classifier:
+
 https://www.tensorflow.org/versions/master/tutorials/audio_recognition
 '''
 
