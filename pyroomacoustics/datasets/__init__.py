@@ -107,3 +107,5 @@ Example 2 (CMU ARCTIC)
 from .base import Meta, Sample, AudioSample, Dataset
 from .timit import Word, Sentence, TimitCorpus
 from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence, cmu_arctic_speakers
+from .google_speech_commands import GoogleSpeechCommands, GoogleSample, google_speech_commands_sounds
+
