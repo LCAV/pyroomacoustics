@@ -14,13 +14,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
-- `notebooks` folder.
+- ``notebooks`` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
+- Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
+
 
 Changed
 ~~~~~~~
 
-- Using now the built-in RIR generator in `examples/doa_algorithms.py`
+- Using now the built-in RIR generator in ``examples/doa_algorithms.py``.
 - Improved the download/uncompress function for large datasets
 
 `0.1.18`_ - 2018-04-24

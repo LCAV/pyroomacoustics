@@ -1,4 +1,3 @@
-
 import os, tarfile, bz2, requests
 
 try:
@@ -38,3 +37,4 @@ def download_uncompress(url, path='.', compression=None):
     stream = urlopen(url)
     tf = tarfile.open(fileobj=stream, mode=mode)
     tf.extractall(path)
+
