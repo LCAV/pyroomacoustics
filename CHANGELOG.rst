@@ -16,6 +16,7 @@ Added
 
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
+- Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
 
 Changed
 ~~~~~~~
