@@ -46,9 +46,6 @@ if __name__ == '__main__':
     # Room 4m by 6m
     room_dim = [8, 9]
 
-    # source location
-    source = np.array([1, 4.5])
-
     # create an anechoic room with sources and mics
     room = pra.ShoeBox(
         room_dim,
