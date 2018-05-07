@@ -32,41 +32,6 @@ except:
 from .utils import download_uncompress
 from .base import Meta, AudioSample, Dataset
 
-
-google_speech_commands_sounds = {
-    'zero' : { 'speech' : 1},
-    'yes': {'speech' : 1},
-    'wow': {'speech' : 1},
-    'up' : {'speech' : 1},
-    'two' : {'speech' : 1},
-    'tree' : {'speech' : 1},
-    'stop' : {'speech' : 1},
-    'six' : {'speech' : 1},
-    'sheila' : {'speech' : 1},
-    'seven' : {'speech' : 1},
-    'right' : {'speech' : 1},
-    'one' : {'speech' : 1},
-    'on' : {'speech' : 1},
-    'off' : {'speech' : 1},
-    'no' : {'speech' : 1},
-    'nine' : {'speech' : 1},
-    'marvin' : {'speech' : 1},
-    'left' : {'speech' : 1},
-    'house' : {'speech' : 1},
-    'happy' : {'speech' : 1},
-    'go' : {'speech' : 1},
-    'four' : {'speech' : 1},
-    'five' : {'speech' : 1},
-    'eight' : {'speech' : 1},
-    'down' : {'speech' : 1},
-    'dog' : {'speech' : 1},
-    'cat' : {'speech' : 1},
-    'bird' : {'speech' : 1},
-    'bed' : {'speech' : 1},
-    '_background_noise_' : {'speech' : 0},
-    }
-
-
 url = "http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz"
 
 
@@ -124,9 +89,9 @@ class GoogleSpeechCommands(Dataset):
         for idx, word in enumerate(self.classes):
 
             if word == '_background_noise_':
-                speech = 0
+                speech = False
             else:
-                speech = 1
+                speech = True
 
             # get all list of all files in the subdirectory
             word_path = self.subdirs[idx]

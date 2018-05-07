@@ -42,11 +42,10 @@ if __name__ == '__main__':
     # list sounds in our dataset and number of occurences
     print()
     print("All sounds in the dataset:")
-    print(dataset.size_by_samples)
+    print(dataset.classes)
 
     # filter by specific word
-    sounds = list(dataset.size_by_samples.keys())
-    selected_word = sounds[1]
+    selected_word = dataset.classes[1]
     matches = speech_samps.filter(word=selected_word)
     print()
     print("Number of '%s' samples : %d" % (selected_word, len(matches)))
