@@ -4,18 +4,11 @@ Blind Source Separation using Independent Low-Rank Matrix Factorization (ILRM)
 2018 (c) Juan Azcarreta Ortiz, MIT License
 '''
 import numpy as np
-
-from pyroomacoustics import stft, istft
 from .common import projection_back
 
-# A few contrast functions
-f_contrasts = {
-        'norm' : { 'f' : (lambda r,c,m : c * r), 'df' : (lambda r,c,m : c) },
-        'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
-        }
-
-def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
-        n_components=3,
+def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
+        n_components=2,
+        return_filters=0,
         callback=None):
 
     '''
@@ -48,7 +41,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     Returns
     -------
     Returns an (nframes, nfrequencies, nsources) array. Also returns
-    the demixing matrix (nfrequencies, nchannels, nsources)
+    the demixing matrix W (nfrequencies, nchannels, nsources)
     if ``return_values`` keyword is True.
     '''
     X = np.transpose(X, (1, 0, 2))
@@ -74,6 +67,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     R = np.zeros((n_freq, n_frames, n_src))
     I = np.eye(n_src, n_src)
     U = np.zeros((n_freq, n_src, n_chan, n_chan))
+    product = np.zeros((n_freq, n_chan, n_chan))
     lambda_aux = np.zeros(n_src)
     machine_epsilon = np.finfo(float).eps
 
@@ -83,7 +77,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
+            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]).T)
 
     demix(Y, X, W)
     P = np.power(abs(Y), 2.)
@@ -91,6 +85,8 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     for epoch in range(n_iter):
 
         if callback is not None and epoch % 10 == 0:
+            print("Iteration: " + str(epoch))
+
             if proj_back:
                 z = projection_back(Y, X[:,:,0])
                 callback(Y * np.conj(z[None,:,:]))
@@ -98,7 +94,6 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
                 callback(Y)
 
         # simple loop as a start
-        # shape: (n_frames, n_src)
         for s in range(n_src):
             T[:, :, s] = np.multiply(T[:, :, s], np.power(np.divide(np.dot(np.multiply(P[:, :, s],
                         np.power(R[:,:,s], -2.)), V[:,:,s].transpose()), np.dot(np.power(R[:,:,s], -1.),
@@ -115,28 +110,29 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=True, W0=None,
 
             # Compute Auxiliary Variable and update the demixing matrix
             for f in range(n_freq):
-                U[f, s, :, :] = np.transpose(np.dot(np.conjugate(X[f,:,:].T), np.multiply(X[f,:,:],
+                U[f, s, :, :] = np.transpose(np.dot(np.conjugate(X[f, :, :].T), np.multiply(X[f, :, :],
                                np.dot(np.power(np.reshape(R[f, :, s], (n_frames, 1)), -1), np.ones([1, n_chan]))))/n_frames)
 
-                W[f, s, :] = np.dot(np.linalg.inv(np.dot(W[f, :, :], U[f, s, :, :])), I[s, :])
-                W[f, s, :] = np.dot(W[f,s,:], np.power(np.dot(np.dot(np.conjugate(W[f, s, :]).T, U[f, s, :, :]), W[f, s, :]), 0.5))
+                product[f, :, :] = np.dot(W[f, :, :], U[f, s, :, :])
+                W[f, s, :] = np.dot(np.linalg.inv(product[f, :, :] + machine_epsilon * I), I[s, :])
+                W[f, s, :] = np.dot(W[f, s, :], np.power(np.dot(np.dot(np.conjugate(W[f, s, :]).T, U[f, s, :, :]), W[f, s, :]), 0.5))
 
         demix(Y, X, W)
         P = np.power(abs(Y), 2.)
 
         for s in range(n_src):
-            lambda_aux[s] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0))
+            lambda_aux[s] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0)/(n_freq*n_frames))
 
-            W[:, s, :] = np.dot(W[:, s, :], np.power(lambda_aux[n], -1))
-
+            W[:, s, :] = np.dot(W[:, s, :], np.power(lambda_aux[s], -1))
             P[:, :, s] = np.dot(P[:, :, s], np.power(lambda_aux[s], -2))
             R[:, :, s] = np.dot(R[:, :, s], np.power(lambda_aux[s], -2))
             T[:, :, s] = np.dot(T[:, :, s], np.power(lambda_aux[s], -2))
 
     if proj_back:
-        z = projection_back(Y, X[:,:,0])
-        Y *= np.conj(z[None,:,:])
+        z = projection_back(Y, X[:, :, 0])
+        Y *= np.conj(z[None, :, :])
 
+    Y = np.transpose(Y, [1, 0, 2])
     if return_filters:
         return Y, W
     else:

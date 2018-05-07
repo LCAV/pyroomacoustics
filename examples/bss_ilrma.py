@@ -99,6 +99,7 @@ if __name__ == '__main__':
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
     def convergence_callback(Y):
+        Y = np.transpose(Y, [1, 0, 2])
         global SDR, SIR
         from mir_eval.separation import bss_eval_images
         ref = np.moveaxis(separate_recordings, 1, 2)
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     X = np.moveaxis(X, 0, 2)
 
     # Run ILRMA
-    Y = pra.bss.ilrma(X, n_iter=30)
+    Y = pra.bss.ilrma(X, n_iter=30, callback=convergence_callback)
 
     # run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
