@@ -2,7 +2,7 @@
 '''
 Google's Speech Commands Dataset
 ======================
-The Speech Commands Dataset has 65'000 one-second long utterances of 30 short 
+The Speech Commands Dataset has 65,000 one-second long utterances of 30 short 
 words, by thousands of different people, contributed by members of the public
 through the AIY website. It’s released under a Creative Commons BY 4.0 license.
 
@@ -37,18 +37,35 @@ url = "http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz"
 
 class GoogleSpeechCommands(Dataset):
     '''
+    This class will load the Google Speech Commands Dataset in a
+    structure that is convenient to be processed.
+
+    Attributes
+    ----------
+    basedir: str
+        The directory where the Speech Commands Dataset is located/downloaded.
+    size_by_samples: dict
+        A dictionary whose keys are the words in the dataset. The values are the number of occurances for that particular word.
+    subdirs: list
+        The list of subdirectories in ``basedir``, where each sound type is the name of a subdirectory.
+    classes: list
+        The list of all sounds, same as the keys of ``size_by_samples``.
+
     Parameters
     ----------
     basedir: str, optional
-        The directory where the Google Speech Command dataset is located/downloaded. By
-        default, this is the current directory.
+        The directory where the Google Speech Commands dataset is located/downloaded. By default, this is the current directory.
     download: bool, optional
         If the corpus does not exist, download it.
     build: bool, optional
-        Can be 'female' or 'male'
+        Whether or not to build the dataset. By default, it is.
+    subset: int, optional
+        Build a dataset that contains all noise samples and `subset` samples per word. By default, the dataset will be built with all samples.
+    seed: int, optional
+        Which seed to use for the random generator when selecting a subset of samples. By default, ``seed=0``.
     '''
 
-    def __init__(self, basedir=None, subset=None, download=False, build=True, 
+    def __init__(self, basedir=None, download=False, build=True, subset=None,
         seed=0, **kwargs):
 
         # initialize
@@ -71,6 +88,7 @@ class GoogleSpeechCommands(Dataset):
             print("Dataset exists! Using %s" % self.basedir)
 
         # set seed of random number generator
+        self.seed = seed
         self.rng = np.random.RandomState(seed)
 
         if build:
@@ -116,21 +134,45 @@ class GoogleSpeechCommands(Dataset):
                     meta = Meta(word=word, speech=speech, file_loc=file_loc)
                 else:
                     noise_type = os.path.basename(filename).split(".")[0]
-                    meta = Meta(noise_type=noise_type, speech=speech, file_loc=file_loc)
+                    meta = Meta(word="NA", noise_type=noise_type, speech=speech, file_loc=file_loc)
 
                 if meta.match(**kwargs):
                     self.add_sample(GoogleSample(filename, **meta.as_dict()))
 
 
+    def filter(self, **kwargs):
+        '''
+        Filter the dataset and select samples that match the criterias provided
+        The arguments to the keyword can be 1) a string, 2) a list of strings, 3)
+        a function. There is a match if one of the following is True.
+
+        1. ``value == attribute``
+        2. ``value`` is a list and ``attribute in value == True``
+        3. ``value`` is a callable (a function) and ``value(attribute) == True``
+        '''
+
+        # first, create the new empty corpus
+        new_corpus = GoogleSpeechCommands(basedir=self.basedir, build=False,
+            seed=self.seed)
+
+        # finally, add all the sentences
+        for s in self.samples:
+            new_corpus.add_sample_matching(s, **kwargs)
+
+        return new_corpus
+
+
 class GoogleSample(AudioSample):
     '''
     Create the sound object.
+
     Parameters
     ----------
     path: str
       the path to the audio file
     **kwargs:
       metadata as a list of keyword arguments
+
     Attributes
     ----------
     data: array_like
