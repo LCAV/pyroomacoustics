@@ -8,6 +8,7 @@ Submodules
 
    pyroomacoustics.datasets.base
    pyroomacoustics.datasets.cmu_arctic
+   pyroomacoustics.datasets.google_speech_commands
    pyroomacoustics.datasets.timit
    pyroomacoustics.datasets.utils
 
