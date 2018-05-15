@@ -19,15 +19,13 @@ Running this script will do two things.
 3. Show a plot of the SDR and SIR as a function of the number of iterations.
 4. Create a `play(ch)` function that can be used to play the `ch` source (if you are in ipython say).
 
-This script requires the `mir_eval`, and `sounddevice` packages to run.
+This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` packages for the GUI option.
 '''
 
 import numpy as np
-import pyroomacoustics as pra
 from scipy.io import wavfile
 
 from mir_eval.separation import bss_eval_images
-import sounddevice as sd
 
 # We concatenate a few samples to make them long enough
 wav_files = [
@@ -40,8 +38,26 @@ wav_files = [
         ]
 
 if __name__ == '__main__':
+
+    import argparse
+    parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA.')
+    parser.add_argument('-b', '--block', type=int, default=2048,
+            help='STFT block size')
+    parser.add_argument('--gui', action='store_true',
+            help='Creates a small GUI for easy playback of the sound samples')
+
+    args = parser.parse_args()
+
+    if args.gui:
+        # avoids a bug with tkinter and matplotlib
+        import matplotlib
+        matplotlib.use('TkAgg')
+
+    import pyroomacoustics as pra
+
+
     # STFT frame length
-    L = 2048
+    L = args.block
 
     # Room 4m by 6m
     room_dim = [8, 9]
@@ -156,7 +172,49 @@ if __name__ == '__main__':
     plt.plot(np.arange(b.shape[0]) * 10, b[:,1], label='SIR Source 1', c='b', marker='o')
     plt.legend()
 
-    plt.show()
+    plt.tight_layout(pad=0.5)
 
-    def play(ch):
-        sd.play(pra.normalize(y[ch]) * 0.75, samplerate=room.fs, blocking=True)
+    if not args.gui:
+        plt.show()
+    else:
+        plt.show(block=False)
+
+    if args.gui:
+
+        # Make a simple GUI to listen to the separated samples
+        from tkinter import Tk, Button, Label
+        import sounddevice as sd
+
+        # Now come the GUI part
+        class PlaySoundGUI(object):
+            def __init__(self, master, fs, mix, sources):
+                self.master = master
+                self.fs = fs
+                self.mix = mix
+                self.sources = sources
+                master.title("A simple GUI")
+
+                self.label = Label(master, text="This is our first GUI!")
+                self.label.pack()
+
+                self.mix_button = Button(master, text='Mix', command=lambda: self.play(self.mix))
+                self.mix_button.pack()
+
+                self.buttons = []
+                for i, source in enumerate(self.sources):
+                    self.buttons.append(Button(master, text='Source ' + str(i+1), command=lambda src=source : self.play(src)))
+                    self.buttons[-1].pack()
+
+                self.stop_button = Button(master, text="Stop", command=sd.stop)
+                self.stop_button.pack()
+
+                self.close_button = Button(master, text="Close", command=master.quit)
+                self.close_button.pack()
+
+            def play(self, src):
+                sd.play(pra.normalize(src) * 0.75, samplerate=self.fs, blocking=False)
+
+
+        root = Tk()
+        my_gui = PlaySoundGUI(root, room.fs, mics_signals[0,:], y)
+        root.mainloop()
