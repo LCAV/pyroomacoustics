@@ -101,9 +101,43 @@ Example 2 (CMU ARCTIC)
     plt.figure()
     matches[0].plot()
     plt.show()
+
+Example 3 (Google's Speech Commands Dataset)
+--------------------------------------------
+
+::
+
+    # This example involves Google's Speech Commands Dataset available at
+    # https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html
+
+    import matplotlib.pyplot as plt
+    import pyroomacoustics as pra
+
+    # The dataset is automatically downloaded if not available and 10 of each word is selected
+    dataset = pra.datasets.GoogleSpeechCommands(download=True, subset=10, seed=0)
+
+    # print dataset info, first 10 entries, and all sounds
+    print(dataset)
+    dataset.head(n=10)
+    print("All sounds in the dataset:")
+    print(dataset.classes)
+
+    # filter by specific word
+    selected_word = 'yes'
+    matches = dataset.filter(word=selected_word)
+    print("Number of '%s' samples : %d" % (selected_word, len(matches)))
+
+    # if the sounddevice package is available, we can play the sample
+    matches[0].play()
+
+    # show the spectrogram
+    plt.figure()
+    matches[0].plot()
+    plt.show()
   
 '''
 
 from .base import Meta, Sample, AudioSample, Dataset
 from .timit import Word, Sentence, TimitCorpus
 from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence, cmu_arctic_speakers
+from .google_speech_commands import GoogleSpeechCommands, GoogleSample

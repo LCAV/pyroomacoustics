@@ -97,6 +97,7 @@ moment we support the following.
 
 * `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_
 * `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
+* `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
 
 Quick Install
 -------------
