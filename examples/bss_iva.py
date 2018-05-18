@@ -45,6 +45,8 @@ if __name__ == '__main__':
             help='STFT block size')
     parser.add_argument('--gui', action='store_true',
             help='Creates a small GUI for easy playback of the sound samples')
+    parser.add_argument('--save', action='store_true',
+            help='Saves the output of the separation to wav files')
 
     args = parser.parse_args()
 
@@ -163,6 +165,8 @@ if __name__ == '__main__':
     plt.specgram(y[perm[1],:], NFFT=1024, Fs=room.fs)
     plt.title('Source 1 (separated)')
 
+    plt.tight_layout(pad=0.5)
+
     plt.figure()
     a = np.array(SDR)
     b = np.array(SIR)
@@ -178,6 +182,15 @@ if __name__ == '__main__':
         plt.show()
     else:
         plt.show(block=False)
+
+    if args.save:
+        from scipy.io import wavfile
+
+        wavfile.write('bss_iva_mix.wav', room.fs,
+                pra.normalize(mics_signals[0,:], bits=16).astype(np.int16))
+        for i, sig in enumerate(y):
+            wavfile.write('bss_iva_source{}.wav'.format(i+1), room.fs,
+                    pra.normalize(sig, bits=16).astype(np.int16))
 
     if args.gui:
 
