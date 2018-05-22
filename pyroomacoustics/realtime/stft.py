@@ -684,6 +684,8 @@ class STFT(object):
 
 def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     '''
+    Convenience function for one-shot inverse STFT
+
     Parameters
     ----------
     x: array_like, (n_samples) or (n_samples, n_channels)
@@ -720,7 +722,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
 
 
 # inverse STFT
-def synthesis(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
+def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
     '''
     Convenience function for one-shot inverse STFT
 

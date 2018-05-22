@@ -8,10 +8,10 @@ advantage of fast FFT libraries like `pyfftw` or `mkl` when available.
 
 DFT
     | A class for performing DFT of real signals
-    | :py:obj:`pyroomacoustics.stft.dft` 
+    | :py:obj:`pyroomacoustics.realtime.dft` 
 STFT
     | A class for continuous STFT processing and frequency domain filtering
-    | :py:obj:`pyroomacoustics.stft.stft`
+    | :py:obj:`pyroomacoustics.realtime.stft`
 
 '''
 

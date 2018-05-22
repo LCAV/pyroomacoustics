@@ -2,7 +2,10 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-'''Collection of spectral estimation methods.'''
+'''Collection of spectral estimation methods.
+
+**This module is deprecated.** It is replaced by the methods of :py:obj:`pyroomacoustics.realtime`
+'''
 from __future__ import division
 
 import sys, warnings
