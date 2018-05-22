@@ -1,5 +1,5 @@
-pyroomacoustics\.experimental\.point\_cloud module
-==================================================
+pyroomacoustics.experimental.point\_cloud module
+================================================
 
 .. automodule:: pyroomacoustics.experimental.point_cloud
     :members:

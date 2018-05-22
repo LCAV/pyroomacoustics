@@ -25,8 +25,12 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-    # Replace dep1 dep2 ... with your dependencies
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy matplotlib nose
+  # We need to setup a new environment
+  - conda create -n test_env python=$TRAVIS_PYTHON_VERSION
+  - source activate test_env
+
+  # Install the dependencies
+  - conda install --yes pip numpy scipy matplotlib nose
   - pip install -r requirements.txt
   - python setup.py install
 
@@ -34,6 +38,7 @@ install:
 script:
   - nosetests
   - python setup.py build_ext --inplace
+  - python pyroomacoustics/c_package/tests/check_build.py
   - nosetests
 
 # Deploy to pypi (or test)

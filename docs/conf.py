@@ -25,7 +25,7 @@ MOCK_MODULES = ['numpy', 'numpy.fft', 'scipy', 'matplotlib', 'matplotlib.pyplot'
         'matplotlib.tri.triangulation', 'matplotlib.colors', 'matplotlib.cm',
         'matplotlib.patches', 'matplotlib.cbook', 'matplotlib.projections',
         'matplotlib.ticker', 'scipy.special', 'scipy.optimize', 'numpy.linalg',
-        'mpl_toolkits', 'mpl_toolkits.mplot3d', 'joblib',]
+        'mpl_toolkits', 'mpl_toolkits.mplot3d', 'joblib', 'scipy.io',]
 
 try:
     from unittest.mock import MagicMock

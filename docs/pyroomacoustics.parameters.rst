@@ -1,5 +1,5 @@
-pyroomacoustics\.parameters module
-==================================
+pyroomacoustics.parameters module
+=================================
 
 .. automodule:: pyroomacoustics.parameters
     :members:

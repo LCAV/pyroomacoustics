@@ -1,5 +1,5 @@
-pyroomacoustics\.doa\.music module
-==================================
+pyroomacoustics.doa.music module
+================================
 
 .. automodule:: pyroomacoustics.doa.music
     :members:

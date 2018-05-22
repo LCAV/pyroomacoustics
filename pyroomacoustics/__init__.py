@@ -45,9 +45,6 @@ Available submodules
 :py:obj:`pyroomacoustics.beamforming`
     Microphone arrays and beamforming routines.
 
-:py:obj:`pyroomacoustics.bss`
-    Blind source separation.
-
 :py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
 
@@ -86,14 +83,22 @@ Available submodules
 
 Available subpackages
 ---------------------
-:py:obj:`pyroomacoustics.doa`
-    Direction of arrival finding algorithms
 
 :py:obj:`pyroomacoustics.adaptive`
     Adaptive filter algorithms
 
+:py:obj:`pyroomacoustics.bss`
+    Blind source separation.
+
+:py:obj:`pyroomacoustics.datasets`
+    Wrappers around a few popular speech datasets
+
+:py:obj:`pyroomacoustics.doa`
+    Direction of arrival finding algorithms
+
 :py:obj:`pyroomacoustics.realtime`
     Block frequency domain processing tools
+
 
 Utilities
 ---------
@@ -115,7 +120,6 @@ from .utilities import *
 from .windows import *
 from .sync import *
 from .metrics import *
-from .bss import *
 from .multirate import *
 from .acoustics import *
 from .recognition import *
@@ -124,3 +128,5 @@ from . import doa
 from . import adaptive
 from . import realtime
 from . import experimental
+from . import datasets
+from . import bss

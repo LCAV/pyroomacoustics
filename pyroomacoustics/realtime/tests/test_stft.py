@@ -14,7 +14,7 @@ block processing.
 '''
 
 # test parameters
-tol = 1e-6
+tol = 5e-6
 np.random.seed(0)
 D = 4
 transform = 'numpy'   # 'numpy', 'pyfftw', or 'mkl'

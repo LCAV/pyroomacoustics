@@ -1,5 +1,5 @@
-pyroomacoustics\.realtime\.stft module
-======================================
+pyroomacoustics.realtime.stft module
+====================================
 
 .. automodule:: pyroomacoustics.realtime.stft
     :members:

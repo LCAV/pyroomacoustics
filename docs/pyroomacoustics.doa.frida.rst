@@ -1,5 +1,5 @@
-pyroomacoustics\.doa\.frida module
-==================================
+pyroomacoustics.doa.frida module
+================================
 
 .. automodule:: pyroomacoustics.doa.frida
     :members:

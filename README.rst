@@ -81,12 +81,23 @@ algorithms for
 
 * beamforming
 * direction of arrival (DOA) finding
-* adaptive filtering
+* adaptive filtering (NLMS, RLS)
+* blind source separation (AuxIVA, Trinicon)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
 pre-set values for the tuning parameters so that a run with the default values
 will in general produce reasonable results.
+
+Datasets
+````````
+In an effort to simplify the use of datasets, we provide a few wrappers that
+allow to quickly load and sort through some popular speech corpora. At the
+moment we support the following.
+
+* `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_
+* `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
+* `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
 
 Quick Install
 -------------
@@ -152,11 +163,12 @@ in the following papers.
 
 * H\. Pan, R. Scheibler, I. Dokmanic, E. Bezzam and M. Vetterli. *FRIDA: FRI-based DOA estimation for arbitrary array layout*, ICASSP 2017, New Orleans, USA, 2017.
 * I\. Dokmanić, R. Scheibler and M. Vetterli. *Raking the Cocktail Party*, in IEEE Journal of Selected Topics in Signal Processing, vol. 9, num. 5, p. 825 - 836, 2015.
-* R\. Scheibler, I. Dokmanić and M. Vetterli. *Raking Echoes in the Time Domain*, ICASSP 2015, Brisbane, Australia, 2015. 
+* R\. Scheibler, I. Dokmanić and M. Vetterli. *Raking Echoes in the Time Domain*, ICASSP 2015, Brisbane, Australia, 2015.
 
 If you use this package in your own research, please cite `our paper describing it <https://arxiv.org/abs/1710.04196>`_.
 
-  R. Scheibler, E. Bezzam, I. Dokmanić, *Pyroomacoustics: A Python package for audio room simulations and array processing algorithms*, Proc. IEEE ICASSP, Calgary, CA, 2018.
+
+  R\. Scheibler, E. Bezzam, I. Dokmanić, *Pyroomacoustics: A Python package for audio room simulations and array processing algorithms*, Proc. IEEE ICASSP, Calgary, CA, 2018.
 
 License
 -------

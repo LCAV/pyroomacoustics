@@ -27,7 +27,7 @@ except:
     raise ValueError('An environment variable ''TIMIT_PATH'' pointing to the TIMIT base location is needed.')
 
 # Load the corpus, be patient
-corpus = pra.TimitCorpus(timit_path)
+corpus = pra.datasets.TimitCorpus(timit_path)
 corpus.build_corpus()
 
 # the corpus is split between train and test

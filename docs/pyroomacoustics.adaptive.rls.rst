@@ -1,5 +1,5 @@
-pyroomacoustics\.adaptive\.rls module
-=====================================
+pyroomacoustics.adaptive.rls module
+===================================
 
 .. automodule:: pyroomacoustics.adaptive.rls
     :members:
