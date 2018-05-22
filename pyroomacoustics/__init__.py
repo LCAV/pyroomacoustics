@@ -107,6 +107,7 @@ from .room import *
 from .beamforming import *
 from .soundsource import *
 from .parameters import *
+from .stft import *
 from .utilities import *
 from .windows import *
 from .sync import *
@@ -118,5 +119,5 @@ from .recognition import *
 
 from . import doa
 from . import adaptive
-from . import stft
+from . import realtime
 from . import experimental

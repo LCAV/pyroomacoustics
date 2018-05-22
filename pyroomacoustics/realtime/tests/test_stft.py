@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
-from pyroomacoustics.stft import STFT
+from pyroomacoustics.realtime import STFT
 
 '''
 We create a signal, a simple filter and compute their convolution.
@@ -15,7 +15,7 @@ block processing.
 '''
 
 # test parameters
-tol = 1e-6
+tol = 3e-6
 np.random.seed(0)
 D = 4
 transform = 'numpy'   # 'numpy', 'pyfftw', or 'mkl'

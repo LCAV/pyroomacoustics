@@ -561,7 +561,6 @@ class STFT(object):
 
 
     def synthesis(self, X=None):
-
         """
         Parameters
         -----------
@@ -683,23 +682,21 @@ class STFT(object):
 " ---------------------------------------------------------------------------- "
 # Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
 
-def analysis(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
+def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     '''
     Parameters
     ----------
-    x: 
-        input signal
-    L: 
+    x: array_like, (n_samples) or (n_samples, n_channels)
+        input signal 
+    L: int
         frame size
-    hop: 
+    hop: int
         shift size between frames
-    transform: 
-        the transform routine to apply (default FFT)
-    win: 
+    win: array_like
         the window to apply (default None)
-    zp_back: 
+    zp_back: int
         zero padding to apply at the end of the frame
-    zp_front: 
+    zp_front: int
         zero padding to apply at the beginning of the frame
 
     Returns
@@ -707,131 +704,52 @@ def analysis(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     The STFT of x
     '''
 
-    # the transform size
-    N = L + zp_back + zp_front
+    if x.ndim == 2:
+        channels = x.shape[1]
 
-    # window needs to be same size as transform
-    if (win is not None and len(win) != N):
-        print('Window length need to be equal to frame length + zero padding.')
-        sys.exit(-1)
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
 
-    # reshape
-    new_strides = (hop * x.strides[0], x.strides[0])
-    new_shape = ((len(x) - L) // hop + 1, L)
-    y = _as_strided(x, shape=new_shape, strides=new_strides)
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
 
-    # add the zero-padding
-    y = np.concatenate(
-        (np.zeros(
-            (y.shape[0], zp_front)), y, np.zeros(
-            (y.shape[0], zp_back))), axis=1)
-
-    # apply window if needed
-    if (win is not None):
-        y = win * y
-        # y = np.expand_dims(win, 0)*y
-
-    # transform along rows
-    Z = transform(y, axis=1)
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
 
     # apply transform
-    return Z
+    return the_stft.analysis(x)
 
 
 # inverse STFT
 def synthesis(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
+    '''
+    Convenience function for one-shot inverse STFT
 
-    # the transform size
-    N = L + zp_back + zp_front
+    Parameters
+    ----------
+    X: array_like (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
+        The data
+    L: int
+        frame size
+    hop: int
+        shift size between frames
+    win: array_like
+        the window to apply (default None)
+    zp_back: int
+        zero padding to apply at the end of the frame
+    zp_front: int
+        zero padding to apply at the beginning of the frame
+    '''
 
-    # window needs to be same size as transform
-    if (win is not None and len(win) != N):
-        print('Window length need to be equal to frame length + zero padding.')
-        sys.exit(-1)
+    if X.ndim == 3:
+        channels = X.shape[2]
 
-    # inverse transform
-    iX = transform(X, axis=1)
-    if (iX.dtype == 'complex128'):
-        iX = np.real(iX)
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
 
-    # apply synthesis window if necessary
-    if (win is not None):
-        iX *= win
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
 
-    # create output signal
-    x = np.zeros(X.shape[0] * hop + (L - hop) + zp_back + zp_front)
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
 
-    # overlap add
-    for i in range(X.shape[0]):
-        x[i * hop:i * hop + N] += iX[i]
-
-    return x
-
-
-# a routine for long convolutions using overlap add method
-def overlap_add(in1, in2, L):
-
-    # set the shortest sequence as the filter
-    if (len(in1) > len(in2)):
-        x = in1
-        h = in2
-    else:
-        h = in1
-        x = in2
-
-    # filter length
-    M = len(h)
-
-    # FFT size
-    N = L + M - 1
-
-    # frequency domain filter (zero-padded)
-    H = np.fft.rfft(h, N)
-
-    # prepare output signal
-    ylen = int(np.ceil(len(x) / float(L)) * L + M - 1)
-    y = np.zeros(ylen)
-
-    # overlap add
-    i = 0
-    while (i < len(x)):
-        y[i:i + N] += np.fft.irfft(np.fft.rfft(x[i:i + L], N) * H, N)
-        i += L
-
-    return y[:len(x) + M - 1]
-
-
-def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
-                vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
-
-    import matplotlib.pyplot as plt
-
-    plt.imshow(
-        20 * np.log10(np.abs(Z[:N // 2 + 1, :])),
-        aspect='auto',
-        origin='lower',
-        vmin=vmin, vmax=vmax, cmap=cmap, interpolation=interpolation)
-
-    # label y axis correctly
-    plt.ylabel('Freq [Hz]')
-    yticks = plt.getp(plt.gca(), 'yticks')
-    plt.setp(plt.gca(), 'yticklabels', np.round(yticks / float(N) * fs))
-    if (fdiv is not None):
-        tick_lbls = np.arange(0, fs / 2, fdiv)
-        tick_locs = tick_lbls * N / fs
-        plt.yticks(tick_locs, tick_lbls)
-
-    # label x axis correctly
-    plt.xlabel('Time [s]')
-    xticks = plt.getp(plt.gca(), 'xticks')
-    plt.setp(plt.gca(), 'xticklabels', xticks / float(fs) * hop)
-    if (tdiv is not None):
-        unit = float(hop) / fs
-        length = unit * Z.shape[1]
-        tick_lbls = np.arange(0, int(length), tdiv)
-        tick_locs = tick_lbls * fs / hop
-        plt.xticks(tick_locs, tick_lbls)
-
-    if colorbar is True:
-        plt.colorbar(orientation='horizontal')
-
+    # apply transform
+    return the_stft.synthesis(x)

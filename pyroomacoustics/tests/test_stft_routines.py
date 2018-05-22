@@ -20,9 +20,9 @@ class TestSTFT(TestCase):
             for div in hop_div:
                 for epoch in range(loops):
                     x = np.random.randn(frames * n // div + n - n // div)
-                    X = pra.stft.analysis(x, n, n // div, 
+                    X = pra.stft(x, n, n // div, 
                         transform=np.fft.rfft)
-                    y = pra.stft.synthesis(X, n, n // div, 
+                    y = pra.istft(X, n, n // div, 
                         transform=np.fft.irfft)
 
                     # because of overlap, there is a scaling at reconstruction
@@ -40,5 +40,5 @@ class TestSTFT(TestCase):
             x = np.random.randn(n1)
             y = np.random.randn(n2)
 
-            self.assertTrue(np.allclose(pra.stft.overlap_add(x, y, L), 
+            self.assertTrue(np.allclose(pra.overlap_add(x, y, L), 
                 fftconvolve(x, y)))

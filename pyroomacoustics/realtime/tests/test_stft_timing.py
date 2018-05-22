@@ -2,7 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 import pyroomacoustics as pra
-from pyroomacoustics.stft import STFT
+from pyroomacoustics.realtime import STFT
 import time
 import warnings
 
@@ -73,9 +73,9 @@ print("One shot function : ", end="")
 start = time.time()
 for k in range(num_times):
 
-    y_mic_stft = np.array([pra.stft.analysis(signals[:, k], block_size, hop,
+    y_mic_stft = np.array([pra.stft(signals[:, k], block_size, hop,
          transform=np.fft.rfft, win=win).T for k in range(num_mic)])
-    x_r = np.array([pra.stft.synthesis(y_mic_stft[k,:,:].T, block_size, hop, 
+    x_r = np.array([pra.istft(y_mic_stft[k,:,:].T, block_size, hop, 
         transform=np.fft.irfft) for k in range(num_mic)])
 avg_time = (time.time()-start)/num_times
 print("%0.3f sec" % avg_time)
