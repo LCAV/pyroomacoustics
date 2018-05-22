@@ -186,22 +186,22 @@ out_RakePerceptual = out_RakePerceptual[:n_lim]
 
 
 # compute time-frequency planes
-F0 = pra.stft.analysis(input_clean, fft_size, fft_hop, 
+F0 = pra.stft(input_clean, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
-F1 = pra.stft.analysis(input_mic, fft_size, fft_hop, 
+F1 = pra.stft(input_mic, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
-F2 = pra.stft.analysis(out_DirectMVDR, fft_size, fft_hop, 
+F2 = pra.stft(out_DirectMVDR, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
-F3 = pra.stft.analysis(out_RakeMVDR, fft_size, fft_hop, 
+F3 = pra.stft(out_RakeMVDR, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
-F4 = pra.stft.analysis(out_DirectPerceptual, fft_size, fft_hop, 
+F4 = pra.stft(out_DirectPerceptual, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
-F5 = pra.stft.analysis(out_RakePerceptual, fft_size, fft_hop, 
+F5 = pra.stft(out_RakePerceptual, fft_size, fft_hop, 
           win=analysis_window, 
           zp_back=fft_zp)
 
@@ -223,7 +223,7 @@ interpolation='none'
 fig, ax = plt.subplots(figsize=figsize, nrows=2, ncols=3)
 
 def plot_spectrogram(F, title):
-    pra.stft.spectroplot(F.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax,
+    pra.spectroplot(F.T, fft_size+fft_zp, fft_hop, Fs, vmin=vmin, vmax=vmax,
             cmap=plt.get_cmap(cmap), interpolation=interpolation, colorbar=False)
     ax.set_title(title)
     ax.set_ylabel('')
