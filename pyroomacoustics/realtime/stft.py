@@ -393,39 +393,6 @@ class STFT(object):
 
                 n += self.hop
 
-            # ## ----- STRIDED WAY
-            # #USE PREVIOUS SAMPLES!
-            # # print(self.old_samples.shape)
-            # # print(x.shape)
-            # x = np.concatenate((self.old_samples,x))
-            # # print(x.shape)
-            # new_strides = (x.strides[0],self.hop * x.strides[0])
-            # new_shape = (self.num_samples,self.num_frames)
-
-            # if self.num_channels > 1:
-            #     for c in range(self.num_channels):
-
-            #         y = _as_strided(x[:,c], shape=new_shape, strides=new_strides)
-            #         y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
-            #                             np.zeros((self.zb,self.num_frames))))
-            #         self.X[:,:,c] = self.dft_frames.analysis(y).T
-
-            #         # store last frame
-            #         self.fft_in_buffer[:,c] = y[:,-1]
-            #         # self.fft_in_state[:,c] = self.old_samples[:,c]
-
-            # else:
-
-            #     y = _as_strided(x, shape=new_shape, strides=new_strides)
-            #     y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
-            #                         np.zeros((self.zb,self.num_frames))))
-            #     self.X[:] = self.dft_frames.analysis(y).T
-
-            #     # store last frame
-            #     self.fft_in_buffer[:] = y[:,-1]
-            #     # self.fft_in_state[:] = self.old_samples[:]
-
-
 
     def _analysis_non_streaming(self, x):
         """
