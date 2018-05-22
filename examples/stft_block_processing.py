@@ -34,7 +34,7 @@ window = pra.hann(block_size, flag='asymmetric', length='full')  # analysis wind
 fs, audio = wavfile.read('examples/input_samples/singing_8000.wav')
 
 # Create the STFT object
-stft = pra.realtime.STFT(block_size, hop=hop, analysis_window=window, channels=1)
+stft = pra.stft.STFT(block_size, hop=hop, analysis_window=window, channels=1)
 
 # set the filter and the appropriate amount of zero padding (back)
 if h_len > 1:

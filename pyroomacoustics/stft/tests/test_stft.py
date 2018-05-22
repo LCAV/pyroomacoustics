@@ -4,6 +4,7 @@ from unittest import TestCase
 import numpy as np
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
+from pyroomacoustics.stft import STFT
 
 '''
 We create a signal, a simple filter and compute their convolution.
@@ -45,7 +46,7 @@ def incorrect_input_size(D, num_frames):
     hop = block_size
 
     # create STFT object
-    stft = pra.realtime.STFT(block_size, hop=hop,
+    stft = STFT(block_size, hop=hop,
         channels=D, 
         transform=transform,
         num_frames=num_frames)
@@ -84,10 +85,10 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False,
 
     # Create the STFT object
     if fixed_memory:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
                 transform=transform, num_frames=num_frames, streaming=streaming)
     else:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
             transform=transform, streaming=streaming)
 
     # collect the processed blocks
@@ -141,10 +142,10 @@ def no_overlap_with_filter(D, num_frames=1, fixed_memory=False,
 
     # Create the STFT object
     if fixed_memory:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
                 transform=transform, num_frames=num_frames, streaming=streaming)
     else:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
             transform=transform, streaming=streaming)
     
     # setup the filter
@@ -201,11 +202,11 @@ def with_half_overlap_no_filter(D, num_frames=1, fixed_memory=False,
 
     # Create the STFT object
     if fixed_memory:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
                 transform=transform, num_frames=num_frames, 
                 analysis_window=window, streaming=streaming)
     else:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
             transform=transform, analysis_window=window, streaming=streaming)
 
     # collect the processed blocks
@@ -263,11 +264,11 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False,
 
     # Create the STFT object
     if fixed_memory:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
                 transform=transform, num_frames=num_frames, 
                 analysis_window=window, streaming=streaming)
     else:
-        stft = pra.realtime.STFT(block_size, hop=hop, channels=D, 
+        stft = STFT(block_size, hop=hop, channels=D, 
             transform=transform, analysis_window=window, streaming=streaming)
 
     # setup the filter

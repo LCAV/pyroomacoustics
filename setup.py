@@ -55,7 +55,7 @@ setup_kwargs = dict(
             'pyroomacoustics.c_package', 
             'pyroomacoustics.doa', 
             'pyroomacoustics.adaptive',
-            'pyroomacoustics.realtime',
+            'pyroomacoustics.stft',
             'pyroomacoustics.experimental',
             ],
 

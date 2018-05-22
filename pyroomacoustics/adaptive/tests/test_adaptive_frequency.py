@@ -26,7 +26,7 @@ x = np.random.randn(n_samples)
 # take to STFT domain
 window = pra.hann(fft_length)  # the analysis window
 hop = fft_length//2
-stft_in = pra.realtime.STFT(fft_length, hop=hop, 
+stft_in = pra.stft.STFT(fft_length, hop=hop, 
     analysis_window=window)
 
 n = 0

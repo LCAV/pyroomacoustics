@@ -636,7 +636,7 @@ class Beamformer(MicrophoneArray):
                                   np.zeros(self.zpb)))
 
             # do real STFT of first signal
-            tfd_sig = stft.stft(self.signals[0],
+            tfd_sig = stft.analysis(self.signals[0],
                                 self.L,
                                 self.hop,
                                 zp_back=self.zpb,
@@ -644,7 +644,7 @@ class Beamformer(MicrophoneArray):
                                 transform=np.fft.rfft,
                                 win=win) * np.conj(self.weights[0])
             for i in range(1, self.M):
-                tfd_sig += stft.stft(self.signals[i],
+                tfd_sig += stft.analysis(self.signals[i],
                                      self.L,
                                      self.hop,
                                      zp_back=self.zpb,
@@ -653,7 +653,7 @@ class Beamformer(MicrophoneArray):
                                      win=win) * np.conj(self.weights[i])
 
             #  now reconstruct the signal
-            output = stft.istft(
+            output = stft.synthesis(
                 tfd_sig,
                 self.L,
                 self.hop,
