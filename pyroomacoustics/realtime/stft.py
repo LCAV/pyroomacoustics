@@ -4,6 +4,7 @@
 """Class for real-time STFT analysis and processing."""
 from __future__ import division
 
+import sys
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
 import warnings
@@ -305,7 +306,7 @@ class STFT(object):
                     # raise ValueError('Not enough samples. Received %d; need \
                     #     at least %d.' % (x_shape[0],self.num_samples))
                     extra_samples = self.num_samples - x_shape[0]
-                    warnings.warn("Not enough samples. Received %d; appending %d zeros full valid frame." \
+                    warnings.warn("Not enough samples. Received %d; appending %d zeros for full valid frame." \
                         % (x_shape[0],
                             extra_samples))
                     x = np.concatenate((x, 
@@ -459,7 +460,7 @@ class STFT(object):
                 self.X[:] = self.dft_frames.analysis(y).T
 
 
-    def _check_input_frequency_dimensions(X):
+    def _check_input_frequency_dimensions(self, X):
         """
         Ensure that given frequency data is valid, i.e. number of channels and
         number of frequency bins.
@@ -484,9 +485,14 @@ class STFT(object):
             raise ValueError("Invalid input shape.")
 
         # check number of bins
-        if X_shape[1]!=self.nbin:
-            raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
-                % (self.nbin,X_shape[0]))
+        if num_frames == 1:
+            if X_shape[0]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
+        else:
+            if X_shape[1]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
 
         # check number of frames, if fixed input size
         if self.fixed_input:
@@ -555,7 +561,6 @@ class STFT(object):
 
 
     def synthesis(self, X=None):
-
         """
         Parameters
         -----------
@@ -671,3 +676,80 @@ class STFT(object):
 
         return self.out
 
+
+" ---------------------------------------------------------------------------- "
+" --------------- One-shot functions to avoid creating object. --------------- "
+" ---------------------------------------------------------------------------- "
+# Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
+
+def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
+    '''
+    Parameters
+    ----------
+    x: array_like, (n_samples) or (n_samples, n_channels)
+        input signal 
+    L: int
+        frame size
+    hop: int
+        shift size between frames
+    win: array_like
+        the window to apply (default None)
+    zp_back: int
+        zero padding to apply at the end of the frame
+    zp_front: int
+        zero padding to apply at the beginning of the frame
+
+    Returns
+    -------
+    The STFT of x
+    '''
+
+    if x.ndim == 2:
+        channels = x.shape[1]
+
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
+
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
+
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
+
+    # apply transform
+    return the_stft.analysis(x)
+
+
+# inverse STFT
+def synthesis(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
+    '''
+    Convenience function for one-shot inverse STFT
+
+    Parameters
+    ----------
+    X: array_like (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
+        The data
+    L: int
+        frame size
+    hop: int
+        shift size between frames
+    win: array_like
+        the window to apply (default None)
+    zp_back: int
+        zero padding to apply at the end of the frame
+    zp_front: int
+        zero padding to apply at the beginning of the frame
+    '''
+
+    if X.ndim == 3:
+        channels = X.shape[2]
+
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
+
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
+
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
+
+    # apply transform
+    return the_stft.synthesis(x)

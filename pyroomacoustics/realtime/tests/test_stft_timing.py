@@ -2,6 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 import pyroomacoustics as pra
+from pyroomacoustics.realtime import STFT
 import time
 import warnings
 
@@ -27,8 +28,8 @@ print("Averaging computation time over %d cases of %d channels of %d samples (%0
     % (num_times,num_mic,len(signals),(len(signals)/fs),fs/1000) )
 print()
 print("----- SINGLE FRAME AT A TIME -----")
-print("realtime.stft (not fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+print("With STFT object (not fixed) : ", end="")
+stft = STFT(block_size, hop=hop, channels=num_mic,
     streaming=True, analysis_window=win)
 start = time.time()
 for k in range(num_times):
@@ -45,8 +46,9 @@ err_dB = 20*np.log10(np.max(np.abs(signals[:n-hop,] - x_r[hop:n,])))
 print("Error [dB] : %0.3f" % err_dB)
 
 
-print("realtime.stft (fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic, num_frames=1, streaming=True, analysis_window=win)
+print("With STFT object (fixed) : ", end="")
+stft = STFT(block_size, hop=hop, channels=num_mic, num_frames=1, 
+    streaming=True, analysis_window=win)
 start = time.time()
 for k in range(num_times):
 
@@ -67,13 +69,14 @@ Multiple frame at a time (non-streaming)
 """
 print()
 print("----- MULTIPLE FRAMES AT A TIME -----")
-print("Current pyroomacoustics : ", end="")
+print("One shot function : ", end="")
 start = time.time()
 for k in range(num_times):
 
     y_mic_stft = np.array([pra.stft(signals[:, k], block_size, hop,
          transform=np.fft.rfft, win=win).T for k in range(num_mic)])
-    x_r = np.array([pra.istft(y_mic_stft[k,:,:].T, block_size, hop, transform=np.fft.irfft) for k in range(num_mic)])
+    x_r = np.array([pra.istft(y_mic_stft[k,:,:].T, block_size, hop, 
+        transform=np.fft.irfft) for k in range(num_mic)])
 avg_time = (time.time()-start)/num_times
 print("%0.3f sec" % avg_time)
 err_dB = 20*np.log10(np.max(np.abs(signals[hop:x_r.shape[1]-hop,] - 
@@ -81,8 +84,8 @@ err_dB = 20*np.log10(np.max(np.abs(signals[hop:x_r.shape[1]-hop,] -
 print("Error [dB] : %0.3f" % err_dB)
 
 warnings.filterwarnings("ignore") # to avoid warning of appending zeros to be printed
-print("realtime.stft (not fixed) : ", end="")
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+print("With STFT object (not fixed) : ", end="")
+stft = STFT(block_size, hop=hop, channels=num_mic,
     analysis_window=win, streaming=False)
 start = time.time()
 for k in range(num_times):
@@ -98,9 +101,9 @@ print("Error [dB] : %0.3f" % err_dB)
 warnings.filterwarnings("default")
 
 
-print("realtime.stft (fixed) : ", end="")
+print("With STFT object (fixed) : ", end="")
 num_frames = (len(signals)-block_size)//hop + 1
-stft = pra.realtime.STFT(block_size, hop=hop, channels=num_mic,
+stft = STFT(block_size, hop=hop, channels=num_mic,
     num_frames=num_frames, analysis_window=win, streaming=False)
 start = time.time()
 for k in range(num_times):
