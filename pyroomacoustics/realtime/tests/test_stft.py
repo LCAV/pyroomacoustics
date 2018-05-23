@@ -65,8 +65,8 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False,
                         streaming=True):
     """
     D             - number of channels
-    num_frames    - how many frames to process, None will process one frame at 
-                    a time 
+    num_frames    - how many frames to process, None will process one frame at
+                    a time
     fixed_memory  - whether to enforce checks for size (real-time consideration)
     streaming     - whether or not to stitch between frames
     """
@@ -113,6 +113,140 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False,
     error = np.max(np.abs(x_local[:n,] - processed_x[:n,]))
 
     return error
+
+def with_half_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
+                        streaming=True):
+    """
+    D             - number of channels
+    num_frames    - how many frames to process, None will process one frame at
+                    a time
+    fixed_memory  - whether to enforce checks for size (real-time consideration)
+    streaming     - whether or not to stitch between frames
+    """
+
+    if D == 1:
+        x_local = x[:,0]
+    else:
+        x_local = x[:,:D]
+
+    # parameters
+    block_size = 512  # make sure the FFT size is a power of 2
+    hop = block_size // 2  # half overlap
+    if not streaming:
+        num_samples = (num_frames-1)*hop+block_size
+        x_local = x_local[:num_samples,]
+
+    analysis_window = np.sqrt(pra.hann(block_size))
+    synthesis_window = np.sqrt(pra.hann(block_size))
+
+    # Create the STFT object
+    if fixed_memory:
+        stft = STFT(block_size, hop=hop, channels=D,
+                transform=transform, num_frames=num_frames,
+                analysis_window=analysis_window, synthesis_window=synthesis_window,
+                streaming=streaming)
+    else:
+        stft = STFT(block_size, hop=hop, channels=D,
+                analysis_window=analysis_window, synthesis_window=synthesis_window,
+                transform=transform, streaming=streaming)
+
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
+
+    if streaming:
+
+        n = 0
+        hop_frames = hop*num_frames
+        # process the signals while full blocks are available
+        while  x_local.shape[0] - n > hop_frames:
+            stft.analysis(x_local[n:n+hop_frames,])
+            processed_x[n:n+hop_frames,] = stft.synthesis()
+            n += hop_frames
+
+    else:
+
+        stft.analysis(x_local)
+        processed_x = stft.synthesis()
+        n = processed_x.shape[0]
+
+    error = np.max(np.abs(x_local[:n-hop,] - processed_x[hop:n,]))
+
+    return error
+
+
+def with_quarter_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
+                        streaming=True):
+    """
+    D             - number of channels
+    num_frames    - how many frames to process, None will process one frame at
+                    a time
+    fixed_memory  - whether to enforce checks for size (real-time consideration)
+    streaming     - whether or not to stitch between frames
+    """
+
+    if D == 1:
+        x_local = x[:,0]
+    else:
+        x_local = x[:,:D]
+
+    # parameters
+    block_size = 512  # make sure the FFT size is a power of 2
+    hop = block_size // 4  # quarter overlap
+    if not streaming:
+        num_samples = (num_frames-1)*hop+block_size
+        x_local = x_local[:num_samples,]
+
+    analysis_window = pra.hann(block_size)
+    synthesis_window = pra.realtime.compute_synthesis_window(analysis_window, hop)
+
+    # Create the STFT object
+    if fixed_memory:
+        stft = STFT(block_size, hop=hop, channels=D,
+                transform=transform, num_frames=num_frames,
+                analysis_window=analysis_window, synthesis_window=synthesis_window,
+                streaming=streaming)
+    else:
+        stft = STFT(block_size, hop=hop, channels=D,
+                analysis_window=analysis_window, synthesis_window=synthesis_window,
+                transform=transform, streaming=streaming)
+
+    # collect the processed blocks
+    processed_x = np.zeros(x_local.shape)
+
+    if streaming:
+
+        n = 0
+        hop_frames = hop*num_frames
+        # process the signals while full blocks are available
+        while  x_local.shape[0] - n > hop_frames:
+            stft.analysis(x_local[n:n+hop_frames,])
+            processed_x[n:n+hop_frames,] = stft.synthesis()
+            n += hop_frames
+
+    else:
+
+        stft.analysis(x_local)
+        processed_x = stft.synthesis()
+        n = processed_x.shape[0]
+
+        '''
+        import matplotlib.pyplot as plt
+        if x_local.ndim > 1:
+            plt.plot(x_local[:,0])
+            plt.plot(processed_x[:,0])
+        else:
+            plt.plot(x_local[:,])
+            plt.plot(processed_x[:,])
+        plt.show()
+
+        import pdb
+        pdb.set_trace()
+        '''
+
+    error = np.max(np.abs(x_local[:n-block_size+hop,] - processed_x[block_size-hop:n,]))
+
+    return error
+
 
 def no_overlap_with_filter(D, num_frames=1, fixed_memory=False,
                         streaming=True):
@@ -317,33 +451,65 @@ def call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=True,
         streaming)
     print('no overlap, no filter, mono             : %0.0f dB' 
         % (20*np.log10(error)))
+
     error = no_overlap_no_filter(D, num_frames, fixed_memory, streaming)
     print('no overlap, no filter, multichannel     : %0.0f dB' 
         % (20*np.log10(error)))
+
     error = no_overlap_with_filter(1, num_frames, fixed_memory,
         streaming)
     print('no overlap, with filter, mono           : %0.0f dB' 
         % (20*np.log10(error)))
+
     error = no_overlap_with_filter(D, num_frames, fixed_memory,
         streaming)
     print('no overlap, with filter, multichannel   : %0.0f dB' 
         % (20*np.log10(error)))
+
     if overlap:
         error = with_half_overlap_no_filter(1, num_frames, fixed_memory,
             streaming)
         print('half overlap, no filter, mono           : %0.0f dB' 
             % (20*np.log10(error)))
+
+        error = with_half_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming)
+        print('half overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_half_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming)
+        print('half overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_quarter_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming)
+        print('quarter overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_quarter_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming)
+        print('quarter overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
         error = with_half_overlap_no_filter(D, num_frames, fixed_memory,
             streaming)
-        print('half overlap, no filter, multichannel   : %0.0f dB' 
+        print('half overlap, no filter, multichannel   : %0.0f dB'
             % (20*np.log10(error)))
-        error = with_half_overlap_with_filter(1, num_frames, 
+
+        error = with_half_overlap_with_filter(1, num_frames,
             fixed_memory, streaming)
-        print('half overlap, with filter, mono         : %0.0f dB' 
+        print('half overlap, with filter, mono         : %0.0f dB'
             % (20*np.log10(error)))
-        error = with_half_overlap_with_filter(D, num_frames, 
+
+        error = with_half_overlap_with_filter(D, num_frames,
             fixed_memory, streaming)
-        print('half overlap, with filter, multichannel : %0.0f dB' 
+        print('half overlap, with filter, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_half_overlap_with_filter(D, num_frames,
+            fixed_memory, streaming)
+        print('half overlap, with filter, multichannel : %0.0f dB'
             % (20*np.log10(error)))
     print()
 

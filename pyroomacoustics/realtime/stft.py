@@ -722,3 +722,37 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
 
     # apply transform
     return the_stft.synthesis(x)
+
+
+def compute_synthesis_window(analysis_window, hop):
+    '''
+    Computes the optimal synthesis window given an analysis window
+    and hop (frame shift). The procedure is described in
+
+    D. Griffin and J. Lim, *Signal estimation from modified short-time Fourier transform,* IEEE Transactions on Acoustics, Speech, and Signal Processing, vol. 32, no. 2, pp. 236–243, 1984.
+
+    Parameters
+    ----------
+    analysis_window: array_like
+        The analysis window
+    hop: int
+        The frame shift
+    '''
+
+    norm = analysis_window ** 2
+    L = analysis_window.shape[0]
+
+    # forward overlap
+    pos = hop
+    while pos < L:
+        norm[pos:] += analysis_window[:-pos] ** 2
+        pos += hop
+
+    # backward overlap
+    pos = -hop
+    while pos + L > 0:
+        overlap = L + pos
+        norm[:-pos] += analysis_window[pos:] ** 2
+        pos -= hop
+
+    return analysis_window / norm
