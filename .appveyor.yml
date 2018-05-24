@@ -29,9 +29,6 @@ install:
 
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
-  # 2018/04/25 For some reason, conda update breaks the symlink from Miniconda3
-  # to the particular version (3.5/3.6)
-  - "mklink /J %MINICONDA% %RESTORE_MINICONDA%"
   - conda info -a
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy matplotlib nose"
   - activate test-environment
