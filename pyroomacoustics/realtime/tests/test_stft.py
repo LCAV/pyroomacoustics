@@ -114,8 +114,8 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False,
 
     return error
 
-def with_half_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
-                        streaming=True):
+def with_arbitrary_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
+                        streaming=True, overlap=0.5):
     """
     D             - number of channels
     num_frames    - how many frames to process, None will process one frame at
@@ -131,67 +131,7 @@ def with_half_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
 
     # parameters
     block_size = 512  # make sure the FFT size is a power of 2
-    hop = block_size // 2  # half overlap
-    if not streaming:
-        num_samples = (num_frames-1)*hop+block_size
-        x_local = x_local[:num_samples,]
-
-    analysis_window = np.sqrt(pra.hann(block_size))
-    synthesis_window = np.sqrt(pra.hann(block_size))
-
-    # Create the STFT object
-    if fixed_memory:
-        stft = STFT(block_size, hop=hop, channels=D,
-                transform=transform, num_frames=num_frames,
-                analysis_window=analysis_window, synthesis_window=synthesis_window,
-                streaming=streaming)
-    else:
-        stft = STFT(block_size, hop=hop, channels=D,
-                analysis_window=analysis_window, synthesis_window=synthesis_window,
-                transform=transform, streaming=streaming)
-
-    # collect the processed blocks
-    processed_x = np.zeros(x_local.shape)
-
-    if streaming:
-
-        n = 0
-        hop_frames = hop*num_frames
-        # process the signals while full blocks are available
-        while  x_local.shape[0] - n > hop_frames:
-            stft.analysis(x_local[n:n+hop_frames,])
-            processed_x[n:n+hop_frames,] = stft.synthesis()
-            n += hop_frames
-
-    else:
-
-        stft.analysis(x_local)
-        processed_x = stft.synthesis()
-        n = processed_x.shape[0]
-
-    error = np.max(np.abs(x_local[:n-hop,] - processed_x[hop:n,]))
-
-    return error
-
-
-def with_quarter_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
-                        streaming=True):
-    """
-    D             - number of channels
-    num_frames    - how many frames to process, None will process one frame at
-                    a time
-    fixed_memory  - whether to enforce checks for size (real-time consideration)
-    streaming     - whether or not to stitch between frames
-    """
-
-    if D == 1:
-        x_local = x[:,0]
-    else:
-        x_local = x[:,:D]
-
-    # parameters
-    block_size = 512  # make sure the FFT size is a power of 2
-    hop = block_size // 4  # quarter overlap
+    hop = int((1 - overlap) * block_size)  # quarter overlap
     if not streaming:
         num_samples = (num_frames-1)*hop+block_size
         x_local = x_local[:num_samples,]
@@ -223,27 +163,37 @@ def with_quarter_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
             processed_x[n:n+hop_frames,] = stft.synthesis()
             n += hop_frames
 
+        error = np.max(np.abs(x_local[:n-block_size+hop,] - processed_x[block_size-hop:n,]))
+
+        if 20 * np.log10(error) > -10:
+            import matplotlib.pyplot as plt
+            if x_local.ndim == 1:
+                plt.plot(x_local[:n-block_size+hop])
+                plt.plot(processed_x[block_size-hop:n])
+            else:
+                plt.plot(x_local[:n-block_size+hop,0])
+                plt.plot(processed_x[block_size-hop:n,0])
+            plt.show()
+
     else:
 
         stft.analysis(x_local)
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
-        '''
-        import matplotlib.pyplot as plt
-        if x_local.ndim > 1:
-            plt.plot(x_local[:,0])
-            plt.plot(processed_x[:,0])
-        else:
-            plt.plot(x_local[:,])
-            plt.plot(processed_x[:,])
-        plt.show()
+        L = block_size - hop
+        error = np.max(np.abs(x_local[L:-L,] - processed_x[L:,]))
 
-        import pdb
-        pdb.set_trace()
-        '''
+        if 20 * np.log10(error) > -10:
+            import matplotlib.pyplot as plt
+            if x_local.ndim == 1:
+                plt.plot(x_local[L:-L])
+                plt.plot(processed_x[L:])
+            else:
+                plt.plot(x_local[L:-L,0])
+                plt.plot(processed_x[L:,0])
+            plt.show()
 
-    error = np.max(np.abs(x_local[:n-block_size+hop,] - processed_x[block_size-hop:n,]))
 
     return error
 
@@ -472,24 +422,64 @@ def call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=True,
         print('half overlap, no filter, mono           : %0.0f dB' 
             % (20*np.log10(error)))
 
-        error = with_half_overlap_synthesis_window(1, num_frames,
-                fixed_memory, streaming)
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=0.5)
         print('half overlap, no filter, with synthesis windows, mono : %0.0f dB'
             % (20*np.log10(error)))
 
-        error = with_half_overlap_synthesis_window(D, num_frames,
-                fixed_memory, streaming)
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=0.5)
         print('half overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
             % (20*np.log10(error)))
 
-        error = with_quarter_overlap_synthesis_window(1, num_frames,
-                fixed_memory, streaming)
-        print('quarter overlap, no filter, with synthesis windows, mono : %0.0f dB'
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=0.75)
+        print('3/4 overlap, no filter, with synthesis windows, mono : %0.0f dB'
             % (20*np.log10(error)))
 
-        error = with_quarter_overlap_synthesis_window(D, num_frames,
-                fixed_memory, streaming)
-        print('quarter overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=0.75)
+        print('3/4 overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=0.84)
+        print('84/100 overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=0.84)
+        print('84/100 overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=0.26)
+        print('26/100 overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=0.26)
+        print('26/100 overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=7/8)
+        print('7/8 overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=7/8)
+        print('7/8 overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(1, num_frames,
+                fixed_memory, streaming, overlap=0.25)
+        print('1/4 overlap, no filter, with synthesis windows, mono : %0.0f dB'
+            % (20*np.log10(error)))
+
+        error = with_arbitrary_overlap_synthesis_window(D, num_frames,
+                fixed_memory, streaming, overlap=0.25)
+        print('1/4 overlap, no filter, with synthesis windows, multichannel : %0.0f dB'
             % (20*np.log10(error)))
 
         error = with_half_overlap_no_filter(D, num_frames, fixed_memory,
@@ -709,6 +699,50 @@ class TestSTFT(TestCase):
         error = with_half_overlap_with_filter(D=D, num_frames=50, 
             fixed_memory=True, streaming=False)
         self.assertTrue(error < tol)
+
+    def test_with_arbitrary_overlap_synthesis_window_multichannel(self):
+        overlaps = [0.5, 0.75, 0.84, 0.26, 7/8, 0.25]
+        for overlap in overlaps:
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=1,
+                    fixed_memory=False, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=50,
+                    fixed_memory=False, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=1,
+                    fixed_memory=True, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=50,
+                    fixed_memory=True, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=50,
+                    fixed_memory=False, streaming=False, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(D, num_frames=50,
+                    fixed_memory=True, streaming=False, overlap=overlap)
+            self.assertTrue(error < tol)
+
+    def test_with_arbitrary_overlap_synthesis_window_mono(self):
+        overlaps = [0.5, 0.75, 0.84, 0.26, 7/8, 0.25]
+        for overlap in overlaps:
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=1,
+                    fixed_memory=False, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=50,
+                    fixed_memory=False, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=1,
+                    fixed_memory=True, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=50,
+                    fixed_memory=True, streaming=True, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=50,
+                    fixed_memory=False, streaming=False, overlap=overlap)
+            self.assertTrue(error < tol)
+            error = with_arbitrary_overlap_synthesis_window(1, num_frames=50,
+                    fixed_memory=True, streaming=False, overlap=overlap)
+            self.assertTrue(error < tol)
 
 
 if __name__ == "__main__":
