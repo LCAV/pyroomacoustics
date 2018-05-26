@@ -1,5 +1,5 @@
 # Author: Eric Bezzam
-# Date: May 26, 2016
+# Date: May 26, 2018
 
 """
 Class for performing the Dicrete Fourier Transform (DFT) and inverse DFT for 
