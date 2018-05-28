@@ -94,6 +94,7 @@ if __name__ == '__main__':
 
     # Monitor Convergence
     #####################
+    window = np.sqrt(pra.hann(L))
 
     from mir_eval.separation import bss_eval_images
     ref = np.moveaxis(separate_recordings, 1, 2)
@@ -103,9 +104,9 @@ if __name__ == '__main__':
         global SDR, SIR
         from mir_eval.separation import bss_eval_images
         ref = np.moveaxis(separate_recordings, 1, 2)
-        y = np.array([pra.istft(Y[:,:,ch], L, L,
-            transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
-        sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+        y = np.array([pra.istft(Y[:,:,ch], L, L // 2,
+            transform=np.fft.irfft, win=window) for ch in range(Y.shape[2])])
+        sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1],0], y)
         SDR.append(sdr)
         SIR.append(sir)
 
@@ -113,19 +114,21 @@ if __name__ == '__main__':
     ###########
     # The STFT needs front *and* back padding
 
+
     # shape == (n_chan, n_frames, n_freq)
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L//2, zp_back=L//2) for ch in mics_signals])
+    X = np.array([pra.stft(ch, L, L // 2, win=window, transform=np.fft.rfft) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Run ILRMA
-    Y = pra.bss.ilrma(X, n_iter=30, callback=convergence_callback)
+    Y, W = pra.bss.ilrma(X, n_iter=51, n_components=10, proj_back=True,
+            return_filters=True, callback=convergence_callback)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
+    y = np.array([pra.istft(Y[:,:,ch], L, L // 2, transform=np.fft.irfft, win=window) for ch in range(Y.shape[2])])
 
     # Compare SIR
     #############
-    sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+    sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1],0], y)
 
     print('SDR:', sdr)
     print('SIR:', sir)

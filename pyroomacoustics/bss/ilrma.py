@@ -20,8 +20,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     Parameters
     ----------
     X: ndarray (nframes, nfrequencies, nchannels)
-        STFT representation of the observed signal
-    n_src: int, optional
+        STFT representation of the observed signal n_src: int, optional
         The number of sources or independent components
     n_iter: int, optional
         The number of iterations (default 20)
@@ -29,10 +28,8 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
         Scaling on first mic by back projection (default True)
     W0: ndarray (nfrequencies, nchannels, nchannels), optional
         Initial value for demixing matrix
-    f_contrast: dict of functions
-        A dictionary with two elements 'f' and 'df' containing the contrast
-        function taking 3 arguments. This should be a ufunc acting element-wise
-        on any array
+    n_components: int
+        Number of components in the non-negative spectrum
     return_filters: bool
         If true, the function will return the demixing matrix too
     callback: func
@@ -44,7 +41,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     the demixing matrix W (nfrequencies, nchannels, nsources)
     if ``return_values`` keyword is True.
     '''
-    X = np.transpose(X, (1, 0, 2))
+    X = np.transpose(X, (1, 0, 2))  # now X is (nfrequencies, nframes, nchannels)
     n_freq, n_frames, n_chan = X.shape
 
     # default to determined case
@@ -55,6 +52,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     assert n_chan == n_src
 
     # initialize the demixing matrices
+    # The demixing matrix has the following dimensions (nfrequencies, nchannels, nsources),
     if W0 is None:
         W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
     else:
@@ -66,18 +64,18 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     Y = np.zeros((n_freq, n_frames, n_src), dtype=X.dtype)
     R = np.zeros((n_freq, n_frames, n_src))
     I = np.eye(n_src, n_src)
-    U = np.zeros((n_freq, n_src, n_chan, n_chan))
-    product = np.zeros((n_freq, n_chan, n_chan))
+    U = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
+    product = np.zeros((n_freq, n_chan, n_chan), dtype=X.dtype)
     lambda_aux = np.zeros(n_src)
     machine_epsilon = np.finfo(float).eps
 
     for n in range(0, n_src):
-        R[:, :, n] = np.dot(T[:, :, n], V[:, :, n])
+        R[:, :, n] = np.dot(T[:,:, n], V[:,:,n])
 
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]).T)
+            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
 
     demix(Y, X, W)
     P = np.power(abs(Y), 2.)
@@ -95,38 +93,36 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
 
         # simple loop as a start
         for s in range(n_src):
-            T[:, :, s] = np.multiply(T[:, :, s], np.power(np.divide(np.dot(np.multiply(P[:, :, s],
-                        np.power(R[:,:,s], -2.)), V[:,:,s].transpose()), np.dot(np.power(R[:,:,s], -1.),
-                        np.transpose(V[:,:,s]))), 0.5))
+            iR = 1 / R[:,:,s]
+            T[:,:,s] *= np.sqrt( np.dot(P[:,:,s] * iR ** 2, V[:,:,s].T) / np.dot(iR, V[:,:,s].T) )
             T[T < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
-            V[:, :, s] = np.multiply(V[:, :, s], np.power(np.divide(np.dot(np.transpose(T[:, :, s]), np.multiply(P[:, :, s],
-                        np.power(R[:, :, s], -2.))), np.dot(np.transpose(T[:, :, s]), np.power(R[:, :, s], -1))), 0.5))
+            iR = 1 / R[:,:,s]
+            V[:,:,s] *= np.sqrt( np.dot(T[:,:,s].T, P[:,:,s] * iR ** 2) / np.dot(T[:,:,s].T, iR) )
             V[V < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
             # Compute Auxiliary Variable and update the demixing matrix
             for f in range(n_freq):
-                U[f, s, :, :] = np.transpose(np.dot(np.conjugate(X[f, :, :].T), np.multiply(X[f, :, :],
-                               np.dot(np.power(np.reshape(R[f, :, s], (n_frames, 1)), -1), np.ones([1, n_chan]))))/n_frames)
-
-                product[f, :, :] = np.dot(W[f, :, :], U[f, s, :, :])
-                W[f, s, :] = np.dot(np.linalg.inv(product[f, :, :] + machine_epsilon * I), I[s, :])
-                W[f, s, :] = np.dot(W[f, s, :], np.power(np.dot(np.dot(np.conjugate(W[f, s, :]).T, U[f, s, :, :]), W[f, s, :]), 0.5))
+                U[f,s,:,:] = np.dot(X[f,:,:].T, np.conj(X[f,:,:]) / R[f,:,None,s]) / n_frames
+                product[f,:,:] = np.dot(np.conj(W[f,:,:].T), U[f,s,:,:])
+                W[f,:,s] = np.linalg.solve(product[f,:,:], I[s,:])
+                w_Unorm = np.inner(np.conj(W[f,:,s]), np.dot(U[f,s,:,:], W[f,:,s]))
+                W[f,:,s] /= np.sqrt(w_Unorm)
 
         demix(Y, X, W)
-        P = np.power(abs(Y), 2.)
+        P = np.abs(Y) ** 2
 
         for s in range(n_src):
-            lambda_aux[s] = np.sqrt(np.sum(np.sum(P[:, :, s], axis=0), axis=0)/(n_freq*n_frames))
+            lambda_aux[s] = 1 / np.sqrt(np.mean(P[:,:,s]))
 
-            W[:, s, :] = np.dot(W[:, s, :], np.power(lambda_aux[s], -1))
-            P[:, :, s] = np.dot(P[:, :, s], np.power(lambda_aux[s], -2))
-            R[:, :, s] = np.dot(R[:, :, s], np.power(lambda_aux[s], -2))
-            T[:, :, s] = np.dot(T[:, :, s], np.power(lambda_aux[s], -2))
+            W[:,:,s] *= lambda_aux[s]
+            P[:,:,s] *= lambda_aux[s] ** 2
+            R[:,:,s] *= lambda_aux[s] ** 2
+            T[:,:,s] *= lambda_aux[s] ** 2
 
     if proj_back:
         z = projection_back(Y, X[:, :, 0])

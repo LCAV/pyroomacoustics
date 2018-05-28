@@ -74,21 +74,21 @@ def test_ilrma():
     ###########
 
     # shape == (n_chan, n_frames, n_freq)
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
+    window = np.sqrt(pra.hann(L))
+    X = np.array([pra.stft(ch, L, L // 2, transform=np.fft.rfft, win=window) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Run ILRMA
-    Y = pra.bss.ilrma(X, n_iter=20, proj_back=True)
+    Y = pra.bss.ilrma(X, n_iter=50, n_components=30, proj_back=True)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
+    y = np.array([pra.istft(Y[:,:,ch], L, L // 2, transform=np.fft.irfft, win=window) for ch in range(Y.shape[2])])
 
     # Compare SIR
     #############
     ref = np.moveaxis(separate_recordings, 1, 2)
-    y_aligned = y[:,L//2:ref.shape[1]+L//2]
 
-    mse = np.mean((ref[:,:,0] - y_aligned)**2)
+    mse = np.mean((ref[:,:y.shape[1],0] - y)**2)
     input_variance = np.var(np.concatenate(signals))
 
     print('Relative MSE (expect less than 1e-5):', mse / input_variance)
