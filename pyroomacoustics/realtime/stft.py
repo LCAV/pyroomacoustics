@@ -4,13 +4,16 @@
 """Class for real-time STFT analysis and processing."""
 from __future__ import division
 
+import sys
 import numpy as np
+from numpy.lib.stride_tricks import as_strided as _as_strided
+import warnings
 from .dft import DFT
 
 
 class STFT(object):
     """
-    A class STFT processing.
+    A class for STFT processing.
 
     Parameters
     -----------
@@ -24,134 +27,188 @@ class STFT(object):
         window applied to the block before synthesis
     channels : int
         number of signals
-    transform: str, optional
-        which FFT package to use: 'numpy', 'pyfftw', or 'mkl'
+
+    transform (optional) : str
+        which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
+    streaming (optional) : bool
+        whether (True) or not (False, default) to "stitch" samples between 
+        repeated calls of 'analysis' and 'synthesis' if we are receiving a 
+        continuous stream of samples.
+    num_frames (optional) : int
+        Number of frames to be processed. If set, this will be strictly enforced
+        as the STFT block will allocate memory accordingly. If not set, there
+        will be no check on the number of frames sent to 
+        analysis/process/synthesis
+
+        NOTE: 
+        1) num_frames = 0, corresponds to a "real-time" case in which each input
+           block corresponds to [hop] samples.
+        2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
+           frame must contain [N] samples.
     """
+
     def __init__(self, N, hop=None, analysis_window=None, 
-        synthesis_window=None, channels=1, transform='numpy'):
+        synthesis_window=None, channels=1, transform='numpy', streaming=False,
+        **kwargs):
+
         # initialize parameters
-        self.N = N          # number of samples per frame
-        self.D = channels         # number of channels
-        if hop is not None: # hop size
+        self.num_samples = N            # number of samples per frame
+        self.num_channels = channels    # number of channels
+        if hop is not None:             # hop size --> number of input samples
             self.hop = hop  
         else:
-            self.hop = self.N/2
-        self.hop = int(np.floor(self.hop))
+            self.hop = self.num_samples
 
-        # analysis window
-        if analysis_window is not None:
-            self.analysis_window = analysis_window
-        elif analysis_window is None and self.hop ==self.N/2:
-            self.analysis_window = np.hanning(self.N)
-        else:
-            self.analysis_window = None
-        # synthesis window
-        if synthesis_window is not None:  
-            self.synthesis_window = synthesis_window
-        elif synthesis_window is None and self.hop ==self.N/2:
-            self.synthesis_window = None # rectangular window
-        else:
-            self.synthesis_window = None
+        # analysis and synthesis window
+        self.analysis_window = analysis_window
+        self.synthesis_window = synthesis_window
 
-        # create DFT object
+        # prepare variables for DFT object
         self.transform = transform
-        self.nfft = self.N   # differ when there is zero-padding
+        self.nfft = self.num_samples   # differ when there is zero-padding
         self.nbin = self.nfft // 2 + 1
-        self.dft = DFT(nfft=self.nfft,D=self.D,
-                analysis_window=self.analysis_window,
-                synthesis_window=self.synthesis_window,
-                transform=self.transform)
-
-        self.fft_out_buffer = np.zeros(self.nbin, dtype=np.complex64)
 
         # initialize filter + zero padding --> use set_filter
-        self.zf = 0; self.zb = 0
-        self.H = None       # filter frequency spectrum
+        self.zf = 0
+        self.zb = 0
+        self.H = None           # filter frequency spectrum
+        self.H_multi = None     # for multiple frames
 
-        # state variables
-        self.num_frames = 0            # number of frames processed so far
-        self.n_state = self.N - self.hop
+        # check keywords
+        if 'num_frames' in kwargs.keys():
+            self.fixed_input = True
+            num_frames = kwargs['num_frames']
+            if num_frames < 0:
+                raise ValueError('num_frames must be non-negative!')
+            self.num_frames = num_frames
+        else:
+            self.fixed_input = False
+            self.num_frames = 0
 
         # allocate all the required buffers
+        self.streaming = streaming
         self._make_buffers()
 
+
+
     def _make_buffers(self):
+        """
+        Allocate memory for internal buffers according to FFT size, number of
+        channels, and number of frames.
+        """
 
-        if self.D==1:  # need this distinction for fftw
+        # state variables
+        self.n_state = self.num_samples - self.hop
+        self.n_state_out = self.nfft - self.hop
 
-            # The input buffer, float32 for speed!
-            self.fft_in_buffer = np.zeros(self.nfft, dtype=np.float32)
-            #  a number of useful views on the input buffer
-            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state]  # Location of state
-            self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop]
-            self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state]
+        # make DFT object
+        self.dft = DFT(nfft=self.nfft,
+                       D=self.num_channels,
+                       analysis_window=self.analysis_window,
+                       synthesis_window=self.synthesis_window,
+                       transform=self.transform)
+        """
+        Need to "squeeze" in case num_channels=1 as the FFTW package can only
+        take 1D array for 1D DFT.
+        """
+        # The input buffer, float32 for speed!
+        self.fft_in_buffer = np.squeeze(np.zeros((self.nfft, self.num_channels), 
+            dtype=np.float32))
+        #  a number of useful views on the input buffer
+        self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state,]
+        self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:\
+                                            self.zf+self.n_state+self.hop,]
+        self.old_samples = self.fft_in_buffer[self.zf+self.hop:
+                                            self.zf+self.hop+self.n_state,]
 
-            self.x_p = np.zeros(self.n_state, dtype=np.float32)  # State buffer
-            self.y_p = np.zeros(self.nfft - self.hop, dtype=np.float32)  # prev reconstructed samples
-            self.X = np.zeros(self.nbin, dtype=np.complex64)       # current frame in STFT domain
-            self.out = np.zeros(self.hop, dtype=np.float32)
+        # state buffer
+        self.x_p = np.squeeze(np.zeros((self.n_state, self.num_channels), 
+            dtype=np.float32))
+        # prev reconstructed samples
+        self.y_p = np.squeeze(np.zeros((self.n_state_out, self.num_channels), 
+            dtype=np.float32))
+        # output samples
+        self.out = np.squeeze(np.zeros((self.hop,self.num_channels), 
+            dtype=np.float32))
 
-        else:
-
-            # The input buffer, float32 for speed!
-            self.fft_in_buffer = np.zeros((self.nfft, self.D), dtype=np.float32)
-            #  a number of useful views on the input buffer
-            self.fft_in_state = self.fft_in_buffer[self.zf:self.zf+self.n_state,:]  # Location of state
-            self.fresh_samples = self.fft_in_buffer[self.zf+self.n_state:self.zf+self.n_state+self.hop,:]
-            self.old_samples = self.fft_in_buffer[self.zf+self.hop:self.zf+self.hop+self.n_state,:]
-
-            self.x_p = np.zeros((self.n_state, self.D), dtype=np.float32)  # State buffer
-            self.y_p = np.zeros((self.nfft - self.hop, self.D), dtype=np.float32)  # prev reconstructed samples
-            self.X = np.zeros((self.nbin, self.D), dtype=np.complex64)       # current frame in STFT domain
-            self.out = np.zeros((self.hop,self.D), dtype=np.float32)
+        # if fixed number of frames to process
+        if self.fixed_input:
+            if self.num_frames==0:
+                self.X = np.squeeze(np.zeros((self.nbin,self.num_channels), 
+                    dtype=np.complex64))
+            else:
+                self.X = np.squeeze(
+                    np.zeros((self.num_frames,self.nbin,self.num_channels), 
+                    dtype=np.complex64))
+                # DFT object for multiple frames
+                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
+                                    analysis_window=self.analysis_window,
+                                    synthesis_window=self.synthesis_window,
+                                    transform=self.transform)
+        else: # we will allocate these on-the-fly
+            self.X = None
+            self.dft_frames = None
 
 
     def reset(self):
         """
-        Reset state variables. Necesary after changing or setting the filter or zero padding.
+        Reset state variables. Necesary after changing or setting the filter 
+        or zero padding.
         """
-        self.num_frames = 0
-        self.nbin = self.nfft // 2 + 1
 
-        if self.D==1:
+        if self.num_channels==1:
             self.fft_in_buffer[:] = 0.
-            self.X[:] = 0.
+            self.x_p[:] = 0.
             self.y_p[:] = 0.
+            self.X[:] = 0.
+            self.out[:] = 0.
         else:
             self.fft_in_buffer[:,:] = 0.
-            self.X[:,:] = 0.
+            self.x_p[:,:] = 0.
             self.y_p[:,:] = 0.
+            self.X[:,:] = 0.
+            self.out[:,:] = 0.
 
-        self.dft = DFT(nfft=self.nfft,D=self.D,
-            analysis_window=self.analysis_window,
-            synthesis_window=self.synthesis_window,
-            transform=self.transform)
 
     def zero_pad_front(self, zf):
         """
         Set zero-padding at beginning of frame.
         """
         self.zf = zf
-        self.nfft = self.N+self.zb+self.zf
+        self.nfft = self.num_samples+self.zb+self.zf
+        self.nbin = self.nfft//2+1
         if self.analysis_window is not None:
-            self.analysis_window = np.concatenate((np.zeros(zf), self.analysis_window))
+            self.analysis_window = np.concatenate((np.zeros(zf), 
+                self.analysis_window))
         if self.synthesis_window is not None:
-            self.synthesis_window = np.concatenate((np.zeros(zf), self.synthesis_window))
+            self.synthesis_window = np.concatenate((np.zeros(zf), 
+                self.synthesis_window))
+
+        # We need to reallocate buffers after changing zero padding
+        self._make_buffers()
+
 
     def zero_pad_back(self, zb):
         """
         Set zero-padding at end of frame.
         """
         self.zb = zb
-        self.nfft = self.N+self.zb+self.zf
+        self.nfft = self.num_samples+self.zb+self.zf
+        self.nbin = self.nfft//2+1
         if self.analysis_window is not None:
-            self.analysis_window = np.concatenate((self.analysis_window, np.zeros(zb)))
+            self.analysis_window = np.concatenate((self.analysis_window, 
+                np.zeros(zb)))
         if self.synthesis_window is not None:
-            self.synthesis_window = np.concatenate((self.synthesis_window, np.zeros(zb)))
+            self.synthesis_window = np.concatenate((self.synthesis_window, 
+                np.zeros(zb)))
+
+        # We need to reallocate buffers after changing zero padding
+        self._make_buffers()
+
 
     def set_filter(self, coeff, zb=None, zf=None, freq=False):
         """
-        Set time-domain filter with appropriate zero-padding.
+        Set time-domain FIR filter with appropriate zero-padding.
         Frequency spectrum of the filter is computed and set for the object. 
         There is also a check for sufficient zero-padding.
 
@@ -163,49 +220,146 @@ class STFT(object):
             Amount of zero-padding added to back/end of frame.
         zf : int
             Amount of zero-padding added to front/beginning of frame.
+        freq : bool
+            Whether or not given coefficients (coeff) are in the frequency domain.
         """
         # apply zero-padding
         if zb is not None:
             self.zero_pad_back(zb)
         if zf is not None:
-            self.zero_pad_front(zf)  
-        self.reset()      
+            self.zero_pad_front(zf)
         if not freq:
             # compute filter magnitude and phase spectrum
             self.H = np.complex64(np.fft.rfft(coeff, self.nfft, axis=0))
             # check for sufficient zero-padding
-            if self.nfft < (self.N+len(coeff)-1):
+            if self.nfft < (self.num_samples+len(coeff)-1):
                 raise ValueError('Insufficient zero-padding for chosen number of samples per frame (L) and filter length (h). Require zero-padding such that new length is at least (L+h-1).')
         else:
             if len(coeff)!=self.nbin:
                 raise ValueError('Invalid length for frequency domain coefficients.')
             self.H = coeff
 
-        # We need to reallocate buffers after changing zero padding
-        self._make_buffers()
+        # prepare filter if fixed input case
+        if self.fixed_input:
+            if self.num_channels == 1:
+                self.H_multi = np.tile(self.H,(self.num_frames,1))
+            else:
+                self.H_multi = np.tile(self.H,(self.num_frames,1,1))
+                # self.H_multi = np.swapaxes(self.H_multi,0,1)
 
 
-    def analysis(self, x_n):
+
+    def analysis(self, x):
+        """
+        Parameters
+        -----------
+        x  : 2D numpy array, [samples, channels]
+            Time-domain signal.
+        """
+
+        # ----check correct number of channels
+        x_shape = x.shape
+        if self.num_channels > 1:
+            if len(x_shape) < 1:   # received mono
+                raise ValueError("Received 1-channel signal. Expecting %d channels." \
+                    % (self.num_channels))
+            if x_shape[1] != self.num_channels:
+                raise ValueError("Incorrect number of channels. Received %d, expecting %d." \
+                    % (x_shape[1], self.num_channels))
+        else:   # expecting mono
+            if len(x_shape) > 1:    # received multi-channel
+                raise ValueError("Received %d channels; expecting 1D mono signal." \
+                    % (x_shape[1]))
+
+        # ----check number of frames
+        if self.streaming:  # need integer multiple of hops
+
+            if self.fixed_input:
+                if x_shape[0] != self.num_frames*self.hop:
+                    raise ValueError(\
+                        'Input must be of length %d; received %d samples.' \
+                        % (self.num_frames*self.hop, x_shape[0]))
+            else:
+                self.num_frames = int(np.ceil(x_shape[0]/self.hop))
+                extra_samples = (self.num_frames*self.hop)-x_shape[0]
+                if extra_samples:
+                    warnings.warn("Received %d samples. Appending  %d zeros for integer multiple of hops." \
+                        % (x_shape[0],
+                            extra_samples))
+                    x = np.concatenate((x, 
+                            np.squeeze(
+                                np.zeros((extra_samples,self.num_channels)))
+                            ))
+
+        # non-streaming
+        # need at least num_samples for last frame
+        # e.g.[hop|hop|...|hop|num_samples]
+        else:
+
+            if self.fixed_input:
+                if x_shape[0]!=(self.hop*(self.num_frames-1)+self.num_samples):
+                    raise ValueError('Input must be of length %d; received %d samples.' 
+                        % ((self.hop*(self.num_frames-1)+ self.num_samples), 
+                        x_shape[0]))
+            else:
+                if x_shape[0] < self.num_samples:
+                    # raise ValueError('Not enough samples. Received %d; need \
+                    #     at least %d.' % (x_shape[0],self.num_samples))
+                    extra_samples = self.num_samples - x_shape[0]
+                    warnings.warn("Not enough samples. Received %d; appending %d zeros for full valid frame." \
+                        % (x_shape[0],
+                            extra_samples))
+                    x = np.concatenate((x, 
+                            np.squeeze(
+                                np.zeros((extra_samples,self.num_channels)))
+                            ))
+                    self.num_frames = 1
+                else:
+
+                    # calculate num_frames and append zeros if necessary
+                    self.num_frames = \
+                        int(np.ceil((x_shape[0]-self.num_samples)/self.hop) + 1)
+                    extra_samples = ((self.num_frames-1)*self.hop+
+                        self.num_samples)-x_shape[0]
+                    if extra_samples:
+                        warnings.warn("Received %d samples. Appending %d zeros for integer multiple of hops." \
+                            % (x_shape[0], extra_samples))
+                        x = np.concatenate((x, 
+                                np.squeeze(
+                                    np.zeros((extra_samples,self.num_channels)))
+                                ))
+
+        # ----allocate memory if necessary
+        if not self.fixed_input:
+            self.X = np.squeeze(np.zeros((self.num_frames,self.nbin,
+                    self.num_channels), dtype=np.complex64))
+            self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
+                    analysis_window=self.analysis_window,
+                    synthesis_window=self.synthesis_window,
+                    transform=self.transform)
+
+        # ----use appropriate function
+        if self.streaming:
+            self._analysis_streaming(x)
+        else:
+            self.reset()
+            self._analysis_non_streaming(x)
+                
+        return self.X
+
+
+    def _analysis_single(self, x_n):
         """
         Transform new samples to STFT domain for analysis.
+
         Parameters
         -----------
         x_n : numpy array
-            [self.hop] new samples.
-        Returns
-        -----------
-        self.X : numpy array 
-            Frequency spectrum of given frame.
+            [self.hop] new samples
         """
 
-        # check for valid input - already done by self.dft
-        # if x_n.shape[0]!=self.hop:
-        #     raise ValueError('Invalid input dimensions.')
-        # if self.D > 1 and x_n.shape[1]!=self.D:
-        #     raise ValueError('Invalid input dimensions.')
-
+        # correct input size check in: dft.analysis()
         self.fresh_samples[:,] = x_n[:,]  # introduce new samples
-
         self.x_p[:,] = self.old_samples   # save next state
 
         # apply DFT to current frame
@@ -214,21 +368,199 @@ class STFT(object):
         # shift backwards in the buffer the state
         self.fft_in_state[:,] = self.x_p[:,]
 
-        # self.num_frames += 1
 
-    def process(self):
+    def _analysis_streaming(self, x):
         """
-        Apply filtering in STFT domain.
+        STFT analysis for streaming case in which we expect
+        [num_frames*hop] samples
+        """
+
+        if self.num_frames==1:
+            self._analysis_single(x)
+        else:
+            n = 0
+            for k in range(self.num_frames):
+                # introduce new samples
+                self.fresh_samples[:,] = x[n:n+self.hop,]  
+                # save next state
+                self.x_p[:,] = self.old_samples   
+
+                # apply DFT to current frame
+                self.X[k,] = self.dft.analysis(self.fft_in_buffer)
+
+                # shift backwards in the buffer the state
+                self.fft_in_state[:,] = self.x_p[:,]
+
+                n += self.hop
+
+
+    def _analysis_non_streaming(self, x):
+        """
+        STFT analysis for non-streaming case in which we expect
+        [(num_frames-1)*hop+num_samples] samples
+        """
+
+        ## ----- STRIDED WAY
+        new_strides = (x.strides[0],self.hop * x.strides[0])
+        new_shape = (self.num_samples,self.num_frames)
+
+        if self.num_channels > 1:
+            for c in range(self.num_channels):
+
+                y = _as_strided(x[:,c], shape=new_shape, strides=new_strides)
+                y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
+                                    np.zeros((self.zb,self.num_frames))))
+
+                if self.num_frames==1:
+                    self.X[:,c] = self.dft_frames.analysis(y[:,0]).T
+                else:
+                    self.X[:,:,c] = self.dft_frames.analysis(y).T
+        else:
+
+            y = _as_strided(x, shape=new_shape, strides=new_strides)
+            y = np.concatenate((np.zeros((self.zf,self.num_frames)), y, 
+                                np.zeros((self.zb,self.num_frames))))
+
+            if self.num_frames==1:
+                self.X[:] = self.dft_frames.analysis(y[:,0]).T
+            else:
+                self.X[:] = self.dft_frames.analysis(y).T
+
+
+    def _check_input_frequency_dimensions(self, X):
+        """
+        Ensure that given frequency data is valid, i.e. number of channels and
+        number of frequency bins.
+
+        If fixed_input=True, ensure expected number of frames. Otherwise, infer 
+        from given data.
+
+        Axis order of X should be : [frames, frequencies, channels]
+        """
+
+        # check number of frames and correct number of bins
+        X_shape = X.shape
+        if len(X_shape)==1:  # single channel, one frame
+            num_frames = 1
+        elif len(X_shape)==2 and self.num_channels>1: # multi-channel, one frame
+            num_frames = 1
+        elif len(X_shape)==2 and self.num_channels==1: # single channel, multiple frames
+            num_frames = X_shape[0]
+        elif len(X_shape)==3 and self.num_channels>1: # multi-channel, multiple frames
+            num_frames = X_shape[0]
+        else:
+            raise ValueError("Invalid input shape.")
+
+        # check number of bins
+        if num_frames == 1:
+            if X_shape[0]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
+        else:
+            if X_shape[1]!=self.nbin:
+                raise ValueError('Invalid number of frequency bins! Expecting %d, got %d'
+                    % (self.nbin,X_shape[0]))
+
+        # check number of frames, if fixed input size
+        if self.fixed_input:
+            if num_frames != self.num_frames:
+                raise ValueError('Input must have %d frames!', 
+                    self.num_frames)
+            self.X[:] = X  # reset if size is alright
+        else:
+            self.X = X
+            self.num_frames = num_frames
+
+
+        return self.X
+
+
+    def process(self, X=None):
+
+        """
+        Parameters
+        -----------
+        X  : numpy array
+            X can take on multiple shapes:
+            1) (N,) if it is single channel and only one frame
+            2) (N,D) if it is multi-channel and only one frame
+            3) (F,N) if it is single channel but multiple frames
+            4) (F,N,D) if it is multi-channel and multiple frames
+
         Returns
         -----------
-        self.X : numpy array 
-            Frequency spectrum of given frame.
+        x_r : numpy array
+            Reconstructed time-domain signal.
+
         """
-        if self.H is not None:
-            np.multiply(self.X, self.H, self.X)
+
+        # check that there is filter
+        if self.H is None:
+            warnings.warn("No filter is set! Exiting...")
+            return
+
+        if X is not None:
+            self._check_input_frequency_dimensions(X)
+
+        # use appropriate function
+        if self.num_frames==1:
+            self._process_single()
+        elif self.num_frames>1:
+            self._process_multiple()
+
+        return self.X
+
+
+    def _process_single(self):
+
+        np.multiply(self.X, self.H, self.X)
+
+
+    def _process_multiple(self):
+
+        if not self.fixed_input:
+            if self.num_channels == 1:
+                self.H_multi = np.tile(self.H,(self.num_frames,1))
+            else:
+                self.H_multi = np.tile(self.H,(self.num_frames,1,1))
+
+        np.multiply(self.X, self.H_multi, self.X)
 
 
     def synthesis(self, X=None):
+        """
+        Parameters
+        -----------
+        X  : numpy array of frequency content
+            X can take on multiple shapes:
+            1) (N,) if it is single channel and only one frame
+            2) (N,D) if it is multi-channel and only one frame
+            3) (F,N) if it is single channel but multiple frames
+            4) (F,N,D) if it is multi-channel and multiple frames
+            where:
+            - F is the number of frames
+            - N is the number of frequency bins
+            - D is the number of channels
+
+
+        Returns
+        -----------
+        x_r : numpy array
+            Reconstructed time-domain signal.
+
+        """
+
+        if X is not None:
+            self._check_input_frequency_dimensions(X)
+
+        # use appropriate function
+        if self.num_frames==1:
+            return self._synthesis_single()
+        elif self.num_frames>1:
+            return self._synthesis_multiple()
+
+
+    def _synthesis_single(self):
         """
         Transform to time domain and reconstruct output with overlap-and-add.
 
@@ -238,31 +570,194 @@ class STFT(object):
             Reconstructed array of samples of length <self.hop> (Optional)
         """
 
-        if X is not None:
-            self.X[:] = X
-
         # apply IDFT to current frame
         self.dft.synthesis(self.X)
 
-        # reconstruct output
-        L = self.y_p.shape[0]  # length of output state vector
+        return self._overlap_and_add()
 
-        self.out[:,] = self.dft.x[0:self.hop,]  # fresh output samples
+
+
+    def _synthesis_multiple(self):
+        """
+        Apply STFT analysis to multiple frames.
+
+        Returns
+        -----------
+        x_r : numpy array
+            Recovered signal.
+
+        """
+
+        # synthesis + overlap and add
+        if self.num_channels > 1:
+
+            x_r = np.zeros((self.num_frames*self.hop,self.num_channels), 
+                dtype=np.float32)
+
+            n = 0
+            for f in range(self.num_frames):
+
+                # appy IDFT to current frame and reconstruct output
+                x_r[n:n+self.hop,] = \
+                    self._overlap_and_add(self.dft.synthesis(self.X[f,:,:]))
+                n += self.hop
+
+        else:
+
+            x_r = np.zeros(self.num_frames*self.hop, dtype=np.float32)
+
+            # treat number of frames as the multiple channels for DFT
+            if not self.fixed_input:
+                self.dft_frames = DFT(nfft=self.nfft,D=self.num_frames,
+                    analysis_window=self.analysis_window,
+                    synthesis_window=self.synthesis_window,
+                    transform=self.transform)
+
+            # back to time domain
+            mx = self.dft_frames.synthesis(self.X.T)
+
+            # overlap and add
+            n = 0
+            for f in range(self.num_frames):
+                x_r[n:n+self.hop,] = self._overlap_and_add(mx[:,f])
+                n += self.hop
+
+        return x_r
+
+
+    def _overlap_and_add(self, x=None):
+
+        if x is None:
+            x = self.dft.x
+
+        self.out[:,] = x[0:self.hop,]  # fresh output samples
 
         # add state from previous frames when overlap is used
-        if L > 0:
-            m = np.minimum(self.hop, L)
+        if self.n_state_out > 0:
+            m = np.minimum(self.hop, self.n_state_out)
             self.out[:m,] += self.y_p[:m,]
             # update state variables
             self.y_p[:-self.hop,] = self.y_p[self.hop:,]  # shift out left
             self.y_p[-self.hop:,] = 0.
-            self.y_p[:,] += self.dft.x[-L:,]
+            self.y_p[:,] += x[-self.n_state_out:,]
 
         return self.out
 
 
-    def get_prev_samples(self):
-        """
-        Get reconstructed previous samples.
-        """
-        return self.y_p
+" ---------------------------------------------------------------------------- "
+" --------------- One-shot functions to avoid creating object. --------------- "
+" ---------------------------------------------------------------------------- "
+# Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
+
+def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
+    '''
+    Convenience function for one-shot inverse STFT
+
+    Parameters
+    ----------
+    x: array_like, (n_samples) or (n_samples, n_channels)
+        input signal 
+    L: int
+        frame size
+    hop: int
+        shift size between frames
+    win: array_like
+        the window to apply (default None)
+    zp_back: int
+        zero padding to apply at the end of the frame
+    zp_front: int
+        zero padding to apply at the beginning of the frame
+
+    Returns
+    -------
+    The STFT of x
+    '''
+
+    if x.ndim == 2:
+        channels = x.shape[1]
+
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
+
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
+
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
+
+    # apply transform
+    return the_stft.analysis(x)
+
+
+# inverse STFT
+def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
+    '''
+    Convenience function for one-shot inverse STFT
+
+    Parameters
+    ----------
+    X: array_like (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
+        The data
+    L: int
+        frame size
+    hop: int
+        shift size between frames
+    win: array_like
+        the window to apply (default None)
+    zp_back: int
+        zero padding to apply at the end of the frame
+    zp_front: int
+        zero padding to apply at the beginning of the frame
+    '''
+
+    if X.ndim == 3:
+        channels = X.shape[2]
+
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
+
+    if zp_back > 0:
+        the_stft.zero_pad_back(zp_back)
+
+    if zp_front > 0:
+        the_stft.zero_pad_front(zp_front)
+
+    # apply transform
+    return the_stft.synthesis(x)
+
+
+def compute_synthesis_window(analysis_window, hop):
+    '''
+    Computes the optimal synthesis window given an analysis window
+    and hop (frame shift). The procedure is described in
+
+    D. Griffin and J. Lim, *Signal estimation from modified short-time Fourier transform,*
+    IEEE Trans. Acoustics, Speech, and Signal Process.,
+    vol. 32, no. 2, pp. 236-243, 1984.
+
+    Parameters
+    ----------
+    analysis_window: array_like
+        The analysis window
+    hop: int
+        The frame shift
+    '''
+
+    norm = np.zeros_like(analysis_window)
+    L = analysis_window.shape[0]
+
+    # move the window back as far as possible while still overlapping
+    n = 0
+    while n - hop > -L:
+        n -= hop
+
+    # now move the window and sum all the contributions
+    while n < L:
+        if n == 0:
+            norm += analysis_window ** 2
+        elif n < 0:
+            norm[:n+L] += analysis_window[-n-L:] ** 2
+        else:
+            norm[n:] += analysis_window[:-n] ** 2
+
+        n += hop
+
+    return analysis_window / norm
