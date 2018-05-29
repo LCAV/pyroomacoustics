@@ -721,7 +721,7 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
         the_stft.zero_pad_front(zp_front)
 
     # apply transform
-    return the_stft.synthesis(x)
+    return the_stft.synthesis(X)
 
 
 def compute_synthesis_window(analysis_window, hop):
