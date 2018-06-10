@@ -25,19 +25,51 @@ This script requires the `mir_eval`, and `sounddevice` packages to run.
 import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
+import librosa
 
 from mir_eval.separation import bss_eval_images
 import sounddevice as sd
 
+def select_dataset(dataset_name):
+    wav_files = {
+        'cmu_arctic_corpus': [
+        ['input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0004.wav',
+            'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0005.wav',
+            'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0006.wav',],
+        ['input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0001.wav',
+            'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0002.wav',
+            'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0003.wav',]
+        ],
+
+        'SiSec2011_Music_NZ': [
+        ['input_samples/SiSec2011_Music/Ultimate NZ Tour/dev2__ultimate_nz_tour__snip_43_61__guitar.wav',],
+        ['input_samples/SiSec2011_Music/Ultimate NZ Tour/dev2__ultimate_nz_tour__snip_43_61__synth.wav',]
+        ],
+
+        'SiSec2011_Music_Bearlin' : [
+        ['input_samples/SiSec2011_Music/Bearlin_Roads/dev1__bearlin-roads__snip_85_99__acoustic_guit_main.wav',],
+        ['input_samples/SiSec2011_Music/Bearlin_Roads/dev1__bearlin-roads__snip_85_99__vocals.wav',]
+        ],
+
+        'SiSec2011_Speech': [
+         ['input_samples/SiSec2011_Speech/dev1_female4_src_1.wav',],
+         ['input_samples/SiSec2011_Speech/dev1_male4_src_1.wav',]
+         ],
+    }
+    return wav_files.get(dataset_name, "Invalid dataset")
+
 # We concatenate a few samples to make them long enough
-wav_files = [
-        ['input_samples/cmu_arctic_us_axb_a0004.wav',
-            'input_samples/cmu_arctic_us_axb_a0005.wav',
-            'input_samples/cmu_arctic_us_axb_a0006.wav',],
-        ['input_samples/cmu_arctic_us_aew_a0001.wav',
-            'input_samples/cmu_arctic_us_aew_a0002.wav',
-            'input_samples/cmu_arctic_us_aew_a0003.wav',]
-        ]
+# wav_files = [
+#         ['input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0004.wav',
+#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0005.wav',
+#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0006.wav',],
+#         ['input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0001.wav',
+#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0002.wav',
+#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0003.wav',]
+#         ]
+#  ]
+
+wav_files = select_dataset('SiSec2011_Music_NZ')
 
 if __name__ == '__main__':
     # STFT frame length
@@ -52,17 +84,27 @@ if __name__ == '__main__':
     # create an anechoic room with sources and mics
     room = pra.ShoeBox(
         room_dim,
-        fs=16000,
+        fs=wavfile.read(wav_files[0][0])[0],        # match sampling frequency of the input samples
         max_order=15,
         absorption=0.35,
         sigma2_awgn=1e-8)
 
     # get signals
+    #signals = [np.concatenate([librosa.load(f, sr=16000)[0]
+    #    for f in source_files])
+    #    for source_files in wav_files ]
+
     signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32)
-        for f in source_files])
-        for source_files in wav_files ]
+               for f in source_files])
+               for source_files in wav_files]
+
+    # From stereo to mono
+    if signals[0].ndim > 1:
+        signals[0] = signals[0][:, 0]/2. + signals[0][:, 1]/2.
+        signals[1] = signals[1][:, 0]/2. + signals[1][:, 1]/2.
+
     delays = [1., 0.]
-    locations = [[2.5,3], [2.5, 6]]
+    locations = [[2.5, 3], [2.5, 6]]
 
     # add mic and good source to room
     # Add silent signals to all sources
@@ -120,7 +162,7 @@ if __name__ == '__main__':
     X = np.moveaxis(X, 0, 2)
 
     # Run ILRMA
-    Y, W = pra.bss.ilrma(X, n_iter=51, n_components=10, proj_back=True,
+    Y, W = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True,
             return_filters=True, callback=convergence_callback)
 
     # run iSTFT
@@ -164,3 +206,4 @@ if __name__ == '__main__':
 
     def play(ch):
         sd.play(pra.normalize(y[ch]) * 0.75, samplerate=room.fs, blocking=True)
+
