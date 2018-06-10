@@ -11,6 +11,10 @@ in the following publication.
 
 It works in the STFT domain. The test files were extracted from the
 `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
+'Signal Separation Campaing 2011
+<http://sisec2011.wiki.irisa.fr/tiki-index165d.html?page=Professionally+produced+music+recordings>
+<http://sisec2011.wiki.irisa.fr/tiki-indexbfd7.html?page=Underdetermined+speech+and+music+mixtures>
+
 
 Running this script will do two things.
 
@@ -52,22 +56,11 @@ def select_dataset(dataset_name):
         ],
 
         'SiSec2011_Speech': [
-         ['input_samples/SiSec2011_Speech/dev1_female4_src_1.wav',],
-         ['input_samples/SiSec2011_Speech/dev1_male4_src_1.wav',]
-         ],
+        ['input_samples/SiSec2011_Speech/dev1_female4_src_1.wav',],
+        ['input_samples/SiSec2011_Speech/dev1_male4_src_1.wav',]
+        ],
     }
     return wav_files.get(dataset_name, "Invalid dataset")
-
-# We concatenate a few samples to make them long enough
-# wav_files = [
-#         ['input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0004.wav',
-#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0005.wav',
-#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_axb_a0006.wav',],
-#         ['input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0001.wav',
-#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0002.wav',
-#             'input_samples/cmu_arctic_corpus/cmu_arctic_us_aew_a0003.wav',]
-#         ]
-#  ]
 
 wav_files = select_dataset('SiSec2011_Music_NZ')
 
@@ -90,7 +83,7 @@ if __name__ == '__main__':
         sigma2_awgn=1e-8)
 
     # get signals
-    #signals = [np.concatenate([librosa.load(f, sr=16000)[0]
+    # signals = [np.concatenate([librosa.load(f, sr=16000)[0]
     #    for f in source_files])
     #    for source_files in wav_files ]
 
