@@ -15,7 +15,6 @@ It works in the STFT domain. The test files were extracted from the
 <http://sisec2011.wiki.irisa.fr/tiki-index165d.html?page=Professionally+produced+music+recordings>
 <http://sisec2011.wiki.irisa.fr/tiki-indexbfd7.html?page=Underdetermined+speech+and+music+mixtures>
 
-
 Running this script will do two things.
 
 1. It will separate the sources.
