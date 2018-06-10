@@ -28,7 +28,7 @@ This script requires the `mir_eval`, and `sounddevice` packages to run.
 import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
-import librosa
+import librosa          # I tried librosa to open the wavfiles because it converts from stereo to mono directly
 
 from mir_eval.separation import bss_eval_images
 import sounddevice as sd
