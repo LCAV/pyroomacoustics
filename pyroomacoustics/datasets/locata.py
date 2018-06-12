@@ -4,7 +4,15 @@ The LOCATA Dataset
 
 This dataset was released as a challenge in spring 2018. The goal of the
 dataset is to provide a standard baseline for acoustic localization and
-tracking algorithm with both dynamic and static sources.
+tracking algorithm with both dynamic and static sources. In particular,
+there are six tasks.
+
+* **Task 1**: Localization of a single, static loudspeaker using static microphone arrays
+* **Task 2**: Localization of multiple static loudspeakers using static microphone arrays
+* **Task 3**: Tracking of a single, moving talker using static microphone arrays
+* **Task 4**: Tracking of multiple, moving talkers using static microphone arrays
+* **Task 5**: Tracking of a single, moving talker using moving microphone arrays
+* **Task 6**: Tracking of multiple moving talkers using moving microphone arrays.
 
 The data is released under a very permissive license, however, at the time of
 writing of this code, the `official download <http://www.locata-challenge.org>`_
@@ -37,7 +45,7 @@ FMT_TS_ARRAY = 'audio_array_timestamps_{array}.txt'
 FMT_REQ_TIME = 'required_time.txt'
 RE_TS = re.compile('^(20[0-9]{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2})\.(\d+)')
 
-def parse(line):
+def __parse(line):
     m = RE_TS.match(line)
     if m:
         elem = [int(m.group(n)) for n in range(1,7)]  # year month day hour minute seconds
@@ -67,10 +75,10 @@ def parse(line):
     else:
         return None
 
-def read_reference_file(fn):
+def __read_reference_file(fn):
     ''' Reads and parse a groundtruth file '''
     with open(fn, 'r') as f:
-        return list(filter(lambda x:x, map(parse, f.readlines())))
+        return list(filter(lambda x:x, map(__parse, f.readlines())))
 
 
 locata_tasks = [1, 2, 3, 4, 5 , 6]
@@ -87,30 +95,30 @@ class LOCATA(Dataset):
 
     The development and evaluation datasets are released in folders with similar
     names for task1 to task6.  We assume that the user will have saved these in
-    separate subfolder `eval` and `dev`.
+    separate subfolder ``eval`` and ``dev``.
 
     Attributes
     ----------
     basedir: str, option
-        The directory where the CMU ARCTIC corpus is located/downloaded. By
+        The directory where the LOCATA dataset is located/downloaded. By
         default, this is the current directory.
-    recordings: list of CMUArcticSentence
+    recordings: list of LocataRecording
         The list of all utterances in the corpus
 
 
     Parameters
     ----------
     basedir: str, optional
-        The directory where the CMU ARCTIC corpus is located/downloaded. By
+        The directory where the LOCATA dataset is located/downloaded. By
         default, this is the current directory.
-    task: int, optional
+    task: int or list of ints, optional
         The number of the task to read
     rec: int or list of ints, optional
         The recordings to consider
     array: str or list of str, optional
         The arrays to read in
     dev: bool
-        Set to True to restrict to dev data, False to eval data. Not setting
+        Set to ``True`` to restrict to dev data, ``False`` to eval data. Not setting
         the parameter will result in using both sets.
 
     '''
@@ -184,7 +192,7 @@ class LocataRecording(AudioSample):
     array: str
         The array used
     dev: bool
-        Wether this a development or evaluation recording
+        Whether this a development or evaluation recording
     '''
 
     def __init__(self, path, task=None, rec=None, array=None, dev=True):
@@ -200,8 +208,8 @@ class LocataRecording(AudioSample):
                 if m:
                     name = m.group(1)
                     fs, data = wavfile.read(os.path.join(path, fn))
-                    ts = read_reference_file(os.path.join(path, FMT_TS_SOURCE.format(source=name)))
-                    pos = read_reference_file(
+                    ts = __read_reference_file(os.path.join(path, FMT_TS_SOURCE.format(source=name)))
+                    pos = __read_reference_file(
                             os.path.join(path, FMT_POS_SOURCE.format(source=name))
                             )
                     self.sources[name] = dict(
@@ -213,13 +221,13 @@ class LocataRecording(AudioSample):
             self.sources = None
 
         # read the array info
-        self.ts = read_reference_file(
+        self.ts = __read_reference_file(
                 os.path.join(path, FMT_TS_ARRAY.format(array=array))
                 )
-        self.pos = read_reference_file(
+        self.pos = __read_reference_file(
                 os.path.join(path, FMT_POS_ARRAY.format(array=array))
                 )
-        self.req = read_reference_file(
+        self.req = __read_reference_file(
                 os.path.join(path, FMT_REQ_TIME)
                 )
         fs, data = wavfile.read(
