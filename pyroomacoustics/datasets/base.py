@@ -99,7 +99,7 @@ class AudioSample(Sample):
     The sampling frequency of the samples is an extra parameter.
 
     For multichannel audio, we assume the same format used by 
-    ```scipy.io.wavfile <https://docs.scipy.org/doc/scipy-0.14.0/reference/io.html#module-scipy.io.wavfile>`_``,
+    `scipy.io.wavfile <https://docs.scipy.org/doc/scipy-0.14.0/reference/io.html#module-scipy.io.wavfile>`_,
     that is ``data`` is then a 2D array with each column being a channel.
 
     Attributes
