@@ -14,6 +14,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Support for the `LOCATA <http://www.locata-challenge.org>`_ dataset in
+  ``pyroomacoustics.datasets.locata``
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
