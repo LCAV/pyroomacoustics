@@ -50,6 +50,12 @@ Deprecation Notice
   ``pyroomacoustics.overlap_add``, etc, are now **deprecated**
   and will be removed in the near future
 
+Bugfix
+~~~~~~
+
+- Fixed the way multichannel signals are handled by
+  ``pyroomacoustics.datasets.AudioSample`` `plot` and `play` functions.
+
 `0.1.18`_ - 2018-04-24
 ----------------------
 

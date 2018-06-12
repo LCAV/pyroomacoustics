@@ -33,12 +33,6 @@ import os
 import numpy as np
 from scipy.io import wavfile
 
-try:
-    import sounddevice as sd
-    have_sounddevice = True
-except:
-    have_sounddevice = False
-
 from .utils import download_uncompress
 from .base import Meta, AudioSample, Dataset
 
