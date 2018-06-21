@@ -40,6 +40,7 @@ Changed
 
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
 - Improved the download/uncompress function for large datasets
+- Dusted the code for plotting on the sphere in ``pyroomacoustics.doa.grid.GridSphere``
 
 Deprecation Notice
 ~~~~~~~~~~~~~~~~~~
