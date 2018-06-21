@@ -1,6 +1,7 @@
 '''
 A collection of functions to plot maps and points on circles and spheres.
 '''
+import numpy as np
 
 def polar_plt_dirac(self, azimuth_ref=None, alpha_ref=None, save_fig=False, 
         file_name=None, plt_dirty_img=True):
@@ -314,6 +315,7 @@ def sph_plot_diracs(
         The colatitudes indexing the dirty_img 2D map
     '''
 
+    import matplotlib.pyplot as plt
 
     fig = plt.figure(figsize=(6.47, 4), dpi=90)
     ax = fig.add_subplot(111, projection="mollweide")
@@ -395,13 +397,15 @@ def sph_plot_diracs(
     if 'title_str' in kwargs:
         ax.set_title(title_str, fontsize=11)
 
-    ax.set_xlabel(r'azimuth $\bm{\varphi}$', fontsize=11)
-    ax.set_ylabel(r'latitude $90^{\circ}-\bm{\theta}$', fontsize=11)
+    ax.set_xlabel(r'azimuth', fontsize=11)
+    ax.set_ylabel(r'latitude', fontsize=11)
 
     ax.xaxis.set_label_coords(0.5, 0.52)
 
     ax.grid(True)
 
+    '''
     if save_fig:
         plt.savefig(file_name, format='pdf', dpi=300, transparent=True)
+    '''
 
