@@ -30,6 +30,8 @@ from scipy.io import wavfile
 import datetime as dt
 import warnings
 
+from ..doa import cart2spher
+
 from .base import Meta, AudioSample, Dataset
 
 url = 'http://www.locata-challenge.org'
@@ -45,7 +47,7 @@ FMT_TS_ARRAY = 'audio_array_timestamps_{array}.txt'
 FMT_REQ_TIME = 'required_time.txt'
 RE_TS = re.compile('^(20[0-9]{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2})\.(\d+)')
 
-def __parse(line):
+def _parse(line):
     m = RE_TS.match(line)
     if m:
         elem = [int(m.group(n)) for n in range(1,7)]  # year month day hour minute seconds
@@ -58,27 +60,34 @@ def __parse(line):
             sub.pop(0)
 
         if len(sub) == 0:
-            return ts
+            return dict(ts=ts)
         elif len(sub) == 1:  # that only happens for the required time file
-            return ts, dict(valid=sub[0])
+            return dict(ts=ts, valid=int(sub[0]))
 
-        ref_vec = np.array([sub.pop(0) for n in range(3)])
-        rot_mat = np.array([sub.pop(0) for n in range(9)]).reshape((3,3), order='F')
+        point = np.array([float(sub.pop(0)) for n in range(3)])
+        ref_vec = np.array([float(sub.pop(0)) for n in range(3)])
+        rot_mat = np.array([float(sub.pop(0)) for n in range(9)]).reshape((3,3))
 
         if len(sub) == 0:
-            return ts, dict(ref=ref_vec, rot=rot_mat)
+            return dict(ts=ts, point=point, ref_vec=ref_vec, rot_mat=rot_mat)
 
-        array_pos = np.array(sub).reshape((3,-1), order='F')
+        mics_pos = np.array([float(s) for s in sub]).reshape((3,-1), order='F')
 
-        return ts, dict(ref=ref_vec, rot=rot_mat, pos=array_pos,)
+        return dict(ts=ts, point=point, ref_vec=ref_vec, rot_mat=rot_mat, mics=mics_pos,)
 
     else:
         return None
 
-def __read_reference_file(fn):
+def _read_reference_file(fn):
     ''' Reads and parse a groundtruth file '''
     with open(fn, 'r') as f:
-        return list(filter(lambda x:x, map(__parse, f.readlines())))
+        return list(filter(lambda x:x, map(_parse, f.readlines())))
+
+
+def _find_ts(L, T):
+    ''' find the closest timestamp in a list '''
+    return np.argmin(np.abs(list(map(lambda x: (x['ts'] - T).total_seconds(), L))))
+
 
 
 locata_tasks = [1, 2, 3, 4, 5 , 6]
@@ -131,7 +140,7 @@ class LOCATA(Dataset):
         eval_dir = os.path.join(self.basedir, 'eval')
         dev_dir = os.path.join(self.basedir, 'dev')
 
-        if not os.path.exists(eval_dir) or not os.path.exists('dev'):
+        if not os.path.exists(eval_dir) or not os.path.exists(dev_dir):
             warnings.warn('The ''eval'' and/or ''dev'' folders are missing. Please check the structure of the dataset directory.')
 
 
@@ -208,8 +217,8 @@ class LocataRecording(AudioSample):
                 if m:
                     name = m.group(1)
                     fs, data = wavfile.read(os.path.join(path, fn))
-                    ts = __read_reference_file(os.path.join(path, FMT_TS_SOURCE.format(source=name)))
-                    pos = __read_reference_file(
+                    ts = _read_reference_file(os.path.join(path, FMT_TS_SOURCE.format(source=name)))
+                    pos = _read_reference_file(
                             os.path.join(path, FMT_POS_SOURCE.format(source=name))
                             )
                     self.sources[name] = dict(
@@ -221,16 +230,121 @@ class LocataRecording(AudioSample):
             self.sources = None
 
         # read the array info
-        self.ts = __read_reference_file(
+        self.ts = _read_reference_file(
                 os.path.join(path, FMT_TS_ARRAY.format(array=array))
                 )
-        self.pos = __read_reference_file(
+        self.pos = _read_reference_file(
                 os.path.join(path, FMT_POS_ARRAY.format(array=array))
                 )
-        self.req = __read_reference_file(
+        self.req = _read_reference_file(
                 os.path.join(path, FMT_REQ_TIME)
                 )
         fs, data = wavfile.read(
                 os.path.join(path, FMT_AUDIO_ARRAY.format(array=array))
                 )
         AudioSample.__init__(self, data, fs, task=task, rec=rec, array=array, dev=dev)
+
+
+    def get_sampleindex(self, ts):
+        '''
+        Find the sample index closest to a given timestamp.
+
+        Parameters
+        ----------
+        ts: datetime
+            The timestamp
+        '''
+        return _find_ts(self.ts, ts)
+
+
+    def get_ts(self, ts):
+        '''
+        Get the audio sample timestamp closest to a given
+        datetime object or a sample index.
+
+        Parameters
+        ----------
+        ts: int or datetime
+            The timestamp or audio sample index
+
+        Returns
+        -------
+        A datetime object or None if the sample doesn't exist
+        '''
+
+        if type(ts) == int:
+
+            if ts < 0 or ts > len(self.ts):
+                return None
+            else:
+                ts = self.ts[ts]['ts']
+
+        return ts
+
+
+    def get_array(self, ts):
+        '''
+        Get the location of the microphones in the local reference frame
+
+        Parameters
+        ----------
+        ts: int or datetime
+            The timestamp or audio sample index
+
+        Returns
+        -------
+        An ndarray containing the microphone locations in the columns.
+        '''
+
+        ts = self.get_ts(ts)
+
+        arr_i = _find_ts(self.pos, ts)
+        array_pos = self.pos[arr_i]['point']
+        array_rot = self.pos[arr_i]['rot_mat']
+        array_mics = self.pos[arr_i]['mics']
+
+        return np.dot(array_rot.T, array_mics - array_pos[:,None])
+
+
+    def get_doa(self, ts):
+        '''
+        Returns the doa of sources at a given time. This is only available for
+        ``dev`` recordings.
+
+        Parameters
+        ----------
+        ts: int or datetime
+            The timestamp or audio sample index
+
+        Returns
+        -------
+        A dictionary containing the spherical coordinates (radius, azimuth,
+        colatitude) of the sources with respect to the array or None if the
+        timestamp is unavailable, or the sources information is unavailable
+        (eval recordings).
+        '''
+
+        if not self.meta.dev:
+            return None
+
+        ts = self.get_ts(ts)
+
+        arr_i = _find_ts(self.pos, ts)
+        array_pos = self.pos[arr_i]['point']
+        array_rot = self.pos[arr_i]['rot_mat']
+
+        doa = dict()
+
+        for name, info in self.sources.items():
+
+            src_i = _find_ts(info['pos'], ts)
+            src_pos = info['pos'][src_i]['point']
+            v = np.dot(array_rot.T, src_pos - array_pos)
+            doa[name] = dict(zip(['radius', 'azimuth', 'colatitude'], cart2spher(v)))
+
+            # fix the azimuth
+            doa[name]['azimuth'] -= np.pi / 2
+            if doa[name]['azimuth'] > np.pi:
+                doa[name]['azimuth'] -= 2 * np.pi
+
+        return doa

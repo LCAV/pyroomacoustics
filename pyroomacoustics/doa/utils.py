@@ -72,6 +72,28 @@ def spher2cart(r, azimuth, colatitude):
     return np.array([x, y, z])
 
 
+def cart2spher(V):
+    '''
+    Converts a number of points in cartesian coordinates to their spherical coordinates.
+
+    Parameters
+    ----------
+    V: array_like, shape (3,...)
+        An ndarray containing the Cartesian coordinates of the points its columns
+
+    Returns
+    -------
+    The spherical coordinates of the columns of the input matrix
+    ``(radius, azimuth, colatitude)``
+    '''
+
+    r = np.sqrt(np.sum(V ** 2, axis=0))
+    colatitude = np.arccos(V[2,] / r)
+    azimuth = np.arctan2(V[1,], V[0,])
+
+    return r, azimuth, colatitude
+
+
 def polar_distance(x1, x2):
     """
     Given two arrays of numbers x1 and x2, pairs the cells that are the
