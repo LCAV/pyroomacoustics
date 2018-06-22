@@ -181,14 +181,28 @@ class LocataRecording(AudioSample):
     sources: dict or None
         A dictionary containing the reference audio recording, as well as the
         timestamps and location information for the sources (only available for
-        the `dev` dataset)
-    ts: list of datetime.DateTime
-        A list of timestamps corresponding to the audio samples
-    pos: list
-        A list of timestamps and position information for the microphone array
-        at each time instant
+        the `dev` dataset), format:
+
+        .. code-block:: python
+
+            {
+              'src_name' : {
+                'audio' : 'pyroomacoustics.datasets.AudioSample',
+                'ts' : 'list of { 'ts' : datetime.DateTime }',
+                'pos' : 'list of dict similar to pos attribute',
+              },
+            }
+
+    ts: list of dict
+        A list of timestamps corresponding to the audio samples each element is
+        a dict with entry ``'ts'``
+    pos: list of dict
+        A list of dict containing ``['ts', 'point', 'ref_vec', 'rot_mat']``
+        (timestamps, location point, reference vector, rotation matrix) for the
+        microphone array at each time instant
     req: list
-        The list of timestamps at which the source location needs to be computed
+        The list of timestamps at which the source location needs to be computed,
+        same format as ``ts`` attribute
 
     Parameters
     ----------
@@ -269,7 +283,8 @@ class LocataRecording(AudioSample):
 
         Returns
         -------
-        A datetime object or None if the sample doesn't exist
+        datetime.Datetime or None
+            The audio sample timestamp closest to a given timestamp
         '''
 
         if type(ts) == int:
@@ -293,7 +308,8 @@ class LocataRecording(AudioSample):
 
         Returns
         -------
-        An ndarray containing the microphone locations in the columns.
+        ndarray
+            An ndarray with the microphone locations in the columns ``(ndim, nmics)``
         '''
 
         ts = self.get_ts(ts)
@@ -318,10 +334,11 @@ class LocataRecording(AudioSample):
 
         Returns
         -------
-        A dictionary containing the spherical coordinates (radius, azimuth,
-        colatitude) of the sources with respect to the array or None if the
-        timestamp is unavailable, or the sources information is unavailable
-        (eval recordings).
+        dict
+            A dictionary containing the spherical coordinates (radius, azimuth,
+            colatitude) of the sources with respect to the array or None if the
+            timestamp is unavailable, or the sources information is unavailable
+            (eval recordings).
         '''
 
         if not self.meta.dev:
