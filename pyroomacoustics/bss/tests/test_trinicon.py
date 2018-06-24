@@ -3,10 +3,20 @@ import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
-wav_files = [ 
-    'examples/input_samples/german_speech_8000.wav',
-    'examples/input_samples/singing_8000.wav',
-    ]
+# We use several sound samples for each source to have a long enough length
+wav_files = [
+        [
+            'examples/input_samples/cmu_arctic_us_axb_a0004.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
+            'examples/input_samples/cmu_arctic_us_axb_a0006.wav',
+            ],
+        [
+            'examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
+            'examples/input_samples/cmu_arctic_us_aew_a0003.wav',
+            ],
+        ]
+
 
 #def test_auxiva():
 
@@ -23,13 +33,14 @@ if __name__ == '__main__':
     # create the room with sources and mics
     room = pra.ShoeBox(
         room_dim,
-        fs=8000,
+        fs=16000,
         max_order=0,
-        absorption=0.45,
         sigma2_awgn=1e-8)
 
     # get signals
-    signals = [wavfile.read(f)[1].astype(np.float32) for f in wav_files]
+    signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32)
+        for f in source_files])
+        for source_files in wav_files ]
     delays = [1., 0.]
     locations = [[2.5,3], [2.5, 6]]
 
@@ -81,10 +92,6 @@ if __name__ == '__main__':
     ###########
 
     y,w = pra.bss.trinicon(mics_signals, filter_length=L, return_filters=True)
-    y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
-    y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
-    y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
-    y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
     y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
     y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)
     y,w = pra.bss.trinicon(mics_signals, w0=w, return_filters=True)

@@ -3,7 +3,15 @@ import numpy as np
 from scipy.signal import fftconvolve
 
 def trinicon(signals, w0=None,
-        filter_length=2048, block_length=None, n_blocks=8,
+        filter_length=2048,
+        block_length=None, 
+        n_blocks=8,
+        alpha_on=None,
+        j_max=10,
+        delta_max=1e-4,
+        sigma2_0=1e-7,
+        mu=0.001,
+        lambd_a=0.2,
         return_filters=False):
     '''
     Implementation of the TRINICON Blind Source Separation algorithm as described in
@@ -11,7 +19,7 @@ def trinicon(signals, w0=None,
     R. Aichner, H. Buchner, F. Yan, and W. Kellermann  *A real-time
     blind source separation scheme and its application to reverberant and noisy
     acoustic environments*,  Signal Processing, 86(6), 1260-1277.
-    doi:10.1016/j.sigpro.2005.06.022, 2006.
+    doi:10.1016/j.sigpro.2005.06.022, 2006. `[pdf] <http://www.buchner-net.com/lnt2006_19.pdf>`_
 
     Specifically, adaptation of the pseudo-code from Table 1.
 
@@ -24,19 +32,33 @@ def trinicon(signals, w0=None,
     w0: ndarray (nchannels, nsources, nsamples), optional
         Optional initial value for the demixing filters
     filter_length: int, optional
-        The length of the demixing filters
+        The length of the demixing filters, if w0 is provided, this option is ignored
     block_length: int, optional
         Block length (default 2x filter_length)
     n_blocks: int, optional
         Number of blocks processed at once (default 8)
+    alpha_on: int, optional
+        Online overlap factor (default ``n_blocks``)
+    j_max: int, optional
+        Number of offline iterations (default 10)
+    delta_max: float, optional
+        Regularization parameter, this sets the maximum value of the regularization term (default 1e-4)
+    sigma2_0: float, optional
+        Regularization parameter, this sets the reference (machine?) noise
+        level in the regularization (default 1e-7)
+    mu: float, optional
+        Offline update step size (default 0.001)
+    lambd_a: float, optional
+        Online forgetting factor (default 0.2)
     return_filters: bool
-        If true, the function will return the demixing matrix too
+        If true, the function will return the demixing matrix too (default False)
 
     Returns
     -------
-    Returns an (nsources, nsamples) array. Also returns
-    the demixing matrix (nchannels, nsources, nsamples)
-    if ``return_values`` keyword is True.
+    ndarray
+        Returns an (nsources, nsamples) array. Also returns
+        the demixing matrix (nchannels, nsources, nsamples)
+        if ``return_filters`` keyword is True.
     '''
 
     P = signals.shape[0] # number of microphones
@@ -58,16 +80,9 @@ def trinicon(signals, w0=None,
         N = 2*L
     else:
         N = block_length
-    alpha_on = K         # online overlap factor
-    alpha_off = 1        # offline overlap factor (not used here)
 
-    j_max = 10           # number of offline iterations
-
-    delta_max = 1e-4     # regularization parameter, this sets the maximum value of the regularization term
-    sigma2_0  = 1e-7     # regularization parameter, this sets the reference (machine?) noise level in the regularization
-
-    mu = 0.0010          # offline update step size
-    lambd_a = 0.2        # online forgetting factor
+    if alpha_on is None:
+        alpha_on = K         # online overlap factor
 
     hop = K * L // alpha_on
 
@@ -118,6 +133,7 @@ def trinicon(signals, w0=None,
             sigma2 = np.sum(y_blocks**2, axis=2)
 
             # cross-correlations
+            # XXX This is the part hard coded for two channels XXX
             r_cross = np.zeros((Q,K,2*L-1))
             for i in range(K):
                 y0 = y_c[0,i*L:i*L+N]
