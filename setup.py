@@ -14,6 +14,8 @@ except ImportError:
     from distutils.core import setup
     from distutils.extension import Extension
 
+from Cython.Build import cythonize
+
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -64,7 +66,7 @@ setup_kwargs = dict(
             ],
 
         # Libroom C extension
-        ext_modules=[libroom_ext, cython_ext],
+        ext_modules=[libroom_ext] + cythonize(cython_ext),
 
         # Necessary to keep the source files
         package_data={
