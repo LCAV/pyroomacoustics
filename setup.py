@@ -123,4 +123,5 @@ except:
     # Retry without the C module
     print("Error. Probably building C extension failed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
+    setup_kwargs['ext_modules'] = cythonize(cython_ext)
     setup(**setup_kwargs)

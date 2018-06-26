@@ -226,8 +226,21 @@ class SoundSource(object):
         t = np.arange(N) / float(Fs)
         ir = np.zeros(t.shape)
 
-        from .build_rir import build_rir
-        build_rir(ir, time, alpha, visibility, Fs, fdl)
+        try:
+            # Try to use the Cython extension
+            from .build_rir import fast_rir_builder
+            fast_rir_builder(ir, time, alpha, visibility, Fs, fdl)
+
+        except ImportError:
+            print("Cython-extension build_rir unavailable. Falling back to pure python")
+            # fallback to pure Python implemenation
+            from .utilities import fractional_delay
+    
+            for i in range(time.shape[0]):
+                if visibility[i] == 1:
+                    time_ip = int(np.round(Fs * time[i]))
+                    time_fp = (Fs * time[i]) - time_ip
+                    ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[i]*fractional_delay(time_fp)
 
         return ir
 

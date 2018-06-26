@@ -5,7 +5,7 @@ cimport cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def build_rir(
+def fast_rir_builder(
         double [:] rir,
         double [:] time,
         double [:] alpha,
