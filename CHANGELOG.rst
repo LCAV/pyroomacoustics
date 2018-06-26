@@ -14,6 +14,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Added a cython function to efficiently compute the fractional delays in the room
+  impulse response from time delays and attenuations
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.

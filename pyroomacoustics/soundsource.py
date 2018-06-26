@@ -226,15 +226,8 @@ class SoundSource(object):
         t = np.arange(N) / float(Fs)
         ir = np.zeros(t.shape)
 
-        # from utilities import lowPassDirac
-        from .utilities import fractional_delay
-        #return u.lowPassDirac(time[:, np.newaxis], alpha[:, np.newaxis], Fs, N).sum(axis=0)
-
-        for i in range(time.shape[0]):
-            if visibility[i] == 1:
-                time_ip = int(np.round(Fs * time[i]))
-                time_fp = (Fs * time[i]) - time_ip
-                ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[i]*fractional_delay(time_fp)
+        from build_rir import build_rir
+        build_rir(ir, time, alpha, visibility, Fs, fdl)
 
         return ir
 
