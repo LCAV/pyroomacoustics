@@ -74,6 +74,7 @@ setup_kwargs = dict(
             },
 
         install_requires=[
+            'Cython',
             'numpy',
             'scipy>=0.18.0',
             'matplotlib',
