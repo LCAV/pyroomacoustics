@@ -26,7 +26,7 @@ libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + '/' + f for f in files],
                     include_dirs=[src_dir,numpy.get_include()])
-cython_ext = Extension("build_rir", ["pyroomacoustics/build_rir.pyx"])
+cython_ext = Extension("pyroomacoustics.build_rir", ["pyroomacoustics/build_rir.pyx"])
 
 here = path.abspath(path.dirname(__file__))
 
@@ -108,7 +108,6 @@ setup_kwargs = dict(
         keywords='room acoustics signal processing doa beamforming adaptive',
 )
 
-setup(**setup_kwargs)
 try:
     # Try to build everything first
     setup(**setup_kwargs)
@@ -117,5 +116,3 @@ except:
     print("Error. Probably building C extension failed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
     setup(**setup_kwargs)
-    
-

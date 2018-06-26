@@ -226,7 +226,7 @@ class SoundSource(object):
         t = np.arange(N) / float(Fs)
         ir = np.zeros(t.shape)
 
-        from build_rir import build_rir
+        from .build_rir import build_rir
         build_rir(ir, time, alpha, visibility, Fs, fdl)
 
         return ir
