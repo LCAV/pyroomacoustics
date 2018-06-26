@@ -55,7 +55,6 @@ setup_kwargs = dict(
         packages=[
             'pyroomacoustics', 
             'pyroomacoustics.c_package', 
-            'pyroomacoustics.build_rir',
             'pyroomacoustics.doa', 
             'pyroomacoustics.adaptive',
             'pyroomacoustics.realtime',
@@ -66,6 +65,11 @@ setup_kwargs = dict(
 
         # Libroom C extension
         ext_modules=[libroom_ext, cython_ext],
+
+        # Necessary to keep the source files
+        package_data={
+            'pyroomacoustics': ['*.pxd', '*.pyx'],
+            },
 
         install_requires=[
             'numpy',
