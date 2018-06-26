@@ -1,7 +1,6 @@
 # cython: infer_types=True
 
 import numpy as np
-import matplotlib.pyplot as plt
 cimport cython
 
 @cython.boundscheck(False)
@@ -51,8 +50,6 @@ def build_rir(
     cdef double [:] hann = np.hanning(fdl)
     cdef int lut_pos, i, f, time_ip
     cdef float x_off, x_off_frac, sample_frac
-
-    plt.plot(n, sinc_lut)
 
     for i in range(n_times):
         if visibility[i] == 1:
