@@ -34,6 +34,7 @@ Added
   * The ordering of axis in the output from bulk STFT is now
     ``(n_frames, n_frequencies, n_channels)``
   * Support for Intel's ``mkl_fft`` `package <https://github.com/IntelPython/mkl_fft>`_
+  * ``axis`` (along which to perform DFT) and ``bits`` parameters for ``DFT`` class.
 
 Changed
 ~~~~~~~
