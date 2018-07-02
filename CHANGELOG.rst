@@ -17,12 +17,38 @@ Added
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
+- Lots of new features in the ``pyroomacoustics.realtime`` subpackage
+
+  * The ``STFT`` class can now be used both for frame-by-frame processing
+    or for bulk processing
+  * The functionality will replace the methods ``pyroomacoustics.stft``,
+    ``pyroomacoustics.istft``, ``pyroomacoustics.overlap_add``, etc,
+  * The **new** function ``pyroomacoustics.realtime.compute_synthesis_window``
+    computes the optimal synthesis window given an analysis window and
+    the frame shift
+  * Extensive tests for the ``pyroomacoustics.realtime`` module
+  * Convenience functions ``pyroomacoustics.realtime.analysis`` and
+    ``pyroomacoustics.realtime.synthesis`` with an interface similar
+    to ``pyroomacoustics.stft`` and ``pyroomacoustics.istft`` (which
+    are now deprecated and will disappear soon)
+  * The ordering of axis in the output from bulk STFT is now
+    ``(n_frames, n_frequencies, n_channels)``
+  * Support for Intel's ``mkl_fft`` `package <https://github.com/IntelPython/mkl_fft>`_
+  * ``axis`` (along which to perform DFT) and ``bits`` parameters for ``DFT`` class.
 
 Changed
 ~~~~~~~
 
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
 - Improved the download/uncompress function for large datasets
+- Dusted the code for plotting on the sphere in ``pyroomacoustics.doa.grid.GridSphere``
+
+Deprecation Notice
+~~~~~~~~~~~~~~~~~~
+
+- The methods ``pyroomacoustics.stft``, ``pyroomacoustics.istft``,
+  ``pyroomacoustics.overlap_add``, etc, are now **deprecated**
+  and will be removed in the near future
 
 `0.1.18`_ - 2018-04-24
 ----------------------

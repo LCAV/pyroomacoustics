@@ -1,5 +1,5 @@
 # Author: Eric Bezzam
-# Date: May 26, 2018
+# Last modification: July 2, 2018
 
 """
 Class for performing the Dicrete Fourier Transform (DFT) and inverse DFT for 
@@ -27,7 +27,7 @@ except ImportError:
     pyfftw_available = False
 
 try:
-    import mkl_fft
+    import mkl_fft    # https://github.com/IntelPython/mkl_fft
     mkl_available = True
 except ImportError:
     mkl_available = False
@@ -67,9 +67,9 @@ class DFT(object):
     D: int, optional
         Number of channels. Default is 1.
     analysis_window: numpy array, optional
-        Window to be applied before DFT.
+        Window to be applied before DFT. Default is no window.
     synthesis_window: numpy array, optional
-        Window to be applied after inverse DFT.
+        Window to be applied after inverse DFT. Default is no window.
     transform: str, optional
         which FFT package to use: ``numpy``, ``pyfftw``, or ``mkl``. Default is 
         ``numpy``.
@@ -78,7 +78,7 @@ class DFT(object):
     bits : int, optional
         How many bits to use for real input. Twice the amount will be used for 
         the complex spectrum. 32 will use ``float32``/``complex64`` and 64 will
-        use ``float64``/``complex128``
+        use ``float64``/``complex128``. Default is 32.
 
     """
 

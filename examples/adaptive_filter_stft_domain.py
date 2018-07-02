@@ -56,7 +56,7 @@ Y_concat = np.zeros((num_bands,num_blocks), dtype=np.complex64)
 for k in range(num_bands):
     Y_concat[k,:] = fftconvolve(X_concat[k,:], W[:,k])[:num_blocks]
 
-# add noise (is this right way?)
+# add noise
 V = np.random.randn(num_bands,num_blocks) + \
     1j*np.random.randn(num_bands,num_blocks)
 V /= np.linalg.norm(V, axis=0) * np.linalg.norm(Y_concat, axis=0)
@@ -88,7 +88,7 @@ for n in range(num_blocks):
 plt.figure()
 time_scale = np.arange(num_blocks)*hop/fs
 for k in range(num_bands):
-    plt.semilogy(time_scale, error_per_band[k,:])
+    plt.semilogy(time_scale, np.abs(error_per_band[k,:]))
 plt.title('Convergence to unknown filter (per band)')
 plt.grid()
 plt.autoscale(enable=True, axis='x', tight=True)

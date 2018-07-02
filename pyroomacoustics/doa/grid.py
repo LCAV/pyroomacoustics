@@ -312,7 +312,7 @@ class GridSphere(Grid):
         
         x = int(np.sqrt(self.n_points / 2))
 
-        G = np.mgrid[0:2*np.pi:2j*x, 0:np.pi:1j*x]
+        G = np.mgrid[-np.pi:np.pi:2j*x, 0:np.pi:1j*x]
         spherical_grid = np.squeeze(G.reshape((2,1,-1)))
 
         gridded = griddata(self.spherical.T, self.values, spherical_grid.T, method='nearest', fill_value=0.)
@@ -322,8 +322,8 @@ class GridSphere(Grid):
 
 
     def plot(self, 
-            colatitude_ref=0, azimuth_ref=0, 
-            colatitude_recon=0, azimuth_recon=0, 
+            colatitude_ref=None, azimuth_ref=None,
+            colatitude_recon=None, azimuth_recon=None,
             plotly=True, projection=True, points_only=False):
 
         if points_only:
@@ -334,19 +334,20 @@ class GridSphere(Grid):
             dirty_grid_x, dirty_grid_y, dirty_img = self.regrid()
 
         ## Then, we just need to call Hanjie's routines
-        from plotters import sph_plot_diracs, sph_plot_diracs_plotly
+        from .plotters import sph_plot_diracs, sph_plot_diracs_plotly
 
         if projection:
             sph_plot_diracs(
                     colatitude_ref, azimuth_ref, colatitude_recon, azimuth_recon, 
-                    48, 0, 
-                    dirty_img=dirty_img, colatitude_plt=G[1], azimuth_plt=G[0]
+                    dirty_img=dirty_img,
+                    colatitude_grid=dirty_grid_y, azimuth_grid=dirty_grid_x,
                     )
 
         if plotly:
             sph_plot_diracs_plotly(
                     colatitude_ref, azimuth_ref, colatitude_recon, azimuth_recon, 
-                    G[0], G[1], dirty_img
+                    dirty_img=dirty_img,
+                    azimuth_grid=dirty_grid_x, colatitude_grid=dirty_grid_y
                     )
 
     

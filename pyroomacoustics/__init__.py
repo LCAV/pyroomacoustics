@@ -34,7 +34,7 @@ Code snippets are indicated by three greater-than signs::
 
 Use the built-in ``help`` function to view a function's docstring::
 
-  >>> help(pra.stft)
+  >>> help(pra.stft.STFT)
   ... # doctest: +SKIP
 
 Available submodules
@@ -65,9 +65,9 @@ Available submodules
 
 :py:obj:`pyroomacoustics.soundsource`
     Abstraction for a sound source.
- 
+
 :py:obj:`pyroomacoustics.stft`
-    STFT processing engine.
+    **Deprecated** Replaced by the methods in :py:obj:`pyroomacoustics.realtime`
 
 :py:obj:`pyroomacoustics.sync`
     A few routines to help synchronize signals.

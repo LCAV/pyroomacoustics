@@ -2,15 +2,21 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-'''Collection of spectral estimation methods.'''
+'''Collection of spectral estimation methods.
+
+**This module is deprecated.** It is replaced by the methods of :py:obj:`pyroomacoustics.realtime`
+'''
 from __future__ import division
 
-import sys
+import sys, warnings
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
 
 # a routine for long convolutions using overlap add method
 def overlap_add(in1, in2, L):
+
+    warnings.warn("The function pyroomacoustics.overlap is deprecated and will disappear soon.",
+            DeprecationWarning)
 
     # set the shortest sequence as the filter
     if (len(in1) > len(in2)):
@@ -45,6 +51,9 @@ def overlap_add(in1, in2, L):
 # Nicely plot the spectrogram
 def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
                 vmin=None, vmax=None, cmap=None, interpolation='none', colorbar=True):
+
+    warnings.warn("The function pyroomacoustics.spectroplot is deprecated and will disappear soon.",
+            DeprecationWarning)
 
     import matplotlib.pyplot as plt
 
@@ -104,6 +113,9 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     The STFT of x
     '''
 
+    warnings.warn("The function pyroomacoustics.stft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.realtime.STFT object.",
+            DeprecationWarning)
+
     # the transform size
     N = L + zp_back + zp_front
 
@@ -119,14 +131,15 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
 
     # add the zero-padding
     y = np.concatenate(
-        (np.zeros(
-            (y.shape[0], zp_front)), y, np.zeros(
-            (y.shape[0], zp_back))), axis=1)
+            (
+                np.zeros( (y.shape[0], zp_front), dtype=x.dtype), 
+                y, 
+                np.zeros( (y.shape[0], zp_back), dtype=x.dtype)
+            ), axis=1)
 
     # apply window if needed
     if (win is not None):
-        y = win * y
-        # y = np.expand_dims(win, 0)*y
+        y = win.astype(x.dtype) * y
 
     # transform along rows
     Z = transform(y, axis=1)
@@ -137,6 +150,9 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
 
 # inverse STFT
 def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
+
+    warnings.warn("The function pyroomacoustics.istft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.realtime.STFT object.",
+            DeprecationWarning)
 
     # the transform size
     N = L + zp_back + zp_front
