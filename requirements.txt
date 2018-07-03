@@ -4,3 +4,5 @@ scipy>=0.18.0
 matplotlib
 joblib
 requests
+sounddevice
+mir_eval
