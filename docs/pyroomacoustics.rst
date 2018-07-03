@@ -11,7 +11,7 @@ Subpackages
     pyroomacoustics.datasets
     pyroomacoustics.doa
     pyroomacoustics.experimental
-    pyroomacoustics.realtime
+    pyroomacoustics.transform
 
 Submodules
 ----------
@@ -20,12 +20,14 @@ Submodules
 
    pyroomacoustics.acoustics
    pyroomacoustics.beamforming
+   pyroomacoustics.build_rir
    pyroomacoustics.geometry
    pyroomacoustics.metrics
    pyroomacoustics.multirate
    pyroomacoustics.parameters
    pyroomacoustics.recognition
    pyroomacoustics.room
+   pyroomacoustics.scnr
    pyroomacoustics.soundsource
    pyroomacoustics.stft
    pyroomacoustics.sync
