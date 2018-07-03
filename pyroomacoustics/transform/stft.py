@@ -31,7 +31,7 @@ class STFT(object):
     transform (optional) : str
         which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
     streaming (optional) : bool
-        whether (True) or not (False, default) to "stitch" samples between 
+        whether (True, default) or not (False) to "stitch" samples between
         repeated calls of 'analysis' and 'synthesis' if we are receiving a 
         continuous stream of samples.
     num_frames (optional) : int
@@ -48,7 +48,7 @@ class STFT(object):
     """
 
     def __init__(self, N, hop=None, analysis_window=None, 
-        synthesis_window=None, channels=1, transform='numpy', streaming=False,
+        synthesis_window=None, channels=1, transform='numpy', streaming=True,
         **kwargs):
 
         # initialize parameters
@@ -246,7 +246,6 @@ class STFT(object):
             else:
                 self.H_multi = np.tile(self.H,(self.num_frames,1,1))
                 # self.H_multi = np.swapaxes(self.H_multi,0,1)
-
 
 
     def analysis(self, x):

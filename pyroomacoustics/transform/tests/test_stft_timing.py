@@ -2,7 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 import pyroomacoustics as pra
-from pyroomacoustics.realtime import STFT
+from pyroomacoustics.transform import STFT
 import time
 import warnings
 

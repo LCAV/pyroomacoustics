@@ -25,7 +25,7 @@ def no_window(nfft, D, transform, axis=0):
             X_local = X_numpy.T
 
     # make object
-    dft = pra.realtime.DFT(nfft, D, transform=transform, axis=axis)
+    dft = pra.transform.DFT(nfft, D, transform=transform, axis=axis)
 
     # forward
     X = dft.analysis(x_local)
@@ -52,8 +52,8 @@ def window(nfft, D, analysis_window, synthesis_window, axis=0):
             X_local = X_numpy.T
 
     # make object
-    dft = pra.realtime.DFT(nfft, D, axis=axis, analysis_window=analysis_window,
-        synthesis_window=synthesis_window)
+    dft = pra.transform.DFT(nfft, D, axis=axis, analysis_window=analysis_window,
+                            synthesis_window=synthesis_window)
 
     try:
         # forward
