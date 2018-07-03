@@ -14,6 +14,8 @@ except ImportError:
     from distutils.core import setup
     from distutils.extension import Extension
 
+from Cython.Build import cythonize
+
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -26,6 +28,7 @@ libroom_ext = Extension('pyroomacoustics.c_package.libroom',
                     extra_compile_args = ['-Wall', '-O3', '-std=c99'],
                     sources = [src_dir + '/' + f for f in files],
                     include_dirs=[src_dir,numpy.get_include()])
+cython_ext = Extension("pyroomacoustics.build_rir", ["pyroomacoustics/build_rir.pyx"])
 
 here = path.abspath(path.dirname(__file__))
 
@@ -63,9 +66,15 @@ setup_kwargs = dict(
             ],
 
         # Libroom C extension
-        ext_modules=[libroom_ext],
+        ext_modules=[libroom_ext] + cythonize(cython_ext),
+
+        # Necessary to keep the source files
+        package_data={
+            'pyroomacoustics': ['*.pxd', '*.pyx'],
+            },
 
         install_requires=[
+            'Cython',
             'numpy',
             'scipy>=0.18.0',
             'matplotlib',
@@ -114,6 +123,5 @@ except:
     # Retry without the C module
     print("Error. Probably building C extension failed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
+    setup_kwargs['ext_modules'] = cythonize(cython_ext)
     setup(**setup_kwargs)
-    
-
