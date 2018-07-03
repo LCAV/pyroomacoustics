@@ -111,6 +111,12 @@ The requirements are::
 * numpy 
 * scipy 
 * matplotlib
+* Cython
+* scipy>=0.18.0
+* joblib
+* requests
+* sounddevice
+* mir_eval
 
 Example
 -------
