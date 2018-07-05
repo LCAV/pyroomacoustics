@@ -45,17 +45,17 @@ is repeatedly called to provide new samples to the algorithm.
 
 The SubbandLMS class has the same methods as the time domain 
 approaches. However, the signal must be in the frequency domain. This
-can be done with the STFT block in the `realtime` sub-package of 
+can be done with the STFT block in the `transform` sub-package of
 `pyroomacoustics`.
 
 ::
 
     # initialize STFT and SubbandLMS blocks
     block_size = 128
-    stft_x = pra.realtime.STFT(block_size=block_size, 
+    stft_x = pra.transform.STFT(N=block_size,
         hop=block_size//2, 
         analysis_window=pra.hann(block_size))
-    stft_d = pra.realtime.STFT(block_size=block_size, 
+    stft_d = pra.transform.STFT(N=block_size,
         hop=block_size//2, 
         analysis_window=pra.hann(block_size))
     nlms = pra.adaptive.SubbandLMS(num_taps=6, 

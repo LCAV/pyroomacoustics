@@ -96,6 +96,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.doa`
     Direction of arrival finding algorithms
 
+:py:obj:`pyroomacoustics.scnr`
+    Single channel noise reduction methods
+
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 
@@ -131,6 +134,7 @@ from . import transform as realtime  # to be deprecated
 from . import experimental
 from . import datasets
 from . import bss
+from . import scnr
 
 import warnings
 warnings.warn(

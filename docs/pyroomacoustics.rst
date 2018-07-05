@@ -11,6 +11,7 @@ Subpackages
     pyroomacoustics.datasets
     pyroomacoustics.doa
     pyroomacoustics.experimental
+    pyroomacoustics.scnr
     pyroomacoustics.transform
 
 Submodules
