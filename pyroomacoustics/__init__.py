@@ -67,7 +67,7 @@ Available submodules
     Abstraction for a sound source.
 
 :py:obj:`pyroomacoustics.stft`
-    **Deprecated** Replaced by the methods in :py:obj:`pyroomacoustics.realtime`
+    **Deprecated** Replaced by the methods in :py:obj:`pyroomacoustics.transform`
 
 :py:obj:`pyroomacoustics.sync`
     A few routines to help synchronize signals.
@@ -96,7 +96,7 @@ Available subpackages
 :py:obj:`pyroomacoustics.doa`
     Direction of arrival finding algorithms
 
-:py:obj:`pyroomacoustics.realtime`
+:py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 
 

@@ -27,7 +27,6 @@ Submodules
    pyroomacoustics.parameters
    pyroomacoustics.recognition
    pyroomacoustics.room
-   pyroomacoustics.scnr
    pyroomacoustics.soundsource
    pyroomacoustics.stft
    pyroomacoustics.sync

@@ -28,13 +28,13 @@ class STFT(object):
     channels : int
         number of signals
 
-    transform (optional) : str
+    transform : str, optional
         which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
-    streaming (optional) : bool
+    streaming : bool, optional
         whether (True, default) or not (False) to "stitch" samples between
         repeated calls of 'analysis' and 'synthesis' if we are receiving a 
         continuous stream of samples.
-    num_frames (optional) : int
+    num_frames : int, optional
         Number of frames to be processed. If set, this will be strictly enforced
         as the STFT block will allocate memory accordingly. If not set, there
         will be no check on the number of frames sent to 
@@ -566,7 +566,7 @@ class STFT(object):
         Returns
         -------
         numpy array
-            Reconstructed array of samples of length <self.hop> (Optional)
+            Reconstructed array of samples of length <self.hop>.
         """
 
         # apply IDFT to current frame
