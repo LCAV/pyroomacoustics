@@ -127,6 +127,13 @@ from .recognition import *
 from . import doa
 from . import adaptive
 from . import transform
+from . import transform as realtime  # to be deprecated
 from . import experimental
 from . import datasets
 from . import bss
+
+import warnings
+warnings.warn(
+    "Do not import the 'realtime' module as it will be deprecated soon. It will be replaced by the 'transform' module."
+    , DeprecationWarning
+)

@@ -15,7 +15,6 @@ after filtering.
 
 from __future__ import division, print_function
 import numpy as np
-from scipy.signal import fftconvolve
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
@@ -32,7 +31,7 @@ hop = block_size // 2  # half overlap
 window = pra.hann(block_size, flag='asymmetric', length='full')  # analysis window (no synthesis window)
 
 # open single channel audio file
-fn = os.path.join(os.path.dirname(__file__), 'input_samples/singing_8000.wav')
+fn = os.path.join(os.path.dirname(__file__), 'input_samples', 'singing_8000.wav')
 fs, audio = wavfile.read(fn)
 
 # Create the STFT object
