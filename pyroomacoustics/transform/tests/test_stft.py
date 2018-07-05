@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
-from pyroomacoustics.realtime import STFT
+from pyroomacoustics.transform import STFT
 
 '''
 We create a signal, a simple filter and compute their convolution.
@@ -137,7 +137,7 @@ def with_arbitrary_overlap_synthesis_window(D, num_frames=1, fixed_memory=False,
         x_local = x_local[:num_samples,]
 
     analysis_window = pra.hann(block_size)
-    synthesis_window = pra.realtime.compute_synthesis_window(analysis_window, hop)
+    synthesis_window = pra.transform.compute_synthesis_window(analysis_window, hop)
 
     # Create the STFT object
     if fixed_memory:
