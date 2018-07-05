@@ -1,5 +1,5 @@
-pyroomacoustics.room module
-===========================
+Room Simulation
+===============
 
 .. automodule:: pyroomacoustics.room
     :members:

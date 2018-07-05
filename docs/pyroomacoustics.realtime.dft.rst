@@ -1,5 +1,5 @@
-pyroomacoustics.realtime.dft module
-===================================
+DFT
+===
 
 .. automodule:: pyroomacoustics.realtime.dft
     :members:

@@ -1,13 +1,5 @@
-pyroomacoustics.realtime package
-================================
-
-Submodules
-----------
-
-.. toctree::
-
-   pyroomacoustics.realtime.dft
-   pyroomacoustics.realtime.stft
+Transforms
+==========
 
 Module contents
 ---------------
@@ -16,3 +8,12 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Algorithms
+----------
+
+.. toctree::
+
+   pyroomacoustics.realtime.dft
+   pyroomacoustics.realtime.stft
+

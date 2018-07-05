@@ -1,5 +1,5 @@
-pyroomacoustics package
-=======================
+Pyroomacoustics API
+===================
 
 Subpackages
 -----------

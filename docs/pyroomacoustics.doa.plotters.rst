@@ -1,5 +1,5 @@
-pyroomacoustics.doa.plotters module
-===================================
+Plot Helpers
+============
 
 .. automodule:: pyroomacoustics.doa.plotters
     :members:

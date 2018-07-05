@@ -1,5 +1,5 @@
-pyroomacoustics.datasets.utils module
-=====================================
+Dataset Utilities
+=================
 
 .. automodule:: pyroomacoustics.datasets.utils
     :members:

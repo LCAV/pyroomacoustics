@@ -1,5 +1,5 @@
-pyroomacoustics.doa.detect\_peaks module
-========================================
+Peak Detection
+==============
 
 .. automodule:: pyroomacoustics.doa.detect_peaks
     :members:
