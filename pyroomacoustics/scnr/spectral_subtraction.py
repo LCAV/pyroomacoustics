@@ -32,7 +32,8 @@ class SpectralSub(object):
 
     With a large suppression, i.e. large values for :math:`db\_reduc`, we can observe
     a typical artefact of such spectral subtraction approaches, namely "musical
-    noise". Here is nice article about noise reduction and musical noise: https://www.vocal.com/noise-reduction/musical-noise/
+    noise". `Here <https://www.vocal.com/noise-reduction/musical-noise/>`_ is nice
+    article about noise reduction and musical noise.
 
     Adjusting the constants :math:`\\beta` and :math:`\\alpha` also presents a trade-off
     between suppression and undesirable artefacts, i.e. more noticeable musical noise.

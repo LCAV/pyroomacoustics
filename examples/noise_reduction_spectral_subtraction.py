@@ -11,10 +11,9 @@ This simple approach is suitable for scenarios with noise that is rather station
 and where the SNR is positive.
 
 With a large suppression, i.e. large values for `db_reduc`, we can observe a typical
-artefact of such spectral subtraction approaches, namely "musical noise". Below is
-nice article about noise reduction and musical noise:
-
-https://www.vocal.com/noise-reduction/musical-noise/
+artefact of such spectral subtraction approaches, namely "musical noise".
+`Here <https://www.vocal.com/noise-reduction/musical-noise/>`_ is nice article about
+noise reduction and musical noise:
 """
 
 import numpy as np
