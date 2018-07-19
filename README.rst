@@ -79,10 +79,10 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* beamforming
-* direction of arrival (DOA) finding
-* adaptive filtering (NLMS, RLS)
-* blind source separation (AuxIVA, Trinicon)
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
+* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
@@ -98,6 +98,8 @@ moment we support the following.
 * `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_
 * `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
 * `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
+
+For more details, see the `doc <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.datasets.html>`_.
 
 Quick Install
 -------------
@@ -153,6 +155,10 @@ How to contribute
 
 If you would like to contribute, please clone the
 `repository <http://github.com/LCAV/pyroomacoustics>`_ and send a pull request.
+
+For more details, see our `CONTRIBUTING
+<http://pyroomacoustics.readthedocs.io/en/pypi-release/contributing.html>`_
+page.
 
 Academic publications
 ---------------------

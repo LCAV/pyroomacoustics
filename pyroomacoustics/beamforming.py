@@ -68,19 +68,77 @@ def unit_vec2D(phi):
 
 
 def linear_2D_array(center, M, phi, d):
+    '''
+    Creates an array of uniformly spaced linear points in 2D
+
+    Parameters
+    ----------
+    center: array_like
+        The center of the array
+    M: int
+        The number of points
+    phi: float
+        The counterclockwise rotation of the array (from the x-axis)
+    d: float
+        The distance between neighboring points
+
+    Returns
+    -------
+    ndarray (2, M)
+        The array of points
+    '''
     u = unit_vec2D(phi)
     return np.array(center)[:, np.newaxis] + d * \
         (np.arange(M)[np.newaxis, :] - (M - 1.) / 2.) * u
 
 
 def circular_2D_array(center, M, phi0, radius):
+    '''
+    Creates an array of uniformly spaced circular points in 2D
+
+    Parameters
+    ----------
+    center: array_like
+        The center of the array
+    M: int
+        The number of points
+    phi0: float
+        The counterclockwise rotation of the first element in the array (from the x-axis)
+    radius: float
+        The radius of the array
+
+    Returns
+    -------
+    ndarray (2, M)
+        The array of points
+    '''
     phi = np.arange(M) * 2. * np.pi / M
     return np.array(center)[:, np.newaxis] + radius * \
         np.vstack((np.cos(phi + phi0), np.sin(phi + phi0)))
 
 
 def poisson_2D_array(center, M, d):
-    ''' Create array of 2D positions drawn from Poisson process. '''
+    '''
+    Create array of 2D positions drawn from Poisson process.
+
+    Parameters
+    ----------
+    center: array_like
+        The center of the array
+    M: int
+        The number of points in the first dimension
+    M: int
+        The number of points in the second dimension
+    phi: float
+        The counterclockwise rotation of the array (from the x-axis)
+    d: float
+        The distance between neighboring points
+
+    Returns
+    -------
+    ndarray (2, M * N)
+        The array of points
+    '''
 
     from numpy.random import standard_exponential, randint
 
@@ -93,6 +151,27 @@ def poisson_2D_array(center, M, d):
 
 
 def square_2D_array(center, M, N, phi, d):
+    '''
+    Creates an array of uniformly spaced grid points in 2D
+
+    Parameters
+    ----------
+    center: array_like
+        The center of the array
+    M: int
+        The number of points in the first dimension
+    M: int
+        The number of points in the second dimension
+    phi: float
+        The counterclockwise rotation of the array (from the x-axis)
+    d: float
+        The distance between neighboring points
+
+    Returns
+    -------
+    ndarray (2, M * N)
+        The array of points
+    '''
 
     c = linear_2D_array(center, M, phi+np.pi/2., d)
     R = np.zeros((2, M*N))
@@ -101,15 +180,29 @@ def square_2D_array(center, M, N, phi, d):
 
     return R
 
+
 def spiral_2D_array(center, M, radius=1., divi=3, angle=None):
     '''
-    generate microphone array layout randomly
-    :param center: location of the center of the array
-    :param radius: microphones are contained within a cirle of this radius (default 1)
-    :param M: number of microphones
-    :param divi: number of rotations of the spiral (default 3)
-    :param angle: the angle offset of the spiral (default random)
-    :return:
+    Generate an array of points placed on a spiral
+
+    Parameters
+    ----------
+
+    center: array_like
+        location of the center of the array
+    M: int
+        number of microphones
+    radius: float
+        microphones are contained within a cirle of this radius (default 1)
+    divi: int
+        number of rotations of the spiral (default 3)
+    angle: float
+        the angle offset of the spiral (default random)
+
+    Returns
+    -------
+    ndarray (2, M * N)
+        The array of points
     '''
     num_seg = int(np.ceil(M / divi))
 

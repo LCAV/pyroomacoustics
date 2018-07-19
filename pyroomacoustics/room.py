@@ -1,6 +1,132 @@
 # @version: 1.0  date: 05/06/2015 by Sidney Barthe
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
+'''
+Room
+====
+
+The three main classes are :py:obj:`pyroomacoustics.room.Room`,
+:py:obj:`pyroomacoustics.soundsource.SoundSource`, and
+:py:obj:`pyroomacoustics.beamforming.MicrophoneArray`. On a high level, a
+simulation scenario is created by first defining a room to which a few sound
+sources and a microphone array are attached. The actual audio is attached to
+the source as raw audio samples. The image source method (ISM) is then used to
+find all image sources up to a maximum specified order and room impulse
+responses (RIR) are generated from their positions. The microphone signals are
+then created by convolving the audio samples associated to sources with the
+appropriate RIR. Since the simulation is done on discrete-time signals, a
+sampling frequency is specified for the room and the sources it contains.
+Microphones can optionally operate at a different sampling frequency; a rate
+conversion is done in this case.
+
+Simulating a Shoebox Room
+-------------------------
+
+We will first walk through the steps to simulate a shoebox-shaped room in 3D.
+
+
+Create the room
+~~~~~~~~~~~~~~~
+
+So-called shoebox rooms are pallelepipedic rooms with 4 or 6 walls (in 2D and 3D,
+respectiely), all at right angles. They are defined by a single vector that contains
+the lengths of the walls. They have the advantage of being simple to define and very
+efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply defined like this
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    room = pra.Shoebox([9, 7.5, 3.5], fs=16000)
+
+The second optional argument is the sampling frequency at which the RIR will be
+generated. Note that the default value of ``fs`` is 8 kHz.
+
+
+Add sources and microphones
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sources are fairly straighforward to create. They take their location as single
+mandatory argument, and a signal and start time as optional arguments.  Here we
+create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
+the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the simulation.
+
+.. code-block:: python
+
+    # import a mono wavfile as the source signal
+    # the sampling frequency should match that of the room
+    from scipy.io import wavfile
+    _, audio = wavfile.read('speech.wav')
+
+    my_source = pra.SoundSource([2.5, 3.73, 1.76], signal=audio, delay=1.3)
+
+    # place the source in the room
+    room.add_source(my_source)
+
+The locations of the microphones in the array should be provided in a numpy
+``nd-array`` of size ``(ndim, nmics)``, that is each column contains the
+coordinates of one microphone. This array is used to construct a
+:py:obj:`pyroomacoustics.beamforming.MicrophoneArray` object, together with the
+sampling frequency for the microphone. Note that it can be different from that
+of the room, in which case resampling will occur. Here, we create an array
+with two microphones placed at ``[6.3, 4.87, 1.2]`` and ``[6.3, 4.93, 1.2]``.
+
+.. code-block:: python
+
+    # define the location of the array
+    import numpy as np
+    R = np.c_[
+        [6.3, 4.87, 1.2],  # mic 1
+        [6.3, 4.93, 1.2],  # mic 2
+        ]
+
+    # the fs of the microphones is the same as the room
+    mic_array = pra.MicrophoneArray(R, room.fs)
+
+    # finally place the array in the room
+    room.add_microphone_array(mic_array)
+
+A number of routines exist to create regular array geometries in 2D.
+
+- :py:func:`pyroomacoustics.beamforming.linear_2D_array`
+- :py:func:`pyroomacoustics.beamforming.circular_2D_array`
+- :py:func:`pyroomacoustics.beamforming.square_2D_array`
+- :py:func:`pyroomacoustics.beamforming.poisson_2D_array`
+- :py:func:`pyroomacoustics.beamforming.spiral_2D_array`
+
+
+Simulate the propagation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Example
+-------
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import pyroomacoustics as pra
+
+    # Create a 4 by 6 metres shoe box room
+    room = pra.ShoeBox([4,6])
+
+    # Add a source somewhere in the room
+    room.add_source([2.5, 4.5])
+
+    # Create a linear array beamformer with 4 microphones
+    # with angle 0 degrees and inter mic distance 10 cm
+    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
+    room.add_microphone_array(pra.Beamformer(R, room.fs))
+
+    # Now compute the delay and sum weights for the beamformer
+    room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
+
+    # plot the room and resulting beamformer
+    room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
+    plt.show()
+
+'''
+
 
 from __future__ import print_function
 
@@ -20,9 +146,23 @@ from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int
 
 class Room(object):
     '''
-    This class represents a room instance.
-    
-    A room instance is formed by wall instances. A MicrophoneArray and SoundSources can be added.
+    A Room object has as attributes a collection of
+    :py:obj:`pyroomacoustics.wall.Wall` objects, a
+    :py:obj:`pyroomacoustics.beamforming.MicrophoneArray` array, and a list of
+    :py:obj:`pyroomacoustics.soundsource.SoundSource`. The room can be two
+    dimensional (2D), in which case the walls are simply line segments. A factory method 
+    :py:func:`pyroomacoustics.room.Room.from_corners`
+    can be used to create the room from a polygon. In three dimensions (3D), the
+    walls are two dimensional polygons, namely a collection of points lying on a
+    common plane. Creating rooms in 3D is more tedious and for convenience a method
+    :py:func:`pyroomacoustics.room.Room.extrude` is provided to lift a 2D room
+    into 3D space by adding vertical walls and a parallel “ceiling” (see Figure
+    4b).
+
+    The Room is sub-classed by :py:obj:pyroomacoustics.room.ShoeBox` which
+    creates a rectangular (2D) or parallelepipedic (3D) room. Such rooms
+    benefit from an efficient algorithm for the image source method.
+
     
     :attribute walls: (Wall array) list of walls forming the room
     :attribute fs: (int) sampling frequency

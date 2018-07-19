@@ -11,6 +11,8 @@ Table of contents
 .. toctree::
   :maxdepth: 2
 
+  contributing
+  changelog
   pyroomacoustics.room
   pyroomacoustics.realtime
   pyroomacoustics.datasets
