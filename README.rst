@@ -118,8 +118,6 @@ To run the example scripts the following optional dependencies should be manuall
 * scipy>=0.18.0
 * joblib
 * requests
-* sounddevice
-* mir_eval
 
 Example
 -------
