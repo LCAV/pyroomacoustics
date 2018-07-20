@@ -113,7 +113,7 @@ The requirements are::
 * matplotlib
 * Cython
 
-To run the example scripts the following optional dependencies should be manually installed::
+To run the example scripts install manually these packages::
 
 * scipy>=0.18.0
 * joblib
