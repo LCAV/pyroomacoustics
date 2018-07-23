@@ -26,8 +26,8 @@ x = np.random.randn(n_samples)
 # take to STFT domain
 window = pra.hann(fft_length)  # the analysis window
 hop = fft_length//2
-stft_in = pra.realtime.STFT(fft_length, hop=hop, 
-    analysis_window=window)
+stft_in = pra.transform.STFT(fft_length, hop=hop,
+                             analysis_window=window)
 
 n = 0
 num_blocks = 0

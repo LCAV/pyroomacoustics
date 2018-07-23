@@ -23,7 +23,7 @@ x = np.random.randn(nfft, D).astype('float32')
 
 def timing(transform, n_trials):
 
-    dft = pra.realtime.DFT(nfft, D, transform=transform)
+    dft = pra.transform.DFT(nfft, D, transform=transform)
     start_time = time.time()
     for k in range(n_trials):
         dft.analysis(x)

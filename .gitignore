@@ -2,6 +2,7 @@
 *.swp
 *.o
 *.vim
+*.idea
 *.DS_Store
 *.wav
 build/
