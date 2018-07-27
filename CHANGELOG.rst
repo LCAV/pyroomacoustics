@@ -14,7 +14,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
-- Added single channel noise reduction sub-package ``scnr`` with spectral subtraction
+- Added noise reduction sub-package ``denoise`` with spectral subtraction
   class and example.
 - Renamed ``realtime`` to ``transform`` and added deprecation warning.
 - Added a cython function to efficiently compute the fractional delays in the room

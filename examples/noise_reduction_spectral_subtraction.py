@@ -21,7 +21,7 @@ from scipy.io import wavfile
 import os
 import pyroomacoustics as pra
 import matplotlib.pyplot as plt
-from pyroomacoustics.scnr import SpectralSub
+from pyroomacoustics.denoise import SpectralSub
 
 """
 Test and algorithm parameters

@@ -46,7 +46,7 @@ class SpectralSub(object):
         # initialize STFT and SpectralSub objects
         nfft = 512
         stft = pra.transform.STFT(nfft, hop=nfft//2, analysis_window=pra.hann(nfft))
-        scnr = pra.scnr.SpectralSub(nfft, db_reduc=10, lookback=5, beta=20, alpha=3)
+        scnr = pra.denoise.SpectralSub(nfft, db_reduc=10, lookback=5, beta=20, alpha=3)
 
         # apply block-by-block
         for n in range(num_blocks):

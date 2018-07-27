@@ -93,11 +93,11 @@ Available subpackages
 :py:obj:`pyroomacoustics.datasets`
     Wrappers around a few popular speech datasets
 
+:py:obj:`pyroomacoustics.denoise`
+    Single channel noise reduction methods
+
 :py:obj:`pyroomacoustics.doa`
     Direction of arrival finding algorithms
-
-:py:obj:`pyroomacoustics.scnr`
-    Single channel noise reduction methods
 
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
@@ -134,7 +134,7 @@ from . import transform as realtime  # to be deprecated
 from . import experimental
 from . import datasets
 from . import bss
-from . import scnr
+from . import denoise
 
 import warnings
 warnings.warn(

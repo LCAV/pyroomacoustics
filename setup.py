@@ -63,7 +63,7 @@ setup_kwargs = dict(
             'pyroomacoustics.experimental',
             'pyroomacoustics.datasets',
             'pyroomacoustics.bss',
-            'pyroomacoustics.scnr',
+            'pyroomacoustics.denoise',
             ],
 
         # Libroom C extension
