@@ -3,7 +3,6 @@ from unittest import TestCase
 
 import numpy as np
 import pyroomacoustics as pra
-import matplotlib.pyplot as plt
 from scipy.stats import ortho_group
 
 class TestWhitening(TestCase):
@@ -32,19 +31,6 @@ class TestWhitening(TestCase):
         # Verify that the new correlation matrix is orthonormal
         test = ortho_group.rvs(dimensions)
         assert np.all(abs(np.dot(test,np.conj(test).T) - covy) < 1E-10), "Whitening unsuccessful"
-        y0 = Y[:,:,0]
-        y1 = Y[:,:,1]
-
-        # Plot the input
-        plt.subplot(1, 2, 1)
-        plt.plot(x0, x1, 'x')
-        plt.title('Correlated multivariate distribution')
-
-        # Plot the output
-        plt.subplot(1, 2, 2)
-        plt.plot(y0, y1, 'rx')
-        plt.title('Whitened multivariate distribution')
-        plt.show()
 
 if __name__ == '__main__':
     TestCase()
