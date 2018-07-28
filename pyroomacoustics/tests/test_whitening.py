@@ -36,7 +36,6 @@ class TestWhitening(TestCase):
         y1 = Y[:,:,1]
 
         # Plot the input
-        plt.figure()
         plt.subplot(1, 2, 1)
         plt.plot(x0, x1, 'x')
         plt.title('Correlated multivariate distribution')
