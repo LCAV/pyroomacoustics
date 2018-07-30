@@ -14,6 +14,9 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Added option in ``pyroomacoustics.room.ShoeBox`` to specify the RT60 of the room.
+  The parameters ``max_order`` and ``absorption`` are then picked automatically
+  to match the desired RT60.
 - Added noise reduction sub-package ``denoise`` with spectral subtraction
   class and example.
 - Renamed ``realtime`` to ``transform`` and added deprecation warning.
