@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 
+import itertools, math
 import numpy as np
 import scipy.spatial as spatial
 import ctypes
@@ -1082,7 +1083,39 @@ class Room(object):
 
 class ShoeBox(Room):
     '''
-    This class extends room for shoebox room in 3D space.
+    This class represents a shoebox-shaped room, that is a room with all walls
+    perpendicular to their neighbors. This means a rectangle in 2D, and a
+    rectangle parallelepiped in 3D.
+
+    Parameters
+    ----------
+    p: array_like
+        A list or array that the contains the lengths of the sides of the shoebox.
+        The list size is 2 for 2D and 3 for 3D.
+    fs: int
+        Sampling frequency (default 8 kHz)
+    t0: float
+        Time offset (in seconds)
+    absorption: float or dict
+        The wall absorption factor (in amplitudes). If a scalar, the same
+        factor is used for all walls.  If a different factor for every wall is
+        needed, then a dictionary should be provided. The keys of the
+        dictionary should be *west*, *south*, *east*, *north*, with the
+        addition of *floor* and *ceiling* in 3D. The assignment to walls should
+        hopefully be intuitive.
+    max_order: int
+        The maximum computed order for images (default 0, i.e. no echoes)
+    rt60: float
+        The desired reverberation time for the room, RT60, i.e., the time it
+        takes for reverberation power to fall by 60 dB. If this option is
+        enabled, then values given for ``absorption`` and ``max_order`` are
+        ignored and instead set automatically.
+    sigma2_awgn: float
+        Ambient additive white gaussian noise level
+    sources: list of SoundSource
+        List of sound sources to place in the room
+    mics: MicrophoneArray
+        Microphone array to place in the room
     '''
 
     def __init__(self, 
@@ -1090,7 +1123,8 @@ class ShoeBox(Room):
             fs=8000,
             t0=0.,
             absorption=0.,
-            max_order=1,
+            max_order=0,
+            rt60=None,
             sigma2_awgn=None,
             sources=None,
             mics=None):
@@ -1108,6 +1142,12 @@ class ShoeBox(Room):
 
         # record shoebox dimension in object
         self.shoebox_dim = p2
+
+        # if reverberation time is given, then use it to automatically
+        # determine the value of the abosrption coefficient and the
+        # necessary reflection order
+        if rt60 is not None:
+            absorption, max_order = ShoeBox.inv_sabine(rt60, p)
 
         # Keep the correctly ordered naming of walls
         # This is the correct order for the shoebox computation later
@@ -1164,4 +1204,49 @@ class ShoeBox(Room):
 
         Room.extrude(self, np.array([0., 0., height]))
 
+    @classmethod
+    def inv_sabine(self, t60, room_dim):
+        '''
+        Given desired T60, (shoebox) room dimension and sound speed,
+        computes the absorbtion coefficient (amplitude) and image source
+        order needed. The speed of sound used is the package wide default
+        (in :py:data:`pyroomacoustics.parameters.constants`).
+
+        Parameters
+        ----------
+        t60: float
+            Desired T60 (time it takes to go from full amplitude to -60 dB decay) in seconds
+        room_dim: list of floats
+            List of length 2 or 3 of the room side lengths
+
+        Returns
+        -------
+        absorption: float
+            The absorption coefficient (in amplitude domain, to be passed to Room constructor)
+        max_order: int
+            The maximum image source order necessary to achieve the desired T60
+        '''
+        c = constants.get('c')
+
+        # diameter of cicrcumscribing circle
+        R = []
+        for l1, l2 in  itertools.combinations(room_dim, 2):
+            R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
+
+        V = np.prod(room_dim)  # volume
+        # surface computation is diff for 2D and 3D
+        if len(room_dim) == 2:
+            S = np.sum(room_dim)
+        elif len(room_dim) == 3:
+            S = 2 * np.sum([l1 * l2 for l1, l2 in itertools.combinations(room_dim, 2)])
+
+        a2 = 24 * np.log(10) * V / (c * S * t60)  # absorbtion in power
+        if a2 > 1.:
+            raise ValueError('Evaluation of parameters failed. Room may be too large for required T60.')
+
+        a = 1 - np.sqrt(1 - a2)  # absorbtion in amplitude
+
+        max_order = math.ceil(c * t60 / np.min(R) - 1)
+
+        return a, max_order
 
