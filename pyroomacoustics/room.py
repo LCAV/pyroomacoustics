@@ -94,8 +94,13 @@ A number of routines exist to create regular array geometries in 2D.
 - :py:func:`pyroomacoustics.beamforming.spiral_2D_array`
 
 
-Simulate the propagation
-~~~~~~~~~~~~~~~~~~~~~~~~
+Create the Room Impulse Response
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+At this point, the RIRs are simply created by invoking the ISM via
+:py:func:`pyroomacoustics.room.Room.image_source_model`. This function will
+generate all the images sources up to the order required and use them to
+generate the RIRs, which will be stored in the ``rir`` attribute of ``room``.
 
 
 Example
