@@ -36,10 +36,19 @@ efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply defined like this
 .. code-block:: python
 
     import pyroomacoustics as pra
-    room = pra.Shoebox([9, 7.5, 3.5], fs=16000)
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, rt60=0.3)
 
-The second optional argument is the sampling frequency at which the RIR will be
-generated. Note that the default value of ``fs`` is 8 kHz.
+The second argument is the sampling frequency at which the RIR will be
+generated. Note that the default value of ``fs`` is 8 kHz. The third argument
+sets the reverberation time to 0.3 s. This means that sound power decays by 
+60 dB in 0.3 s in the room.
+
+The reverberation time option is only available for shoebox-shaped rooms. In
+general, the decay time is controlled by parameters ``absorption``, the amount
+of signal (in amplitude) absorbed by walls, and ``max_order``, the maximum
+number of reflections to do in the ISM. For shoebox rooms, these two numbers
+are picked automatically by the function
+:py:func:`pyroomacoustics.room.Shoebox.inv_sabine`.
 
 
 Add sources and microphones
@@ -101,6 +110,34 @@ At this point, the RIRs are simply created by invoking the ISM via
 :py:func:`pyroomacoustics.room.Room.image_source_model`. This function will
 generate all the images sources up to the order required and use them to
 generate the RIRs, which will be stored in the ``rir`` attribute of ``room``.
+The attribute ``rir`` is a list of lists so that the outer list is on microphones
+and the inner list over sources.
+
+..code-block:: python
+
+    room.compute_rir()
+
+    # plot the RIR between mic 1 and source 0
+    import matplotlib.pyplot as plt
+    plt.plot(room.rir[1][0])
+    plt.show()
+
+
+Simulate sound propagation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By calling :py:func:`pyroomacoustics.room.Room.simulate`, a convolution of the
+signal of each source (if not ``None``) will be performed with the
+corresponding room impulse response. The output from the convolutions will be summed up
+at the microphones. The result is stored in the ``signals`` attribute of ``room.mic_array``
+with each row corresponding to one microphone.
+
+..code-block:: python
+
+    room.simulate()
+
+    # plot signal at microphone 1
+    plt.plot(room.mic_array.signals[1,:])
 
 
 Example
