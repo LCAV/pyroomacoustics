@@ -1,6 +1,6 @@
 """
 Single Channel Noise Reduction
-============================
+==============================
 
 Collection of single channel noise reduction (SCNR) algorithms for speech.
 At the moment, only a :doc:`spectral subtraction <pyroomacoustics.denoise.spectral_subtraction>`

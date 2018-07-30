@@ -1,7 +1,7 @@
-pyroomacoustics.transform.dft module
-====================================
+DFT
+===
 
-.. automodule:: pyroomacoustics.transform.dft
+.. automodule:: pyroomacoustics.realtime.dft
     :members:
     :undoc-members:
     :show-inheritance:

@@ -711,7 +711,7 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
     Returns
     -------
     x: ndarray, (n_samples) or (n_samples, n_channels)
-        The inverse STFT of x
+        The inverse STFT of X
     '''
 
     if X.ndim == 3:

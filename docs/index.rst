@@ -14,11 +14,12 @@ Table of contents
   contributing
   changelog
   pyroomacoustics.room
-  pyroomacoustics.realtime
+  pyroomacoustics.transform
   pyroomacoustics.datasets
   pyroomacoustics.adaptive
   pyroomacoustics.bss
   pyroomacoustics.doa
+  pyroomacoustics.denoise
   pyroomacoustics
 
 Indices and tables

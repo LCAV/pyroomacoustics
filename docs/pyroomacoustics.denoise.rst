@@ -1,12 +1,5 @@
-pyroomacoustics.denoise package
-===============================
-
-Submodules
-----------
-
-.. toctree::
-
-   pyroomacoustics.denoise.spectral_subtraction
+Single Channel Denoising
+========================
 
 Module contents
 ---------------
@@ -15,3 +8,10 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Algorithms
+----------
+
+.. toctree::
+
+   pyroomacoustics.denoise.spectral_subtraction
