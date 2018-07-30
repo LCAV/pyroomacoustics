@@ -1228,7 +1228,11 @@ class ShoeBox(Room):
         '''
         c = constants.get('c')
 
-        # diameter of cicrcumscribing circle
+        # Finding image sources up to a maximum order creates a (possibly 3D) diamond
+        # like pile of (reflected rooms). Now we need to find the orded needed so that
+        # reflections at least up to ``c * rt60`` are included one possibility is to
+        # find the largest sphere (or circle) that fits in the diamond. This is what we
+        # are doing here.
         R = []
         for l1, l2 in  itertools.combinations(room_dim, 2):
             R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
@@ -1237,10 +1241,12 @@ class ShoeBox(Room):
         # surface computation is diff for 2D and 3D
         if len(room_dim) == 2:
             S = np.sum(room_dim)
+            sab_coef = 5  # The Sabine's coefficient needs to be adjusted in 2D
         elif len(room_dim) == 3:
             S = 2 * np.sum([l1 * l2 for l1, l2 in itertools.combinations(room_dim, 2)])
+            sab_coef = 24
 
-        a2 = 24 * np.log(10) * V / (c * S * t60)  # absorbtion in power
+        a2 = sab_coef * np.log(10) * V / (c * S * t60)  # absorbtion in power
         if a2 > 1.:
             raise ValueError('Evaluation of parameters failed. Room may be too large for required T60.')
 

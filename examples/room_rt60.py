@@ -6,7 +6,7 @@ In this example, we create a room with a pre-set reverberation time
 (according to Sabine's formula), and then check how the simulated RIR
 verifies the prediction.
 '''
-import math, itertools
+import math, itertools, argparse
 import numpy as np
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
@@ -52,29 +52,39 @@ def rt60_analysis(room, mic, src, plot=True, rt60_tgt=None):
 
     return est_rt60
 
+if __name__ == '__main__':
 
-# Define room dimensions and RT60
-room_dim = [10, 7.5, 3.6]
-rt60 = 0.3
-c = 343
+    parser = argparse.ArgumentParser(description='Explore the parameters and RT60 of rooms')
+    parser.add_argument('dim', type=float, nargs='+',
+            help='The room dimensions')
+    parser.add_argument('rt60', type=float,
+            help='The desired reverberation time')
+    args = parser.parse_args()
 
-# Create the room and place equipment in it
-room = pra.ShoeBox(
-        room_dim,
-        fs=16000,
-        rt60=rt60,
-        )
-room.add_source([2.2, 3.3, 1.75])
-room.add_microphone_array(
-        pra.MicrophoneArray(
-            np.c_[
-                [4.5, 6.2, 1.6],
-                [4.5, 6.25, 1.6],
-                ],
-            room.fs,
+    # Define room dimensions and RT60
+    room_dim = args.dim
+    rt60 = args.rt60
+
+    if len(room_dim) not in [2,3]:
+        raise ValueError('The room dimension must be a pair or triplet of numbers')
+
+    mic_loc = 0.33 * np.array(room_dim)
+    src_loc = 0.66 * np.array(room_dim)
+
+    # Create the room and place equipment in it
+    room = pra.ShoeBox(
+            room_dim,
+            fs=16000,
+            rt60=rt60,
             )
-        )
+    room.add_source(src_loc)
+    room.add_microphone_array(
+            pra.MicrophoneArray(
+                np.c_[ mic_loc, ],
+                room.fs,
+                )
+            )
 
-# Simulate and analyze
-room.compute_rir()
-rt60_analysis(room, 1, 0, rt60_tgt=rt60)
+    # Simulate and analyze
+    room.compute_rir()
+    rt60_analysis(room, 0, 0, rt60_tgt=rt60)
