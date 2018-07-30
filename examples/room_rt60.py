@@ -5,6 +5,13 @@ Room RT60
 In this example, we create a room with a pre-set reverberation time
 (according to Sabine's formula), and then check how the simulated RIR
 verifies the prediction.
+
+### Example
+
+Simulate a ``10 x 7.5 x 3.2`` room with ``RT60 = 0.5 s``
+
+    python examples/room_rt60.py 10 7.5 3.2 0.5
+
 '''
 import math, itertools, argparse
 import numpy as np
@@ -70,6 +77,11 @@ if __name__ == '__main__':
 
     mic_loc = 0.33 * np.array(room_dim)
     src_loc = 0.66 * np.array(room_dim)
+
+    # we just do this to avoid some probability zero
+    # placements with special artefacts
+    mic_loc += 0.0005 * np.random.randn(len(room_dim))
+    src_loc += 0.0005 * np.random.randn(len(room_dim))
 
     # Create the room and place equipment in it
     room = pra.ShoeBox(
