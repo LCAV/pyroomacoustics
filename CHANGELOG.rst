@@ -14,6 +14,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Added noise reduction sub-package ``denoise`` with spectral subtraction
+  class and example.
+- Renamed ``realtime`` to ``transform`` and added deprecation warning.
+- Added a cython function to efficiently compute the fractional delays in the room
+  impulse response from time delays and attenuations
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
@@ -34,6 +39,7 @@ Added
   * The ordering of axis in the output from bulk STFT is now
     ``(n_frames, n_frequencies, n_channels)``
   * Support for Intel's ``mkl_fft`` `package <https://github.com/IntelPython/mkl_fft>`_
+  * ``axis`` (along which to perform DFT) and ``bits`` parameters for ``DFT`` class.
 
 Changed
 ~~~~~~~
