@@ -1144,7 +1144,7 @@ class ShoeBox(Room):
         self.shoebox_dim = p2
 
         # if reverberation time is given, then use it to automatically
-        # determine the value of the abosrption coefficient and the
+        # determine the value of the absorption coefficient and the
         # necessary reflection order
         if rt60 is not None:
             absorption, max_order = ShoeBox.inv_sabine(rt60, p)
@@ -1156,7 +1156,7 @@ class ShoeBox(Room):
         if self.dim == 3:
             self.wall_names += ['floor', 'ceiling']
 
-        # copy over the aborption coefficent
+        # copy over the absorption coefficient
         if isinstance(absorption, float):
             self.absorption_dict = dict(zip(self.wall_names, [absorption] * len(self.wall_names)))
             absorption = self.absorption_dict
@@ -1169,12 +1169,12 @@ class ShoeBox(Room):
                     self.absorption.append(self.absorption_dict[d])
                 else:
                     raise KeyError(
-                            "Absorbtion needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            "Absorption needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
                             )
 
             self.absorption = np.array(self.absorption)
         else:
-            raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+            raise ValueError("Absorption must be either a scalar or a 2x dim dictionary with entries for 'east', 'west', etc.")
 
 
         if self.dim == 2:
@@ -1208,14 +1208,14 @@ class ShoeBox(Room):
     def inv_sabine(self, t60, room_dim):
         '''
         Given desired T60, (shoebox) room dimension and sound speed,
-        computes the absorbtion coefficient (amplitude) and image source
+        computes the absorption coefficient (amplitude) and image source
         order needed. The speed of sound used is the package wide default
         (in :py:data:`pyroomacoustics.parameters.constants`).
 
         Parameters
         ----------
         t60: float
-            Desired T60 (time it takes to go from full amplitude to -60 dB decay) in seconds
+            Desired T60 (time it takes to go from full amplitude to 60 dB decay) in seconds
         room_dim: list of floats
             List of length 2 or 3 of the room side lengths
 
@@ -1229,10 +1229,10 @@ class ShoeBox(Room):
         c = constants.get('c')
 
         # Finding image sources up to a maximum order creates a (possibly 3D) diamond
-        # like pile of (reflected rooms). Now we need to find the orded needed so that
-        # reflections at least up to ``c * rt60`` are included one possibility is to
-        # find the largest sphere (or circle) that fits in the diamond. This is what we
-        # are doing here.
+        # like pile of (reflected) rooms. Now we need to find the image source model order
+        # so that reflections at a distance of at least up to ``c * rt60`` are included.
+        # One possibility is to find the largest sphere (or circle in 2D) that fits in the
+        # diamond. This is what we are doing here.
         R = []
         for l1, l2 in  itertools.combinations(room_dim, 2):
             R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
@@ -1246,11 +1246,11 @@ class ShoeBox(Room):
             S = 2 * np.sum([l1 * l2 for l1, l2 in itertools.combinations(room_dim, 2)])
             sab_coef = 24
 
-        a2 = sab_coef * np.log(10) * V / (c * S * t60)  # absorbtion in power
+        a2 = sab_coef * np.log(10) * V / (c * S * t60)  # absorption in power
         if a2 > 1.:
             raise ValueError('Evaluation of parameters failed. Room may be too large for required T60.')
 
-        a = 1 - np.sqrt(1 - a2)  # absorbtion in amplitude
+        a = 1 - np.sqrt(1 - a2)  # absorption in amplitude
 
         max_order = math.ceil(c * t60 / np.min(R) - 1)
 
