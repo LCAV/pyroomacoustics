@@ -3,7 +3,6 @@ from unittest import TestCase
 
 import numpy as np
 import pyroomacoustics as pra
-from scipy.stats import ortho_group
 
 class TestWhitening(TestCase):
 
@@ -14,9 +13,7 @@ class TestWhitening(TestCase):
         samples = 5000
 
         # Test the input
-        assert np.all(np.linalg.eigvalsh(covx) >= 0), "Covariance matrix is not positive-semidefinite"
         dimensions = len(covx)      # should be equal to two
-        assert dimensions == 2, "The number of dimensions must be equal to two"
         X = np.zeros([samples,1,dimensions])
         # Create multivariate Gaussian distribution
         x0, x1 = np.random.multivariate_normal(mean, covx, samples).T
@@ -29,8 +26,5 @@ class TestWhitening(TestCase):
         # Test the output
         covy = np.dot(Y[:,0,:].T,np.conj(Y[:,0,:])).T/samples
         # Verify that the new correlation matrix is orthonormal
-        test = ortho_group.rvs(dimensions)
-        assert np.all(abs(np.dot(test,np.conj(test).T) - covy) < 1E-10), "Whitening unsuccessful"
+        self.assertTrue(np.allclose(np.all(abs(np.eye(dimensions), covy))))
 
-if __name__ == '__main__':
-    TestCase()
