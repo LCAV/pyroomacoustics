@@ -79,7 +79,8 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* beamforming
+* :doc:`beamforming <pyroomacoustics.beamforming>`
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
 * direction of arrival (DOA) finding
 * adaptive filtering (NLMS, RLS)
 * blind source separation (AuxIVA, Trinicon)
