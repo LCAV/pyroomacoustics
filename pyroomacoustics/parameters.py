@@ -46,7 +46,7 @@ class Constants:
         return v
 
 
-#: Instanciation of the class :py:obj:`pyroomacoustics.parameters.Constants`
+#: Instantiation of the class :py:obj:`pyroomacoustics.parameters.Constants`
 #: to hold package wide constants (e.g., speed of sound *c*, etc)
 constants = Constants()
 

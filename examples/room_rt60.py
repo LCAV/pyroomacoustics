@@ -13,9 +13,8 @@ Simulate a ``10 x 7.5 x 3.2`` room with ``RT60 = 0.5 s``
     python examples/room_rt60.py 10 7.5 3.2 0.5
 
 '''
-import math, itertools, argparse
+import argparse
 import numpy as np
-from scipy.signal import fftconvolve
 import pyroomacoustics as pra
 import matplotlib.pyplot as plt
 
