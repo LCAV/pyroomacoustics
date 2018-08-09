@@ -1237,11 +1237,11 @@ class ShoeBox(Room):
         for l1, l2 in  itertools.combinations(room_dim, 2):
             R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
 
-        V = np.prod(room_dim)  # volume
-        # surface computation is diff for 2D and 3D
+        V = np.prod(room_dim)  # area (2D) or volume (3D)
+        # "surface" computation is diff for 2D and 3D
         if len(room_dim) == 2:
-            S = np.sum(room_dim)
-            sab_coef = 5  # The Sabine's coefficient needs to be adjusted in 2D
+            S = 2 * np.sum(room_dim)
+            sab_coef = 12  # The Sabine's coefficient needs to be adjusted in 2D
         elif len(room_dim) == 3:
             S = 2 * np.sum([l1 * l2 for l1, l2 in itertools.combinations(room_dim, 2)])
             sab_coef = 24
