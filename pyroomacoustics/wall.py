@@ -13,7 +13,7 @@ class Wall(object):
     This class represents a wall instance. A room instance is formed by these.
     
     :attribute corners: (np.array dim 2x2 or 3xN, N>2) endpoints forming the wall
-    :attribute absorption: (float) attenuation reflection factor
+    :attribute reflection: (float) reflection coefficient
     :attribute name: (string) name given to the wall, which can be reused to reference it in the Room object
     :attribute normal: (np.array dim 2 or 3) normal vector pointing outward the room
     :attribute dim: (int) dimension of the wall (2 or 3, meaning 2D or 3D)
@@ -23,11 +23,12 @@ class Wall(object):
     def __init__(
         self,
         corners,
-        absorption = 1.,
+        reflection = 0.,
         name = None):
         
         self.corners = np.array(corners, order='F', dtype=np.float32)
-        self.absorption = absorption
+
+        self.reflection = reflection
 
         # set first corner as origin of plane
         self.plane_point = np.array(self.corners[:,0])

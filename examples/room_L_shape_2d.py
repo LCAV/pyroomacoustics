@@ -21,7 +21,7 @@ max_order = 10
 pol = 3 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
 
 # Create the room from its corners
-room = pra.Room.from_corners(pol, fs=16000, max_order=max_order, absorption=0.1)
+room = pra.Room.from_corners(pol, fs=16000, max_order=max_order, reflection=0.8)
 
 # Add a source somewhere in the room
 room.add_source([1.5, 1.2])

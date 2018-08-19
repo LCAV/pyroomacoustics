@@ -6,7 +6,7 @@
 
 float eps = 1e-5;
 
-wall_t *new_wall(int dim, int n_corners, float *corners, float absorption)
+wall_t *new_wall(int dim, int n_corners, float *corners, float reflection)
 {
   int i;
 
@@ -25,7 +25,7 @@ wall_t *new_wall(int dim, int n_corners, float *corners, float absorption)
   // allocate new wall
   wall_t *wall = (wall_t *)malloc(sizeof(wall_t));
   wall->dim = dim;
-  wall->absorption = absorption;
+  wall->reflection = reflection;
   wall->n_corners = n_corners;
 
   // copy over the corners

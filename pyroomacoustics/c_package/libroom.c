@@ -143,7 +143,7 @@ py_image_source_shoebox(PyObject *self, PyObject *args)
   // Argument 4 (expecting read-only numpy array, np.float32)
   PyObject *arg4 = NULL;
   PyArrayObject *arr4 = NULL;
-  float *absorption = NULL;
+  float *reflection = NULL;
 
   // Argument 3 (expecting integer)
   int max_order;
@@ -157,7 +157,7 @@ py_image_source_shoebox(PyObject *self, PyObject *args)
    * w#: the room c structure and its size, size == sizeof(room_t)
    * O : source location, a numpy float array, length == room->dim
    * O : room size, a numpy float array, length == room->dim
-   * O : absorption list, a numpy float array, length == 2 * room->dim
+   * O : reflection list, a numpy float array, length == 2 * room->dim
    * i : maximum order, an integer
    */
 
@@ -226,7 +226,7 @@ py_image_source_shoebox(PyObject *self, PyObject *args)
   arr4 = (PyArrayObject*)PyArray_FROM_OTF(arg4, NPY_FLOAT, NPY_IN_ARRAY);
   if (arr4 == NULL) 
   {
-    PyErr_SetString(PyExc_TypeError, "Could not get pointer to absorption");
+    PyErr_SetString(PyExc_TypeError, "Could not get pointer to reflection");
     goto fail;
   }
 
@@ -240,15 +240,15 @@ py_image_source_shoebox(PyObject *self, PyObject *args)
   shape = PyArray_DIMS(arr4);  // npy_intp array of length nd showing length in each dim.
   if (shape[0] != 2 * room->dim) 
   {
-    PyErr_SetString(PyExc_TypeError, "There should as many absorption coefficients as walls");
+    PyErr_SetString(PyExc_TypeError, "There should as many reflection coefficients as walls");
     goto fail;
   }
 
   // get arg3 data
-  absorption = (float *)PyArray_DATA(arr4);
+  reflection = (float *)PyArray_DATA(arr4);
 
   /* do function */
-  ret = image_source_shoebox(room, source_location, room_size, absorption, max_order);
+  ret = image_source_shoebox(room, source_location, room_size, reflection, max_order);
   if (ret < 0)
   {
     PyErr_SetString(PyExc_TypeError, "Memory could not be allocated.");

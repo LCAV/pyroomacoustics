@@ -8,7 +8,7 @@
 typedef struct wall_struct
 {
   int dim;
-  float absorption;
+  float reflection;
   float normal[3];
   int n_corners;
   float *corners;
@@ -91,7 +91,7 @@ void gram_schmidt(float *vec, int n_vec, int dim);
 void print_vec(float *p, int dim);
 
 /* segment line/plane intersection routines */
-wall_t *new_wall(int dim, int n_corners, float *corners, float absorption);
+wall_t *new_wall(int dim, int n_corners, float *corners, float reflection);
 void free_wall(wall_t *wall);
 int wall_side(wall_t *wall, float *p);
 int ccw3p(float *p1, float *p2, float *p3);
@@ -115,7 +115,7 @@ int is_obstructed_dfs(room_t *room, float *p, image_source_t *image);
 int fill_sources(room_t *room, is_ll_t **stack);
 void free_sources(room_t *room);
 
-int image_source_shoebox(room_t *room, float *source, float *room_size, float *absorption, int max_order);
+int image_source_shoebox(room_t *room, float *source, float *room_size, float *reflection, int max_order);
 
 void set_num_threads(int n);
 

@@ -30,7 +30,7 @@ def test_issue_22():
     n_times = 25000
     dim = 3
     mic_pos = np.random.rand(dim, n_mics)
-    abs_coeff = 0.1
+    reflection_coef = 0.9
     fs = 16000
     wall_max_len = 15
 
@@ -38,7 +38,7 @@ def test_issue_22():
 
     shoebox = pyroomacoustics.ShoeBox(
             room_dim,
-            absorption=abs_coeff,
+            reflection=reflection_coef,
             fs=fs,
             max_order=0)
 

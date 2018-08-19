@@ -34,7 +34,7 @@ class Room(object):
     :attribute mics: (MicrophoneArray) array of microphones
     :attribute normals: (numpy.ndarray 2xN or 3xN, N=number of walls) array containing normal vector for each wall, used for calculations
     :attribute corners: (numpy.ndarray 2xN or 3xN, N=number of walls) array containing a point belonging to each wall, used for calculations
-    :attribute absorption: (numpy.ndarray size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
+    :attribute reflection: (numpy.ndarray size N, N=number of walls)  array containing the reflection factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
     :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
     '''
@@ -69,7 +69,7 @@ class Room(object):
          
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-        self.absorption = np.array([wall.absorption for wall in self.walls])
+        self.reflection = np.array([wall.reflection for wall in self.walls])
 
         # Pre-compute RIR if needed
         if (len(self.sources) > 0 and self.mic_array is not None):
@@ -96,7 +96,8 @@ class Room(object):
     def from_corners(
             cls,
             corners,
-            absorption=0.,
+            absorption=None,
+            reflection=None,
             fs=8000,
             t0=0.,
             max_order=1,
@@ -107,7 +108,7 @@ class Room(object):
         Creates a 2D room by giving an array of corners.
         
         :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
-        :arg absorption: (float array or float) list of absorption factor for each wall or single value for all walls
+        :arg reflection: (float array or float) list of reflection coefficients for each wall or single value for all walls
         
         :returns: (Room) instance of a 2D room
         '''
@@ -121,16 +122,30 @@ class Room(object):
 
         cls.corners = corners
         cls.dim = corners.shape[0] 
-            
-        absorption = np.array(absorption, dtype='float64')
-        if (absorption.ndim == 0):
-            absorption = absorption * np.ones(corners.shape[1])
-        elif (absorption.ndim > 1 and corners.shape[1] != len(absorption)):
-            raise ValueError('Arg absorption must be the same size as corners or must be a single value.')
+
+        # handle the absorption deprecation
+        if absorption is not None:
+            import warnings
+            if reflection is None:
+                warnings.warn("The absorption parameter is deprecated. Use reflection coefficient instead.",
+                DeprecationWarning)
+                absorption = np.array(absorption, dtype='float64')
+                reflection = 1 - absorption  # consistent with previous behavior, not physics
+            else:
+                warnings.warn("The absorption parameter is deprecated and ignored if reflection is provided.", Warning)
+
+        if reflection is None:
+            reflection = 1.
+
+        reflection = np.array(reflection, dtype='float64')
+        if (reflection.ndim == 0):
+            reflection = reflection * np.ones(corners.shape[1])
+        elif (reflection.ndim > 1 and corners.shape[1] != len(reflection)):
+            raise ValueError('Arg reflection must be the same size as corners or must be a single value.')
         
         walls = []
         for i in range(corners.shape[1]):
-            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
+            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, reflection[i], "wall_"+str(i)))
             
         return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
@@ -138,7 +153,8 @@ class Room(object):
             self,
             height,
             v_vec=None,
-            absorption=0.):
+            reflection=None,
+            absorption=None):
         '''
         Creates a 3D room by extruding a 2D polygon. 
         The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
@@ -151,9 +167,9 @@ class Room(object):
             A unit vector. An orientation for the extrusion direction. The
             ceiling will be placed as a translation of the floor with respect
             to this vector (The default is [0,0,1]).
-        absorption : float or array-like
-            Absorption coefficients for all the walls. If a scalar, then all the walls
-            will have the same absorption. If an array is given, it should have as many elements
+        reflection : float or array-like
+            Reflection coefficients for all the walls. If a scalar, then all the walls
+            will have the same reflection. If an array is given, it should have as many elements
             as there will be walls, that is the number of vertices of the polygon plus two. The two
             last elements are for the floor and the ceiling, respectively. (default 1)
         '''
@@ -194,13 +210,27 @@ class Room(object):
                 np.r_[floor_corners[:,(i+1)%nw], 0] + height*v_vec,
                 np.r_[floor_corners[:,i], 0] + height*v_vec
                 ]).T
-            walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
+            walls.append(Wall(corners, self.walls[i].reflection, name=str(i)))
 
-        absorption = np.array(absorption)
-        if absorption.ndim == 0:
-            absorption = absorption * np.ones(2)
-        elif absorption.ndim == 1 and absorption.shape[0] != 2:
-            raise ValueError("The size of the absorption array must be 2 for extrude, for the floor and ceiling")
+        # Handle deprecation of absorption parameter
+        if absorption is not None:
+            import warnings
+            if reflection is None:
+                warnings.warn("The absorption parameter is deprecated. Use reflection coefficient instead.",
+                DeprecationWarning)
+                absorption = np.array(absorption, dtype='float64')
+                reflection = 1 - absorption  # consistent with previous behavior, not physics
+            else:
+                warnings.warn("The absorption parameter is deprecated and ignored if reflection is provided.", Warning)
+
+        if reflection is None:
+            reflection = 1.
+
+        reflection = np.array(reflection)
+        if reflection.ndim == 0:
+            reflection = reflection * np.ones(2)
+        elif reflection.ndim == 1 and reflection.shape[0] != 2:
+            raise ValueError("The size of the reflection array must be 2 for extrude, for the floor and ceiling")
 
         floor_corners = np.pad(floor_corners, ((0, 1),(0,0)), mode='constant')
         ceiling_corners = (floor_corners.T + height*v_vec).T
@@ -208,8 +238,8 @@ class Room(object):
         # we need the floor corners to ordered clockwise (for the normal to point outward)
         floor_corners = np.fliplr(floor_corners)
 
-        walls.append(Wall(floor_corners, absorption[0], name='floor'))
-        walls.append(Wall(ceiling_corners, absorption[1], name='ceiling'))
+        walls.append(Wall(floor_corners, reflection[0], name='floor'))
+        walls.append(Wall(ceiling_corners, reflection[1], name='ceiling'))
 
         self.walls = walls
         self.dim = 3
@@ -217,7 +247,7 @@ class Room(object):
         # re-collect all normals, corners, absoption
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-        self.absorption = np.array([wall.absorption for wall in self.walls])
+        self.reflection = np.array([wall.reflection for wall in self.walls])
 
         # recheck which walls are in the convex hull
         self.convex_hull()
@@ -478,8 +508,8 @@ class Room(object):
         # compute images points, positivity is to get only the reflections outside the room
         images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
 
-        # collect absorption factors of reflecting walls
-        damping = (1 - self.absorption[ip > 0])
+        # collect reflection factors of reflecting walls
+        damping = self.reflection[ip > 0]
 
         # collect the index of the wall corresponding to the new image
         wall_indices = np.arange(len(self.walls))[ip > 0]
@@ -633,8 +663,8 @@ class Room(object):
 
                 if isinstance(self, ShoeBox):
 
-                    # create absorption list in correct order for shoebox algorithm
-                    absorption_list_shoebox = np.array([self.absorption_dict[d] for d in self.wall_names], dtype=np.float32)
+                    # create reflection list in correct order for shoebox algorithm
+                    reflection_list_shoebox = np.array([self.reflection_dict[d] for d in self.wall_names], dtype=np.float32)
                     shoebox_dim = self.shoebox_dim.astype(np.float32)
 
                     # Call the dedicated C routine for shoebox room
@@ -642,7 +672,7 @@ class Room(object):
                             c_room,
                             source_position,
                             shoebox_dim,
-                            absorption_list_shoebox,
+                            reflection_list_shoebox,
                             self.max_order)
                 else:
                     # Call the general image source generator
@@ -813,7 +843,7 @@ class Room(object):
             c_corners = wall.corners.ctypes.data_as(c_float_p)
 
             cwall.dim=wall.dim
-            cwall.absorption=wall.absorption
+            cwall.reflection=wall.reflection
             cwall.normal=(ctypes.c_float * 3)(*wall.normal.tolist())
             cwall.n_corners=wall.corners.shape[1]
             cwall.corners=c_corners
@@ -1096,8 +1126,8 @@ class ShoeBox(Room):
         Sampling frequency (default 8 kHz)
     t0: float
         Time offset (in seconds)
-    absorption: float or dict
-        The wall absorption factor (in amplitudes). If a scalar, the same
+    reflection: float or dict
+        The wall reflection coefficient. If a scalar, the same
         factor is used for all walls.  If a different factor for every wall is
         needed, then a dictionary should be provided. The keys of the
         dictionary should be *west*, *south*, *east*, *north*, with the
@@ -1108,7 +1138,7 @@ class ShoeBox(Room):
     rt60: float
         The desired reverberation time for the room, RT60, i.e., the time it
         takes for reverberation power to fall by 60 dB. If this option is
-        enabled, then values given for ``absorption`` and ``max_order`` are
+        enabled, then values given for ``reflection`` and ``max_order`` are
         ignored and instead set automatically.
     sigma2_awgn: float
         Ambient additive white gaussian noise level
@@ -1122,7 +1152,8 @@ class ShoeBox(Room):
             p,
             fs=8000,
             t0=0.,
-            absorption=0.,
+            absorption=None,
+            reflection=None,
             max_order=0,
             rt60=None,
             sigma2_awgn=None,
@@ -1144,10 +1175,10 @@ class ShoeBox(Room):
         self.shoebox_dim = p2
 
         # if reverberation time is given, then use it to automatically
-        # determine the value of the absorption coefficient and the
+        # determine the value of the reflection coefficient and the
         # necessary reflection order
         if rt60 is not None:
-            absorption, max_order = ShoeBox.inv_sabine(rt60, p)
+            reflection, max_order = ShoeBox.inv_sabine(rt60, p)
 
         # Keep the correctly ordered naming of walls
         # This is the correct order for the shoebox computation later
@@ -1156,43 +1187,61 @@ class ShoeBox(Room):
         if self.dim == 3:
             self.wall_names += ['floor', 'ceiling']
 
-        # copy over the absorption coefficient
-        if isinstance(absorption, float):
-            self.absorption_dict = dict(zip(self.wall_names, [absorption] * len(self.wall_names)))
-            absorption = self.absorption_dict
+        # Handle the deprecation of absorption parameter
+        if absorption is not None:
+            import warnings
+            if reflection is None:
+                warnings.warn("The absorption parameter is deprecated. Use reflection coefficient instead.",
+                DeprecationWarning)
+                if isinstance(absorption, float):
+                    reflection = 1 - absorption  # consistent with previous behavior, not physics
+                elif isinstance(absorption, dict):
+                    reflection = dict()
+                    for key, val in absorption.items():
+                        reflection[key] = 1 - absorption  # consistent with previous behavior, not physics
+            else:
+                warnings.warn("The absorption parameter is deprecated and ignored if reflection is provided.", Warning)
 
-        self.absorption = []
-        if isinstance(absorption, dict):
-            self.absorption_dict = absorption
+        if reflection is None:
+            reflection = 1.
+
+        # copy over the reflection coefficient
+        if isinstance(reflection, float):
+            self.reflection_dict = dict(zip(self.wall_names, [reflection] * len(self.wall_names)))
+            reflection = self.reflection_dict
+
+        self.reflection = []
+        if isinstance(reflection, dict):
+            self.reflection_dict = reflection
             for d in self.wall_names:
-                if d in self.absorption_dict:
-                    self.absorption.append(self.absorption_dict[d])
+                if d in self.reflection_dict:
+                    self.reflection.append(self.reflection_dict[d])
                 else:
                     raise KeyError(
-                            "Absorption needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            "Reflection needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
                             )
 
-            self.absorption = np.array(self.absorption)
+            self.reflection = np.array(self.reflection)
         else:
-            raise ValueError("Absorption must be either a scalar or a 2x dim dictionary with entries for 'east', 'west', etc.")
+            raise ValueError("Reflection must be either a scalar or a 2x dim dictionary with entries for 'east', 'west', etc.")
 
 
         if self.dim == 2:
             walls = []
             # seems the order of walls is important here, don't change!
-            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
+            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), reflection['south'], "south"))
+            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), reflection['east'], "east"))
+            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), reflection['north'], "north"))
+            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), reflection['west'], "west"))
 
         elif self.dim == 3:
             walls = []
-            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
+            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), reflection['west'], "west"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), reflection['east'], "east"))
+            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), reflection['south'], "south"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), reflection['north'], "north"))
+            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), reflection['floor'], "floor"))
+            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), reflection['ceiling'], "ceiling"))
 
         else:
             raise ValueError("Only 2D and 3D rooms are supported.")
@@ -1208,7 +1257,7 @@ class ShoeBox(Room):
     def inv_sabine(self, t60, room_dim):
         '''
         Given desired T60, (shoebox) room dimension and sound speed,
-        computes the absorption coefficient (amplitude) and image source
+        computes the reflection coefficient (amplitude) and image source
         order needed. The speed of sound used is the package wide default
         (in :py:data:`pyroomacoustics.parameters.constants`).
 
@@ -1221,8 +1270,8 @@ class ShoeBox(Room):
 
         Returns
         -------
-        absorption: float
-            The absorption coefficient (in amplitude domain, to be passed to Room constructor)
+        reflection: float
+            The reflection coefficient (in amplitude domain, to be passed to Room constructor)
         max_order: int
             The maximum image source order necessary to achieve the desired T60
         '''
@@ -1250,9 +1299,9 @@ class ShoeBox(Room):
         if a2 > 1.:
             raise ValueError('Evaluation of parameters failed. Room may be too large for required T60.')
 
-        a = 1 - np.sqrt(1 - a2)  # absorption in amplitude
+        reflection = np.sqrt(1 - a2)  # convert to reflection coefficient
 
         max_order = math.ceil(c * t60 / np.min(R) - 1)
 
-        return a, max_order
+        return reflection, max_order
 

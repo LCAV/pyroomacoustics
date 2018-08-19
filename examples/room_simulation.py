@@ -19,7 +19,7 @@ room_dim = [5, 4, 6]
 # Create the shoebox
 shoebox = pra.ShoeBox(
     room_dim,
-    absorption=0.2,
+    reflection=0.8,
     fs=fs,
     max_order=15,
     )

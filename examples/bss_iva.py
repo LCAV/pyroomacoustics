@@ -72,7 +72,7 @@ if __name__ == '__main__':
         room_dim,
         fs=16000,
         max_order=15,
-        absorption=0.35,
+        reflection=0.65,
         sigma2_awgn=1e-8)
 
     # get signals

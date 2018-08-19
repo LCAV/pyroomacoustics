@@ -7,7 +7,7 @@ c_int_p = ct.POINTER(ct.c_int)
 class CWALL(ct.Structure):
     _fields_ = [
             ('dim', ct.c_int),
-            ('absorption', ct.c_float),
+            ('reflection', ct.c_float),
             ('normal', ct.c_float * 3),
             ('n_corners', ct.c_int),
             ('corners', c_float_p),

@@ -5,17 +5,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-int image_source_shoebox(room_t *room, float *source, float *room_size, float *absorption, int max_order)
+int image_source_shoebox(room_t *room, float *source, float *room_size, float *reflection, int max_order)
 {
   int i, d;
 
-  // precompute powers of the absorption coefficients
+  // precompute powers of the reflection coefficients
   float *transmission_pwr = (float *)malloc((max_order + 1) * 2 * room->dim * sizeof(int));
   for (d = 0 ; d < 2 * room->dim ; d++)
     transmission_pwr[d] = 1.;
   for (i = 1 ; i <= max_order ; i++)
     for (d = 0 ; d < 2 * room->dim ; d++)
-      transmission_pwr[i * 2 * room->dim + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*room->dim + d];
+      transmission_pwr[i * 2 * room->dim + d] = reflection[d] * transmission_pwr[(i-1)*2*room->dim + d];
 
   /*
   for (i = 0 ; i <= max_order ; i++)
@@ -80,8 +80,8 @@ int image_source_shoebox(room_t *room, float *source, float *room_size, float *a
               p1, 2 * room->dim * p1 + 2*d, a1, 
               p2, 2 * room->dim * p2 + 2*d+1, a2);
           */
-          node->is.attenuation *= a1;       // 'west' absorption factor
-          node->is.attenuation *= a2; // 'east' absorption factor
+          node->is.attenuation *= a1;       // 'west' reflection factor
+          node->is.attenuation *= a2; // 'east' reflection factor
         }
 
         // add to list and increment counter

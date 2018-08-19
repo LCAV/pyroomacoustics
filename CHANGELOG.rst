@@ -15,8 +15,9 @@ Added
 ~~~~~
 
 - Added option in ``pyroomacoustics.room.ShoeBox`` to specify the RT60 of the room.
-  The parameters ``max_order`` and ``absorption`` are then picked automatically
-  to match the desired RT60.
+  The parameters ``max_order`` and ``reflection`` (which replaces
+  ``absorption``, see below) are then picked automatically to match the desired
+  RT60.
 - Added noise reduction sub-package ``denoise`` with spectral subtraction
   class and example.
 - Renamed ``realtime`` to ``transform`` and added deprecation warning.
@@ -47,6 +48,8 @@ Added
 Changed
 ~~~~~~~
 
+- Refactored the room simulator to take a *reflection* coefficient as parameter rather
+  than *absorption*. Absorption is still supported with a deprecation warning for now.
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
 - Improved the download/uncompress function for large datasets
 - Dusted the code for plotting on the sphere in ``pyroomacoustics.doa.grid.GridSphere``

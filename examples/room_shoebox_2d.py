@@ -18,6 +18,7 @@ source = np.array([1, 4.5])
 room = pra.ShoeBox(
     room_dim,
     fs=16000,
+    reflection=0.8,
     max_order=4)
 
 # add mic and good source to room
