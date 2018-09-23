@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+- STFT tutorial and demo notebook.
 
 `0.1.19`_ - 2018-09-24
 ----------------------
@@ -19,7 +22,6 @@ Nothing yet.
 Added
 ~~~~~
 
-- Added STFT tutorial and demo notebook.
 - Added noise reduction sub-package ``denoise`` with spectral subtraction
   class and example.
 - Renamed ``realtime`` to ``transform`` and added deprecation warning.
