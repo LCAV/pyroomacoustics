@@ -117,6 +117,9 @@ The requirements are::
 Example
 -------
 
+Here is a quick example of how to create and visual the response of a
+beamformer in a room.
+
 .. code-block:: python
 
     import numpy as np
@@ -140,6 +143,10 @@ Example
     # plot the room and resulting beamformer
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
+
+A comprehensive set of examples covering most of the functionalities
+of the package can be found in the ``examples`` folder of the `github
+repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
 
 Authors
 -------

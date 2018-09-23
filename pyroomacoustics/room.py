@@ -113,7 +113,7 @@ generate the RIRs, which will be stored in the ``rir`` attribute of ``room``.
 The attribute ``rir`` is a list of lists so that the outer list is on microphones
 and the inner list over sources.
 
-..code-block:: python
+.. code-block:: python
 
     room.compute_rir()
 
@@ -132,7 +132,7 @@ corresponding room impulse response. The output from the convolutions will be su
 at the microphones. The result is stored in the ``signals`` attribute of ``room.mic_array``
 with each row corresponding to one microphone.
 
-..code-block:: python
+.. code-block:: python
 
     room.simulate()
 
