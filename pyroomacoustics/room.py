@@ -36,19 +36,19 @@ efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply defined like this
 .. code-block:: python
 
     import pyroomacoustics as pra
-    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, rt60=0.3)
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, absorption=0.35, max_order=17)
 
 The second argument is the sampling frequency at which the RIR will be
 generated. Note that the default value of ``fs`` is 8 kHz. The third argument
-sets the reverberation time to 0.3 s. This means that sound power decays by 
-60 dB in 0.3 s in the room.
+is the absorption of the walls, namely reflections are multiplied by ``(1 -
+absorption)`` for every wall they hit. The fourth argument is the maximum
+number of reflections allowed in the ISM.
 
-The reverberation time option is only available for shoebox-shaped rooms. In
-general, the decay time is controlled by parameters ``absorption``, the amount
-of signal (in amplitude) absorbed by walls, and ``max_order``, the maximum
-number of reflections to do in the ISM. For shoebox rooms, these two numbers
-are picked automatically by the function
-:py:func:`pyroomacoustics.room.Shoebox.inv_sabine`.
+The relationship between ``absorption``/``max_order`` and `reverberation time
+<https://en.wikipedia.org/wiki/Reverberation>`_ (the T60 or RT60 in the
+acoustics literature) is not straightforward. `Sabine's formula
+<https://en.wikipedia.org/wiki/Reverberation#Sabine_equation>`_ can be used to
+some extent to set these parameters.
 
 
 Add sources and microphones
