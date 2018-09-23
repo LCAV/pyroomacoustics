@@ -1,7 +1,7 @@
 '''
-Blind Source Separation using Independent Low-Rank Matrix Factorization (ILRM)
+Blind Source Separation using Independent Low-Rank Matrix Factorization Analysis (ILRMA)
 
-2018 (c) Juan Azcarreta Ortiz, MIT License
+2018 (c) Juan Azcarreta, Robin Scheibler, MIT License
 '''
 import numpy as np
 from .common import projection_back
@@ -86,9 +86,15 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             print("Iteration: " + str(epoch))
 
             if proj_back:
+                X = np.transpose(X, (1, 0, 2))
+                Y = np.transpose(Y, (1, 0, 2))
                 z = projection_back(Y, X[:,:,0])
-                callback(Y * np.conj(z[None,:,:]))
+                callback_input = Y * np.conj(z[None,:,:])
+                callback(callback_input)
+                X = np.transpose(X, (1, 0, 2))
+                Y = np.transpose(Y, (1, 0, 2))
             else:
+                Y = np.transpose(Y, (1, 0, 2))
                 callback(Y)
 
         # simple loop as a start
@@ -125,10 +131,11 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             T[:,:,s] *= lambda_aux[s] ** 2
 
     if proj_back:
+        X = np.transpose(X, (1, 0, 2))
+        Y = np.transpose(Y, (1, 0, 2))
         z = projection_back(Y, X[:, :, 0])
         Y *= np.conj(z[None, :, :])
 
-    Y = np.transpose(Y, [1, 0, 2])
     if return_filters:
         return Y, W
     else:
