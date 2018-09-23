@@ -12,16 +12,16 @@ Summary
 
 Pyroomacoustics is a software package aimed at the rapid development
 and testing of audio array processing algorithms. The content of the package
-can be divided into three main components: an intuitive Python object-oriented
-interface to quickly construct different simulation scenarios involving
-multiple sound sources and microphones in 2D and 3D rooms; a fast C
-implementation of the image source model for general polyhedral rooms to
-efficiently generate room impulse responses and simulate the propagation
-between sources and receivers; and finally, reference implementations of
-popular algorithms for beamforming, direction finding, and adaptive filtering.
-Together, they form a package with the potential to speed up the time to market
+can be divided into three main components: 
+
+1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
+2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
+3. Reference implementations of popular algorithms for beamforming, direction finding, adaptive filtering, and source separation.
+
+Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
-performance evaluation step.
+performance evaluation step. Please refer to `this notebook <http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb>`_
+for a demonstration of the different components of this package.
 
 Room Acoustics Simulation
 `````````````````````````
@@ -49,11 +49,11 @@ image source model that can handle
 * Convex and non-convex rooms
 * 2D/3D rooms
 
-Both a pure python implementation and a C accelerator are included for maximum
+Both a pure Python implementation and a C accelerator are included for maximum
 speed and compatibility.
 
 The philosophy of the package is to abstract all necessary elements of
-an experiment using object oriented programming concept. Each of these elements
+an experiment using an object-oriented programming approach. Each of these elements
 is represented using a class and an experiment can be designed by combining
 these elements just as one would do in a real experiment.
 

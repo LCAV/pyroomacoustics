@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+- STFT tutorial and demo notebook.
 
 `0.1.19`_ - 2018-09-24
 ----------------------
