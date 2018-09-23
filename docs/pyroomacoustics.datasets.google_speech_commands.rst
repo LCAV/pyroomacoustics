@@ -1,5 +1,5 @@
-pyroomacoustics.datasets.google\_speech\_commands module
-========================================================
+Google Speech Commands
+======================
 
 .. automodule:: pyroomacoustics.datasets.google_speech_commands
     :members:

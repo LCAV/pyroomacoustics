@@ -79,10 +79,10 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* beamforming
-* direction of arrival (DOA) finding
-* adaptive filtering (NLMS, RLS)
-* blind source separation (AuxIVA, Trinicon)
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
+* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
@@ -99,6 +99,8 @@ moment we support the following.
 * `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
 * `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
 
+For more details, see the `doc <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.datasets.html>`_.
+
 Quick Install
 -------------
 
@@ -114,6 +116,9 @@ The requirements are::
 
 Example
 -------
+
+Here is a quick example of how to create and visual the response of a
+beamformer in a room.
 
 .. code-block:: python
 
@@ -139,6 +144,10 @@ Example
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
 
+A comprehensive set of examples covering most of the functionalities
+of the package can be found in the ``examples`` folder of the `github
+repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
+
 Authors
 -------
 
@@ -153,6 +162,10 @@ How to contribute
 
 If you would like to contribute, please clone the
 `repository <http://github.com/LCAV/pyroomacoustics>`_ and send a pull request.
+
+For more details, see our `CONTRIBUTING
+<http://pyroomacoustics.readthedocs.io/en/pypi-release/contributing.html>`_
+page.
 
 Academic publications
 ---------------------

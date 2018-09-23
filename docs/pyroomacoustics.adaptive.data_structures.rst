@@ -1,5 +1,5 @@
-pyroomacoustics.adaptive.data\_structures module
-================================================
+Data Structures
+===============
 
 .. automodule:: pyroomacoustics.adaptive.data_structures
     :members:

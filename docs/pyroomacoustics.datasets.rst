@@ -1,16 +1,5 @@
-pyroomacoustics.datasets package
-================================
-
-Submodules
-----------
-
-.. toctree::
-
-   pyroomacoustics.datasets.base
-   pyroomacoustics.datasets.cmu_arctic
-   pyroomacoustics.datasets.google_speech_commands
-   pyroomacoustics.datasets.timit
-   pyroomacoustics.datasets.utils
+Dataset Wrappers
+================
 
 Module contents
 ---------------
@@ -19,3 +8,21 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Datasets Available
+------------------
+
+.. toctree::
+
+   pyroomacoustics.datasets.cmu_arctic
+   pyroomacoustics.datasets.google_speech_commands
+   pyroomacoustics.datasets.timit
+
+Tools and Helpers
+-----------------
+
+.. toctree::
+
+   pyroomacoustics.datasets.base
+   pyroomacoustics.datasets.utils
+
