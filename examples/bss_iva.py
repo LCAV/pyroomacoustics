@@ -25,7 +25,7 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 import numpy as np
 from scipy.io import wavfile
 
-from mir_eval.separation import bss_eval_images
+from mir_eval.separation import bss_eval_sources
 
 # We concatenate a few samples to make them long enough
 wav_files = [
@@ -113,16 +113,15 @@ if __name__ == '__main__':
     # Monitor Convergence
     #####################
 
-    from mir_eval.separation import bss_eval_images
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
     def convergence_callback(Y):
         global SDR, SIR
-        from mir_eval.separation import bss_eval_images
+        from mir_eval.separation import bss_eval_sources
         ref = np.moveaxis(separate_recordings, 1, 2)
         y = np.array([pra.istft(Y[:,:,ch], L, L,
             transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
-        sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+        sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
         SDR.append(sdr)
         SIR.append(sir)
 
@@ -142,7 +141,7 @@ if __name__ == '__main__':
 
     # Compare SIR
     #############
-    sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+    sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
 
     print('SDR:', sdr)
     print('SIR:', sir)
