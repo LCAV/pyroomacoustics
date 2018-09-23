@@ -14,6 +14,6 @@ Algorithms
 
 .. toctree::
 
-   pyroomacoustics.realtime.dft
-   pyroomacoustics.realtime.stft
+   pyroomacoustics.transform.dft
+   pyroomacoustics.transform.stft
 
