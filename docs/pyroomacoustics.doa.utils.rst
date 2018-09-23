@@ -1,5 +1,5 @@
-pyroomacoustics.doa.utils module
-================================
+DOA Utilities
+=============
 
 .. automodule:: pyroomacoustics.doa.utils
     :members:

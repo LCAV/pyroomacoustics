@@ -1,5 +1,5 @@
-pyroomacoustics.adaptive.rls module
-===================================
+Recursive Least Squares
+=======================
 
 .. automodule:: pyroomacoustics.adaptive.rls
     :members:

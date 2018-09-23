@@ -1,17 +1,5 @@
-pyroomacoustics.adaptive package
-================================
-
-Submodules
-----------
-
-.. toctree::
-
-   pyroomacoustics.adaptive.adaptive_filter
-   pyroomacoustics.adaptive.data_structures
-   pyroomacoustics.adaptive.lms
-   pyroomacoustics.adaptive.rls
-   pyroomacoustics.adaptive.subband_lms
-   pyroomacoustics.adaptive.util
+Adaptive Filtering
+==================
 
 Module contents
 ---------------
@@ -20,3 +8,22 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Algorithms
+----------
+
+.. toctree::
+
+   pyroomacoustics.adaptive.adaptive_filter
+   pyroomacoustics.adaptive.lms
+   pyroomacoustics.adaptive.rls
+   pyroomacoustics.adaptive.subband_lms
+
+Tools and Helpers
+-----------------
+
+.. toctree::
+
+   pyroomacoustics.adaptive.data_structures
+   pyroomacoustics.adaptive.util
+

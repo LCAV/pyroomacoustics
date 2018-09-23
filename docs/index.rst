@@ -3,11 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. toctree::
-  :maxdepth: 2
-
-  index
-
 .. include:: ../README.rst
 
 Table of contents
@@ -16,6 +11,15 @@ Table of contents
 .. toctree::
   :maxdepth: 2
 
+  contributing
+  changelog
+  pyroomacoustics.room
+  pyroomacoustics.transform
+  pyroomacoustics.datasets
+  pyroomacoustics.adaptive
+  pyroomacoustics.bss
+  pyroomacoustics.doa
+  pyroomacoustics.denoise
   pyroomacoustics
 
 Indices and tables

@@ -11,6 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet.
+
+`0.1.19`_ - 2018-09-24
+----------------------
+
 Added
 ~~~~~
 
@@ -45,6 +50,7 @@ Added
 Changed
 ~~~~~~~
 
+- Improved documentation and docstrings
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
 - Improved the download/uncompress function for large datasets
 - Dusted the code for plotting on the sphere in ``pyroomacoustics.doa.grid.GridSphere``
@@ -129,7 +135,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...HEAD
+.. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18
 .. _0.1.17: https://github.com/LCAV/pyroomacoustics/compare/v0.1.16...v0.1.17
 .. _0.1.16: https://github.com/LCAV/pyroomacoustics/compare/v0.1.15...v0.1.16

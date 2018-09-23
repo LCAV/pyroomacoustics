@@ -1,5 +1,5 @@
-pyroomacoustics.doa.srp module
-==============================
+SRP-PHAT
+========
 
 .. automodule:: pyroomacoustics.doa.srp
     :members:

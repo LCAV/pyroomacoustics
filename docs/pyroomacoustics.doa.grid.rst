@@ -1,5 +1,5 @@
-pyroomacoustics.doa.grid module
-===============================
+Grid Objects
+============
 
 .. automodule:: pyroomacoustics.doa.grid
     :members:

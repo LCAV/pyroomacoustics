@@ -1,5 +1,5 @@
-pyroomacoustics.bss.common module
-=================================
+Common Tools
+============
 
 .. automodule:: pyroomacoustics.bss.common
     :members:

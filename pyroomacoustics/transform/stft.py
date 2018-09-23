@@ -41,10 +41,10 @@ class STFT(object):
         analysis/process/synthesis
 
         NOTE: 
-        1) num_frames = 0, corresponds to a "real-time" case in which each input
-           block corresponds to [hop] samples.
-        2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
-           frame must contain [N] samples.
+            1) num_frames = 0, corresponds to a "real-time" case in which each input
+               block corresponds to [hop] samples.
+            2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
+               frame must contain [N] samples.
     """
 
     def __init__(self, N, hop=None, analysis_window=None, 
@@ -650,7 +650,7 @@ class STFT(object):
 
 def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     '''
-    Convenience function for one-shot inverse STFT
+    Convenience function for one-shot STFT
 
     Parameters
     ----------
@@ -669,7 +669,8 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
 
     Returns
     -------
-    The STFT of x
+    X: ndarray, (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
+        The STFT of x
     '''
 
     if x.ndim == 2:
@@ -706,6 +707,11 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
         zero padding to apply at the end of the frame
     zp_front: int
         zero padding to apply at the beginning of the frame
+
+    Returns
+    -------
+    x: ndarray, (n_samples) or (n_samples, n_channels)
+        The inverse STFT of X
     '''
 
     if X.ndim == 3:

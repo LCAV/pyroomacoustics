@@ -1,5 +1,5 @@
-pyroomacoustics.bss.auxiva module
-=================================
+Independent Vector Analysis (AuxIVA)
+====================================
 
 .. automodule:: pyroomacoustics.bss.auxiva
     :members:

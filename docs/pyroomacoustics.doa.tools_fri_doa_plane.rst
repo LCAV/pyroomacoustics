@@ -1,5 +1,5 @@
-pyroomacoustics.doa.tools\_fri\_doa\_plane module
-=================================================
+Tools for FRIDA (azimuth only)
+==============================
 
 .. automodule:: pyroomacoustics.doa.tools_fri_doa_plane
     :members:

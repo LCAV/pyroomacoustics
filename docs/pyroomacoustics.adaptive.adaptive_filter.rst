@@ -1,5 +1,5 @@
-pyroomacoustics.adaptive.adaptive\_filter module
-================================================
+Adaptive Filter (Base)
+======================
 
 .. automodule:: pyroomacoustics.adaptive.adaptive_filter
     :members:
