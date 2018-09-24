@@ -4,4 +4,4 @@ to download this repository, we recommend viewing the notebooks with
 [nbviewer](http://nbviewer.jupyter.org/), as math will be better rendered than on GitHub
 
 * [General pyroomacoustics demo](http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb)
-* [STFT tutorial and demo](http://nbviewer.jupyter.org/github/ebezzam/pyroomacoustics/blob/stft_notebook/notebooks/stft.ipynb)
+* [STFT tutorial and demo](http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/stft.ipynb)
