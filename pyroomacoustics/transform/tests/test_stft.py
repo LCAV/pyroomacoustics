@@ -750,7 +750,7 @@ if __name__ == "__main__":
     print()
     print("TEST INFO")
     print("-------------------------------------------------------------")
-    print("Max error in dB for randomnly generated signal of %d samples."
+    print("Max error in dB for randomly generated signal of %d samples."
         % len(x))
     print("Multichannel corresponds to %d channels." % D)
     print("-------------------------------------------------------------")
