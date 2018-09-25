@@ -306,7 +306,7 @@ class Room(object):
         absorption = np.array(absorption, dtype='float64')
         if (absorption.ndim == 0):
             absorption = absorption * np.ones(corners.shape[1])
-        elif (absorption.ndim > 1 and corners.shape[1] != len(absorption)):
+        elif (absorption.ndim >= 1 and corners.shape[1] != len(absorption)):
             raise ValueError('Arg absorption must be the same size as corners or must be a single value.')
         
         walls = []
