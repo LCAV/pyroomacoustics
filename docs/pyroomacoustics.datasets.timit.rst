@@ -1,5 +1,5 @@
-pyroomacoustics.datasets.timit module
-=====================================
+TIMIT Corpus
+============
 
 .. automodule:: pyroomacoustics.datasets.timit
     :members:

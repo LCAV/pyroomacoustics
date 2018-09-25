@@ -1,5 +1,5 @@
-pyroomacoustics.adaptive.subband\_lms module
-============================================
+Subband LMS
+===========
 
 .. automodule:: pyroomacoustics.adaptive.subband_lms
     :members:

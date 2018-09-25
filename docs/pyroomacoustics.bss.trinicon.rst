@@ -1,5 +1,5 @@
-pyroomacoustics.bss.trinicon module
-===================================
+Trinicon
+========
 
 .. automodule:: pyroomacoustics.bss.trinicon
     :members:

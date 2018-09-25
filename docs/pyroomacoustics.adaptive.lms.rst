@@ -1,5 +1,5 @@
-pyroomacoustics.adaptive.lms module
-===================================
+Least Mean Squares
+==================
 
 .. automodule:: pyroomacoustics.adaptive.lms
     :members:

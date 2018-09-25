@@ -1,7 +1,15 @@
-pyroomacoustics.transform package
-=================================
+Transforms
+==========
 
-Submodules
+Module contents
+---------------
+
+.. automodule:: pyroomacoustics.realtime
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Algorithms
 ----------
 
 .. toctree::
@@ -9,10 +17,3 @@ Submodules
    pyroomacoustics.transform.dft
    pyroomacoustics.transform.stft
 
-Module contents
----------------
-
-.. automodule:: pyroomacoustics.transform
-    :members:
-    :undoc-members:
-    :show-inheritance:
