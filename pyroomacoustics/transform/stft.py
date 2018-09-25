@@ -675,6 +675,8 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
 
     if x.ndim == 2:
         channels = x.shape[1]
+    else:
+        channels = 1
 
     the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
 
@@ -716,6 +718,8 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
 
     if X.ndim == 3:
         channels = X.shape[2]
+    else:
+        channels = 1
 
     the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
 
