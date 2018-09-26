@@ -11,6 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Bugfix
+~~~~~~
+
+- Monaural signals are now properly handled in one-shot stft/istft
+- Corrected check of size of absorption coefficients list in ``Room.from_corners``
+
 Added
 ~~~~~
 
