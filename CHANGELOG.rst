@@ -20,8 +20,11 @@ Changed
 ~~~~~~~
 
 - Matplotlib is not a hard requirement anymore. When matplotlib is not
-  installed, only a warning is issued on plotting commands
-- Apply `matplotlib.pyplot.tight_layout` in `pyroomacoustics.Room.plot_rir`
+  installed, only a warning is issued on plotting commands. This is useful
+  to run pyroomacoustics on headless servers that might not have matplotlib
+  installed
+- Removed dependencies on ``joblib`` and ``requests`` packages
+- Apply ``matplotlib.pyplot.tight_layout`` in ``pyroomacoustics.Room.plot_rir``
 
 Bugfix
 ~~~~~~
