@@ -1,7 +1,7 @@
 STFT
 ====
 
-.. automodule:: pyroomacoustics.realtime.stft
+.. automodule:: pyroomacoustics.transform.stft
     :members:
     :undoc-members:
     :show-inheritance:

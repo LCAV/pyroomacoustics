@@ -78,8 +78,6 @@ setup_kwargs = dict(
             'Cython',
             'numpy',
             'scipy>=0.18.0',
-            'matplotlib',
-            'joblib',
             ],
 
         test_suite='nose.collector',
