@@ -51,12 +51,14 @@ import sounddevice as sd
 
 if __name__ == '__main__':
 
+    choices = ['ilrma', 'auxiva']
+
     import argparse
     parser = argparse.ArgumentParser(description='Records a segment of speech and then performs separation')
     parser.add_argument('-b', '--block', type=int, default=2048,
             help='STFT block size')
-    parser.add_argument('-a', '--algo', type=str, default='auxiva',
-            help='Chooses BSS method to run: auxiva or ilrma')
+    parser.add_argument('-a', '--algo', type=str, default=choices[0], choices=choices,
+            help='Chooses BSS method to run')
     parser.add_argument('-D', '--device', type=int,
             help='The sounddevice recording device id (obtain it with `python -m sounddevice`)')
     parser.add_argument('-d', '--duration', type=float,

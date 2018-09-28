@@ -53,12 +53,14 @@ wav_files = [
 
 if __name__ == '__main__':
 
+    choices = ['ilrma', 'auxiva']
+
     import argparse
     parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA or ILRMA.')
     parser.add_argument('-b', '--block', type=int, default=2048,
             help='STFT block size')
-    parser.add_argument('-a', '--algo', type=str, default='ilrma',
-            help='Chooses BSS method to run: auxiva or ilrma')
+    parser.add_argument('-a', '--algo', type=str, default=choices[0], choices=choices,
+            help='Chooses BSS method to run')
     parser.add_argument('--gui', action='store_true',
             help='Creates a small GUI for easy playback of the sound samples')
     parser.add_argument('--save', action='store_true',
