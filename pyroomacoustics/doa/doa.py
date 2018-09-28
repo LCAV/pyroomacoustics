@@ -497,6 +497,9 @@ class DOA(object):
         ax.xaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle=':')
         ax.yaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle='--')
         ax.set_ylim([0, 1.05 * (base + height)])
+
+        plt.tight_layout()
+
         if save_fig:
             if file_name is None:
                 file_name = 'polar_recon_dirac.pdf'
