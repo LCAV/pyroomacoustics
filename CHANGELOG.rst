@@ -11,16 +11,23 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- STFT tutorial and demo notebook.
+
+Changed
+~~~~~~~
+
+- Matplotlib is not a hard requirement anymore. When matplotlib is not
+  installed, only a warning is issued on plotting commands
+- Apply `matplotlib.pyplot.tight_layout` in `pyroomacoustics.Room.plot_rir`
+
 Bugfix
 ~~~~~~
 
 - Monaural signals are now properly handled in one-shot stft/istft
 - Corrected check of size of absorption coefficients list in ``Room.from_corners``
-
-Added
-~~~~~
-
-- STFT tutorial and demo notebook.
 
 `0.1.19`_ - 2018-09-24
 ----------------------
