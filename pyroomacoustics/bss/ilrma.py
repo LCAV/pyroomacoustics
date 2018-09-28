@@ -45,8 +45,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     the demixing matrix W (nfrequencies, nchannels, nsources)
     if ``return_values`` keyword is True.
     '''
-    X = np.transpose(X, (1, 0, 2))  # now X is (nfrequencies, nframes, nchannels)
-    n_freq, n_frames, n_chan = X.shape
+    n_frames, n_freq, n_chan = X.shape
 
     # default to determined case
     if n_src is None:
@@ -63,9 +62,9 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
         W = W0.copy()
 
     # initialize the nonnegative matrixes with random values
-    T = abs(np.array(np.random.rand(n_freq, n_components, n_src)))
-    V = abs(np.array(np.random.rand(n_components, n_frames, n_src)))
-    Y = np.zeros((n_freq, n_frames, n_src), dtype=X.dtype)
+    T = np.array(np.random.rand(n_freq, n_components, n_src))
+    V = np.array(np.random.rand(n_components, n_frames, n_src))
+    Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
     R = np.zeros((n_freq, n_frames, n_src))
     I = np.eye(n_src, n_src)
     U = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
@@ -79,7 +78,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[f,:,:] = np.dot(X[f,:,:], np.conj(W[f,:,:]))
+            Y[:,f,:] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
 
     demix(Y, X, W)
     P = np.power(abs(Y), 2.)
@@ -90,34 +89,28 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             print("Iteration: " + str(epoch))
 
             if proj_back:
-                X = np.transpose(X, (1, 0, 2))
-                Y = np.transpose(Y, (1, 0, 2))
                 z = projection_back(Y, X[:,:,0])
-                callback_input = Y * np.conj(z[None,:,:])
-                callback(callback_input)
-                X = np.transpose(X, (1, 0, 2))
-                Y = np.transpose(Y, (1, 0, 2))
+                callback(Y * np.conj(z[None,:,:]))
             else:
-                Y = np.transpose(Y, (1, 0, 2))
                 callback(Y)
 
         # simple loop as a start
         for s in range(n_src):
             iR = 1 / R[:,:,s]
-            T[:,:,s] *= np.sqrt( np.dot(P[:,:,s] * iR ** 2, V[:,:,s].T) / np.dot(iR, V[:,:,s].T) )
+            T[:,:,s] *= np.sqrt( np.dot(P[:,:,s].T * iR ** 2, V[:,:,s].T) / np.dot(iR, V[:,:,s].T) )
             T[T < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
             iR = 1 / R[:,:,s]
-            V[:,:,s] *= np.sqrt( np.dot(T[:,:,s].T, P[:,:,s] * iR ** 2) / np.dot(T[:,:,s].T, iR) )
+            V[:,:,s] *= np.sqrt( np.dot(T[:,:,s].T, P[:,:,s].T * iR ** 2) / np.dot(T[:,:,s].T, iR) )
             V[V < machine_epsilon] = machine_epsilon
 
             R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
 
             # Compute Auxiliary Variable and update the demixing matrix
             for f in range(n_freq):
-                U[f,s,:,:] = np.dot(X[f,:,:].T, np.conj(X[f,:,:]) / R[f,:,None,s]) / n_frames
+                U[f,s,:,:] = np.dot(X[:,f,:].T, np.conj(X[:,f,:]) / R[f,:,None,s]) / n_frames
                 product[f,:,:] = np.dot(np.conj(W[f,:,:].T), U[f,s,:,:])
                 W[f,:,s] = np.linalg.solve(product[f,:,:], I[s,:])
                 w_Unorm = np.inner(np.conj(W[f,:,s]), np.dot(U[f,s,:,:], W[f,:,s]))
@@ -135,8 +128,6 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             T[:,:,s] *= lambda_aux[s] ** 2
 
     if proj_back:
-        X = np.transpose(X, (1, 0, 2))
-        Y = np.transpose(Y, (1, 0, 2))
         z = projection_back(Y, X[:, :, 0])
         Y *= np.conj(z[None, :, :])
 
