@@ -113,6 +113,13 @@ The requirements are::
 * numpy 
 * scipy 
 * matplotlib
+* Cython
+
+In additions, these packages are needed to run the example scripts::
+
+* scipy>=0.18.0
+* joblib
+* requests
 
 Example
 -------
