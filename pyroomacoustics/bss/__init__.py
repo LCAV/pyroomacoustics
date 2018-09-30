@@ -11,7 +11,7 @@ Trinicon
     | Time-domain BSS [2]_
     | :py:mod:`pyroomacoustics.bss.trinicon`
 ILRMA
-    | Independent Low-Rank Matrix Analysis [3]
+    | Independent Low-Rank Matrix Analysis [3]_
     | :py:mod:`pyroomacoustics.bss.ilrma`
 
 A few commonly used functions, such as projection back, can be found in
