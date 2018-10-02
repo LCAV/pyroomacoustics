@@ -118,6 +118,9 @@ scenarios::
     # create the simulation script
     cookiecutter gh:fakufaku/cookiecutter-pyroomacoustics-sim
 
+    # run the newly created script
+    python <chosen_script_name>.py
+
 Dependencies
 ------------
 
