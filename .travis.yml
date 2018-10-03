@@ -30,7 +30,7 @@ install:
   - source activate test_env
 
   # Install the dependencies
-  - conda install --yes pip numpy scipy>=0.18.0 nose
+  - conda install --yes pip numpy scipy>=0.18.0 matplotlib nose
   - pip install -r requirements.txt
   - python setup.py install
 

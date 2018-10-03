@@ -79,8 +79,7 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
-* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_ * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
 * `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
 
@@ -139,10 +138,14 @@ On top of that, some functionalities of the package depend on extra packages::
     samplerate   # for resampling signals
     matplotlib   # to create graphs and plots
     sounddevice  # to play sound samples
+    mir_eval     # to evaluate performance of source separation in examples
+
+The ``requirements.txt`` file lists all packages necessary to run all of the
+scripts in the ``examples`` folder.
 
 This package is mainly developed under Python 3.5. We try as much as possible to keep
 things compatible with Python 2.7 and run tests and builds under both. However, the tests
-code coverage is not 100% and it might happen that we break some things in Python 2.7 from
+code coverage is far from 100% and it might happen that we break some things in Python 2.7 from
 time to time. We apologize in advance for that.
 
 Under Linux and Mac OS, the compiled accelerators require a valid compiler to
