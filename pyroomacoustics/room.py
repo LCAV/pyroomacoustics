@@ -631,6 +631,8 @@ class Room(object):
                     else:
                         plt.xlabel('Normalized frequency')
 
+        plt.tight_layout()
+
 
     def add_microphone_array(self, micArray):
         self.mic_array = micArray

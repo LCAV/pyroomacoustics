@@ -79,8 +79,7 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
-* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_ * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
 * `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
 
@@ -106,13 +105,54 @@ Quick Install
 
 Install the package with pip::
 
-    $ pip install pyroomacoustics
+    pip install pyroomacoustics
 
-The requirements are::
+A [cookiecutter](https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim)
+is available that generates a working simulation script for a few 2D/3D
+scenarios::
 
-* numpy 
-* scipy 
-* matplotlib
+    # if necessary install cookiecutter
+    pip install cookiecutter
+
+    # create the simulation script
+    cookiecutter gh:fakufaku/cookiecutter-pyroomacoustics-sim
+
+    # run the newly created script
+    python <chosen_script_name>.py
+
+Dependencies
+------------
+
+The minimal dependencies are::
+
+    numpy 
+    scipy>=0.18.0
+    Cython
+
+where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
+The simulator itself has a pure Python counterpart, so that this requirement could
+be ignored, but is much slower.
+
+On top of that, some functionalities of the package depend on extra packages::
+
+    samplerate   # for resampling signals
+    matplotlib   # to create graphs and plots
+    sounddevice  # to play sound samples
+    mir_eval     # to evaluate performance of source separation in examples
+
+The ``requirements.txt`` file lists all packages necessary to run all of the
+scripts in the ``examples`` folder.
+
+This package is mainly developed under Python 3.5. We try as much as possible to keep
+things compatible with Python 2.7 and run tests and builds under both. However, the tests
+code coverage is far from 100% and it might happen that we break some things in Python 2.7 from
+time to time. We apologize in advance for that.
+
+Under Linux and Mac OS, the compiled accelerators require a valid compiler to
+be installed, typically this is GCC. When no compiler is present, the package
+will still install but default to the pure Python implementation which is much
+slower. On Windows, we provide pre-compiled Python Wheels for Python 3.5 and
+3.6.
 
 Example
 -------
@@ -188,7 +228,7 @@ License
 
 ::
 
-  Copyright (c) 2014-2017 EPFL-LCAV
+  Copyright (c) 2014-2018 EPFL-LCAV
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in

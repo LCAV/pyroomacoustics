@@ -4,7 +4,7 @@ Transforms
 Module contents
 ---------------
 
-.. automodule:: pyroomacoustics.realtime
+.. automodule:: pyroomacoustics.transform
     :members:
     :undoc-members:
     :show-inheritance:

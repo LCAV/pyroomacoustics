@@ -24,6 +24,13 @@ def polar_plt_dirac(self, azimuth_ref=None, alpha_ref=None, save_fig=False,
         'dirty image' in the case of FRI.
     """
 
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
+
     if self.dim != 2:
         raise ValueError('This function only handles 2D problems.')
 
@@ -174,7 +181,9 @@ def sph_plot_diracs_plotly(
         import plotly.graph_objs as go
         import plotly
     except ImportError:
-        raise ValueError('The plotly package is required to use this function')
+        import warnings
+        warnings.warn('The plotly package is required to use this function')
+        return
 
     plotly.offline.init_notebook_mode()
 
@@ -315,7 +324,12 @@ def sph_plot_diracs(
         The colatitudes indexing the dirty_img 2D map
     '''
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     fig = plt.figure(figsize=(6.47, 4), dpi=90)
     ax = fig.add_subplot(111, projection="mollweide")

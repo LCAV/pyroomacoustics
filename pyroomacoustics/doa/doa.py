@@ -383,6 +383,11 @@ class DOA(object):
             'dirty image' in the case of FRI.
         """
 
+        if not matplotlib_available:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         if self.dim != 2:
             raise ValueError('This function only handles 2D problems.')
 
@@ -492,6 +497,9 @@ class DOA(object):
         ax.xaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle=':')
         ax.yaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle='--')
         ax.set_ylim([0, 1.05 * (base + height)])
+
+        plt.tight_layout()
+
         if save_fig:
             if file_name is None:
                 file_name = 'polar_recon_dirac.pdf'

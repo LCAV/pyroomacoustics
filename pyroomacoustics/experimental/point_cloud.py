@@ -12,8 +12,6 @@ from __future__ import division, print_function
 # Provided by LCAV
 import numpy as np
 from scipy import linalg as la
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
 
 
 class PointCloud:
@@ -327,6 +325,14 @@ class PointCloud:
 
     def plot(self, axes=None, show_labels=True, **kwargs):
 
+        try:
+            from mpl_toolkits.mplot3d import Axes3D
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         if self.dim == 2:
 
             # Create a figure if needed
@@ -363,6 +369,8 @@ class PointCloud:
 
 
 if __name__ == '__main__':
+
+    import matplotlib.pyplot as plt
 
     # number of markers
     m = 4

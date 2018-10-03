@@ -121,7 +121,12 @@ class GridCircle(Grid):
 
     def plot(self, mark_peaks=0):
 
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='polar')
@@ -355,10 +360,16 @@ class GridSphere(Grid):
         ''' Plot the points on the sphere with their values '''
 
         from scipy import rand
-        import matplotlib.colors as colors
-        #from mpl_toolkits.mplot3d import Axes3D
-        import mpl_toolkits.mplot3d as a3
-        import matplotlib.pyplot as plt
+
+        try:
+            import matplotlib.colors as colors
+            #from mpl_toolkits.mplot3d import Axes3D
+            import mpl_toolkits.mplot3d as a3
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
