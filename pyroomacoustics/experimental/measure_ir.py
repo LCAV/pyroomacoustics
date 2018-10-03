@@ -3,7 +3,7 @@ import numpy as np
 try:
     import sounddevice as sd
     sounddevice_available = True
-except ImportError:
+except:
     sounddevice_available = False
 
 from .signals import exponential_sweep, linear_sweep
