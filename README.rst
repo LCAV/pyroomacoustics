@@ -16,7 +16,7 @@ can be divided into three main components:
 
 1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
 2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
-3. Reference implementations of popular algorithms for beamforming, direction finding, adaptive filtering, and source separation.
+3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, and source separation.
 
 Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
@@ -79,7 +79,9 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_ * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `Short time Fourier transform <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.transform.stft.html>`_ (block + online)
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
+* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
 * `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
 
