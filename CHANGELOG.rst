@@ -11,10 +11,16 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet.
+
+`0.1.20`_ - 2018-10-04
+----------------------
+
 Added
 ~~~~~
 
 - STFT tutorial and demo notebook.
+- New algorithm for blind source separation (BSS): Independent Low-Rank Matrix Analysis (ILRMA)
 
 Changed
 ~~~~~~~
@@ -153,7 +159,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...HEAD
+.. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
 .. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18
 .. _0.1.17: https://github.com/LCAV/pyroomacoustics/compare/v0.1.16...v0.1.17
