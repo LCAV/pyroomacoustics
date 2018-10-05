@@ -450,10 +450,15 @@ class Room(object):
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
         ''' Plots the room with its walls, microphones, sources and images '''
     
-        import matplotlib
-        from matplotlib.patches import Circle, Wedge, Polygon
-        from matplotlib.collections import PatchCollection
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib
+            from matplotlib.patches import Circle, Wedge, Polygon
+            from matplotlib.collections import PatchCollection
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         if (self.dim == 2):
             fig = plt.figure(figsize=figsize)
@@ -611,7 +616,13 @@ class Room(object):
         if self.rir is None:
             self.compute_rir()
 
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         from . import utilities as u
 
         M = self.mic_array.M

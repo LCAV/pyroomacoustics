@@ -156,7 +156,8 @@ def _plot(x, mph, mpd, threshold, edge, valley, ax, ind):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        print('matplotlib is not available.')
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
     else:
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(8, 4))

@@ -68,6 +68,13 @@ class DelayCalibration:
         # placeholder for delays
         delays = np.zeros((sd.default.channels[0], len(ch_out)))
 
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         for och in ch_out:
             # play and record the signal simultaneously
             s[:mls.shape[0], och] = 0.1 * mls
@@ -77,7 +84,6 @@ class DelayCalibration:
             for ich in range(rec_sig.shape[1]):
                 xcorr = signal.correlate(rec_sig[:,ich], mls, mode='valid')
                 delays[ich,och] = np.argmax(xcorr)
-                import matplotlib.pyplot as plt
                 plt.plot(xcorr)
                 plt.show()
 

@@ -74,7 +74,9 @@ class MUSIC(DOA):
         """
 
         # check if matplotlib imported
-        if matplotlib_available is False:
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
             import warnings
             warnings.warn('Matplotlib is required for plotting')
             return

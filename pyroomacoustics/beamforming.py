@@ -570,7 +570,12 @@ class Beamformer(MicrophoneArray):
         if x.ndim == 0:
             x = np.array([x])
 
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         HF = np.zeros((x.shape[1], self.frequencies.shape[0]), dtype=complex)
         for k, p in enumerate(x.T):
@@ -620,7 +625,12 @@ class Beamformer(MicrophoneArray):
         p_max = 100
         vmin, vmax = np.percentile(H_abs.flatten(), [p_min, p_max])
 
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         plt.imshow(H_abs,
                    aspect='auto',
@@ -787,7 +797,12 @@ class Beamformer(MicrophoneArray):
         elif self.weights is None and self.filters is None:
             raise NameError('Beamforming weights or filters need to be computed first.')
 
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         if FD is True:
             plt.subplot(2, 2, 1)

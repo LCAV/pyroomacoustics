@@ -13,6 +13,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Nothing yet.
 
+Changed
+~~~~~~~
+
+- Limits imports of matplotlib to within plotting functions so that the
+  matplotlib backend can still be changed, even after importing pyroomacoustics
+
 `0.1.20`_ - 2018-10-04
 ----------------------
 

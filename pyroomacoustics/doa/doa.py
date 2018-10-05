@@ -11,19 +11,6 @@ import math, sys
 import warnings
 from abc import ABCMeta, abstractmethod
 
-try:
-    import matplotlib as mpl
-
-    matplotlib_available = True
-except ImportError:
-    matplotlib_available = False
-
-if matplotlib_available:
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter
-
 from .grid import GridCircle, GridSphere
 
 tol = 1e-14
@@ -383,7 +370,9 @@ class DOA(object):
             'dirty image' in the case of FRI.
         """
 
-        if not matplotlib_available:
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
             import warnings
             warnings.warn('Matplotlib is required for plotting')
             return

@@ -55,7 +55,12 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
     warnings.warn("The function pyroomacoustics.spectroplot is deprecated and will disappear soon.",
             DeprecationWarning)
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     plt.imshow(
         20 * np.log10(np.abs(Z[:N // 2 + 1, :])),

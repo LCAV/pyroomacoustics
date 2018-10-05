@@ -77,7 +77,13 @@ def highpass(signal, Fs, fc=None, plot=False):
 
     # plot frequency response of filter if requested
     if (plot):
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         w, h = freqz(b, a)
 
         plt.figure()
@@ -100,7 +106,12 @@ def time_dB(signal, Fs, bits=16):
     normalized wrt the number of bits used for the signal.
     '''
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     # min dB (least significant bit in dB)
     lsb = -20 * np.log10(2.) * (bits - 1)
@@ -155,7 +166,12 @@ def dB(signal, power=False):
 
 def compare_plot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, title1=None, title2=None):
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     td_amp = np.maximum(np.abs(signal1).max(), np.abs(signal2).max())
 
@@ -209,7 +225,12 @@ def compare_plot(signal1, signal2, Fs, fft_size=512, norm=False, equal=False, ti
 
 def real_spectrum(signal, axis=-1, **kwargs):
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     S = np.fft.rfft(signal, axis=axis)
     f = np.arange(S.shape[axis])/float(2*S.shape[axis])
