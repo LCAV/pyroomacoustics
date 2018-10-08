@@ -86,8 +86,6 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     for epoch in range(n_iter):
 
         if callback is not None and epoch % 10 == 0:
-            print("Iteration: " + str(epoch))
-
             if proj_back:
                 z = projection_back(Y, X[:,:,0])
                 callback(Y * np.conj(z[None,:,:]))

@@ -11,13 +11,16 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
-
 Changed
 ~~~~~~~
 
 - Limits imports of matplotlib to within plotting functions so that the
   matplotlib backend can still be changed, even after importing pyroomacoustics
+
+Bugfix
+~~~~~~
+
+- Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
 
 `0.1.20`_ - 2018-10-04
 ----------------------
