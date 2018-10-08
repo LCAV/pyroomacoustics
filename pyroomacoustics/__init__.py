@@ -81,6 +81,9 @@ Available submodules
 :py:obj:`pyroomacoustics.windows`
     Tapering windows for spectral analysis.
 
+:py:obj:`pyroomacoustics.whitening`
+    Whitening method.
+
 Available subpackages
 ---------------------
 
@@ -126,6 +129,7 @@ from .metrics import *
 from .multirate import *
 from .acoustics import *
 from .recognition import *
+from .whitening import *
 
 from . import doa
 from . import adaptive
