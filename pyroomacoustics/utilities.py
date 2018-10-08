@@ -366,7 +366,7 @@ def fractional_delay(t0):
     Parameters
     ----------
     t0: float
-        The delay in fraction of sample. Typically between 0 and 1.
+        The delay in fraction of sample. Typically between -1 and 1.
 
     Returns
     -------
