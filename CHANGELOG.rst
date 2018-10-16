@@ -28,6 +28,8 @@ Bugfix
 ~~~~~~
 
 - Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
+- Corrects invalid memory access in the ``pyroomacoustics.build_rir`` cython accelerator
+  and adds a unit test that checks the cython code output is correct
 
 `0.1.20`_ - 2018-10-04
 ----------------------
