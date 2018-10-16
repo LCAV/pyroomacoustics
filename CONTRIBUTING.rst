@@ -33,9 +33,8 @@ style <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__
 We recommend the following steps for generating the documentation:
 
 -  Create a separate environment, e.g. with Anaconda, as such:
-   ``conda create -n mkdocs27 python=2.7 sphinx numpydoc mock``
+   ``conda create -n mkdocs27 python=2.7 sphinx numpydoc mock sphinx-rtd-theme``
 -  Switch to the environment: ``source activate mkdocs27``
--  Install the theme for ReadTheDocs: ``pip install sphinx-rtd-theme``
 -  Navigate to the ``docs`` folder and run: ``./make_apidoc.sh``
 -  Build and view the documentation locally with: ``make html``
 -  Open in your browser: ``docs/_build/html/index.html``
