@@ -3,7 +3,7 @@ import numpy as np
 try:
     import sounddevice as sd
     sounddevice_available = True
-except ImportError:
+except:
     sounddevice_available = False
 
 from .signals import exponential_sweep, linear_sweep
@@ -117,7 +117,12 @@ def measure_ir(sweep_length=1., sweep_type='exponential',
                 ).T
 
     if plot:
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
 
         if h is not None:
             plt.figure()

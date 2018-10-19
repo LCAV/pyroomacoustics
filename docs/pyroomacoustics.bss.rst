@@ -1,14 +1,5 @@
-pyroomacoustics.bss package
-===========================
-
-Submodules
-----------
-
-.. toctree::
-
-   pyroomacoustics.bss.auxiva
-   pyroomacoustics.bss.common
-   pyroomacoustics.bss.trinicon
+Blind Source Separation
+=======================
 
 Module contents
 ---------------
@@ -17,3 +8,14 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Algorithms
+----------
+
+.. toctree::
+
+   pyroomacoustics.bss.auxiva
+   pyroomacoustics.bss.trinicon
+   pyroomacoustics.bss.ilrma
+   pyroomacoustics.bss.common
+

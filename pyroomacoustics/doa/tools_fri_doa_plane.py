@@ -7,10 +7,8 @@ from scipy import linalg
 import scipy.special
 import scipy.optimize
 from functools import partial
-import joblib as jl
 import os
 
-thread_num = 1
 
 def polar2cart(rho, phi):
     """
@@ -1385,9 +1383,11 @@ def dirac_recon_ri_half_parallel(G, a_ri, K, M, max_ini=100):
     # generate all the random initialisations
     c_ri_half_all = np.random.randn(sz_coef, max_ini)
 
-    res_all = jl.Parallel(n_jobs=thread_num)(
-        jl.delayed(partial_dirac_recon)(c_ri_half_all[:, loop][:, np.newaxis])
-        for loop in range(max_ini))
+    res_all = []
+    for loop in range(max_ini):
+        res_all.append(
+                partial_dirac_recon(c_ri_half_all[:,loop][:,np.newaxis])
+                )
 
     # find the one with smallest error
     min_idx = np.array(zip(*res_all)[1]).argmin()
@@ -1677,14 +1677,15 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
 
         elif signal_type == 'raw':
             partial_build_mtx_amp = partial(build_mtx_raw_amp, phi_k=phik_recon)
-            amp_mtx = \
-                linalg.block_diag(
-                    *jl.Parallel(n_jobs=thread_num)(
-                        jl.delayed(partial_build_mtx_amp)(
-                            p_mic_x_normalised[:, band_count],
-                            p_mic_y_normalised[:, band_count])
-                        for band_count in range(num_bands))
-                )
+            blocks = []
+            for band_count in range(num_bands):
+                amp_loop = partial_build_mtx_amp(
+                        p_mic_x_normalised[:,band_count],
+                        p_mic_y_normalised[:,band_count],
+                        )
+                blocks.append(amp_loop)
+            amp_mtx = linalg.block_diag(blocks)
+
 
             alphak_recon = sp.linalg.lstsq(amp_mtx, a.flatten('F'))[0]
 

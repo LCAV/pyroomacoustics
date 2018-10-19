@@ -28,27 +28,27 @@ class STFT(object):
     channels : int
         number of signals
 
-    transform (optional) : str
+    transform : str, optional
         which FFT package to use: 'numpy' (default), 'pyfftw', or 'mkl'
-    streaming (optional) : bool
-        whether (True) or not (False, default) to "stitch" samples between 
+    streaming : bool, optional
+        whether (True, default) or not (False) to "stitch" samples between
         repeated calls of 'analysis' and 'synthesis' if we are receiving a 
         continuous stream of samples.
-    num_frames (optional) : int
+    num_frames : int, optional
         Number of frames to be processed. If set, this will be strictly enforced
         as the STFT block will allocate memory accordingly. If not set, there
         will be no check on the number of frames sent to 
         analysis/process/synthesis
 
         NOTE: 
-        1) num_frames = 0, corresponds to a "real-time" case in which each input
-           block corresponds to [hop] samples.
-        2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
-           frame must contain [N] samples.
+            1) num_frames = 0, corresponds to a "real-time" case in which each input
+               block corresponds to [hop] samples.
+            2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the last
+               frame must contain [N] samples.
     """
 
     def __init__(self, N, hop=None, analysis_window=None, 
-        synthesis_window=None, channels=1, transform='numpy', streaming=False,
+        synthesis_window=None, channels=1, transform='numpy', streaming=True,
         **kwargs):
 
         # initialize parameters
@@ -246,7 +246,6 @@ class STFT(object):
             else:
                 self.H_multi = np.tile(self.H,(self.num_frames,1,1))
                 # self.H_multi = np.swapaxes(self.H_multi,0,1)
-
 
 
     def analysis(self, x):
@@ -567,7 +566,7 @@ class STFT(object):
         Returns
         -------
         numpy array
-            Reconstructed array of samples of length <self.hop> (Optional)
+            Reconstructed array of samples of length <self.hop>.
         """
 
         # apply IDFT to current frame
@@ -651,7 +650,7 @@ class STFT(object):
 
 def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     '''
-    Convenience function for one-shot inverse STFT
+    Convenience function for one-shot STFT
 
     Parameters
     ----------
@@ -670,11 +669,14 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
 
     Returns
     -------
-    The STFT of x
+    X: ndarray, (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
+        The STFT of x
     '''
 
     if x.ndim == 2:
         channels = x.shape[1]
+    else:
+        channels = 1
 
     the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
 
@@ -707,10 +709,17 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
         zero padding to apply at the end of the frame
     zp_front: int
         zero padding to apply at the beginning of the frame
+
+    Returns
+    -------
+    x: ndarray, (n_samples) or (n_samples, n_channels)
+        The inverse STFT of X
     '''
 
     if X.ndim == 3:
         channels = X.shape[2]
+    else:
+        channels = 1
 
     the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
 

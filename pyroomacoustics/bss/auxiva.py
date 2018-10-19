@@ -110,7 +110,7 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
             for s in range(n_src):
                 WV = np.dot(np.conj(W[f,:,:].T), V[f,s,:,:])
                 W[f,:,s] = np.linalg.solve(WV, I[:,s])
-                W[f,:,s] /= np.inner(np.conj(W[f,:,s]), np.dot(V[f,s,:,:], W[f,:,s]))
+                W[f,:,s] /= np.sqrt(np.inner(np.conj(W[f,:,s]), np.dot(V[f,s,:,:], W[f,:,s])))
 
     demix(Y, X, W)
 

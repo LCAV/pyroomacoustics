@@ -74,14 +74,18 @@ class MUSIC(DOA):
         """
 
         # check if matplotlib imported
-        if matplotlib_available is False:
-            warnings.warn('Could not import matplotlib.')
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
             return
 
         # only for 2D
         if self.grid.dim == 3:
             pass
         else:
+            import warnings
             warnings.warn('Only for 2D.')
             return
 

@@ -1,5 +1,7 @@
+Cython
 numpy
 scipy>=0.18.0
 matplotlib
-joblib
-requests
+sounddevice
+samplerate
+mir_eval

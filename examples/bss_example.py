@@ -1,23 +1,37 @@
 '''
-Blind Source Separation with Indpendent Vector Analysis
+Blind Source Separation offline example
 =======================================================
 
-Demonstrate how to do blind source separation (BSS) using the indpendent vector
-analysis technique. The method implemented is described in the following
-publication.
+Demonstrate the performance of different blind source separation (BSS) algorithms:
+
+1) Independent Vector Analysis (IVA)
+The method implemented is described in the following publication.
 
     N. Ono, *Stable and fast update rules for independent vector analysis based
     on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
 
-It works in the STFT domain. The test files were extracted from the
+2) Independent Low-Rank Matrix Analysis (ILRMA)
+The method implemented is described in the following publications
+
+    D. Kitamura, N. Ono, H. Sawada, H. Kameoka, H. Saruwatari, *Determined blind
+    source separation unifying independent vector analysis and nonnegative matrix
+    factorization,* IEEE/ACM Trans. ASLP, vol. 24, no. 9, pp. 1626-1641, September 2016
+
+    D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined Blind
+    Source Separation with Independent Low-Rank Matrix Analysis*, in Audio Source Separation,
+    S. Makino, Ed. Springer, 2018, pp.  125-156.
+
+Both algorithms work in the STFT domain. The test files were extracted from the
 `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
 
-Running this script will do two things.
+Depending on the input arguments running this script will do these actions:.
 
-1. It will separate the sources.
+1. Separate the sources.
 2. Show a plot of the clean and separated spectrograms
 3. Show a plot of the SDR and SIR as a function of the number of iterations.
 4. Create a `play(ch)` function that can be used to play the `ch` source (if you are in ipython say).
+5. Save the separated sources as .wav files
+6. Show a GUI where a mixed signals and the separated sources can be played
 
 This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` packages for the GUI option.
 '''
@@ -25,7 +39,7 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 import numpy as np
 from scipy.io import wavfile
 
-from mir_eval.separation import bss_eval_images
+from mir_eval.separation import bss_eval_sources
 
 # We concatenate a few samples to make them long enough
 wav_files = [
@@ -39,15 +53,18 @@ wav_files = [
 
 if __name__ == '__main__':
 
+    choices = ['ilrma', 'auxiva']
+
     import argparse
-    parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA.')
+    parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA or ILRMA.')
     parser.add_argument('-b', '--block', type=int, default=2048,
             help='STFT block size')
+    parser.add_argument('-a', '--algo', type=str, default=choices[0], choices=choices,
+            help='Chooses BSS method to run')
     parser.add_argument('--gui', action='store_true',
             help='Creates a small GUI for easy playback of the sound samples')
     parser.add_argument('--save', action='store_true',
             help='Saves the output of the separation to wav files')
-
     args = parser.parse_args()
 
     if args.gui:
@@ -56,7 +73,6 @@ if __name__ == '__main__':
         matplotlib.use('TkAgg')
 
     import pyroomacoustics as pra
-
 
     # STFT frame length
     L = args.block
@@ -113,16 +129,15 @@ if __name__ == '__main__':
     # Monitor Convergence
     #####################
 
-    from mir_eval.separation import bss_eval_images
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
     def convergence_callback(Y):
         global SDR, SIR
-        from mir_eval.separation import bss_eval_images
+        from mir_eval.separation import bss_eval_sources
         ref = np.moveaxis(separate_recordings, 1, 2)
         y = np.array([pra.istft(Y[:,:,ch], L, L,
             transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
-        sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+        sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
         SDR.append(sdr)
         SIR.append(sir)
 
@@ -130,19 +145,25 @@ if __name__ == '__main__':
     ###########
     # The STFT needs front *and* back padding
 
-    # shape == (n_chan, n_frames, n_freq)
     X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L//2, zp_back=L//2) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
-    # Run AuxIVA
-    Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+    # Run BSS
+    bss_type = args.algo
+    if bss_type == 'auxiva':
+        # Run AuxIVA
+        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+    elif bss_type == 'ilrma':
+        # Run ILRMA
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
+            callback=convergence_callback)
 
-    # run iSTFT
+    # Run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
 
     # Compare SIR
     #############
-    sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+    sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
 
     print('SDR:', sdr)
     print('SIR:', sir)

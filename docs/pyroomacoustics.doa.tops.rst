@@ -1,5 +1,5 @@
-pyroomacoustics.doa.tops module
-===============================
+TOPS
+====
 
 .. automodule:: pyroomacoustics.doa.tops
     :members:

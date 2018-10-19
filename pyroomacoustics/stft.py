@@ -4,7 +4,7 @@
 
 '''Collection of spectral estimation methods.
 
-**This module is deprecated.** It is replaced by the methods of :py:obj:`pyroomacoustics.realtime`
+**This module is deprecated.** It is replaced by the methods of :py:obj:`pyroomacoustics.transform`
 '''
 from __future__ import division
 
@@ -55,7 +55,12 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
     warnings.warn("The function pyroomacoustics.spectroplot is deprecated and will disappear soon.",
             DeprecationWarning)
 
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import warnings
+        warnings.warn('Matplotlib is required for plotting')
+        return
 
     plt.imshow(
         20 * np.log10(np.abs(Z[:N // 2 + 1, :])),
@@ -113,7 +118,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
     The STFT of x
     '''
 
-    warnings.warn("The function pyroomacoustics.stft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.realtime.STFT object.",
+    warnings.warn("The function pyroomacoustics.stft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.transform.STFT object.",
             DeprecationWarning)
 
     # the transform size
@@ -151,7 +156,7 @@ def stft(x, L, hop, transform=np.fft.fft, win=None, zp_back=0, zp_front=0):
 # inverse STFT
 def istft(X, L, hop, transform=np.fft.ifft, win=None, zp_back=0, zp_front=0):
 
-    warnings.warn("The function pyroomacoustics.istft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.realtime.STFT object.",
+    warnings.warn("The function pyroomacoustics.istft is deprecated and will disappear soon. It will be replaced by the pyroomacoustics.transform.STFT object.",
             DeprecationWarning)
 
     # the transform size

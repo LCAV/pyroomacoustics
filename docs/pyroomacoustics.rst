@@ -1,5 +1,5 @@
-pyroomacoustics package
-=======================
+Pyroomacoustics API
+===================
 
 Subpackages
 -----------
@@ -9,9 +9,10 @@ Subpackages
     pyroomacoustics.adaptive
     pyroomacoustics.bss
     pyroomacoustics.datasets
+    pyroomacoustics.denoise
     pyroomacoustics.doa
     pyroomacoustics.experimental
-    pyroomacoustics.realtime
+    pyroomacoustics.transform
 
 Submodules
 ----------
@@ -20,6 +21,7 @@ Submodules
 
    pyroomacoustics.acoustics
    pyroomacoustics.beamforming
+   pyroomacoustics.build_rir
    pyroomacoustics.geometry
    pyroomacoustics.metrics
    pyroomacoustics.multirate

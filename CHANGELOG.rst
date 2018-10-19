@@ -16,6 +16,54 @@ Added
 
 - Support for the `LOCATA <http://www.locata-challenge.org>`_ dataset in
   ``pyroomacoustics.datasets.locata``
+
+Changed
+~~~~~~~
+
+- Limits imports of matplotlib to within plotting functions so that the
+  matplotlib backend can still be changed, even after importing pyroomacoustics
+
+Bugfix
+~~~~~~
+
+- Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
+
+`0.1.20`_ - 2018-10-04
+----------------------
+
+Added
+~~~~~
+
+- STFT tutorial and demo notebook.
+- New algorithm for blind source separation (BSS): Independent Low-Rank Matrix Analysis (ILRMA)
+
+Changed
+~~~~~~~
+
+- Matplotlib is not a hard requirement anymore. When matplotlib is not
+  installed, only a warning is issued on plotting commands. This is useful
+  to run pyroomacoustics on headless servers that might not have matplotlib
+  installed
+- Removed dependencies on ``joblib`` and ``requests`` packages
+- Apply ``matplotlib.pyplot.tight_layout`` in ``pyroomacoustics.Room.plot_rir``
+
+Bugfix
+~~~~~~
+
+- Monaural signals are now properly handled in one-shot stft/istft
+- Corrected check of size of absorption coefficients list in ``Room.from_corners``
+
+`0.1.19`_ - 2018-09-24
+----------------------
+
+Added
+~~~~~
+
+- Added noise reduction sub-package ``denoise`` with spectral subtraction
+  class and example.
+- Renamed ``realtime`` to ``transform`` and added deprecation warning.
+- Added a cython function to efficiently compute the fractional delays in the room
+  impulse response from time delays and attenuations
 - `notebooks` folder.
 - Demo IPython notebook (with WAV files) of several features of the package.
 - Wrapper for Google's Speech Command Dataset and an example usage script in ``examples``.
@@ -36,10 +84,12 @@ Added
   * The ordering of axis in the output from bulk STFT is now
     ``(n_frames, n_frequencies, n_channels)``
   * Support for Intel's ``mkl_fft`` `package <https://github.com/IntelPython/mkl_fft>`_
+  * ``axis`` (along which to perform DFT) and ``bits`` parameters for ``DFT`` class.
 
 Changed
 ~~~~~~~
 
+- Improved documentation and docstrings
 - Using now the built-in RIR generator in `examples/doa_algorithms.py`
 - Improved the download/uncompress function for large datasets
 - Dusted the code for plotting on the sphere in ``pyroomacoustics.doa.grid.GridSphere``
@@ -130,7 +180,9 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...HEAD
+.. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
+.. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18
 .. _0.1.17: https://github.com/LCAV/pyroomacoustics/compare/v0.1.16...v0.1.17
 .. _0.1.16: https://github.com/LCAV/pyroomacoustics/compare/v0.1.15...v0.1.16

@@ -12,16 +12,16 @@ Summary
 
 Pyroomacoustics is a software package aimed at the rapid development
 and testing of audio array processing algorithms. The content of the package
-can be divided into three main components: an intuitive Python object-oriented
-interface to quickly construct different simulation scenarios involving
-multiple sound sources and microphones in 2D and 3D rooms; a fast C
-implementation of the image source model for general polyhedral rooms to
-efficiently generate room impulse responses and simulate the propagation
-between sources and receivers; and finally, reference implementations of
-popular algorithms for beamforming, direction finding, and adaptive filtering.
-Together, they form a package with the potential to speed up the time to market
+can be divided into three main components: 
+
+1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
+2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
+3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, and source separation.
+
+Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
-performance evaluation step.
+performance evaluation step. Please refer to `this notebook <http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb>`_
+for a demonstration of the different components of this package.
 
 Room Acoustics Simulation
 `````````````````````````
@@ -49,11 +49,11 @@ image source model that can handle
 * Convex and non-convex rooms
 * 2D/3D rooms
 
-Both a pure python implementation and a C accelerator are included for maximum
+Both a pure Python implementation and a C accelerator are included for maximum
 speed and compatibility.
 
 The philosophy of the package is to abstract all necessary elements of
-an experiment using object oriented programming concept. Each of these elements
+an experiment using an object-oriented programming approach. Each of these elements
 is represented using a class and an experiment can be designed by combining
 these elements just as one would do in a real experiment.
 
@@ -79,10 +79,11 @@ In addition to its core image source model simulation, **pyroomacoustics**
 also contains a number of reference implementations of popular audio processing
 algorithms for
 
-* beamforming
-* direction of arrival (DOA) finding
-* adaptive filtering (NLMS, RLS)
-* blind source separation (AuxIVA, Trinicon)
+* `Short time Fourier transform <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.transform.stft.html>`_ (block + online)
+* `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
+* `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
+* `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
@@ -100,21 +101,67 @@ moment we support the following.
 * `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
 * `LOCATA <http://www.locata-challenge.com>`_
 
+For more details, see the `doc <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.datasets.html>`_.
+
 Quick Install
 -------------
 
 Install the package with pip::
 
-    $ pip install pyroomacoustics
+    pip install pyroomacoustics
 
-The requirements are::
+A [cookiecutter](https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim)
+is available that generates a working simulation script for a few 2D/3D
+scenarios::
 
-* numpy 
-* scipy 
-* matplotlib
+    # if necessary install cookiecutter
+    pip install cookiecutter
+
+    # create the simulation script
+    cookiecutter gh:fakufaku/cookiecutter-pyroomacoustics-sim
+
+    # run the newly created script
+    python <chosen_script_name>.py
+
+Dependencies
+------------
+
+The minimal dependencies are::
+
+    numpy 
+    scipy>=0.18.0
+    Cython
+
+where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
+The simulator itself has a pure Python counterpart, so that this requirement could
+be ignored, but is much slower.
+
+On top of that, some functionalities of the package depend on extra packages::
+
+    samplerate   # for resampling signals
+    matplotlib   # to create graphs and plots
+    sounddevice  # to play sound samples
+    mir_eval     # to evaluate performance of source separation in examples
+
+The ``requirements.txt`` file lists all packages necessary to run all of the
+scripts in the ``examples`` folder.
+
+This package is mainly developed under Python 3.5. We try as much as possible to keep
+things compatible with Python 2.7 and run tests and builds under both. However, the tests
+code coverage is far from 100% and it might happen that we break some things in Python 2.7 from
+time to time. We apologize in advance for that.
+
+Under Linux and Mac OS, the compiled accelerators require a valid compiler to
+be installed, typically this is GCC. When no compiler is present, the package
+will still install but default to the pure Python implementation which is much
+slower. On Windows, we provide pre-compiled Python Wheels for Python 3.5 and
+3.6.
 
 Example
 -------
+
+Here is a quick example of how to create and visual the response of a
+beamformer in a room.
 
 .. code-block:: python
 
@@ -140,6 +187,10 @@ Example
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
 
+A comprehensive set of examples covering most of the functionalities
+of the package can be found in the ``examples`` folder of the `github
+repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
+
 Authors
 -------
 
@@ -154,6 +205,10 @@ How to contribute
 
 If you would like to contribute, please clone the
 `repository <http://github.com/LCAV/pyroomacoustics>`_ and send a pull request.
+
+For more details, see our `CONTRIBUTING
+<http://pyroomacoustics.readthedocs.io/en/pypi-release/contributing.html>`_
+page.
 
 Academic publications
 ---------------------
@@ -176,7 +231,7 @@ License
 
 ::
 
-  Copyright (c) 2014-2017 EPFL-LCAV
+  Copyright (c) 2014-2018 EPFL-LCAV
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in

@@ -1,5 +1,5 @@
-pyroomacoustics.doa.waves module
-================================
+WAVES
+=====
 
 .. automodule:: pyroomacoustics.doa.waves
     :members:

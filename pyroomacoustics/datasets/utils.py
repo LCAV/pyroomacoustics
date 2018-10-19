@@ -1,5 +1,5 @@
 
-import os, tarfile, bz2, requests
+import os, tarfile, bz2
 
 try:
     from urllib.request import urlopen

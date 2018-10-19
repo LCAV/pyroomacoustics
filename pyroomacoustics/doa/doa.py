@@ -11,19 +11,6 @@ import math, sys
 import warnings
 from abc import ABCMeta, abstractmethod
 
-try:
-    import matplotlib as mpl
-
-    matplotlib_available = True
-except ImportError:
-    matplotlib_available = False
-
-if matplotlib_available:
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter
-
 from .grid import GridCircle, GridSphere
 
 tol = 1e-14
@@ -383,6 +370,13 @@ class DOA(object):
             'dirty image' in the case of FRI.
         """
 
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+
         if self.dim != 2:
             raise ValueError('This function only handles 2D problems.')
 
@@ -492,6 +486,9 @@ class DOA(object):
         ax.xaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle=':')
         ax.yaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle='--')
         ax.set_ylim([0, 1.05 * (base + height)])
+
+        plt.tight_layout()
+
         if save_fig:
             if file_name is None:
                 file_name = 'polar_recon_dirac.pdf'
