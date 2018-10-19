@@ -48,16 +48,21 @@ FMT_REQ_TIME = 'required_time.txt'
 RE_TS = re.compile('^(20[0-9]{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{2})\.(\d+)')
 
 def _parse(line):
-    m = RE_TS.match(line)
-    if m:
-        elem = [int(m.group(n)) for n in range(1,7)]  # year month day hour minute seconds
-        elem.append(int(float('0.' + m.group(7)) * 1e6))  # microseconds
+    #m = RE_TS.match(line)
+    sub = line.split()
+    if len(sub) >= 6 and sub[0] == '2017':
+        elem = [int(sub.pop(0)) for n in range(5)]
+        frac_sec = float(sub.pop(0))
+        elem.append(int(frac_sec))  # seconds
+        elem.append(int((frac_sec - elem[-1]) * 1e6))  # microseconds
+        #elem = [int(m.group(n)) for n in range(1,7)]  # year month day hour minute seconds
+        #elem.append(int(float('0.' + m.group(7)) * 1e6))  # microseconds
         ts = dt.datetime(*elem)
 
-        sub = line.split()
+        #sub = line.split()
 
-        for n in range(6):
-            sub.pop(0)
+        #for n in range(6):
+        #    sub.pop(0)
 
         if len(sub) == 0:
             return dict(ts=ts)
