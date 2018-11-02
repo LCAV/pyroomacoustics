@@ -14,7 +14,7 @@ f_contrasts = {
         'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
         }
 
-def seeriva(X,S,mu,n_iter=20):
+def sparseauxiva(X,S,mu,n_iter=20):
 
     n_frames, n_chan = X.shape
 
