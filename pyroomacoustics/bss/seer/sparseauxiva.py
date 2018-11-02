@@ -1,12 +1,12 @@
 '''
-Blind Source Separation using Tweaked Independent Vector Analysis with Auxiliary Function 
+Blind Source Separation using Tweaked Independent Vector Analysis with Auxiliary Function
 
 2018 (c) Yaron Dibner & Virgile Hernicot, MIT License
 '''
 import numpy as np
 
 from pyroomacoustics import stft, istft
-from .common import projection_back
+from pyroomacoustics.bss.common import projection_back
 
 # A few contrast functions
 f_contrasts = {
@@ -14,26 +14,25 @@ f_contrasts = {
         'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
         }
 
-def sparseauxiva(X,S,mu,n_iter=20):
+def sparseauxiva(X, S, mu, n_iter,return_filters=False):
 
-    n_frames, n_chan = X.shape
+    n_frames = X.shape[0]
 
-    n_freq = S.shape
-    
+    n_chan = X.shape[2]
+
+    k_freq = S.shape[0]
+    n_freq = X.shape[1]
+
     # default to determined case
-    if n_src is None:
-        n_src = X.shape[2]
-        
+
+    n_src = X.shape[2]
+
 
     # initialize the demixing matrices
-    if W0 is None:
-        W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
-    else:
-        W = W0.copy()
+    W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
 
-    if f_contrast is None:
-        f_contrast = f_contrasts['norm']
-        f_contrast_args = [1, 1]
+    f_contrast = f_contrasts['norm']
+    f_contrast_args = [1, 1]
 
     I = np.eye(n_src,n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
@@ -43,8 +42,8 @@ def sparseauxiva(X,S,mu,n_iter=20):
 
     # Compute the demixed output
     def demix(Y, X, W):
-        for f in range(n_freq):
-            Y[:,f,:] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
+        for f in range(k_freq):
+            Y[:,S[f],:] = np.dot(X[:,S[f],:], np.conj(W[S[f],:,:]))
 
     for epoch in range(n_iter):
 
@@ -58,20 +57,20 @@ def sparseauxiva(X,S,mu,n_iter=20):
         G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
         # Compute Auxiliary Variable
-        for f in range(n_freq):
+        for f in range(k_freq):
             for s in range(n_src):
-                V[f,s,:,:] =  (np.dot(G_r[None,:,s] * X[:,f,:].T, np.conj(X[:,f,:]))) / X.shape[0]
+                V[S[f],s,:,:] =  (np.dot(G_r[None,:,s] * X[:,S[f],:].T, np.conj(X[:,S[f],:]))) / X.shape[0]
 
         # Update now the demixing matrix
-        for f in range(n_freq):
+        for f in range(k_freq):
             for s in range(n_src):
-                WV = np.dot(np.conj(W[f,:,:].T), V[f,s,:,:])
-                W[f,:,s] = np.linalg.solve(WV, I[:,s])
-                W[f,:,s] /= np.sqrt(np.inner(np.conj(W[f,:,s]), np.dot(V[f,s,:,:], W[f,:,s])))
+                WV = np.dot(np.conj(W[S[f],:,:].T), V[S[f],s,:,:])
+                W[S[f],:,s] = np.linalg.solve(WV, I[:,s])
+                W[S[f],:,s] /= np.sqrt(np.inner(np.conj(W[S[f],:,s]), np.dot(V[S[f],s,:,:], W[S[f],:,s])))
+
+    # Here comes Lassoooooooooo
 
     demix(Y, X, W)
-    
-    
 
     if return_filters:
         return Y, W
