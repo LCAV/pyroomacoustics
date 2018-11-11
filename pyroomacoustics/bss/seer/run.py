@@ -5,6 +5,7 @@ from scipy.signal import fftconvolve
 import IPython
 import pyroomacoustics as pra
 from sparseauxiva import sparseauxiva
+import sounddevice as sd
 
 
 # Blind Source Separation techniques such as Independent Vector Analysis (IVA)
@@ -92,3 +93,10 @@ S = np.sort(S)
 # Run SparseAuxIva
 
 Y = sparseauxiva(X, S, 0, 20)
+
+# run iSTFT
+y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
+
+# Compare SIR and SDR with our reference signal
+sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+sd.play(y[0], fs)
