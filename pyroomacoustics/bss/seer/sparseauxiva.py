@@ -8,6 +8,7 @@ import numpy as np
 from pyroomacoustics import stft, istft
 from pyroomacoustics.bss.common import projection_back
 from lasso import lasso
+from demix import *
 
 # A few contrast functions
 f_contrasts = {
@@ -40,14 +41,10 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
-    # Compute the demixed output
-    def demix(Y, X, W):
-        for f in range(k_freq):
-            Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
     for epoch in range(n_iter):
 
-        demix(Y, X, W)
+        demix(Y, X,S, W)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -70,7 +67,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
 
     lasso(W, S)
 
-    demix(Y, X, W)
+    demix(Y, X, np.array(range(n_freq)) ,W)
 
     if return_filters:
         return Y, W
