@@ -39,14 +39,10 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
-    # Compute the demixed output
-    def demix(Y, X, W):
-        for f in range(k_freq):
-            Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
     for epoch in range(n_iter):
 
-        demix(Y, X, W)
+        demix(Y, X, W, k_freq, True)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -68,13 +64,13 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
                 W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
 
     # Here comes Lassoooooooooo
-    Z = np.zeros((n_chan, k_freq), dtype=W.dtype)
+    Z = np.zeros((n_src, k_freq), dtype=W.dtype)
     Hrtf = np.zeros((n_chan, n_src), dtype=W.dtype)
-    for i in range(n_chan):
+    for i in range(n_src):
         Z[i, :] = np.array([W[S[f], i, 0] / W[S[f], i, 1] for f in range(k_freq)]).conj().T
         #Hrtf[:, i] = np.argmin(np.linalg.norm(Z[i,:] - ))
 
-    demix(Y, X, W)
+    demix(Y, X, W, n_freq)
 
     if return_filters:
         return Y, W
