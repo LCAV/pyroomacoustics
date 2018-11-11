@@ -7,6 +7,7 @@ import numpy as np
 
 from pyroomacoustics import stft, istft
 from pyroomacoustics.bss.common import projection_back
+from lasso import lasso
 
 # A few contrast functions
 f_contrasts = {
@@ -67,12 +68,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
                 W[S[f], :, s] = np.linalg.solve(WV, I[:, s])
                 W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
 
-    # Here comes Lassoooooooooo
-    Z = np.zeros((n_chan, k_freq), dtype=W.dtype)
-    Hrtf = np.zeros((n_chan, n_src), dtype=W.dtype)
-    for i in range(n_chan):
-        Z[i, :] = np.array([W[S[f], i, 0] / W[S[f], i, 1] for f in range(k_freq)]).conj().T
-        #Hrtf[:, i] = np.argmin(np.linalg.norm(Z[i,:] - ))
+    lasso(W, S)
 
     demix(Y, X, W)
 

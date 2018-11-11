@@ -9,34 +9,34 @@ from sparseauxiva import sparseauxiva
 # Blind Source Separation techniques such as Independent Vector Analysis (IVA)
 # using an Auxiliary function are implemented in ´pyroomacoustics´. IVA based
 # algorithms work when the number of microphones is the same as the number of
-#sources, i.e., the determinant case. Through this example, we will deal with
-#the case of 2 sources and 2 microphones.
+# sources, i.e., the determinant case. Through this example, we will deal with
+# the case of 2 sources and 2 microphones.
 
 # First, open and concatanate wav files from the CMU dataset.
 # concatanate audio samples to make them look long enough
 wav_files = [
-        ['../../../examples/input_samples/cmu_arctic_us_axb_a0004.wav',
-            '../../../examples/input_samples/cmu_arctic_us_axb_a0005.wav',
-            '../../../examples/input_samples/cmu_arctic_us_axb_a0006.wav',],
-        ['../../../examples/input_samples/cmu_arctic_us_aew_a0001.wav',
-            '../../../examples/input_samples/cmu_arctic_us_aew_a0002.wav',
-            '../../../examples/input_samples/cmu_arctic_us_aew_a0003.wav',]
-        ]
+    ['../../../examples/input_samples/cmu_arctic_us_axb_a0004.wav',
+     '../../../examples/input_samples/cmu_arctic_us_axb_a0005.wav',
+     '../../../examples/input_samples/cmu_arctic_us_axb_a0006.wav', ],
+    ['../../../examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+     '../../../examples/input_samples/cmu_arctic_us_aew_a0002.wav',
+     '../../../examples/input_samples/cmu_arctic_us_aew_a0003.wav', ]
+]
 
 fs = 16000
 
-signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32)
+signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32)
 
-        for f in source_files])
+                           for f in source_files])
 
-for source_files in wav_files ]
+           for source_files in wav_files]
 
 # Define an anechoic room envrionment, as well as the microphone array and source locations.
 
 # Room 4m by 6m
 room_dim = [8, 9]
 # source locations and delays
-locations = [[2.5,3], [2.5, 6]]
+locations = [[2.5, 3], [2.5, 6]]
 delays = [1., 0.]
 # create an anechoic room with sources and mics
 room = pra.ShoeBox(room_dim, fs=16000, max_order=15, absorption=0.35, sigma2_awgn=1e-8)
@@ -75,7 +75,7 @@ mics_signals = np.sum(separate_recordings, axis=0)
 L = 2048
 
 # Observation vector in the STFT domain
-X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L//2, zp_back=L//2) for ch in mics_signals])
+X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
 X = np.moveaxis(X, 0, 2)
 
 # Reference signal to calculate performance of BSS
@@ -83,11 +83,11 @@ X = np.moveaxis(X, 0, 2)
 ref = np.moveaxis(separate_recordings, 1, 2)
 SDR, SIR = [], []
 ratio = 0.8
-average = np.abs(np.mean(np.mean(X, axis=2),axis=0))
-k = np.int_(average.shape[0]*ratio)
+average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
+k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
 S = np.sort(S)
 
 # Run SparseAuxIva
 
-Y = sparseauxiva(X,S,0,20)
+Y = sparseauxiva(X, S, 0, 20)
