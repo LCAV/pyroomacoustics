@@ -279,6 +279,7 @@ class Room(object):
             corners,
             absorption=0.,
             fs=8000,
+            blop=0,
             t0=0.,
             max_order=1,
             sigma2_awgn=None,
@@ -293,6 +294,8 @@ class Room(object):
         :returns: (Room) instance of a 2D room
         '''
         
+        freq_absorption_table_size = 6
+        
         corners = np.array(corners)
         if (corners.shape[0] != 2 or corners.shape[1] < 3):
             raise ValueError('Arg corners must be more than two 2D points.')
@@ -304,11 +307,19 @@ class Room(object):
         cls.dim = corners.shape[0] 
             
         absorption = np.array(absorption, dtype='float64')
-        if (absorption.ndim == 0):
-            absorption = absorption * np.ones(corners.shape[1])
-        elif (absorption.ndim >= 1 and corners.shape[1] != len(absorption)):
-            raise ValueError('Arg absorption must be the same size as corners or must be a single value.')
         
+        if (absorption.ndim == 0):
+            absorption = absorption * np.ones((corners.shape[1], freq_absorption_table_size))
+            
+        elif (absorption.ndim == 1  and corners.shape[1] == len(absorption)):
+              absorption = np.array([absorption]).T * np.ones(freq_absorption_table_size)
+        
+        #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
+        elif (absorption.ndim != 2 \
+              or corners.shape[1] != absorption.shape[0] \
+              or absorption.shape[1] != freq_absorption_table_size):
+            raise ValueError('Arg absorption must be either a single value, a single value per corner, or a list per corner') 
+
         walls = []
         for i in range(corners.shape[1]):
             walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
@@ -377,12 +388,21 @@ class Room(object):
                 ]).T
             walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
 
+        freq_absorption_table_size = 6
         absorption = np.array(absorption)
+        
         if absorption.ndim == 0:
-            absorption = absorption * np.ones(2)
-        elif absorption.ndim == 1 and absorption.shape[0] != 2:
+            absorption = absorption * np.ones((2, freq_absorption_table_size))
+            
+        elif absorption.ndim == 1 and len(absorption) == 2:
+            absorption = np.array([absorption]).T * np.ones(freq_absorption_table_size)
+            
+        #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
+        elif (absorption.ndim != 2 \
+              or 2 != absorption.shape[0] \
+              or absorption.shape[1] != freq_absorption_table_size):
             raise ValueError("The size of the absorption array must be 2 for extrude, for the floor and ceiling")
-
+                
         floor_corners = np.pad(floor_corners, ((0, 1),(0,0)), mode='constant')
         ceiling_corners = (floor_corners.T + height*v_vec).T
 
@@ -693,7 +713,6 @@ class Room(object):
             # Fall back to pure python if requested or C module unavailable
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
-
                 if self.max_order > 0:
 
                     # generate first order images

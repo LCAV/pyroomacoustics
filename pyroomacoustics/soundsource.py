@@ -236,10 +236,11 @@ class SoundSource(object):
             # fallback to pure Python implemenation
             from .utilities import fractional_delay
     
+            #for each wall
             for i in range(time.shape[0]):
                 if visibility[i] == 1:
-                    time_ip = int(np.round(Fs * time[i]))
-                    time_fp = (Fs * time[i]) - time_ip
+                    time_ip = int(np.round(Fs * time[i])) #integer part
+                    time_fp = (Fs * time[i]) - time_ip    #fractional part
                     ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[i]*fractional_delay(time_fp)
 
         return ir
