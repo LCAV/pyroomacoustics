@@ -7,6 +7,7 @@ import numpy as np
 
 from pyroomacoustics import stft, istft
 from pyroomacoustics.bss.common import projection_back
+from demix import *
 
 # A few contrast functions
 f_contrasts = {
@@ -42,7 +43,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
 
     for epoch in range(n_iter):
 
-        demix(Y, X, W, k_freq, True)
+        demix(Y, X,S, W)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -70,7 +71,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
         Z[i, :] = np.array([W[S[f], i, 0] / W[S[f], i, 1] for f in range(k_freq)]).conj().T
         #Hrtf[:, i] = np.argmin(np.linalg.norm(Z[i,:] - ))
 
-    demix(Y, X, W, n_freq)
+    demix(Y, X, np.array(range(n_freq)) ,W)
 
     if return_filters:
         return Y, W
