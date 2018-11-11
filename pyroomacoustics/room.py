@@ -693,7 +693,7 @@ class Room(object):
         images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
 
         # collect absorption factors of reflecting walls
-        damping = (1 - self.absorption[ip > 0])
+        damping = (1 - self.absorption[ip > 0][:,0])
 
         # collect the index of the wall corresponding to the new image
         wall_indices = np.arange(len(self.walls))[ip > 0]
@@ -701,7 +701,7 @@ class Room(object):
         return images, damping, wall_indices
 
 
-    def image_source_model(self, use_libroom=True):
+    def image_source_model(self, use_libroom=False):
 
         self.visibility = []
 
@@ -713,6 +713,7 @@ class Room(object):
             # Fall back to pure python if requested or C module unavailable
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
+                print("worked")
                 if self.max_order > 0:
 
                     # generate first order images
@@ -721,7 +722,7 @@ class Room(object):
                     damping = [d]
                     generators = [-np.ones(i.shape[1])]
                     wall_indices = [w]
-
+                    print("1: "+str(damping))
                     # generate all higher order images up to max_order
                     o = 1
                     while o < self.max_order:
@@ -733,7 +734,10 @@ class Room(object):
                         for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                             i, d, w = self.first_order_images(si)
                             img = np.concatenate((img, i), axis=1)
+                            print(str(dmp))
+                            print(str(sd))
                             dmp = np.concatenate((dmp, d * sd))
+                            print(str(o)+": "+str(dmp))
                             gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
                             wal = np.concatenate((wal, w))
 
