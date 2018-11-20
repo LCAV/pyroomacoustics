@@ -16,18 +16,13 @@ f_contrasts = {
     'cosh': {'f': (lambda r, c, m: m * np.log(np.cosh(c * r))), 'df': (lambda r, c, m: c * m * np.tanh(c * r))}
 }
 
-
 def sparseauxiva(X, S, mu, n_iter, return_filters=False):
-    n_frames = X.shape[0]
-
-    n_chan = X.shape[2]
+    n_frames, n_freq, n_chan = X.shape
 
     k_freq = S.shape[0]
-    n_freq = X.shape[1]
 
     # default to determined case
-
-    n_src = X.shape[2]
+    n_src = n_chan
 
     # initialize the demixing matrices
     W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
@@ -44,7 +39,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
 
     for epoch in range(n_iter):
 
-        demix(Y, X,S, W)
+        demix(Y, X, S, W)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -65,10 +60,11 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
                 W[S[f], :, s] = np.linalg.solve(WV, I[:, s])
                 W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
 
-    lasso(W, S)
+    lasso(W, S, mu)
 
     demix(Y, X, np.array(range(n_freq)) ,W)
 
+    # Note: Remember applying projection_back in the end (in ../bss/.common.py) to solve the scale ambiguity
     if return_filters:
         return Y, W
     else:

@@ -1,8 +1,8 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
-import IPython
 import pyroomacoustics as pra
 from sparseauxiva import sparseauxiva
 import sounddevice as sd
@@ -89,10 +89,11 @@ average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
 k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
 S = np.sort(S)
+mu = 0
+n_iter = 20
 
 # Run SparseAuxIva
-
-Y = sparseauxiva(X, S, 0, 20)
+Y = sparseauxiva(X, S, mu, n_iter)
 
 # run iSTFT
 y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
