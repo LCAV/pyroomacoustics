@@ -180,10 +180,11 @@ import ctypes
 from . import beamforming as bf
 from . import geometry as geom
 from .soundsource import SoundSource
-from .wall import Wall
+#from .wall import Wall
 from .geometry import area, ccw3p
 from .parameters import constants, eps
 
+from . import libroom
 from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):

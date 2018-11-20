@@ -1,6 +1,7 @@
 /*
  * This file contains the bindings for the libroom ISM model
  */
+#include <string>
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <Eigen/Dense>
@@ -13,17 +14,38 @@ namespace py = pybind11;
 
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
-PYBIND11_MODULE(_libroom, m) {
+Room *create_room(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf &_microphones)
+{
+  /*
+   * This is a factory method to isolate the Room class from pybind code
+   */
+  Room *room = new Room();
+
+  room->microphones = _microphones;
+
+  for (auto wall : _walls)
+    room->walls.push_back(wall.cast<Wall>());
+
+  for (auto owall : _obstructing_walls)
+    room->obstructing_walls.push_back(owall.cast<int>());
+
+  room->dim = room->walls[0].dim;
+
+  return room;
+}
+
+PYBIND11_MODULE(libroom, m) {
     m.doc() = "Libroom room simulation extension plugin"; // optional module docstring
 
     // The Room class
     py::class_<Room>(m, "Room")
-      .def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
+      //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
+      .def(py::init(&create_room))
       .def("image_source_model", &Room::image_source_model)
+      .def("image_source_shoebox", &Room::image_source_shoebox)
       .def("get_wall", &Room::get_wall)
       .def_readonly("sources", &Room::sources)
       .def_readonly("attenuations", &Room::attenuations)
-      .def_readonly("parents", &Room::parents)
       .def_readonly("gen_walls", &Room::gen_walls)
       .def_readonly("visible_mics", &Room::visible_mics)
       .def_readonly("walls", &Room::walls)
@@ -32,20 +54,31 @@ PYBIND11_MODULE(_libroom, m) {
       ;
 
     // The Wall class
-    py::class_<Wall>(m, "Wall")
-        .def(py::init<const Eigen::MatrixXf &, float>())
+    py::class_<Wall> wall_cls(m, "Wall");
+
+    wall_cls
+        .def(py::init<const Eigen::MatrixXf &, float, const std::string &>(),
+            py::arg("corners"), py::arg("absorption"), py::arg("name") = "")
         .def("area", &Wall::area)
         .def("intersection", &Wall::intersection)
         .def("side", &Wall::side)
         .def("reflect", &Wall::reflect)
         .def_readonly("dim", &Wall::dim)
         .def_readwrite("absorption", &Wall::absorption)
+        .def_readwrite("name", &Wall::name)
         .def_readonly("corners", &Wall::corners)
         .def_readonly("origin", &Wall::origin)
         .def_readonly("normal", &Wall::normal)
         .def_readonly("basis", &Wall::basis)
         .def_readonly("flat_corners", &Wall::flat_corners)
         ;
+
+    py::enum_<Wall::Isect>(wall_cls, "Isect")
+      .value("NONE", Wall::Isect::NONE)
+      .value("VALID", Wall::Isect::VALID)
+      .value("ENDPT", Wall::Isect::ENDPT)
+      .value("BNDRY", Wall::Isect::BNDRY)
+      .export_values();
 
     // The different wall intersection cases
     m.attr("WALL_ISECT_NONE") = WALL_ISECT_NONE;

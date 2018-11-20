@@ -2,11 +2,9 @@
 #define __ROOM_H__
 
 #include <vector>
-#include <pybind11/pybind11.h>  // needed for python list type
+#include <stack>
 #include <Eigen/Dense>
 #include "wall.hpp"
-
-namespace py = pybind11;
 
 typedef Eigen::Matrix<int, Eigen::Dynamic, 1> VectorXi;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
@@ -22,7 +20,6 @@ struct ImageSource
   float attenuation;
   int order;
   int gen_wall;
-  int parent;
   ImageSource *parent;
   VectorXb visible_mics;
 };
@@ -45,7 +42,6 @@ class Room
 
     // This is a list of image sources
     Eigen::MatrixXf sources;
-    VectorXi parents;
     VectorXi gen_walls;
     VectorXi orders;
     Eigen::VectorXf attenuations;
@@ -55,27 +51,29 @@ class Room
     MatrixXb visible_mics;
 
     // Constructor
-    Room(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf _microphones);
+    Room() {}  // default
 
     Wall &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
-    int image_source_model(const Eigen::VectorXf source_location, int max_order);
+    int image_source_model(const Eigen::VectorXf &source_location, int max_order);
+
+    // A specialized method for the shoebox room case
+    int image_source_shoebox(
+        const Eigen::VectorXf &source,
+        const Eigen::VectorXf &room_size,
+        const Eigen::VectorXf &absorption,
+        int max_order);
 
   private:
     // We need a stack to store the image sources during the algorithm
-    std::vector<ImageSource> visible_sources;
+    std::stack<ImageSource> visible_sources;
     
     // Image source model internal methods
-    void image_sources_dfs(int image_id, int max_order);
-    bool is_visible_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id);
-    bool is_obstructed_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id);
+    void image_sources_dfs(ImageSource &is, int max_order);
+    bool is_visible_dfs(const Eigen::VectorXf &p, ImageSource &is);
+    bool is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is);
     int fill_sources();
-
-    /* visibility and obstruction routines */
-    void check_visibility_all();
-    bool is_visible(const Eigen::Ref<Eigen::VectorXf> p, int image_id);
-    bool is_obstructed(const Eigen::Ref<Eigen::VectorXf> p, int image_id);
 
 };
 

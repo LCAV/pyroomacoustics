@@ -1,6 +1,7 @@
 #ifndef __CWALL_H__
 #define __CWALL_H__
 
+#include <string>
 #include <Eigen/Dense>
 
 extern float libroom_eps;
@@ -14,9 +15,16 @@ extern float libroom_eps;
 class Wall
 {
   public:
+    enum Isect {  // The different cases for intersections
+      NONE = -1,  // - There is no intersection
+      VALID = 0,  // - There is a valid intersection
+      ENDPT = 1,  // - The intersection is on the endpoint of the segment
+      BNDRY = 2   // - The intersection is on the boundary of the wall
+    };
 
     int dim;
     float absorption;
+    std::string name;
     
     Eigen::VectorXf  normal;
     Eigen::MatrixXf corners;
@@ -27,20 +35,22 @@ class Wall
     Eigen::MatrixXf flat_corners;
 
     // Constructor
-    Wall(const Eigen::MatrixXf &_corners, float _absorption);
+    Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string &_name);
+    Wall(const Eigen::MatrixXf &_corners, float _absorption)
+    : Wall(_corners, _absorption, "") {}
 
     // methods
     float area();  // compute the area of the wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall
-        const Eigen::Ref<Eigen::VectorXf> p1, const Eigen::Ref<Eigen::VectorXf> p2,
+        const Eigen::VectorXf &p1, const Eigen::VectorXf &p2,
         Eigen::Ref<Eigen::VectorXf> intersection);
 
-    int reflect(const Eigen::Ref<Eigen::VectorXf> p, Eigen::Ref<Eigen::VectorXf> p_reflected);
-    int side(const Eigen::Ref<Eigen::VectorXf> p);
+    int reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected);
+    int side(const Eigen::VectorXf &p);
 
   private:
     int _intersection_segment_3d(  // intersection routine specialized for 3D
-        const Eigen::Ref<Eigen::VectorXf> a1, const Eigen::Ref<Eigen::VectorXf> a2,
+        const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
         Eigen::Ref<Eigen::VectorXf> intersection);
 
 }; 

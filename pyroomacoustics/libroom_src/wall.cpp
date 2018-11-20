@@ -3,8 +3,8 @@
 #include <iostream>
 #include <cmath>
 
-Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption)
-  : absorption(_absorption), corners(_corners)
+Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string &_name)
+  : absorption(_absorption), name(_name), corners(_corners)
 {
   // corners should be D x N for N corners in D dimensions
   dim = corners.rows();  // assign the attribute
@@ -93,7 +93,7 @@ float Wall::area()
 }
 
 int Wall::intersection(
-    const Eigen::Ref<Eigen::VectorXf> p1, const Eigen::Ref<Eigen::VectorXf> p2,
+    const Eigen::VectorXf &p1, const Eigen::VectorXf &p2,
     Eigen::Ref<Eigen::VectorXf> intersection)
 {
   if (p1.size() != dim || p2.size() != dim)
@@ -117,7 +117,7 @@ int Wall::intersection(
 }
 
 
-int Wall::reflect(const Eigen::Ref<Eigen::VectorXf> p, Eigen::Ref<Eigen::VectorXf> p_reflected)
+int Wall::reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected)
 {
   /*
    * Reflects point p across the wall 
@@ -148,7 +148,7 @@ int Wall::reflect(const Eigen::Ref<Eigen::VectorXf> p, Eigen::Ref<Eigen::VectorX
 
 
 /* checks on which side of a wall a point is */
-int Wall::side(const Eigen::Ref<Eigen::VectorXf> p)
+int Wall::side(const Eigen::VectorXf &p)
 {
   // Essentially, returns the sign of the inner product with the normal vector
   float ip = (p - origin).adjoint() * normal;
@@ -163,7 +163,7 @@ int Wall::side(const Eigen::Ref<Eigen::VectorXf> p)
 
 
 int Wall::_intersection_segment_3d(  // intersection routine specialized for 3D
-    const Eigen::Ref<Eigen::VectorXf> a1, const Eigen::Ref<Eigen::VectorXf> a2,
+    const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
     Eigen::Ref<Eigen::VectorXf> intersection)
 {
   /*

@@ -1,51 +1,28 @@
 #include <iostream>
 #include "room.hpp"
 
-Room::Room(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf _microphones)
-  : microphones(_microphones)
-{
-  for (auto wall : _walls)
-    walls.push_back(wall.cast<Wall>());
-
-  for (auto owall : _obstructing_walls)
-    obstructing_walls.push_back(owall.cast<int>());
-
-  dim = walls[0].dim;
-}
-
-void Room::check_visibility_all()
-{
-  /*
-   * Just a big loop checking all sources and mics
-   * at some point, parallelize with pthreads
-   */
-  visible_mics.resize(microphones.cols(), sources.cols());
-
-  for (int m = 0 ; m < microphones.cols() ; m++)
-    for (int s = 0 ; s < sources.cols() ; s++)
-      visible_mics.coeffRef(m, s) = is_visible(microphones.col(m), s);
-}
-
-int Room::image_source_model(const Eigen::VectorXf source_location, int max_order)
+int Room::image_source_model(const Eigen::VectorXf &source_location, int max_order)
 {
   /*
    * This is the top-level method to run the image source model
    */
-  visible_sources.clear();  // make sure the list is empty
+
+  // make sure the list is empty
+  while (visible_sources.size() > 0)
+    visible_sources.pop();
 
   // add the original (real) source
-  visible_sources.push_back(ImageSource());
-  ImageSource &real_source = visible_sources[0];
+  ImageSource real_source;
   real_source.loc.resize(dim);
 
   real_source.loc = source_location;
   real_source.attenuation = 1.;
   real_source.order = 0;
   real_source.gen_wall = -1;
-  real_source.parent = -1;
+  real_source.parent = NULL;
 
   // Run the image source model algorithm
-  image_sources_dfs(0, max_order);
+  image_sources_dfs(real_source, max_order);
 
   // fill the sources array in room and return
   return fill_sources();
@@ -58,44 +35,51 @@ int Room::fill_sources()
   // Create linear arrays to store the image sources
   if (n_sources > 0)
   {
+    // resize all the arrays
     sources.resize(dim, n_sources);
-    parents.resize(n_sources);
     orders.resize(n_sources);
     gen_walls.resize(n_sources);
     attenuations.resize(n_sources);
     visible_mics.resize(microphones.cols(), n_sources);
 
-    for (int i = 0 ; i < n_sources ; i++)
+    for (int i = n_sources - 1 ; i >= 0 ; i--)
     {
-      sources.col(i) = visible_sources[i].loc;
-      parents.coeffRef(i) = visible_sources[i].parent;
-      gen_walls.coeffRef(i) = visible_sources[i].gen_wall;
-      orders.coeffRef(i) = visible_sources[i].order;
-      attenuations.coeffRef(i) = visible_sources[i].attenuation;
-      visible_mics.col(i) = visible_sources[i].visible_mics;
+      ImageSource &top = visible_sources.top();  // sample top of stack
+
+      // fill the arrays
+      sources.col(i) = top.loc;
+      gen_walls.coeffRef(i) = top.gen_wall;
+      orders.coeffRef(i) = top.order;
+      attenuations.coeffRef(i) = top.attenuation;
+      visible_mics.col(i) = top.visible_mics;
+
+      visible_sources.pop();  // unstack
     }
   }
 
   return 0;
 }
 
-void Room::image_sources_dfs(int image_id, int max_order)
+void Room::image_sources_dfs(ImageSource &is, int max_order)
 {
   /*
    * This function runs a depth first search (DFS) on the tree of image sources
    */
 
-  // Check the initial size of the IS stack
-  size_t size_before = visible_sources.size();
+  ImageSource new_is;
+  new_is.loc.resize(dim);
 
   // Check the visibility of the source from the different microphones
-  int any_visible = 0;
-  visible_sources[image_id].visible_mics.resize(microphones.cols());
+  bool any_visible = false;
+  is.visible_mics.resize(microphones.cols());
   for (int mic = 0 ; mic < microphones.cols() ; mic++)
   {
-    visible_sources[image_id].visible_mics.coeffRef(mic) = is_visible_dfs(microphones.col(mic), image_id);
-    any_visible = any_visible || visible_sources[image_id].visible_mics.coeff(mic);
+    is.visible_mics.coeffRef(mic) = is_visible_dfs(microphones.col(mic), is);
+    any_visible = any_visible || is.visible_mics.coeff(mic);
   }
+
+  if (any_visible)
+    visible_sources.push(is);  // this should push a copy onto the stack
   
   // If we reached maximal depth, stop
   if (max_order == 0)
@@ -104,34 +88,24 @@ void Room::image_sources_dfs(int image_id, int max_order)
   // Then, check all the reflections across the walls
   for (size_t wi=0 ;  wi < walls.size() ; wi++)
   {
-    visible_sources.push_back(ImageSource());  // add a new image source
-    ImageSource &new_is = visible_sources.back();  // ref to newly added image source
-    new_is.loc.resize(dim);
+    int dir = walls[wi].reflect(is.loc, new_is.loc);  // the reflected location
 
-    int dir = walls[wi].reflect(visible_sources[image_id].loc, new_is.loc);  // the reflected location
     // We only check valid reflections (normals should point outward from the room
     if (dir <= 0)
-    {
-      visible_sources.pop_back();  // remove newly created source
       continue;
-    }
 
     // The reflection is valid, fill in the image source attributes
-    new_is.attenuation = visible_sources[image_id].attenuation * (1. - walls[wi].absorption);
-    new_is.order = visible_sources[image_id].order + 1;
+    new_is.attenuation = is.attenuation * (1. - walls[wi].absorption);
+    new_is.order = is.order + 1;
     new_is.gen_wall = wi;
-    new_is.parent = image_id;
+    new_is.parent = &is;
 
     // Run the DFS recursion (on the last element in the array, the one we just added)
-    image_sources_dfs(visible_sources.size() - 1, max_order - 1);
+    image_sources_dfs(new_is, max_order - 1);
   }
-
-  if (visible_sources.size() == size_before)
-    visible_sources.pop_back();
-
 }
 
-bool Room::is_visible_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
+bool Room::is_visible_dfs(const Eigen::VectorXf &p, ImageSource &is)
 {
   /*
      Returns true if the given sound source (with image source id) is visible from point p.
@@ -145,25 +119,25 @@ bool Room::is_visible_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
      True (1) :  visible
      */
 
-  if (is_obstructed_dfs(p, image_id))
+  if (is_obstructed_dfs(p, is))
     return false;
 
-  if (image_id > 0)
+  if (is.parent != NULL)
   {
     Eigen::VectorXf intersection;
     intersection.resize(dim);
 
     // get generating wall id
-    int wall_id = visible_sources[image_id].gen_wall;
+    int wall_id = is.gen_wall;
 
     // check if the generating wall is intersected
-    int ret = walls[wall_id].intersection(p, visible_sources[image_id].loc, intersection);
+    int ret = walls[wall_id].intersection(p, is.loc, intersection);
 
     // The source is not visible if the ray does not intersect
     // the generating wall
     if (ret >= 0)
       // Check visibility of intersection point from parent source
-      return is_visible_dfs(intersection, visible_sources[image_id].parent);
+      return is_visible_dfs(intersection, *(is.parent));
     else
       return false;
   }
@@ -172,7 +146,7 @@ bool Room::is_visible_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
   return true;
 }
 
-bool Room::is_obstructed_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
+bool Room::is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is)
 {
   /*
      Checks if there is a wall obstructing the line of sight going from a source to a point.
@@ -185,7 +159,7 @@ bool Room::is_obstructed_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
      False (0) : not obstructed
      True (1) :  obstructed
      */
-  int gen_wall_id = visible_sources[image_id].gen_wall;
+  int gen_wall_id = is.gen_wall;
 
   // Check candidate walls for obstructions
   for (size_t ow = 0 ; ow < obstructing_walls.size() ; ow++)
@@ -197,18 +171,18 @@ bool Room::is_obstructed_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
     {
       Eigen::VectorXf intersection;
       intersection.resize(dim);
-      int ret = walls[wall_id].intersection(visible_sources[image_id].loc, p, intersection);
+      int ret = walls[wall_id].intersection(is.loc, p, intersection);
 
       // There is an intersection and it is distinct from segment endpoints
-      if (ret == WALL_ISECT_VALID || ret == WALL_ISECT_VALID_BNDRY)
+      if (ret == Wall::Isect::VALID || ret == Wall::Isect::BNDRY)
       {
-        if (visible_sources[image_id].parent != -1)
+        if (is.parent != NULL)
         {
           // Test if the intersection point and the image are on
           // opposite sides of the generating wall 
           // We ignore the obstruction if it is inside the
           // generating wall (it is what happens in a corner)
-          int img_side = walls[wall_id].side(visible_sources[image_id].loc);
+          int img_side = walls[wall_id].side(is.loc);
           int intersection_side = walls[wall_id].side(intersection);
 
           if (img_side != intersection_side && intersection_side != 0)
@@ -223,95 +197,81 @@ bool Room::is_obstructed_dfs(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
   return false;
 }
 
-bool Room::is_visible(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
+int Room::image_source_shoebox(
+    const Eigen::VectorXf &source,
+    const Eigen::VectorXf &room_size,
+    const Eigen::VectorXf &absorption,
+    int max_order
+    )
 {
-  /*
-     Returns true if the given sound source (with image source id) is visible from point p.
+  // precompute powers of the absorption coefficients
+  std::vector<float> transmission_pwr((max_order + 1) * 2 * dim);
+  for (int d = 0 ; d < 2 * dim ; d++)
+    transmission_pwr[d] = 1.;
+  for (int i = 1 ; i <= max_order ; i++)
+    for (int d = 0 ; d < 2 * dim ; d++)
+      transmission_pwr[i * 2 * dim + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*dim + d];
 
-     room - the structure that contains all the sources and stuff
-     p (np.array size 2 or 3) coordinates of the point where we check visibility
-     imageId (int) id of the image within the SoundSource object
-     
-     Returns
-     False (0) : not visible
-     True (1) :  visible
-     */
+  // make sure the list is empty
+  while (visible_sources.size() > 0)
+    visible_sources.pop();
+  
+  // L1 ball of room images
+  int point[3] = {0, 0, 0};
 
-  if (is_obstructed(p, image_id))
-    return false;
+  // Take 2D case into account
+  int z_max = max_order;
+  if (dim == 2)
+    z_max = 0;
 
-  if (orders[image_id] > 0)
+  // Walk on all the points of the discrete L! ball of radius max_order
+  for (point[2] = -z_max ; point[2] <= z_max ; point[2]++)
   {
-    Eigen::VectorXf intersection;
-    intersection.resize(p.size());
-
-    // get generating wall id
-    int wall_id = gen_walls[image_id];
-
-    // check if the generating wall is intersected
-    int ret = walls[wall_id].intersection(p, sources.col(image_id), intersection);
-
-    // The source is not visible if the ray does not intersect
-    // the generating wall
-    if (ret >= 0)
-      // Check visibility of intersection point from parent source
-      return is_visible(intersection, parents[image_id]);
-    else
-      return false;
-  }
-
-  // If we get here this is the original, unobstructed, source
-  return true;
-}
-
-bool Room::is_obstructed(const Eigen::Ref<Eigen::VectorXf> p, int image_id)
-{
-  /*
-     Checks if there is a wall obstructing the line of sight going from a source to a point.
-
-     room - the structure that contains all the sources and stuff
-     p (np.array size 2 or 3) coordinates of the point where we check obstruction
-     imageId (int) id of the image within the SoundSource object
-
-     Returns (bool)
-     False (0) : not obstructed
-     True (1) :  obstructed
-     */
-  int gen_wall_id = gen_walls[image_id];
-
-  // Check candidate walls for obstructions
-  for (size_t ow = 0 ; ow < obstructing_walls.size() ; ow++)
-  {
-    // reference to the current possibly obstructing wall
-    int wall_id = obstructing_walls[ow];
-
-    // generating wall can't be obstructive
-    if (wall_id != gen_wall_id)
+    int y_max = max_order - abs(point[2]);
+    for (point[1] = -y_max ; point[1] <= y_max ; point[1]++)
     {
-      Eigen::VectorXf intersection;
-      intersection.resize(p.size());
-      int ret = walls[wall_id].intersection(sources.col(image_id), p, intersection);
+      int x_max = y_max - abs(point[1]);
+      if (x_max < 0) x_max = 0;
 
-      // There is an intersection and it is distinct from segment endpoints
-      if (ret == WALL_ISECT_VALID || ret == WALL_ISECT_VALID_BNDRY)
+      for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
-        if (orders[image_id] > 0)
-        {
-          // Test if the intersection point and the image are on
-          // opposite sides of the generating wall 
-          // We ignore the obstruction if it is inside the
-          // generating wall (it is what happens in a corner)
-          int img_side = walls[wall_id].side(sources.col(image_id));
-          int intersection_side = walls[wall_id].side(intersection);
+        visible_sources.push(ImageSource());
+        ImageSource &is = visible_sources.top();
+        is.visible_mics = VectorXb::Ones(microphones.cols());  // everything is visible
 
-          if (img_side != intersection_side && intersection_side != 0)
-            return true;
+        is.order = 0;
+        is.attenuation = 1.;
+        is.gen_wall = -1;
+
+        // Now compute the reflection, the order, and the multiplicative constant
+        for (int d = 0 ; d < dim ; d++)
+        {
+          // Compute the reflected source
+          float step = abs(point[d]) % 2 == 1 ? room_size.coeff(d) - source.coeff(d) : source.coeff(d);
+          is.loc[d] = point[d] * room_size.coeff(d) + step;
+
+          // source order is just the sum of absolute values of reflection indices
+          is.order += abs(point[d]);
+
+          // attenuation can also be computed this way
+          int p1 = 0, p2 = 0;
+          if (point[d] > 0)
+          {
+            p1 = point[d]/2; 
+            p2 = (point[d]+1)/2;
+          }
+          else if (point[d] < 0)
+          {
+            p1 = abs((point[d]-1)/2);
+            p2 = abs(point[d]/2);
+          }
+          is.attenuation *= transmission_pwr[2 * dim * p1 + 2*d];  // 'west' absorption factor
+          is.attenuation *= transmission_pwr[2 * dim * p2 + 2*d+1];  // 'east' absorption factor
         }
-        else
-          return true;
       }
     }
   }
 
-  return false;
+  // fill linear arrays and return status
+  return fill_sources();
 }
