@@ -145,7 +145,6 @@ setup_kwargs = dict(
         # simple. Or you can use find_packages().
         packages=[
             'pyroomacoustics', 
-            'pyroomacoustics.c_package', 
             'pyroomacoustics.doa', 
             'pyroomacoustics.adaptive',
             'pyroomacoustics.transform',
