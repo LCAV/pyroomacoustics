@@ -48,8 +48,8 @@ ext_modules = [
         include_dirs=[
             '.',
             libroom_src_dir,
-            get_pybind_include(),
-            get_pybind_include(user=True),
+            str(get_pybind_include()),
+            str(get_pybind_include(user=True)),
             os.path.join(libroom_src_dir, 'ext/eigen'),
         ],
         language='c++',

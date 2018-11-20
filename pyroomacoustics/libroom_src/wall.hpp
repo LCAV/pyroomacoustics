@@ -44,6 +44,7 @@ class Wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall
         const Eigen::VectorXf &p1, const Eigen::VectorXf &p2,
         Eigen::Ref<Eigen::VectorXf> intersection);
+    int intersects(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2);
 
     int reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected);
     int side(const Eigen::VectorXf &p);

@@ -178,14 +178,12 @@ import ctypes
 
 #import .beamforming as bf
 from . import beamforming as bf
-from . import geometry as geom
 from .soundsource import SoundSource
-#from .wall import Wall
-from .geometry import area, ccw3p
 from .parameters import constants, eps
 
 from . import libroom
-from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
+from .libroom import Wall
+#from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):
     '''
@@ -249,7 +247,6 @@ class Room(object):
 
         self.mic_array = mics
          
-        self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
 
@@ -298,7 +295,7 @@ class Room(object):
         if (corners.shape[0] != 2 or corners.shape[1] < 3):
             raise ValueError('Arg corners must be more than two 2D points.')
 
-        if (geom.area(corners) <= 0):
+        if (libroom.area_2d_polygon(corners) <= 0):
             corners = corners[:,::-1]
 
         cls.corners = corners
@@ -365,7 +362,7 @@ class Room(object):
                 if the room is created with Room.from_corners")
 
         # make sure the floor_corners are ordered anti-clockwise (for now)
-        if (geom.area(floor_corners) <= 0):
+        if (libroom.area_2d_polygon(floor_corners) <= 0):
             floor_corners = np.fliplr(floor_corners)
 
         walls = []
@@ -397,7 +394,6 @@ class Room(object):
         self.dim = 3
 
         # re-collect all normals, corners, absoption
-        self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
 
@@ -430,7 +426,7 @@ class Room(object):
                     # check if co-linear
                     p0 = convex_hull.points[simplex[0]]
                     p1 = convex_hull.points[simplex[1]]
-                    if geom.ccw3p(p0, p1, point) == 0:
+                    if libroom.ccw3p(p0, p1, point) == 0:
                         # co-linear point add to hull
                         self.in_convex_hull[i] = True
 
@@ -445,7 +441,7 @@ class Room(object):
                         # co-planar point found!
                         self.in_convex_hull[i] = True
 
-        self.obstructing_walls = np.array([i for i in range(len(self.walls)) if not self.in_convex_hull[i]], dtype=np.int32)
+        self.obstructing_walls = [i for i in range(len(self.walls)) if not self.in_convex_hull[i]]
 
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
@@ -662,219 +658,60 @@ class Room(object):
                     )
                 )
 
-    def first_order_images(self, source_position):
 
-        # projected length onto normal
-        ip = np.sum(self.normals * (self.corners - source_position[:, np.newaxis]), axis=0)
-
-        # projected vector from source to wall
-        d = ip * self.normals
-
-        # compute images points, positivity is to get only the reflections outside the room
-        images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
-
-        # collect absorption factors of reflecting walls
-        damping = (1 - self.absorption[ip > 0])
-
-        # collect the index of the wall corresponding to the new image
-        wall_indices = np.arange(len(self.walls))[ip > 0]
-
-        return images, damping, wall_indices
-
-
-    def image_source_model(self, use_libroom=True):
+    def image_source_model(self):
 
         self.visibility = []
 
+        c_room = libroom.Room(self.walls, self.obstructing_walls, self.mic_array.R)
+
         for source in self.sources:
 
-            if use_libroom and not libroom_available:
-                print("C-extension libroom unavailable. Falling back to pure python")
+            # if libroom is available, use it!
 
-            # Fall back to pure python if requested or C module unavailable
-            if not use_libroom or not libroom_available:
-                # Then do it in pure python
+            source_position = source.position.astype(np.float32)
 
-                if self.max_order > 0:
+            if isinstance(self, ShoeBox):
 
-                    # generate first order images
-                    i, d, w = self.first_order_images(np.array(source.position))
-                    images = [i]
-                    damping = [d]
-                    generators = [-np.ones(i.shape[1])]
-                    wall_indices = [w]
+                # create absorption list in correct order for shoebox algorithm
+                absorption_list_shoebox = np.array(
+                        [self.absorption_dict[d] for d in self.wall_names],
+                        )
 
-                    # generate all higher order images up to max_order
-                    o = 1
-                    while o < self.max_order:
-                        # generate all images of images of previous order
-                        img = np.zeros((self.dim, 0))
-                        dmp = np.array([])
-                        gen = np.array([])
-                        wal = np.array([])
-                        for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
-                            i, d, w = self.first_order_images(si)
-                            img = np.concatenate((img, i), axis=1)
-                            dmp = np.concatenate((dmp, d * sd))
-                            gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
-                            wal = np.concatenate((wal, w))
-
-                        # sort
-                        ordering = np.lexsort(img)
-                        img = img[:, ordering]
-                        dmp = dmp[ordering]
-                        gen = gen[ordering]
-                        wal = wal[ordering]
-
-                        if isinstance(self, ShoeBox):
-                            '''
-                            For shoebox rooms, we can remove duplicate
-                            image sources from different wall orderings
-                            '''
-                            diff = np.diff(img, axis=1)
-                            ui = np.ones(img.shape[1], 'bool')
-                            ui[1:] = (diff != 0).any(axis=0)
-
-                            # add to array of images
-                            images.append(img[:, ui])
-                            damping.append(dmp[ui])
-                            generators.append(gen[ui])
-                            wall_indices.append(wal[ui])
-
-                        else:
-                            '''
-                            But in general, we have to keep everything
-                            '''
-                            # add to array of images
-                            images.append(img)
-                            damping.append(dmp)
-                            generators.append(gen)
-                            wall_indices.append(wal)
-
-                        # next order
-                        o += 1
-
-                    o_len = np.array([x.shape[0] for x in generators])
-                    # correct the pointers for linear structure
-                    for o in np.arange(2, len(generators)):
-                        generators[o] += np.sum(o_len[0:o-1])
-
-                    # linearize the arrays
-                    images_lin = np.concatenate(images, axis=1)
-                    damping_lin = np.concatenate(damping)
-                    generators_lin = np.concatenate(generators)
-                    walls_lin = np.concatenate(wall_indices)
-                    
-                    # store the corresponding orders in another array
-                    ordlist = []
-                    for o in range(len(generators)):
-                        ordlist.append((o+1)*np.ones(o_len[o]))
-                    orders_lin = np.concatenate(ordlist)
-
-                    # add the direct source to the arrays
-                    source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
-                    source.damping = np.concatenate(([1], damping_lin))
-                    source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
-                    source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
-                    source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
-
-                else:
-                    # when simulating free space, there is only the direct source
-                    source.images = np.array([source.position]).T
-                    source.damping = np.ones(1)
-                    source.generators = -np.ones(1, dtype=np.int)
-                    source.walls = -np.ones(1, dtype=np.int)
-                    source.orders = np.zeros(1, dtype=np.int)
-
-                # Then we will check the visibilty of the sources
-                # visibility is a list with first index for sources, and second for mics
-                self.visibility.append([])
-                for mic in self.mic_array.R.T:
-                    if isinstance(self, ShoeBox):
-                        # All sources are visible in shoebox rooms
-                        self.visibility[-1].append(np.ones(source.images.shape[1], dtype=bool))
-                    else:
-                        # In general, we need to check
-                        self.visibility[-1].append(
-                                self.check_visibility_for_all_images(source, mic, use_libroom=False)
-                                )
-                self.visibility[-1] = np.array(self.visibility[-1])
-
-                I = np.zeros(self.visibility[-1].shape[1], dtype=bool)
-                for mic_vis in self.visibility[-1]:
-                    I = np.logical_or(I, mic_vis == 1)
-
-                # Now we can get rid of the superfluous images
-                source.images = source.images[:,I]
-                source.damping = source.damping[I]
-                source.generators = source.generators[I]
-                source.walls = source.walls[I]
-                source.orders = source.orders[I]
-
-                self.visibility[-1] = self.visibility[-1][:,I]
-
+                # Call the dedicated C routine for shoebox room
+                c_room.image_source_shoebox(
+                        source.position,
+                        self.shoebox_dim,
+                        absorption_list_shoebox,
+                        self.max_order,
+                        )
 
             else:
-                # if libroom is available, use it!
+                # Call the general image source generator
+                c_room.image_source_model(
+                        source.position,
+                        self.max_order,
+                        )
 
-                c_room = self.make_c_room()
+            # Recover all the arrays as ndarray from the c struct
+            n_sources = c_room.sources.shape[1]
 
-                # copy microphone information to struct
-                mic = np.asfortranarray(self.mic_array.R, dtype=np.float32)
-                c_room.n_microphones = ctypes.c_int(mic.shape[1])
-                c_room.microphones = mic.ctypes.data_as(c_float_p)
+            if (n_sources > 0):
 
-                source_position = source.position.astype(np.float32)
+                # Copy to python managed memory
+                source.images = c_room.sources.copy()
+                source.orders = c_room.orders.copy()
+                source.walls = c_room.gen_walls.copy()
+                source.damping = c_room.attenuations.copy()
+                source.generators = -np.ones(source.walls.shape)
 
-                if isinstance(self, ShoeBox):
+                self.visibility.append(c_room.visible_mics.copy())
 
-                    # create absorption list in correct order for shoebox algorithm
-                    absorption_list_shoebox = np.array([self.absorption_dict[d] for d in self.wall_names], dtype=np.float32)
-                    shoebox_dim = self.shoebox_dim.astype(np.float32)
-
-                    # Call the dedicated C routine for shoebox room
-                    libroom.image_source_shoebox(
-                            c_room,
-                            source_position,
-                            shoebox_dim,
-                            absorption_list_shoebox,
-                            self.max_order)
-                else:
-                    # Call the general image source generator
-                    libroom.image_source_model(
-                            c_room,
-                            source_position,
-                            self.max_order)
-
-                # Recover all the arrays as ndarray from the c struct
-                n_sources = c_room.n_sources
-
-                if (n_sources > 0):
-
-                    # numpy wrapper around C arrays
-                    images = np.ctypeslib.as_array(c_room.sources, shape=(n_sources, self.dim))
-                    orders = np.ctypeslib.as_array(c_room.orders, shape=(n_sources,))
-                    gen_walls = np.ctypeslib.as_array(c_room.gen_walls, shape=(n_sources,))
-                    attenuations = np.ctypeslib.as_array(c_room.attenuations, shape=(n_sources,))
-                    is_visible = np.ctypeslib.as_array(c_room.is_visible, shape=(mic.shape[1], n_sources))
-
-                    # Copy to python managed memory
-                    source.images = np.asfortranarray(images.copy().T)
-                    source.orders = orders.copy()
-                    source.walls = gen_walls.copy()
-                    source.damping = attenuations.copy()
-                    source.generators = -np.ones(source.walls.shape)
-
-                    self.visibility.append(is_visible.copy())
-
-                    # free the C malloc'ed memory
-                    libroom.free_sources(c_room)
-
-                    # We need to check that microphones are indeed in the room
-                    for m in range(self.mic_array.R.shape[1]):
-                        # if not, it's not visible from anywhere!
-                        if not self.is_inside(self.mic_array.R[:,m]):
-                            self.visibility[-1][m,:] = 0
+                # We need to check that microphones are indeed in the room
+                for m in range(self.mic_array.R.shape[1]):
+                    # if not, it's not visible from anywhere!
+                    if not self.is_inside(self.mic_array.R[:,m]):
+                        self.visibility[-1][m,:] = 0
 
 
     def compute_rir(self):
@@ -891,6 +728,7 @@ class Room(object):
             for s, source in enumerate(self.sources):
                 h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
+
 
     def simulate(self, recompute_rir=False):
         ''' Simulates the microphone signal at every microphone in the array '''
@@ -980,200 +818,6 @@ class Room(object):
         else:
             raise ValueError('The wall '+name+' cannot be found.')
 
-    def print_wall_sequences(self, source):
-
-        visibilityCheck = np.zeros_like(source.images[0])-1
-        
-        for imageId in range(len(visibilityCheck)-1, -1, -1):
-            print("%2d, %d,%.0f,%.0f --- "%(imageId,source.orders[imageId],source.generators[imageId],source.walls[imageId]), end='')
-            p = imageId
-            while p >= 0:
-                if not np.isnan(source.walls[p]):
-                    print(int(source.walls[p]), end='')
-                p = source.generators[p]
-            print()
-
-    def make_c_room(self):
-        ''' Wrapper around the C libroom '''
-
-        # exit if libroom is not available
-        if not libroom_available:
-            return
-
-        # create the ctypes wall array
-        c_walls = (CWALL * len(self.walls))()
-        c_walls_array = ctypes.cast(c_walls, c_wall_p)
-        for cwall, wall in zip(c_walls_array, self.walls):
-
-            c_corners = wall.corners.ctypes.data_as(c_float_p)
-
-            cwall.dim=wall.dim
-            cwall.absorption=wall.absorption
-            cwall.normal=(ctypes.c_float * 3)(*wall.normal.tolist())
-            cwall.n_corners=wall.corners.shape[1]
-            cwall.corners=c_corners
-
-            cwall.origin=(ctypes.c_float * 3)(*wall.plane_point.tolist())
-
-            if wall.dim == 3:
-                c_corners_2d = wall.corners_2d.ctypes.data_as(c_float_p)
-
-                cwall.basis=(ctypes.c_float * 6)(*wall.plane_basis.flatten('F').tolist())
-                cwall.flat_corners=c_corners_2d
-
-        # create the ctypes Room struct
-        c_room = CROOM(
-                dim = self.dim,
-                n_walls = len(self.walls),
-                walls = c_walls_array,
-                n_obstructing_walls = self.obstructing_walls.shape[0],
-                obstructing_walls = self.obstructing_walls.ctypes.data_as(c_int_p),
-                )
-
-        return c_room
-
-    def check_visibility_for_all_images(self, source, p, use_libroom=True):
-        '''
-        Checks visibility from a given point for all images of the given source.
-        
-        This function tests visibility for all images of the source and returns the results
-        in an array.
-        
-        :arg source: (SoundSource) the sound source object (containing all its images)
-        :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
-        
-        :returns: (int array) list of results of visibility for each image
-            -1 : unchecked (only during execution of the function)
-            0 (False) : not visible
-            1 (True) : visible
-        '''
-        
-        visibilityCheck = np.zeros_like(source.images[0], dtype=np.int32)-1
-        
-        if self.is_inside(np.array(p)):
-            # Only check for points that are in the room!
-            if use_libroom and libroom_available:
-                # Call the C routine that checks visibility
-
-                # Create the C struct
-                c_room = self.make_c_room()
-
-                # copy source information to struct
-                c_room.n_sources = ctypes.c_int(source.images.shape[1])
-                c_room.sources = source.images.ctypes.data_as(c_float_p)
-                c_room.parents = source.generators.ctypes.data_as(c_int_p)
-                c_room.gen_walls = source.walls.ctypes.data_as(c_int_p)
-                c_room.orders = source.orders.ctypes.data_as(c_int_p)
-
-                # copy microphone information to struct
-                mic = np.array(p, dtype=np.float32)
-                c_room.n_microphones = ctypes.c_int(1)
-                c_room.microphones = mic.ctypes.data_as(c_float_p)
-
-                # add the array for the visibility information
-                c_room.is_visible = visibilityCheck.ctypes.data_as(c_int_p)
-
-                # Run the routine here
-                libroom.check_visibility_all(ctypes.byref(c_room))
-
-                return visibilityCheck
-            else:
-                for imageId in range(len(visibilityCheck)-1, -1, -1):
-                    visibilityCheck[imageId] = self.is_visible(source, p, imageId)
-        else:
-            # If point is outside, nothing is visible
-            for imageId in range(len(visibilityCheck)-1, -1, -1):
-                visibilityCheck[imageId] = False
-            
-        return visibilityCheck
-
-            
-    def is_visible(self, source, p, imageId = 0):
-        '''
-        Returns true if the given sound source (with image source id) is visible from point p.
-        
-        :arg source: (SoundSource) the sound source (containing all its images)
-        :arg p: (np.array size 2 or 3) coordinates of the point where we check visibility
-        :arg imageId: (int) id of the image within the SoundSource object
-        
-        :return: (bool)
-            False (0) : not visible
-            True (1) :  visible
-        '''
-
-        p = np.array(p)
-        imageId = int(imageId)
-        
-        # Check if there is an obstruction
-        if(self.is_obstructed(source, p, imageId)):
-            return False
-        
-        if (source.orders[imageId] > 0):
-        
-            # Check if the line of sight intersects the generating wall
-            genWallId = int(source.walls[imageId])
-
-            # compute the location of the reflection on the wall
-            intersection = self.walls[genWallId].intersection(p, np.array(source.images[:, imageId]))[0]
-
-            # the reflection point needs to be visible from the image source that generates the ray
-            if intersection is not None:
-                    # Check visibility for the parent image by recursion
-                    return self.is_visible(source, intersection, source.generators[imageId])
-            else:
-                return False
-        else:
-            return True
-      
-    def is_obstructed(self, source, p, imageId = 0):
-        '''
-        Checks if there is a wall obstructing the line of sight going from a source to a point.
-        
-        :arg source: (SoundSource) the sound source (containing all its images)
-        :arg p: (np.array size 2 or 3) coordinates of the point where we check obstruction
-        :arg imageId: (int) id of the image within the SoundSource object
-        
-        :returns: (bool)
-            False (0) : not obstructed
-            True (1) :  obstructed
-        '''
-        
-        imageId = int(imageId)
-        if (np.isnan(source.walls[imageId])):
-            genWallId = -1
-        else:
-            genWallId = int(source.walls[imageId])
-        
-        # Only 'non-convex' walls can be obstructing
-        for wallId in self.obstructing_walls:
-        
-            # The generating wall can't be obstructive
-            if(wallId != genWallId):
-            
-                # Test if the line segment intersects the current wall
-                # We ignore intersections at boundaries of the line of sight
-                #intersects, borderOfWall, borderOfSegment = self.walls[wallId].intersects(source.images[:, imageId], p)
-                intersectionPoint, borderOfSegment, borderOfWall = self.walls[wallId].intersection(source.images[:, imageId], p)
-
-                if (intersectionPoint is not None and not borderOfSegment):
-                    
-                    # Only images with order > 0 have a generating wall. 
-                    # At this point, there is obstruction for source order 0.
-                    if (source.orders[imageId] > 0):
-
-                        imageSide = self.walls[genWallId].side(source.images[:, imageId])
-                    
-                        # Test if the intersection point and the image are at
-                        # opposite sides of the generating wall 
-                        # We ignore the obstruction if it is inside the
-                        # generating wall (it is what happens in a corner)
-                        intersectionPointSide = self.walls[genWallId].side(intersectionPoint)
-                        if (intersectionPointSide != imageSide and intersectionPointSide != 0):
-                            return True
-                    else:
-                        return True
-                
-        return False
 
     def get_bbox(self):
         ''' Returns a bounding box for the room '''
@@ -1182,6 +826,7 @@ class Room(object):
         upper = np.amax(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
 
         return np.c_[lower, upper]
+
 
     def is_inside(self, p, include_borders = True):
         '''
@@ -1235,19 +880,20 @@ class Room(object):
             is_on_border = False  # we have to know if the point is on the boundary
             count = 0  # wall intersection counter
             for i in range(len(self.walls)):
-                intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
+                #intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
+                ret = self.walls[i].intersects(p0, p)
 
-                # this flag is True when p is on the wall
-                if border_of_segment:
+                
+                if ret == int(Wall.Isect.ENDPT) or ret == int(Wall.Isect.ENDPT) | int(Wall.Isect.BNDRY):  # this flag is True when p is on the wall
                     is_on_border = True
-                elif border_of_wall:
+                elif ret == Wall.Isect.BNDRY:
                     # the intersection is on a corner of the room
                     # but the point to check itself is *not* on the wall
                     # then things get tricky
                     ambiguous = True
 
                 # count the wall intersections
-                if intersects:
+                if ret == Wall.Isect.VALID:
                     count += 1
 
             # start over when ambiguous

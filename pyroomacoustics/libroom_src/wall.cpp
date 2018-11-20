@@ -116,6 +116,13 @@ int Wall::intersection(
   return -1;
 }
 
+int Wall::intersects(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2)
+{
+  Eigen::VectorXf v;
+  v.resize(dim);
+  return intersection(p1, p2, v);
+}
+
 
 int Wall::reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected)
 {

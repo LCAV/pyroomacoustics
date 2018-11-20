@@ -229,7 +229,7 @@ class SoundSource(object):
         try:
             # Try to use the Cython extension
             from .build_rir import fast_rir_builder
-            fast_rir_builder(ir, time, alpha, visibility, Fs, fdl)
+            fast_rir_builder(ir, time, alpha, visibility.astype(np.int32), Fs, fdl)
 
         except ImportError:
             print("Cython-extension build_rir unavailable. Falling back to pure python")
