@@ -237,6 +237,7 @@ int Room::image_source_shoebox(
       {
         visible_sources.push(ImageSource());
         ImageSource &is = visible_sources.top();
+        is.loc.resize(dim);
         is.visible_mics = VectorXb::Ones(microphones.cols());  // everything is visible
 
         is.order = 0;
