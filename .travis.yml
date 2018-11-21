@@ -36,9 +36,7 @@ install:
 
 # Run test twice, without C lib, and with C lib
 script:
-  - nosetests
   - python setup.py build_ext --inplace
-  - python pyroomacoustics/c_package/tests/check_build.py
   - nosetests
 
 # Deploy to pypi (or test)

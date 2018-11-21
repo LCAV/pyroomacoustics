@@ -37,9 +37,7 @@ install:
   - python setup.py install
 
 test_script:
-  - nosetests
   - python.exe setup.py build_ext --inplace
-  - python pyroomacoustics/c_package/tests/check_build.py
   - nosetests
 
 after_test:
