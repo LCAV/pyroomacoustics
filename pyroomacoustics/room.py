@@ -183,7 +183,6 @@ from .parameters import constants, eps
 
 from . import libroom
 from .libroom import Wall
-#from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
 class Room(object):
     '''
@@ -881,11 +880,13 @@ class Room(object):
             count = 0  # wall intersection counter
             for i in range(len(self.walls)):
                 #intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
-                ret = self.walls[i].intersects(p0, p)
-
+                #ret = self.walls[i].intersects(p0, p)
+                loc = np.zeros(self.dim, dtype=np.float32)
+                ret = self.walls[i].intersection(p0, p, loc)
                 
-                if ret == int(Wall.Isect.ENDPT) or ret == int(Wall.Isect.ENDPT) | int(Wall.Isect.BNDRY):  # this flag is True when p is on the wall
+                if ret == int(Wall.Isect.ENDPT) or ret == 3:  # this flag is True when p is on the wall
                     is_on_border = True
+
                 elif ret == Wall.Isect.BNDRY:
                     # the intersection is on a corner of the room
                     # but the point to check itself is *not* on the wall
@@ -893,7 +894,7 @@ class Room(object):
                     ambiguous = True
 
                 # count the wall intersections
-                if ret == Wall.Isect.VALID:
+                if ret >= 0:  # valid intersection
                     count += 1
 
             # start over when ambiguous

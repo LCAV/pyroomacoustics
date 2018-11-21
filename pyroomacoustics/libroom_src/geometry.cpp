@@ -236,7 +236,7 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     throw std::exception();
   }
 
-  int is_inside = 0;  // initialize point not in the polygon
+  bool is_inside = false;  // initialize point not in the polygon
   int c1c2p, c1c2p0, pp0c1, pp0c2;
   int n_corners = corners.cols();
 
@@ -244,8 +244,16 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
   int i_min;
   corners.row(0).minCoeff(&i_min);
   Eigen::Vector2f p_out;
-  p_out.coeffRef(0) = corners.coeff(0,i_min);
+  p_out.resize(2);
+  p_out.coeffRef(0) = corners.coeff(0,i_min) - 1;
   p_out.coeffRef(1) = p.coeff(1);
+
+  /*
+  std::cout << "The corners: " << corners << std::endl;
+  std::cout << "The point: " << p << std::endl;
+  std::cout << "Aux point: " << p_out << std::endl;
+  */
+
 
   // Now count intersections
   for (int i = 0, j = n_corners-1 ; i < n_corners ; j=i++)
@@ -279,8 +287,18 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     // at this point we are sure there is an intersection
 
     // the second condition takes care of horizontal edges and intersection on vertex
-    if (p.coeff(1) < fmaxf(corners.coeff(1,i), corners.coeff(1,j)))
-      is_inside = ~is_inside;
+    float c_max = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
+    if (p.coeff(1) + libroom_eps < c_max)
+    {
+      /*
+      std::cout << "wall " << j << " " << i 
+        << " p[1]=" << p.coeff(1) << " c1[1]=" << corners.coeff(1,i)
+        << " c2[1]=" << corners.coeff(1,j) << " c_max=" << c_max
+        << " p[1] < c_max:" << (p.coeff(1) < c_max)
+        << " diff=" << (c_max - p.coeff(1)) << std::endl;
+      */
+      is_inside = !is_inside;
+    }
 
   }
 

@@ -113,7 +113,6 @@ __version__
 from .version import __version__
 
 from . import libroom as libroom_new
-from . import c_package
 
 from .room import *
 from .beamforming import *

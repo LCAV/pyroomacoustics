@@ -2,141 +2,163 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-from unittest import TestCase
+import unittest
+import numpy as np
 
 import pyroomacoustics as pra
 
-class TestGeometryRoutines(TestCase):
+class TestGeometryRoutines(unittest.TestCase):
 
     def test_area_square(self):
-        self.assertEquals(pra.geometry.area([[0, 4, 4, 0], [0, 0, 4, 4]]), 4*4)
+        self.assertEqual(pra.libroom.area_2d_polygon([[0, 4, 4, 0], [0, 0, 4, 4]]), 4*4)
 
     def test_area_triangle(self):
-        self.assertEquals(pra.geometry.area([[0, 4, 2], [0, 0, 2]]), (4*2)/2)
-
-    def test_side_left(self):
-        self.assertEquals(pra.geometry.side([-1, 0], [0, 0], [1, 0]), -1)
-
-    def test_side_right(self):
-        self.assertEquals(pra.geometry.side([1, 0], [0, 0], [1, 0]), 1)
-
-    def test_side_middle(self):
-        self.assertEquals(pra.geometry.side([0, 1], [0, 0], [1, 0]), 0)
+        self.assertEqual(pra.libroom.area_2d_polygon([[0, 4, 2], [0, 0, 2]]), (4*2)/2)
 
     def test_ccw3p_counterclockwise(self):
-        self.assertEquals(pra.geometry.ccw3p([0, 0], [2, 0], [1, 1]), 1)
+        self.assertEqual(pra.libroom.ccw3p([0, 0], [2, 0], [1, 1]), 1)
 
     def test_ccw3p_clockwise(self):
-        self.assertEquals(pra.geometry.ccw3p([1, 1], [2, 0], [0, 0]), -1)
+        self.assertEqual(pra.libroom.ccw3p([1, 1], [2, 0], [0, 0]), -1)
 
     def test_ccw3p_collinear(self):
-        self.assertEquals(pra.geometry.ccw3p([0, 0], [1, 0], [2, 0]), 0)
+        self.assertEqual(pra.libroom.ccw3p([0, 0], [1, 0], [2, 0]), 0)
 
     def test_intersection2DSegments_cross(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([-2, 0], [2, 0], [0, -2], [0, 2])
-        i = all(p==[0, 0])
-        self.assertTrue(all([i, not endOfA, not endOfB]))
+        loc = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([-2, 0], [2, 0], [0, -2], [0, 2], loc)
+        i = np.allclose(loc, np.zeros(2))
+        self.assertTrue(all([i, ret == 0]))  # intersection is valid
 
     def test_intersection2DSegments_T(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [2, -2], [2, 2])
-        i = all(p==[2, 0])
-        self.assertTrue(all([i, endOfA, not endOfB]))
+        loc = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([0, 0], [2, 0], [2, -2], [2, 2], loc)
+        i = np.allclose(loc, np.r_[2,0])
+        self.assertTrue(all([i, ret == 1]))  # intersection on endpoint of 1st seg
 
     def test_intersection2DSegments_T2(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([-2, 0], [2, 0], [0, -2], [0, 0])
-        i = all(p==[0, 0])
-        self.assertTrue(all([i, not endOfA, endOfB]))
+        loc = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([-2, 0], [2, 0], [0, -2], [0, 0], loc)
+        i = np.allclose(loc, np.r_[0,0])
+        self.assertTrue(all([i, ret == 2]))
 
     def test_intersection2DSegments_L(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [2, 2], [2, 0])
-        i = all(p==[2, 0])
-        self.assertTrue(all([i, endOfA, endOfB]))
+        loc = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([0, 0], [2, 0], [2, 2], [2, 0], loc)
+        i = np.allclose(loc, np.r_[2,0])
+        self.assertTrue(all([i, ret == 3]))
 
     def test_intersection2DSegments_parallel(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [0, 1], [2, 1])
-        i = p is None
-        self.assertTrue(all([i, not endOfA, not endOfB]))
+        loc = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([0, 0], [2, 0], [0, 1], [2, 1], loc)
+        self.assertTrue(ret == -1)
 
     def test_intersection2DSegments_notTouching(self):
-        p, endOfA, endOfB = pra.geometry.intersection_2D_segments([0, 0], [2, 0], [1, 4], [1, 1])
-        i = p is None
-        self.assertTrue(all([i, not endOfA, not endOfB]))
+        p = np.zeros(2, dtype=np.float32)
+        ret = pra.libroom.intersection_2d_segments([0, 0], [2, 0], [1, 4], [1, 1], p)
+        self.assertTrue(ret == -1)
 
     def test_intersectionSegmentPlane_through(self):
-        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, -2], [2, 2, 0], [0, 0, -1])
-        i = all(p==[2, 2, 0])
-        self.assertTrue(all([i, not endOfSegment]))
+        p = np.zeros(3, dtype=np.float32)
+        ret = pra.libroom.intersection_3d_segment_plane([2, 2, 2], [2, 2, -2], [2, 2, 0], [0, 0, -1], p)
+        i = np.allclose(p, np.r_[2,2,0])
+        self.assertTrue(all([i, ret == 0]))
 
     def test_intersectionSegmentPlane_touching(self):
-        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, 0], [2, 2, 0], [0, 0, -1])
-        i = all(p==[2, 2, 0])
-        self.assertTrue(all([i, endOfSegment]))
+        p = np.zeros(3, dtype=np.float32)
+        ret = pra.libroom.intersection_3d_segment_plane([2, 2, 2], [2, 2, 0], [2, 2, 0], [0, 0, -1], p)
+        i = np.allclose(p, np.r_[2,2,0])
+        self.assertTrue(all([i, ret == 1]))
 
     def test_intersectionSegmentPlane_notTouching(self):
-        p, endOfSegment = pra.geometry.intersection_segment_plane([2, 2, 2], [2, 2, 1], [2, 2, 0], [0, 0, -1])
-        i = p is None
-        self.assertTrue(all([i, not endOfSegment]))
+        p = np.zeros(3, dtype=np.float32)
+        ret = pra.libroom.intersection_3d_segment_plane([2, 2, 2], [2, 2, 1], [2, 2, 0], [0, 0, -1], p)
+        self.assertTrue(all([ret == -1]))
 
     def test_intersectionSegmentPlane_inside(self):
-        p, endOfSegment = pra.geometry.intersection_segment_plane([0, 2, 0], [2, 2, 0], [2, 2, 0], [0, 0, -1])
-        i = p is None
-        self.assertTrue(all([i, not endOfSegment]))
+        p = np.zeros(3, dtype=np.float32)
+        ret = pra.libroom.intersection_3d_segment_plane([0, 2, 0], [2, 2, 0], [2, 2, 0], [0, 0, -1], p)
+        self.assertTrue(all([ret == -1]))
 
     def test_intersectionSegmentPolygonSurface_through(self):
-        wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([2, 2, 2], [2, 2, -2], wall.corners_2d, wall.normal,
-                wall.plane_point, wall.plane_basis)
-        i = all(p==[2, 2, 0])
-        self.assertTrue(all([i, not endOfSegment, not onBorder]))
+        wall = pra.libroom.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
+        p = np.zeros(3, dtype=np.float32)
+        ret = wall.intersection([2,2,2], [2,2,-2], p)
+        i = np.allclose(p, np.r_[2,2,0])
+        self.assertTrue(all([i, ret == pra.libroom.Wall.Isect.VALID]))
 
     def test_intersectionSegmentPolygonSurface_touching(self):
-        wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([2, 2, 2], [2, 2, 0], wall.corners_2d, wall.normal,
-                wall.plane_point, wall.plane_basis)
-        i = all(p==[2, 2, 0])
-        self.assertTrue(all([i, endOfSegment, not onBorder]))
+        wall = pra.libroom.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
+        p = np.zeros(3, dtype=np.float32)
+        ret = wall.intersection([2,2,2], [2,2,0], p)
+        i = np.allclose(p, np.r_[2,2,0])
+        self.assertTrue(all([i, ret == pra.libroom.Wall.Isect.ENDPT]))
 
     def test_intersectionSegmentPolygonSurface_border(self):
-        wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([0, 0, 2], [0, 0, -2], wall.corners_2d, wall.normal,
-                wall.plane_point, wall.plane_basis)
-        i = all(p==[0, 0, 0])
-        self.assertTrue(all([i, not endOfSegment, onBorder]))
+        wall = pra.libroom.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
+        p = np.zeros(3, dtype=np.float32)
+        ret = wall.intersection([0,0,2], [0,0,-2], p)
+        i = np.allclose(p, np.r_[0,0,0])
+        self.assertTrue(all([i, ret == pra.libroom.Wall.Isect.BNDRY]))
 
     def test_intersectionSegmentPolygonSurface_miss(self):
-        wall = pra.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
-        p, endOfSegment, onBorder = pra.geometry.intersection_segment_polygon_surface([-1, -1, 2], [-1, -1, -2], wall.corners_2d, wall.normal,
-                wall.plane_point, wall.plane_basis)
-        i = p is None
-        self.assertTrue(all([i, not endOfSegment, not onBorder]))
+        wall = pra.libroom.Wall([[0, 4, 4, 0], [0, 0, 4, 4], [0, 0, 0, 0]])
+        p = np.zeros(3, dtype=np.float32)
+        ret = wall.intersection([-1,-1,2], [-1,-1,-2], p)
+        self.assertTrue(all([ret == pra.libroom.Wall.Isect.NONE]))
+
+    def test_intersectionSegmentPolygonSurface_miss_2(self):
+        corners = np.array([
+            [0, 0, 0, 0],
+            [3, 0, 0, 3],
+            [0, 0, 4, 4]
+            ])
+        wall = pra.libroom.Wall(corners)
+        p = np.array([ 2. ,  3. ,  1.7])
+        p0 = np.array([-2.348,  3.27 ,  8.91 ])
+        loc = np.zeros(p.shape[0], dtype=np.float32)
+        ret = wall.intersection(p, p0, loc)
+        self.assertTrue(ret == pra.libroom.Wall.Isect.NONE)
+
+    def test_isInside2DPolygon_inside1(self):
+        p = np.r_[0, -2]
+        corners = np.array([
+            [ 0,     -2,           0,  2,],
+            [-0,     -2, -np.sqrt(8), -2,],
+            ])
+        ret = pra.libroom.is_inside_2d_polygon(p, corners)
+        self.assertTrue(ret == 0)
         
     def test_isInside2DPolygon_inside(self):
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
-        self.assertTrue(all([inside, not onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([2, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([ret == 0]))
         
     def test_isInside2DPolygon_onBorder(self):
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([0, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
-        self.assertTrue(all([inside, onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([0, 2], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([ret == 1]))
         
     def test_isInside2DPolygon_onCorner(self):
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([4, 4], [[0, 4, 4, 0], [0, 0, 4, 4]])
-        self.assertTrue(all([inside, onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([4, 4], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([ret == 1]))
         
     def test_isInside2DPolygon_outside(self):
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([5, 5], [[0, 4, 4, 0], [0, 0, 4, 4]])
-        self.assertTrue(all([not inside, not onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([5, 5], [[0, 4, 4, 0], [0, 0, 4, 4]])
+        self.assertTrue(all([ret == -1]))
 
     def test_isInside2DPolygon_parallel_wall(self):
         corners = [[0, 0, 1, 1, 3, 3], [0, 1, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 1], corners)
-        self.assertTrue(all([inside, not onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([2, 1], corners)
+        self.assertTrue(all([ret == 0]))
 
     def test_isInside2DPolygon_at_corner(self):
         corners = [[0, 1, 1, 3, 3], [0, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([2, 1], corners)
-        self.assertTrue(all([inside, not onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([2, 1], corners)
+        self.assertTrue(all([ret == 0]))
 
     def test_isInside2DPolygon_just_out(self):
         corners = [[0, 1, 1, 3, 3], [0, 1, 2, 2, 0]]
-        inside, onBorder = pra.geometry.is_inside_2D_polygon([4, 2], corners)
-        self.assertTrue(all([not inside, not onBorder]))
+        ret = pra.libroom.is_inside_2d_polygon([4, 2], corners)
+        self.assertTrue(all([ret == -1]))
+
+if __name__ == '__main__':
+    unittest.main()

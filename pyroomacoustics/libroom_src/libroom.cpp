@@ -59,7 +59,7 @@ PYBIND11_MODULE(libroom, m) {
 
     wall_cls
         .def(py::init<const Eigen::MatrixXf &, float, const std::string &>(),
-            py::arg("corners"), py::arg("absorption"), py::arg("name") = "")
+            py::arg("corners"), py::arg("absorption") = 0., py::arg("name") = "")
         .def("area", &Wall::area)
         .def("intersection", &Wall::intersection)
         .def("intersects", &Wall::intersects)

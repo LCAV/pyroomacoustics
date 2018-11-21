@@ -182,8 +182,8 @@ bool Room::is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is)
           // opposite sides of the generating wall 
           // We ignore the obstruction if it is inside the
           // generating wall (it is what happens in a corner)
-          int img_side = walls[wall_id].side(is.loc);
-          int intersection_side = walls[wall_id].side(intersection);
+          int img_side = walls[is.gen_wall].side(is.loc);
+          int intersection_side = walls[is.gen_wall].side(intersection);
 
           if (img_side != intersection_side && intersection_side != 0)
             return true;
