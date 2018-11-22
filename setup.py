@@ -41,22 +41,27 @@ class get_pybind_include(object):
 # build C extension for image source model
 libroom_src_dir = 'pyroomacoustics/libroom_src'
 ext_modules = [
-    Extension(
-        'pyroomacoustics.libroom',
-        [ os.path.join(libroom_src_dir, f)
-            for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp']],
-        include_dirs=[
-            '.',
-            libroom_src_dir,
-            str(get_pybind_include()),
-            str(get_pybind_include(user=True)),
-            os.path.join(libroom_src_dir, 'ext/eigen'),
-        ],
-        language='c++',
-        #extra_compile_args = ['-Wall', '-O3',],
-    ),
-    Extension("pyroomacoustics.build_rir", ["pyroomacoustics/build_rir.pyx"], language='c'),
-]
+        Extension(
+            'pyroomacoustics.libroom',
+            [ os.path.join(libroom_src_dir, f)
+                for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp']],
+            include_dirs=[
+                '.',
+                libroom_src_dir,
+                str(get_pybind_include()),
+                str(get_pybind_include(user=True)),
+                os.path.join(libroom_src_dir, 'ext/eigen'),
+                ],
+            language='c++',
+            extra_compile_args = ['-DEIGEN_MPL2_ONLY', '-Wall', '-O3',],
+            ),
+        Extension(
+            'pyroomacoustics.build_rir',
+            ["pyroomacoustics/build_rir.pyx"],
+            language='c',
+            extra_compile_args = [],
+            ),
+        ]
 
 here = path.abspath(path.dirname(__file__))
 
@@ -119,7 +124,7 @@ class BuildExt(build_ext):
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
         for ext in self.extensions:
             if ext.language == 'c++':
-                ext.extra_compile_args = opts
+                ext.extra_compile_args += opts
         build_ext.build_extensions(self)
 
 ### Build Tools End ###
@@ -159,7 +164,7 @@ setup_kwargs = dict(
 
         # Necessary to keep the source files
         package_data={
-            'pyroomacoustics': ['*.pxd', '*.pyx'],
+            'pyroomacoustics': ['*.pxd', '*.pyx',],
             },
 
         install_requires=[
