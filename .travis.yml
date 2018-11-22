@@ -1,12 +1,12 @@
-language: python
+language: generic
 os:
   - osx
   - linux
-python:
-  - 2.7
-  - 3.5
-  - 3.6
-  - 3.7
+env:
+  - PYTHON_VERSION=2.7
+  - PYTHON_VERSION=3.5
+  - PYTHON_VERSION=3.6
+  - PYTHON_VERSION=3.7
 
 notifications:
   slack: echology:avPAhIlErQnf7XSUGcSB5awZ
@@ -14,13 +14,20 @@ notifications:
 
 # Install packages
 install:
-  - sudo apt-get update
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo apt-get update;
+    fi
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export MINICONDA_OS="MacOSX";
     else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      export MINICONDA_OS="Linux";
+    fi
+  - if [[ "$PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-${MINICONDA_OS}-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-${MINICONDA_OS}-x86_64.sh -O miniconda.sh;
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -31,7 +38,7 @@ install:
   - conda info -a
 
   # We need to setup a new environment
-  - conda create -n test_env python=$TRAVIS_PYTHON_VERSION
+  - conda create -n test_env python=$PYTHON_VERSION
   - source activate test_env
 
   # Install the dependencies
@@ -51,7 +58,7 @@ deploy:
     on:
       branch: pypi-release
       tags: true
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $PYTHON_VERSION = "2.7"
     distributions: "sdist"
     user: "fakufaku"
     password:
@@ -62,7 +69,7 @@ deploy:
     on:
       branch: pypi-test
       tags: false
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $PYTHON_VERSION = "2.7"
     distributions: "sdist"
     user: "fakufaku"
     password:

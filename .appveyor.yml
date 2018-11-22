@@ -18,6 +18,14 @@ environment:
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda36-x64
       PYTHON_ARCH: "64"
+    - PYTHON_VERSION: 3.7
+      MINICONDA: C:\Miniconda3
+      RESTORE_MINICONDA: C:\Miniconda37
+      PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.7
+      MINICONDA: C:\Miniconda3-x64
+      RESTORE_MINICONDA: C:\Miniconda37-x64
+      PYTHON_ARCH: "64"
 
 init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
