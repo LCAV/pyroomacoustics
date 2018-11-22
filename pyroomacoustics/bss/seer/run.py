@@ -73,6 +73,13 @@ separate_recordings = np.array(separate_recordings)
 # Mix down the recorded signals
 mics_signals = np.sum(separate_recordings, axis=0)
 
+mydata = sd.rec(mics_signals[0],fs,channels=2, blocking=True)
+sf.write('mix0.wav', mydata, fs)
+
+
+mydata = sd.rec(mics_signals[1],fs,channels=2, blocking=True)
+sf.write('mix1.wav', mydata, fs)
+
 # STFT frame length
 L = 2048
 
@@ -101,3 +108,10 @@ y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, 
 # Compare SIR and SDR with our reference signal
 sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
 sd.play(y[0], fs)
+
+mydata = sd.rec(int(y[0]),fs, blocking=True)
+sf.write('demix0.wav', mydata, fs)
+
+
+mydata = sd.rec(int(y[1]),fs, blocking=True)
+sf.write('demix1.wav', mydata, fs)

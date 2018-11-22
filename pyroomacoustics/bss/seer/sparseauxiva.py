@@ -37,6 +37,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
+    print("Init done, proceeding to sparse AuxIVA...")
 
     for epoch in range(n_iter):
 
@@ -61,6 +62,7 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
                 W[S[f], :, s] = np.linalg.solve(WV, I[:, s])
                 W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
 
+    print("Successfully computed the sparse weights, proceeding to lasso...")
 
     # Here comes Lassoooooooooo
     Z = np.zeros((n_src, k_freq), dtype=W.dtype)
@@ -70,12 +72,12 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
     for i in range(n_chan):
         Z[i, :] = np.array([W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
         # I believe in your case A is the DFT matrix of size |S| x F, and x is the h_rtf in the time domain.
-        # hrtf[:, i] = ADMM(DFT_matrix[S, :], Z[i,:], lambda_var, rho, alpha)
+        hrtf[:, i] = ADMM(DFT_matrix[S, :], Z[i,:]) #, lambda_var, rho, alpha)
         # Then, after calculating hrtf you should transform it to the frequency domain to perform the demixing
-        # Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
+        Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
         # Finally, you could assemble W
-        #for f in range(n_freq):
-        #    W[f,:,i] = np.conj([Hrtf[f,i], -1]).T
+        for f in range(n_freq):
+            W[f,:,i] = np.conj([Hrtf[f,i], -1]).T
 
     demix(Y, X, np.array(range(n_freq)), W)
 

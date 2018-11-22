@@ -11,11 +11,11 @@ def ADMM(A, y):
 
     This is simplified version, specifically for the LASSO
     """
-
     m, n = A.shape
     A_t_A = A.T.dot(A)
     w, v = np.linalg.eig(A_t_A)
-    MAX_ITER = 10000
+    MAX_ITER = 10
+
 
     # Function to caluculate min 1/2(y - Ax) + l||x||
     # via alternating direction methods
@@ -30,6 +30,7 @@ def ADMM(A, y):
 
     # Pre-compute to save some multiplications
     A_t_y = A.T.dot(y)
+    A_t_y = A_t_y.reshape(n,1)
     Q = A_t_A + rho * np.identity(n)
     Q = np.linalg.inv(Q)
     Q_dot = Q.dot
@@ -37,7 +38,7 @@ def ADMM(A, y):
     maximum = np.maximum
     absolute = np.absolute
 
-    for _ in range(MAX_ITER):
+    for i in range(MAX_ITER):
         # x minimisation step via posterier OLS
         x_hat = Q_dot(A_t_y + rho * (z_hat - u))
         # z minimisation via soft-thresholding
@@ -45,8 +46,9 @@ def ADMM(A, y):
         z_hat = sign(u) * maximum(0, absolute(u) - l_over_rho)
         # mulitplier update
         u = u - z_hat
+        print("Iteration: {d}, ".format(d=i))
 
-    return z_hat
+    return np.squeeze(z_hat)
 
 
 def test(m=50, n=200):
