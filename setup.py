@@ -10,8 +10,10 @@ with open('pyroomacoustics/version.py') as f:
 try:
     from setuptools import setup, Extension
     from setuptools.command.build_ext import build_ext
+    from setuptools import distutils
 except ImportError:
     print("Setuptools unavailable. Falling back to distutils.")
+    import distutils
     from distutils.core import setup
     from distutils.extension import Extension
     from distutils.command.build_ext import build_ext
@@ -83,7 +85,7 @@ def has_flag(compiler, flagname):
         f.write('int main (int argc, char **argv) { return 0; }')
         try:
             compiler.compile([f.name], extra_postargs=[flagname])
-        except setuptools.distutils.errors.CompileError:
+        except distutils.errors.CompileError:
             return False
     return True
 
