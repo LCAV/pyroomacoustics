@@ -1,7 +1,12 @@
 language: python
+os:
+  - osx
+  - linux
 python:
   - 2.7
   - 3.5
+  - 3.6
+  - 3.7
 
 notifications:
   slack: echology:avPAhIlErQnf7XSUGcSB5awZ

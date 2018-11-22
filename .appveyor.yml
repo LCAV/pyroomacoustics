@@ -23,6 +23,7 @@ init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
 
 install:
+  - git submodule update --init --recursive
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
