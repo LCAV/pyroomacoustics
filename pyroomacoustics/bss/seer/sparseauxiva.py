@@ -17,7 +17,7 @@ f_contrasts = {
     'cosh': {'f': (lambda r, c, m: m * np.log(np.cosh(c * r))), 'df': (lambda r, c, m: c * m * np.tanh(c * r))}
 }
 
-def sparseauxiva(X, S, mu, n_iter, return_filters=False):
+def sparseauxiva(X, S, mu, n_iter,proj_back=True, return_filters=False):
     n_frames, n_freq, n_chan = X.shape
 
     k_freq = S.shape[0]
@@ -82,6 +82,11 @@ def sparseauxiva(X, S, mu, n_iter, return_filters=False):
     demix(Y, X, np.array(range(n_freq)), W)
 
     # Note: Remember applying projection_back in the end (in ../bss/.common.py) to solve the scale ambiguity
+
+    if proj_back:
+        z = projection_back(Y, X[:,:,0])
+        Y *= np.conj(z[None,:,:])
+
     if return_filters:
         return Y, W
     else:

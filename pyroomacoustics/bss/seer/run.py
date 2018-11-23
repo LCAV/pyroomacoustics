@@ -27,11 +27,14 @@ wav_files = [
 
 fs = 16000
 
-signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32)
+signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32,order='C')
 
                            for f in source_files])
 
            for source_files in wav_files]
+
+wavfile.write('audio/sample1.wav',fs,np.asarray(signals[0], dtype=np.int16))
+wavfile.write('audio/sample2.wav',fs,np.asarray(signals[1], dtype=np.int16))
 
 # Define an anechoic room envrionment, as well as the microphone array and source locations.
 
@@ -73,10 +76,11 @@ separate_recordings = np.array(separate_recordings)
 # Mix down the recorded signals
 mics_signals = np.sum(separate_recordings, axis=0)
 
-print(mics_signals.shape)
-wavfile.write('mix1.wav',fs,mics_signals.T)
-
-sd.play(mics_signals.T[:,0], fs)
+# save mixed signals as wav files
+wavfile.write('audio/mix1.wav',fs,np.asarray(mics_signals[0].T, dtype=np.int16))
+wavfile.write('audio/mix2.wav',fs,np.asarray(mics_signals[1].T, dtype=np.int16))
+wavfile.write('audio/mix1_norm.wav',fs,np.asarray(mics_signals[0].T/np.max(np.abs(mics_signals[0].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/mix2_norm.wav',fs,np.asarray(mics_signals[1].T/np.max(np.abs(mics_signals[1].T)) * 32767, dtype=np.int16))
 
 # STFT frame length
 L = 2048
@@ -105,11 +109,8 @@ y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, 
 
 # Compare SIR and SDR with our reference signal
 sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
-sd.play(y[0], fs)
 
-mydata = sd.rec(int(y[0]),fs, blocking=True)
-sf.write('demix0.wav', mydata, fs)
-
-
-mydata = sd.rec(int(y[1]),fs, blocking=True)
-sf.write('demix1.wav', mydata, fs)
+wavfile.write('audio/demix1.wav',fs,np.asarray(y[0].T, dtype=np.int16))
+wavfile.write('audio/demix2.wav',fs,np.asarray(y[1].T, dtype=np.int16))
+wavfile.write('audio/demix1.wav',fs,np.asarray(y[0].T/np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/demix2.wav',fs,np.asarray(y[1].T/np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
