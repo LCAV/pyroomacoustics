@@ -10,10 +10,11 @@
  * (c) 2018 Robin Scheibler
  * MIT License
  */
-
-#include "geometry.hpp"
+ 
 #include <iostream>
 #include <cmath>
+#include "utility.hpp"
+#include "geometry.hpp"
 
 
 int ccw3p(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2, const Eigen::VectorXf &p3)
@@ -343,3 +344,47 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
   }
   return a;
 }
+
+
+float angle_between(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
+{
+	/* Function that takes 2 vectors with 3 components and computes the angle between them.
+	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
+
+	Eigen::Vector3f v1n = v1.normalized();
+	Eigen::Vector3f v2n = v2.normalized();
+		
+	return 	acos(clamp(v1n.dot(v2n), -1., 1.));
+}
+
+float angle_between(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2)
+{
+	/* Function that takes 2 vectors with 2 components and computes the angle between them.
+	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
+	 
+	Eigen::Vector2f v1n = v1.normalized();
+	Eigen::Vector2f v2n = v2.normalized();
+		
+	return 	acos(clamp(v1n.dot(v2n), -1., 1.));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

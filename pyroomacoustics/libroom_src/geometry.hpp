@@ -2,6 +2,8 @@
 #define __GEOMETRY_H__
 
 #include <Eigen/Dense>
+#include <Eigen/Core>
+
 
 extern float libroom_eps;
 
@@ -29,5 +31,9 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     const Eigen::MatrixXf &corners);
 
 float area_2d_polygon(const Eigen::MatrixXf &corners);
+
+float angle_between(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2);
+
+float angle_between(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2);
 
 #endif // __GEOMETRY_H__
