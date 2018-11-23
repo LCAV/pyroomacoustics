@@ -73,12 +73,10 @@ separate_recordings = np.array(separate_recordings)
 # Mix down the recorded signals
 mics_signals = np.sum(separate_recordings, axis=0)
 
-mydata = sd.rec(mics_signals[0],fs,channels=2, blocking=True)
-sf.write('mix0.wav', mydata, fs)
+print(mics_signals.shape)
+wavfile.write('mix1.wav',fs,mics_signals.T)
 
-
-mydata = sd.rec(mics_signals[1],fs,channels=2, blocking=True)
-sf.write('mix1.wav', mydata, fs)
+sd.play(mics_signals.T[:,0], fs)
 
 # STFT frame length
 L = 2048
