@@ -346,7 +346,7 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
 }
 
 
-float angle_between(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
+float angle_between_3D(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
 {
 	/* Function that takes 2 vectors with 3 components and computes the angle between them.
 	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
@@ -357,7 +357,7 @@ float angle_between(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
 	return 	acos(clamp(v1n.dot(v2n), -1., 1.));
 }
 
-float angle_between(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2)
+float angle_between_2D(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2)
 {
 	/* Function that takes 2 vectors with 2 components and computes the angle between them.
 	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
