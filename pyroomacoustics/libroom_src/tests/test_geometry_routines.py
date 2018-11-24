@@ -160,5 +160,21 @@ class TestGeometryRoutines(unittest.TestCase):
         ret = pra.libroom.is_inside_2d_polygon([4, 2], corners)
         self.assertTrue(all([ret == -1]))
 
+    def test_angleBetween3D_orthog(self):
+        eps = 0.001
+        result = pra.libroom.angle_between_3D([1.,0.,0.],[0.,0.,1.])
+        self.assertTrue(all([abs(result-np.pi/2) < eps]))
+
+    def test_angleBetween3D_colinear(self):
+        eps = 0.001
+        result = pra.libroom.angle_between_3D([1.,1.,0.],[-1.,-1.,0.])
+        self.assertTrue(all([abs(result-np.pi) < eps]))
+
+    def test_angleBetween3D_special(self):
+        eps = 0.001
+        result = pra.libroom.angle_between_3D([36.,1.,-4.],[12.,-1.,2.])
+        self.assertTrue(all([abs(result-0.29656619639789794) < eps]))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 
 #include "geometry.hpp"
+#include "utility.hpp"
 #include "wall.hpp"
 #include "room.hpp"
 
@@ -114,5 +115,15 @@ PYBIND11_MODULE(libroom, m) {
 
     m.def("area_2d_polygon", &area_2d_polygon,
         "Compute the signed area of a planar polygon");
+        
+    m.def("angle_between_2D", &angle_between_2D,
+		"Computes the angle between two 2D vectors");
+		
+	m.def("angle_between_3D", &angle_between_3D,
+		"Computes the angle between two 3D vectors");
+	
+	// Routines for the utility packages
+	m.def("equation", &equation,
+		"Computes the a and b coefficients in the expression y=ax+b given two points lying on that line.");
 }
 

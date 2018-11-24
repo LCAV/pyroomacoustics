@@ -2,7 +2,6 @@
 #define __GEOMETRY_H__
 
 #include <Eigen/Dense>
-#include <Eigen/Core>
 
 
 extern float libroom_eps;
