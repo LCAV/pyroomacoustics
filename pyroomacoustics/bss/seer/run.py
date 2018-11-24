@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
 from sparseauxiva import sparseauxiva
 import sounddevice as sd
+from plots import plotInitials, plotComparaison
 
 
 # Blind Source Separation techniques such as Independent Vector Analysis (IVA)
@@ -26,6 +26,7 @@ wav_files = [
 ]
 
 fs = 16000
+plot = True
 
 signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32,order='C')
 
@@ -92,14 +93,19 @@ X = np.moveaxis(X, 0, 2)
 # Reference signal to calculate performance of BSS
 
 ref = np.moveaxis(separate_recordings, 1, 2)
+
+if(plot):
+    plotInitials(ref, room)
+
+
 SDR, SIR = [], []
-ratio = 0.8
+ratio = 1
 average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
 k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
 S = np.sort(S)
 mu = 0
-n_iter = 20
+n_iter = 30
 
 # Run SparseAuxIva
 Y = sparseauxiva(X, S, mu, n_iter)
@@ -110,7 +116,10 @@ y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, 
 # Compare SIR and SDR with our reference signal
 sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
 
+if(plot):
+    plotComparaison(ref,y,room)
+
 wavfile.write('audio/demix1.wav',fs,np.asarray(y[0].T, dtype=np.int16))
 wavfile.write('audio/demix2.wav',fs,np.asarray(y[1].T, dtype=np.int16))
-wavfile.write('audio/demix1.wav',fs,np.asarray(y[0].T/np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
-wavfile.write('audio/demix2.wav',fs,np.asarray(y[1].T/np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/demix1_norm.wav',fs,np.asarray(y[0].T/np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/demix2_norm.wav',fs,np.asarray(y[1].T/np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))

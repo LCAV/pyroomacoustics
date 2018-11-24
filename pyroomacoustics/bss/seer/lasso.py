@@ -1,3 +1,4 @@
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from math import sqrt, log
@@ -11,10 +12,16 @@ def ADMM(A, y):
 
     This is simplified version, specifically for the LASSO
     """
+
     m, n = A.shape
     A_t_A = A.T.dot(A)
+
+    start_time = datetime.datetime.now()
     w, v = np.linalg.eig(A_t_A)
     MAX_ITER = 10
+    end_time = datetime.datetime.now()
+    print((end_time - start_time).total_seconds())
+
 
 
     # Function to caluculate min 1/2(y - Ax) + l||x||
@@ -23,11 +30,14 @@ def ADMM(A, y):
     z_hat = np.zeros([n, 1])
     u = np.zeros([n, 1])
 
+
     # Calculate regression co-efficient and stepsize
     r = np.amax(np.absolute(w))
     l_over_rho = sqrt(2 * log(n, 10)) * r / 2.0  # I might be wrong here
     rho = 1 / r
 
+
+    start_time = datetime.datetime.now()
     # Pre-compute to save some multiplications
     A_t_y = A.T.dot(y)
     A_t_y = A_t_y.reshape(n,1)
@@ -37,6 +47,8 @@ def ADMM(A, y):
     sign = np.sign
     maximum = np.maximum
     absolute = np.absolute
+    end_time = datetime.datetime.now()
+    print((end_time - start_time).total_seconds())
 
     for i in range(MAX_ITER):
         # x minimisation step via posterier OLS
