@@ -45,6 +45,8 @@ PYBIND11_MODULE(libroom, m) {
       .def("image_source_model", &Room::image_source_model)
       .def("image_source_shoebox", &Room::image_source_shoebox)
       .def("get_wall", &Room::get_wall)
+      .def("get_max_distance_3D", &Room::get_max_distance_3D)
+      .def("get_max_distance_2D", &Room::get_max_distance_2D)
       .def_readonly("sources", &Room::sources)
       .def_readonly("orders", &Room::orders)
       .def_readonly("attenuations", &Room::attenuations)

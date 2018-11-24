@@ -64,6 +64,9 @@ class Room
         const Eigen::VectorXf &room_size,
         const Eigen::VectorXf &absorption,
         int max_order);
+        
+    float get_max_distance_3D();
+    float get_max_distance_2D();
 
   private:
     // We need a stack to store the image sources during the algorithm

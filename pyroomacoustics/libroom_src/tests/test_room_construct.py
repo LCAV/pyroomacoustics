@@ -53,3 +53,7 @@ def test_room_construct():
 if __name__ == '__main__':
     
     room = test_room_construct()
+
+    corners = room.get_wall(0).corners
+
+    print(corners)
