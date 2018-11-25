@@ -394,12 +394,6 @@ def get_intersected_walls(start, end, room, previous_wall):
         different_than_previous = previous_wall is not None   and   not same_wall(previous_wall, w)
         w_intersects_segment = w.intersects(start, end)[0]
 
-        # if (w_intersects_segment):
-        #     print()
-        #     print("prev :", previous_wall)
-        #     print("wall candidate :", w)
-        #     sys.stdout.flush()
-
         # Candidate walls for first hit
         if w_intersects_segment and (previous_wall is None or different_than_previous):
             intersected_walls = intersected_walls + [w]

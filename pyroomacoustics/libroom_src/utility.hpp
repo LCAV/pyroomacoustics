@@ -3,10 +3,15 @@
 
 #include <Eigen/Dense>
 
+using namespace Eigen;
 
 double clamp(double value, double min, double max);
 
-Eigen::Vector2f equation(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2);
+Vector2f equation(const Vector2f &p1, const Vector2f &p2);
+
+VectorXf compute_segment_end(const VectorXf start_point, float_t length, float phi, float theta);
+
+
 
 
 

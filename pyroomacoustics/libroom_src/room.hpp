@@ -7,6 +7,7 @@
 #include "wall.hpp"
 
 typedef Eigen::Matrix<int, Eigen::Dynamic, 1> VectorXi;
+typedef Eigen::Matrix<int, 1, 1> Vector1i;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
 
@@ -66,6 +67,14 @@ class Room
         int max_order);
         
     float get_max_distance();
+    
+	Eigen::VectorXf next_wall_hit(
+					const Eigen::VectorXf &start,
+					const Eigen::VectorXf &end,
+					bool there_is_prev_wall,
+					const Wall &previous_wall,
+					Eigen::Ref<Vector1i> next_wall_index);
+					
 
   private:
     // We need a stack to store the image sources during the algorithm

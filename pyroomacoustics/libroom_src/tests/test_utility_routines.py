@@ -27,5 +27,37 @@ class TestUtilityRoutines(unittest.TestCase):
         a,b = pra.libroom.equation(p1, p2)
         self.assertTrue(all([a == -0.5 and b == 6.]))
 
+    def test_segment_end2D(self):
+
+        eps = 0.001
+
+        start = [0, 0]
+        phi = np.pi
+        theta = 0.
+        length = 2.
+
+        res = pra.libroom.compute_segment_end(start, length, phi, theta)
+
+        ok0 = abs(res[0] - (-2.0)) < eps
+        ok1 = abs(res[1] - .0) < eps
+        self.assertTrue(all([ok0 and ok1]))
+
+    def test_segment_end3D(self):
+
+        eps = 0.001
+
+        start = [1, 1, 1]
+        phi = 0.35
+        theta = 2.
+        length = 2.
+
+        res = pra.libroom.compute_segment_end(start, length, phi, theta)
+
+        ok0 = abs(res[0] - (1+ length*np.sin(theta)*np.cos(phi))) < eps
+        ok1 = abs(res[1] - (1+ length*np.sin(theta)*np.sin(phi))) < eps
+        ok2 = abs(res[2] - (1+ length*np.cos(theta))) < eps
+        self.assertTrue(all([ok0 and ok1 and ok2]))
+
+
 if __name__ == '__main__':
     unittest.main()

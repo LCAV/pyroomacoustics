@@ -345,6 +345,52 @@ float Room::get_max_distance(){
 
 
 
+Eigen::VectorXf Room::next_wall_hit(
+					const Eigen::VectorXf &start,
+					const Eigen::VectorXf &end,
+					bool there_is_prev_wall,
+					const Wall &previous_wall,
+					Eigen::Ref<Vector1i> next_wall_index){
+						
+	/* Computes the next next wall_hit position given a segment defined
+	 * by its endpoints. This method also stores the index of the wall
+	 * that contains this next hit point. */
+						
+	Eigen::VectorXf result;
+	result.resize(dim);
+	
+	float_t min_dist(get_max_distance());
+	
+	for (size_t i(0); i < walls.size(); ++i){
+		
+		Eigen::VectorXf temp_hit;
+		temp_hit.resize(dim);
+		
+		Wall w = walls[i];
+		
+		bool different_than_prev = there_is_prev_wall and not w.same_as(previous_wall);
+		bool intersects = (w.intersection(start, end, temp_hit) > -1);
+		float_t temp_dist = (start-temp_hit).norm();
+		
+		bool closer_than_prev =  temp_dist<min_dist;
+		
+		if (closer_than_prev
+			and intersects
+			and (different_than_prev or not there_is_prev_wall)){
+				
+			min_dist = temp_dist;
+			result = temp_hit;
+			next_wall_index[0] = i;
+		}
+			
+			
+		
+	}
+	return result;
+}					
+					
+					
+
 
 
 

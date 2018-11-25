@@ -4,6 +4,7 @@
 #include <string>
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/stl.h>
 #include <Eigen/Dense>
 
 #include "geometry.hpp"
@@ -46,6 +47,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("image_source_shoebox", &Room::image_source_shoebox)
       .def("get_wall", &Room::get_wall)
       .def("get_max_distance", &Room::get_max_distance)
+      .def("next_wall_hit", &Room::next_wall_hit)
       .def_readonly("sources", &Room::sources)
       .def_readonly("orders", &Room::orders)
       .def_readonly("attenuations", &Room::attenuations)
@@ -124,5 +126,8 @@ PYBIND11_MODULE(libroom, m) {
 	// Routines for the utility packages
 	m.def("equation", &equation,
 		"Computes the a and b coefficients in the expression y=ax+b given two points lying on that line.");
+		
+	m.def("compute_segment_end", &compute_segment_end,
+		"Computes the end point of a segment given the start point, the length, and the orientation");
 }
 
