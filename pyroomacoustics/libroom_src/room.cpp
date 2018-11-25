@@ -277,30 +277,37 @@ int Room::image_source_shoebox(
   return fill_sources();
 }
 
-float Room::get_max_distance_3D(){
+
+float Room::get_max_distance(){
 	
 	/* This function outputs a value L that is strictly larger than any distance
-	 * that a ray could travel in straight line in the 3D room without
+	 * that a ray could travel in straight line in the 2D or 3D room without
 	 * hitting anything.
 	 * As we are sure that a ray reflecting from a hit_point H will hit
 	 * another wall in less than L meters, we can use the wall intersection
 	 * functions with the segment starting at H and of length V*/
-	 
-	if (this -> dim != 3){
-		std::cerr << "This method only supports 3D rooms" << std::endl;
-		throw std::exception();
-    }
 	
-	float maxX, maxY, maxZ;
-	float minX, minY, minZ;
+	// Useless initialization to avoid compilation warnings
+	float maxX(0), maxY(0), maxZ(0);
+	float minX(0), minY(0), minZ(0);
 	
 	size_t n_walls = walls.size();
 	
 	for (size_t i(0); i<n_walls; ++i){
 		Wall wi = this -> get_wall(i);
 		
-		Eigen::Vector3f max_coord = wi.corners.rowwise().maxCoeff();
-		Eigen::Vector3f min_coord = wi.corners.rowwise().minCoeff();
+		Eigen::Vector3f max_coord(0,0,0);
+		Eigen::Vector3f min_coord(0,0,0);
+		
+		if (this -> dim == 2){
+			max_coord.head(2) = wi.corners.rowwise().maxCoeff();
+			min_coord.head(2) = wi.corners.rowwise().minCoeff();
+		}else{
+			max_coord = wi.corners.rowwise().maxCoeff();
+			min_coord = wi.corners.rowwise().minCoeff();
+		}
+		
+		
 		
 		if (i == 0){
 			maxX = max_coord[0]; minX = min_coord[0];
@@ -327,67 +334,14 @@ float Room::get_max_distance_3D(){
 		}	
 	}
 	
+	// If we are in 2D, maxZ = minZ = 0
+	// so there won't be any difference
 	Eigen::Vector3f max_point(maxX, maxY, maxZ);
 	Eigen::Vector3f min_point(minX, minY, minZ);
 	
 	return (min_point - max_point).norm() + 1;
 
 }
-
-float Room::get_max_distance_2D(){
-	
-	/* This function outputs a value L that is strictly larger than any distance
-	 * that a ray could travel in straight line in the 2D room without
-	 * hitting anything.
-	 * As we are sure that a ray reflecting from a hit_point H will hit
-	 * another wall in less than L meters, we can use the wall intersection
-	 * functions with the segment starting at H and of length V*/
-	 
-	if (this -> dim != 2){
-		std::cerr << "This method only supports 2D rooms" << std::endl;
-		throw std::exception();
-    }
-	
-	float maxX, maxY;
-	float minX, minY;
-	
-	size_t n_walls = walls.size();
-	
-	for (size_t i(0); i<n_walls; ++i){
-		Wall wi = this -> get_wall(i);
-		
-		Eigen::Vector2f max_coord = wi.corners.rowwise().maxCoeff();
-		Eigen::Vector2f min_coord = wi.corners.rowwise().minCoeff();
-		
-		if (i == 0){
-			maxX = max_coord[0]; minX = min_coord[0];
-			maxY = max_coord[1]; minY = min_coord[1];
-			
-		}else{
-			
-			// Update max point
-			if (max_coord[0] > maxX)
-				maxX = max_coord[0];
-			if (max_coord[1] > maxY)
-				maxY = max_coord[1];
-				
-			// Update min point
-			if (min_coord[0] < minX)
-				minX = min_coord[0];
-			if (min_coord[1] < minY)
-				minY = min_coord[1];
-		}	
-	}
-	
-	Eigen::Vector2f max_point(maxX, maxY);
-	Eigen::Vector2f min_point(minX, minY);
-	
-	return (min_point - max_point).norm() + 1;
-
-}
-
-
-
 
 
 

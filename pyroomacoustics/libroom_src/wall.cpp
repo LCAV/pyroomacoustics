@@ -223,3 +223,40 @@ int Wall::_intersection_segment_3d(  // intersection routine specialized for 3D
 
   return ret;  // no intersection
 }
+
+bool Wall::same_as(const Wall &that){
+	
+	if (dim != that.dim){
+		std::cerr << "The two walls are not of the same dimensions !" << std::endl;
+		throw std::exception();
+	}
+	
+	// Not the same number of corners
+	if(corners.cols() != that.corners.cols()){
+		return false;
+	}
+	
+	return (corners - that.corners).cwiseAbs().sum() == 0.;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

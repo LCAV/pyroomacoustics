@@ -45,8 +45,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("image_source_model", &Room::image_source_model)
       .def("image_source_shoebox", &Room::image_source_shoebox)
       .def("get_wall", &Room::get_wall)
-      .def("get_max_distance_3D", &Room::get_max_distance_3D)
-      .def("get_max_distance_2D", &Room::get_max_distance_2D)
+      .def("get_max_distance", &Room::get_max_distance)
       .def_readonly("sources", &Room::sources)
       .def_readonly("orders", &Room::orders)
       .def_readonly("attenuations", &Room::attenuations)
@@ -68,6 +67,7 @@ PYBIND11_MODULE(libroom, m) {
         .def("intersects", &Wall::intersects)
         .def("side", &Wall::side)
         .def("reflect", &Wall::reflect)
+        .def("same_as", &Wall::same_as)
         .def_readonly("dim", &Wall::dim)
         .def_readwrite("absorption", &Wall::absorption)
         .def_readwrite("name", &Wall::name)
@@ -117,12 +117,9 @@ PYBIND11_MODULE(libroom, m) {
 
     m.def("area_2d_polygon", &area_2d_polygon,
         "Compute the signed area of a planar polygon");
-        
-    m.def("angle_between_2D", &angle_between_2D,
-		"Computes the angle between two 2D vectors");
 		
-	m.def("angle_between_3D", &angle_between_3D,
-		"Computes the angle between two 3D vectors");
+	m.def("angle_between", &angle_between,
+		"Computes the angle between two 2D or 3D vectors");
 	
 	// Routines for the utility packages
 	m.def("equation", &equation,

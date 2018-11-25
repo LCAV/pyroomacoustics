@@ -20,11 +20,6 @@ int print(double value);
 
 int main(){
 	
-	Vector2f vec(1,1);
-	Vector2f vec2(-1,-1);
-		
-	print(angle_between_2D(vec, vec2));
-
 	return 0;
 }
 

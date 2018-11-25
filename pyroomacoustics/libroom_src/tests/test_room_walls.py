@@ -41,6 +41,7 @@ wall_corners_3D = [
             ]),
         ]
 
+
 absorptions_3D = [ 0.1, 0.25, 0.25, 0.25, 0.2, 0.15 ]
 
 
@@ -72,7 +73,7 @@ wall_corners_2D = [
 absorptions_2D = [ 0.1, 0.25, 0.25, 0.25, 0.2]
 
 
-class TestRoomMaxDist(unittest.TestCase):
+class TestRoomWalls(unittest.TestCase):
 
     def test_max_dist_3D(self):
 
@@ -87,7 +88,7 @@ class TestRoomMaxDist(unittest.TestCase):
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
         eps = 0.001
-        result = room.get_max_distance_3D()
+        result = room.get_max_distance()
         correct = np.sqrt(116)+1
         self.assertTrue(all([abs(result - correct) < eps]))
 
@@ -104,8 +105,36 @@ class TestRoomMaxDist(unittest.TestCase):
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
         eps = 0.001
-        result = room.get_max_distance_2D()
+        result = room.get_max_distance()
         self.assertEqual(result, np.sqrt(25)+1)
+
+    def test_same_wall_true3D(self):
+        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
+        self.assertTrue(all([w1.same_as(w2)]))
+
+    def test_same_wall_true2D(self):
+        w1 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
+        w2 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
+        self.assertTrue(all([w1.same_as(w2)]))
+
+    def test_same_wall_false3D(self):
+        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom_new.Wall(wall_corners_3D[1], absorptions_3D[0])
+        self.assertTrue(all([not w1.same_as(w2)]))
+
+    def test_same_wall_false3D_more_corners(self):
+
+        # Modification of wall_corners_3D[0]: adding a corner => 5 corners wall
+        c1 = np.array([
+            [0, 3, 3, 1.5, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 2, 1.5, 2]])
+
+        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom_new.Wall(c1, absorptions_3D[0])
+        self.assertTrue(all([not w1.same_as(w2)]))
+
 
 if __name__ == '__main__':
     unittest.main()

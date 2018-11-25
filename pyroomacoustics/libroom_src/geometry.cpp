@@ -346,29 +346,21 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
 }
 
 
-float angle_between_3D(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
+float angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2)
 {
 	/* Function that takes 2 vectors with 3 components and computes the angle between them.
 	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
-
-	Eigen::Vector3f v1n = v1.normalized();
-	Eigen::Vector3f v2n = v2.normalized();
-		
-	return 	acos(clamp(v1n.dot(v2n), -1., 1.));
-}
-
-float angle_between_2D(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2)
-{
-	/* Function that takes 2 vectors with 2 components and computes the angle between them.
-	 * The result is in radians and belongs to the unsigned [0;pi] interval*/
 	 
-	Eigen::Vector2f v1n = v1.normalized();
-	Eigen::Vector2f v2n = v2.normalized();
-		
-	return 	acos(clamp(v1n.dot(v2n), -1., 1.));
+	 int s1 = v1.size();
+	 int s2 = v2.size();
+	 
+	 if (s1<2 or s1>3 or s2<2 or s2>3 or s1 != s2){
+		 std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		throw std::exception();
+	 }
+
+	return 	acos(clamp(v1.normalized().dot(v2.normalized()), -1., 1.));
 }
-
-
 
 
 

@@ -26,7 +26,7 @@ class Wall
     float absorption;
     std::string name;
     
-    Eigen::VectorXf  normal;
+    Eigen::VectorXf normal;
     Eigen::MatrixXf corners;
 
     /* for 3D wall, provide local basis for plane of wall */
@@ -48,6 +48,7 @@ class Wall
 
     int reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected);
     int side(const Eigen::VectorXf &p);
+    bool same_as(const Wall &that);
 
   private:
     int _intersection_segment_3d(  // intersection routine specialized for 3D

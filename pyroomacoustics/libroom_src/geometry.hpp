@@ -31,9 +31,7 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 
 float area_2d_polygon(const Eigen::MatrixXf &corners);
 
-float angle_between_2D(const Eigen::Vector2f &v1, const Eigen::Vector2f &v2);
-
-float angle_between_3D(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2);
+float angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2);
 
 
 
