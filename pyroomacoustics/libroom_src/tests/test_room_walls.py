@@ -90,7 +90,7 @@ class TestRoomWalls(unittest.TestCase):
         eps = 0.001
         result = room.get_max_distance()
         correct = np.sqrt(116)+1
-        self.assertTrue(all([abs(result - correct) < eps]))
+        self.assertTrue(abs(result - correct) < eps)
 
 
     def test_max_dist_2D(self):
@@ -111,17 +111,17 @@ class TestRoomWalls(unittest.TestCase):
     def test_same_wall_true3D(self):
         w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
         w2 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
-        self.assertTrue(all([w1.same_as(w2)]))
+        self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_true2D(self):
         w1 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
         w2 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
-        self.assertTrue(all([w1.same_as(w2)]))
+        self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_false3D(self):
         w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
         w2 = pra.libroom_new.Wall(wall_corners_3D[1], absorptions_3D[0])
-        self.assertTrue(all([not w1.same_as(w2)]))
+        self.assertTrue(not w1.same_as(w2))
 
     def test_same_wall_false3D_more_corners(self):
 
@@ -133,7 +133,7 @@ class TestRoomWalls(unittest.TestCase):
 
         w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
         w2 = pra.libroom_new.Wall(c1, absorptions_3D[0])
-        self.assertTrue(all([not w1.same_as(w2)]))
+        self.assertTrue(not w1.same_as(w2))
 
 
     def test_next_wall_hit(self):
@@ -163,7 +163,7 @@ class TestRoomWalls(unittest.TestCase):
         correct_result = sum(abs(result - np.array([0,2,1]))) < eps
         correct_next_wall = a[0] == 4
 
-        self.assertTrue(all([correct_next_wall and correct_result]))
+        self.assertTrue(correct_next_wall and correct_result)
 
 
     def test_next_wall_hit2D(self):
@@ -193,7 +193,7 @@ class TestRoomWalls(unittest.TestCase):
         correct_result = sum(abs(result-np.array([0,-1./3]))) < eps
         correct_next_wall = a[0] == 4
 
-        self.assertTrue(all([correct_next_wall and correct_result ]))
+        self.assertTrue(correct_next_wall and correct_result )
 
 if __name__ == '__main__':
     unittest.main()

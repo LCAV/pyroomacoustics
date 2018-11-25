@@ -129,5 +129,8 @@ PYBIND11_MODULE(libroom, m) {
 		
 	m.def("compute_segment_end", &compute_segment_end,
 		"Computes the end point of a segment given the start point, the length, and the orientation");
+		
+	m.def("compute_reflected_end", &compute_reflected_end,
+		"This function operates when we know the vector [start, hit_point]. This function computes the end point E so that [hit_point, E] is the reflected vector of [start, hit_point] with the correct magnitude");
 }
 

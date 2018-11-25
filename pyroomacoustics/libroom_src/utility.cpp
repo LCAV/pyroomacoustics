@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include "utility.hpp"
+#include "geometry.hpp"
 
 using namespace Eigen;
 
@@ -16,8 +17,8 @@ double clamp(double value, double min, double max){
 	return value;
 }
 
-Vector2f equation(const Vector2f &p1, const Vector2f &p2)
-{
+
+Vector2f equation(const Vector2f &p1, const Vector2f &p2){
 	/* Function that computes the a and be coefficients of the line defined
 	 * by the equation y = a*x + b.
 	 * The function is given two points p1 and p2, each one defined by its
@@ -62,4 +63,23 @@ VectorXf compute_segment_end(const VectorXf start, float_t length, float phi, fl
 	throw std::exception();
 }
 
-
+VectorXf compute_reflected_end(const VectorXf &start,
+							   const VectorXf &hit_point,
+							   const VectorXf &wall_normal,
+							   float_t length){
+								   
+	VectorXf incident = (hit_point-start).normalized();
+	
+	VectorXf n = wall_normal;
+	
+	// Reverse the normal if the angle between the incoming ray and 
+	// the normal is more than PI/2 rad
+	
+	if (angle_between((-1)*incident, n) > M_PI_2){
+		n = (-1)*wall_normal;
+	}
+	
+	return hit_point + length*( (incident - n*2*incident.dot(n)).normalized() );
+		
+}
+							  
