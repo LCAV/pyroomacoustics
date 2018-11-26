@@ -7,7 +7,7 @@ import numpy as np
 
 from pyroomacoustics import stft, istft
 from pyroomacoustics.bss.common import projection_back
-from lasso import ADMM
+from lasso import lasso_admm
 from demix import *
 from scipy.linalg import dft
 
@@ -69,10 +69,11 @@ def sparseauxiva(X, S, mu, n_iter,proj_back=True, return_filters=False):
     hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
     Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
     DFT_matrix = dft(n_freq)
+    print(np.all(np.linalg.eigvals(DFT_matrix) > 0))
     for i in range(n_chan):
         Z[i, :] = np.array([W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
         # I believe in your case A is the DFT matrix of size |S| x F, and x is the h_rtf in the time domain.
-        hrtf[:, i] = ADMM(DFT_matrix[S, :], Z[i,:]) #, lambda_var, rho, alpha)
+        hrtf[:, i], h = lasso_admm(DFT_matrix[S, :], Z[i,:], mu) #, lambda_var, rho, alpha)
         # Then, after calculating hrtf you should transform it to the frequency domain to perform the demixing
         Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
         # Finally, you could assemble W

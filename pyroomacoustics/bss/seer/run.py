@@ -26,7 +26,7 @@ wav_files = [
 ]
 
 fs = 16000
-plot = True
+plot = False
 
 signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32,order='C')
 
