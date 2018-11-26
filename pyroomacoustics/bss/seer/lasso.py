@@ -1,6 +1,7 @@
 import pdb, time
 import numpy as np
 import scipy.sparse as sparse
+from scipy.linalg import lu
 from scipy.sparse.linalg import spsolve
 from numpy.linalg import norm, cholesky
 
@@ -11,7 +12,7 @@ Date    : 12/06/2015
 
 
 def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
-               MAX_ITER=50, ABSTOL=1e-3, RELTOL=1e-2):
+               MAX_ITER=10, ABSTOL=1e-3, RELTOL=1e-2):
     """
      Solve lasso problem via ADMM
 
@@ -45,16 +46,13 @@ def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
     def factor(X, rho):
         m, n = X.shape
         if m >= n:
-            L = cholesky(X.T.dot(X) + rho * sparse.eye(n))
+            _, L, _ = lu(X.T.dot(X) + rho * sparse.eye(n))
         else:
-            L = cholesky(sparse.eye(m) + 1. / rho * (X.dot(X.T)))
+            _, L, _ = lu(sparse.eye(m) + 1. / rho * (X.dot(X.T)))
         L = sparse.csc_matrix(L)
         U = sparse.csc_matrix(L.T)
 
         return L, U
-
-    if not QUIET:
-        tic = time.time()
 
     # Data preprocessing
     m, n = X.shape
@@ -69,15 +67,7 @@ def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
     # cache the (Cholesky) factorization
     L, U = factor(X, rho)
 
-    if not QUIET:
-        print
-        '\n%3s\t%10s\t%10s\t%10s\t%10s\t%10s' % ('iter',
-                                                 'r norm',
-                                                 'eps pri',
-                                                 's norm',
-                                                 'eps dual',
-                                                 'objective')
-
+    '''
     # Saving state
     h = {}
     h['objval'] = np.zeros(MAX_ITER)
@@ -85,8 +75,11 @@ def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
     h['s_norm'] = np.zeros(MAX_ITER)
     h['eps_pri'] = np.zeros(MAX_ITER)
     h['eps_dual'] = np.zeros(MAX_ITER)
+    '''
 
-    for k in xrange(MAX_ITER):
+    for k in range(MAX_ITER):
+
+        print("Iteration: {iter}".format(iter=k))
 
         # x-update
         q = Xty + rho * (z - u)  # (temporary value)
@@ -102,31 +95,17 @@ def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
         z = shrinkage(x_hat + u, alpha * 1. / rho)
 
         # u-update
-        u += (x_hat - z)
+        u = u + (x_hat - z)
 
+        '''
         # diagnostics, reporting, termination checks
-        h['objval'][k] = objective(X, y, alpha, x, z)
+        h['objval'][k] = 0#objective(X, y, alpha, x, z)
         h['r_norm'][k] = norm(x - z)
         h['s_norm'][k] = norm(-rho * (z - zold))
         h['eps_pri'][k] = np.sqrt(n) * ABSTOL + \
                           RELTOL * np.maximum(norm(x), norm(-z))
         h['eps_dual'][k] = np.sqrt(n) * ABSTOL + \
                            RELTOL * norm(rho * u)
-        if not QUIET:
-            print
-            '%4d\t%10.4f\t%10.4f\t%10.4f\t%10.4f\t%10.2f' % (k + 1, \
-                                                             h['r_norm'][k], \
-                                                             h['eps_pri'][k], \
-                                                             h['s_norm'][k], \
-                                                             h['eps_dual'][k], \
-                                                             h['objval'][k])
+        '''
 
-        if (h['r_norm'][k] < h['eps_pri'][k]) and (h['s_norm'][k] < h['eps_dual'][k]):
-            break
-
-    if not QUIET:
-        toc = time.time() - tic
-        print
-        "\nElapsed time is %.2f seconds" % toc
-
-    return z.ravel(), h
+    return z.ravel()
