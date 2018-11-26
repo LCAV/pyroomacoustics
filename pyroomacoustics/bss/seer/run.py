@@ -104,7 +104,7 @@ average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
 k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
 S = np.sort(S)
-mu = 0
+mu = 1
 n_iter = 30
 
 # Run SparseAuxIva
