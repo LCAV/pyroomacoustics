@@ -299,6 +299,48 @@ VectorXf mic_intersection(const VectorXf &start,
 	throw std::exception();
 }
 
+void update_travel_time(float_t &travel_time,
+						float_t hop_length,
+						float_t sound_speed){
+							
+	/* This function updates the travel time according to the newly 
+	 * travelled distance*/
+	 
+	travel_time = travel_time + hop_length/sound_speed;	
+}
+
+void update_energy_wall(float_t &energy,
+						const Wall &wall){
+							
+	/* This function updates the travel time according to the newly 
+	 * travelled distance*/
+	 
+	energy = energy * sqrt(1 - wall.absorption);
+}
+
+float compute_scat_energy(float_t energy, float_t scat_coef,
+						  const Wall &wall, 
+						  const VectorXf &start,
+						  const VectorXf &hit_point,
+						  const VectorXf &mic_pos){
+	
+	Vector2f n = wall.normal;
+	
+	// Make sure the normal points inside the room
+	if (angle_between(start-hit_point, n) > M_PI_2){
+		n = (-1)*n;
+	}
+	
+	return energy * scat_coef * cos(angle_between(n, mic_pos-hit_point));
+}
+
+
+
+
+
+
+
+
 
 
 

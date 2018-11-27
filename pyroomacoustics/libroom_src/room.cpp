@@ -354,36 +354,44 @@ Eigen::VectorXf Room::next_wall_hit(
 						
 	/* Computes the next next wall_hit position given a segment defined
 	 * by its endpoints. This method also stores the index of the wall
-	 * that contains this next hit point. */
+	 * that contains this next hit point.
+	 * 
+	 * If no wall is intersected, then the next_wall_index will be -1*/
 						
 	Eigen::VectorXf result;
 	result.resize(dim);
 	
+	next_wall_index[0] = -1;
+	
+	// Upperbound on the min distance that we could find
 	float_t min_dist(get_max_distance());
 	
 	for (size_t i(0); i < walls.size(); ++i){
 		
+		Wall w = walls[i];
+		
+		// To store the results of this iteration
 		Eigen::VectorXf temp_hit;
 		temp_hit.resize(dim);
 		
-		Wall w = walls[i];
-		
+		// The 2 conditions for wall hit (temp_hit computed as a side effect)
 		bool different_than_prev = there_is_prev_wall and not w.same_as(previous_wall);
 		bool intersects = (w.intersection(start, end, temp_hit) > -1);
-		float_t temp_dist = (start-temp_hit).norm();
 		
-		bool closer_than_prev =  temp_dist<min_dist;
 		
-		if (closer_than_prev
-			and intersects
-			and (different_than_prev or not there_is_prev_wall)){
+		
+		if (intersects and
+			(different_than_prev or not there_is_prev_wall)){
 				
-			min_dist = temp_dist;
-			result = temp_hit;
-			next_wall_index[0] = i;
+			float_t temp_dist = (start-temp_hit).norm();
+			
+			if (temp_dist < min_dist){
+				
+				min_dist = temp_dist;
+				result = temp_hit;
+				next_wall_index[0] = i;
+			}
 		}
-			
-			
 		
 	}
 	return result;

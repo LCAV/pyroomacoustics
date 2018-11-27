@@ -156,14 +156,41 @@ class TestRoomWalls(unittest.TestCase):
         # end at the same (x,y) but very high in the sky
         end = [5,-3,1]
 
-        a = np.zeros(1, dtype=np.int32)
+        wall_idx = np.zeros(1, dtype=np.int32)
 
-        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), a))
+        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
 
-        correct_result = sum(abs(result - np.array([0,2,1]))) < eps
-        correct_next_wall = a[0] == 4
+        correct_result = np.allclose(result, [0,2,1], atol=eps)
+        correct_next_wall = wall_idx[0] == 4
 
         self.assertTrue(correct_next_wall and correct_result)
+
+
+    def test_next_wall_nohit(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [1, ],
+            [1, ],
+            [1, ],
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+        eps = 0.001
+
+        # start outside the room
+        start = [-1,-1,-1]
+
+        # end outside the room
+        end = [-2,-3,-1]
+
+        wall_idx = np.zeros(1, dtype=np.int32)
+
+        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
+
+        self.assertTrue(wall_idx[0] == -1)
 
 
     def test_next_wall_hit2D(self):
@@ -186,12 +213,12 @@ class TestRoomWalls(unittest.TestCase):
         # end at the same (x,y) but very high in the sky
         end = [0,4]
 
-        a = np.zeros(1, dtype=np.int32)
+        wall_idx = np.zeros(1, dtype=np.int32)
 
-        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), a))
+        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
 
         correct_result = sum(abs(result-np.array([0,-1./3]))) < eps
-        correct_next_wall = a[0] == 4
+        correct_next_wall = wall_idx[0] == 4
 
         self.assertTrue(correct_next_wall and correct_result )
 
