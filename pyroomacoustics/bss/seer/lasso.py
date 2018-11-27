@@ -65,7 +65,8 @@ def lasso_admm(X, y, alpha, rho=1., rel_par=1., QUIET=True, \
     u = np.zeros((n, 1))
 
     # cache the (Cholesky) factorization
-    L, U = factor(X, rho)
+    # L, U = factor(X, rho)
+    P, L, U = lu(X)
 
     '''
     # Saving state
