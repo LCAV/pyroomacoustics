@@ -108,7 +108,7 @@ mu = 1
 n_iter = 30
 
 # Run SparseAuxIva
-Y = sparseauxiva(X, S, mu, n_iter)
+Y = sparseauxiva(X, S, mu, n_iter, lasso=False)
 
 # run iSTFT
 y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
@@ -119,7 +119,7 @@ sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:r
 if(plot):
     plotComparaison(ref,y,room)
 
-wavfile.write('audio/demix1.wav',fs,np.asarray(y[0].T, dtype=np.int16))
-wavfile.write('audio/demix2.wav',fs,np.asarray(y[1].T, dtype=np.int16))
-wavfile.write('audio/demix1_norm.wav',fs,np.asarray(y[0].T/np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
-wavfile.write('audio/demix2_norm.wav',fs,np.asarray(y[1].T/np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/demix1AuxIva.wav',fs,np.asarray(y[0].T, dtype=np.int16))
+wavfile.write('audio/demix2AuxIva.wav',fs,np.asarray(y[1].T, dtype=np.int16))
+wavfile.write('audio/demix1AuxIva_norm.wav',fs,np.asarray(y[0].T/np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
+wavfile.write('audio/demix2AuxIva_norm.wav',fs,np.asarray(y[1].T/np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
