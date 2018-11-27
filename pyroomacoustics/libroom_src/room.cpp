@@ -398,7 +398,59 @@ Eigen::VectorXf Room::next_wall_hit(
 }					
 					
 					
-
+bool Room::scat_ray(const Wall &last_wall,
+					const Eigen::VectorXf &last_hit,
+					float_t radius,
+					float_t scat_energy,
+					float_t travel_time,
+					float_t time_thres,
+					float_t sound_speed,
+					std::vector<entry> &output){
+						
+	/*
+	 * Trace a one-hop scattering ray from the last wall hit to the microphone.
+	 * In case the scattering ray can reach the microphone (no wall in
+	 * between), then we add an entry to the output passed by reference.
+	 * 
+    - last_wall: The wall object where last_hit is located
+    - radius : The radius of the circle/sphere microphone
+    - last_hit: An array of length 2 or 3 defining the last wall hit position
+    - scat_energy: The energy of the scattering ray
+    - actual_travel_time: The cumulated travel time of the ray
+    - time_thresh: The time threshold of the ray
+    - sound_speed: The speed of sound
+    * 
+    * Return : true if the scattered ray reached the mic, false otw
+	*/
+	
+	bool result = false;
+	
+	Vector1i next_wall_idx(-1);
+	next_wall_hit(last_hit, mic_pos, true, last_wall, next_wall_idx);
+	
+	
+	// No wall intersecting the direct scattered ray
+	if (next_wall_idx[0] == -1){
+		
+		VectorXf mic_hit = mic_intersection(last_hit, mic_pos, mic_pos, radius);
+		float hop_dist = (last_hit - mic_hit).norm();
+		
+		update_travel_time(travel_time, hop_dist, sound_speed);
+		
+		// Remember that the energy distance attenuation will be 
+		// performed once all the ray arrived.
+		
+		if (travel_time < time_thres){
+			append(scat_energy, travel_time, output);
+			result = true;
+						
+		}
+		
+	}
+	
+	return result;
+	
+}
 
 
 

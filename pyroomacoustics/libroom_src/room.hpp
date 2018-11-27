@@ -5,6 +5,7 @@
 #include <stack>
 #include <Eigen/Dense>
 #include "wall.hpp"
+#include "utility.hpp"
 
 typedef Eigen::Matrix<int, Eigen::Dynamic, 1> VectorXi;
 typedef Eigen::Matrix<int, 1, 1> Vector1i;
@@ -40,6 +41,8 @@ class Room
 
     // The microphones are in the room
     Eigen::MatrixXf microphones;
+    // Position format that fits the need of ray_tracing
+    Eigen::VectorXf mic_pos;
 
     // This is a list of image sources
     Eigen::MatrixXf sources;
@@ -74,6 +77,15 @@ class Room
 					bool there_is_prev_wall,
 					const Wall &previous_wall,
 					Eigen::Ref<Vector1i> next_wall_index);
+					
+	bool scat_ray(const Wall &last_wall,
+					const Eigen::VectorXf &last_hit,
+					float_t radius,
+					float_t scat_energy,
+					float_t travel_time,
+					float_t time_thres,
+					float_t sound_speed,
+					std::vector<entry> &output);
 					
 
   private:

@@ -9,6 +9,7 @@
 
 #include "geometry.hpp"
 #include "utility.hpp"
+#include "ray_tracing.hpp"
 #include "wall.hpp"
 #include "room.hpp"
 
@@ -24,6 +25,7 @@ Room *create_room(py::list _walls, py::list _obstructing_walls, const Eigen::Mat
   Room *room = new Room();
 
   room->microphones = _microphones;
+  room->mic_pos = _microphones.col(0);
 
   for (auto wall : _walls)
     room->walls.push_back(wall.cast<Wall>());
@@ -48,6 +50,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("get_wall", &Room::get_wall)
       .def("get_max_distance", &Room::get_max_distance)
       .def("next_wall_hit", &Room::next_wall_hit)
+      .def("scat_ray", &Room::scat_ray)
       .def_readonly("sources", &Room::sources)
       .def_readonly("orders", &Room::orders)
       .def_readonly("attenuations", &Room::attenuations)
@@ -145,6 +148,10 @@ PYBIND11_MODULE(libroom, m) {
 		
 	m.def("mic_intersection", &mic_intersection,
 		"Computes the intersection point between the ray and the microphone");
+		
+		
+	// Routines for the ray_tracing package
+	m.def("bilbo", &bilbo,"Computes the bilbo");
 	
 	
 }

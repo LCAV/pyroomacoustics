@@ -64,6 +64,7 @@ VectorXf compute_segment_end(const VectorXf start, float_t length, float phi, fl
 	throw std::exception();
 }
 
+
 VectorXf compute_reflected_end(const VectorXf &start,
 							   const VectorXf &hit_point,
 							   const VectorXf &wall_normal,
@@ -83,6 +84,7 @@ VectorXf compute_reflected_end(const VectorXf &start,
 	return hit_point + length*( (incident - n*2*incident.dot(n)).normalized() );
 		
 }
+
 
 bool intersects_mic(const VectorXf &start,
 					const VectorXf &end,
@@ -197,9 +199,8 @@ VectorXf mic_intersection(const VectorXf &start,
 	 // Here we make sure that the ray hits the microphone 
 	 // We take a small margin to avoid bugs due to rounding errors
 	 // in the mic_intersection function
-	 if ((start-center).norm() < radius-libroom_eps
-		  or (end-center).norm() < radius-libroom_eps){
-		 std::cerr << "One of the end point is inside the mic !" << std::endl;
+	 if ((start-center).norm() < radius-libroom_eps){
+		 std::cerr << "The start point is inside the mic !" << std::endl;
 	 }
 	 
 	 if (start.size() == 2){
@@ -299,6 +300,7 @@ VectorXf mic_intersection(const VectorXf &start,
 	throw std::exception();
 }
 
+
 void update_travel_time(float_t &travel_time,
 						float_t hop_length,
 						float_t sound_speed){
@@ -309,6 +311,7 @@ void update_travel_time(float_t &travel_time,
 	travel_time = travel_time + hop_length/sound_speed;	
 }
 
+
 void update_energy_wall(float_t &energy,
 						const Wall &wall){
 							
@@ -317,6 +320,7 @@ void update_energy_wall(float_t &energy,
 	 
 	energy = energy * sqrt(1 - wall.absorption);
 }
+
 
 float compute_scat_energy(float_t energy, float_t scat_coef,
 						  const Wall &wall, 
@@ -335,6 +339,26 @@ float compute_scat_energy(float_t energy, float_t scat_coef,
 }
 
 
+void append(float energy, float travel_time, std::vector<entry> &output){
+	/* This function simply push_backs the value at the end of the vector
+	 * but in case the vector is at full capacity, we first double
+	 * the capacity*/
+	 
+	 size_t sz = output.size();
+	 size_t cap = output.capacity();
+	 
+	 if (sz == output.max_size()){
+		 std::cerr << "We cannot add more elements !\nAdding nothing." << std::endl;
+		 return;
+	 }
+	 
+	 // Reserve memory
+	 if (sz == cap){
+		 output.reserve(2*cap);
+	 }
+	 	 
+	 output.push_back(entry{{energy, travel_time}});
+}
 
 
 

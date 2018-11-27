@@ -3,6 +3,17 @@
 
 #include <Eigen/Dense>
 #include "wall.hpp"
+#include <vector>
+#include <array>
+
+
+/* The 'entry' type is simply defined as an array of 2 floats.
+ * It represents an entry that is logged by the microphone
+ * during the ray_tracing execution.
+ * The first one of those float will be the energy of a ray reaching
+ * the microphone. The second one will be the travel time of this ray.*/
+typedef std::array<float,2> entry;
+
 
 using namespace Eigen;
 
@@ -38,6 +49,8 @@ float compute_scat_energy(float_t energy, float_t scat_coef,
 						  const Wall &wall, 
 						  const VectorXf &start,
 						  const VectorXf &hit_point,
-						  const VectorXf &mic_pos);						
+						  const VectorXf &mic_pos);
+						  
+void append(float energy, float travel_time, std::vector<entry> &output);				
 
 #endif // __UTILITY_H__

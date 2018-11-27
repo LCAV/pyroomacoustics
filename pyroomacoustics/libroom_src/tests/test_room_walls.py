@@ -45,6 +45,8 @@ wall_corners_3D = [c0, c1, c2, c3, c4, c5]
 absorptions_3D = [ 0.1, 0.25, 0.25, 0.25, 0.2, 0.15 ]
 
 
+# Let's describe a pentagonal room with corners :
+# (-1,0) (-1,2) (0,3) (2,2) (2,-1)
 d0 = np.array([  # side1
             [ -1, -1],
             [ 0, 2],
@@ -65,10 +67,33 @@ d4 = np.array([  # side5
             [ 2, -1],
             [ -1, 0],
             ])
-
-# Let's describe a pentagonal room with corners :
-# (-1,0) (-1,2) (0,3) (2,2) (2,-1)
 wall_corners_2D = [d0, d1, d2, d3, d4]
+
+
+# Let's describe a simple non_convex room with corners :
+# (0,0) (0,2) (1,1) (2,2) (2,0)
+e0 = np.array([  # side1
+            [ 0, 0],
+            [ 0, 2],
+            ])
+e1 = np.array([  # side2
+            [ 0, 1],
+            [ 2, 1],
+            ])
+e2 = np.array([  # side3
+            [ 1, 2],
+            [ 1, 2],
+            ])
+e3 = np.array([  # side4
+            [ 2, 2],
+            [ 2, 0],
+            ])
+e4 = np.array([  # side5
+            [ 2, 0],
+            [ 0, 0],
+            ])
+
+wall_corners_2D_non_convex = [e0, e1, e2, e3, e4]
 
 absorptions_2D = [ 0.1, 0.25, 0.25, 0.25, 0.2]
 
@@ -221,6 +246,61 @@ class TestRoomWalls(unittest.TestCase):
         correct_next_wall = wall_idx[0] == 4
 
         self.assertTrue(correct_next_wall and correct_result )
+
+
+    def test_scat_ray_blocked(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [1.5 ],
+            [1.2 ]
+            ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+        radius = 0.1
+        scat_energy = 100.
+        prev_wall = room.get_wall(0)
+        last_hit = [0, 1.9]
+        travel_time = 100.
+
+        # Very high => will not be reached
+        time_thres = 200.
+
+        sound_speed = 340.
+
+        self.assertTrue(not np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
+
+    def test_scat_ray_ok(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [0.5 ],
+            [0.2 ]
+            ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+        radius = 0.1
+        scat_energy = 100.
+        prev_wall = room.get_wall(0)
+        last_hit = [0, 1.9]
+        travel_time = 100.
+
+        # Very high => will not be reached
+        time_thres = 200.
+
+        sound_speed = 340.
+
+        self.assertTrue(np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
+
+
+    def test_bilbo(self):
+
+
+        res = (pra.libroom.bilbo())
 
 if __name__ == '__main__':
     unittest.main()

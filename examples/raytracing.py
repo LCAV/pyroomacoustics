@@ -651,6 +651,7 @@ def update_travel_time(previous_travel_time, current_hop_length, speed):
     return previous_travel_time + current_hop_length / speed
 
 
+# Not useful in C++
 def distance_attenuation(previous_energy, new_dist, total_dist):
     """
     Computes the distance attenuation of the sound
@@ -678,6 +679,7 @@ def wall_absorption(previous_energy, wall):
     return previous_energy * math.sqrt(1 - wall.absorption)
 
 
+# Maybe not useful in C++
 def stop_ray(actual_travel_time, time_thresh, actual_energy, energy_thresh=0.1, sound_speed=340.):
     """
     Returns True if the ray must be stopped according to the 'which' condition
@@ -718,10 +720,10 @@ def scattering_ray(room,
                    last_wall,
                    last_hit,
                    mic_pos,
+                   mic_radius,
                    scat_energy,
                    actual_travel_time,
                    time_thresh,
-                   total_dist,
                    sound_speed,
                    plot=False):
     """
@@ -730,6 +732,7 @@ def scattering_ray(room,
     :param last_wall: The wall object where last_hit is located
     :param last_hit: An array of length 2 or 3 defining the last wall hit position
     :param mic_pos: An array of length 2 or 3 defining the position of the microphone
+    :param mic_radius: A number representing the radius of the microphone
     :param scat_energy: The energy of the scattering ray
     :param actual_travel_time: The cumulated travel time of the ray
     :param time_thresh: The time threshold of the ray
@@ -746,8 +749,6 @@ def scattering_ray(room,
     if intersects_no_wall:
 
         hit_point, distance = mic_intersection(last_hit, mic_pos, mic_pos, mic_radius)
-        total_dist += distance
-        #scat_energy = distance_attenuation(scat_energy, distance, total_dist)
         travel_time = update_travel_time(actual_travel_time, distance, sound_speed)
 
         if not stop_ray(travel_time, time_thresh, scat_energy):
@@ -910,7 +911,7 @@ def simul_ray(room,
             energy -= energy_scat
 
             # Add the scattered ray to the output (if there is no wall between hit_point and mic_pos)
-            output = output + scattering_ray(room, wall, hit_point, mic_pos, energy_scat, travel_time, time_thres, total_dist, sound_speed)
+            output = output + scattering_ray(room, wall, hit_point, mic_pos, mic_radius, energy_scat, travel_time, time_thres, sound_speed)
 
 
         if plot:

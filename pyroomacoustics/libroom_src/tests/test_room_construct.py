@@ -48,12 +48,10 @@ def test_room_construct():
 
     room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
+    print(room.microphones)
+
     return room
 
 if __name__ == '__main__':
     
     room = test_room_construct()
-
-    corners = room.get_wall(0).corners
-
-    print(corners)
