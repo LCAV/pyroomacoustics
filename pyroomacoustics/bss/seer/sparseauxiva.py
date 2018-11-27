@@ -11,6 +11,7 @@ from lasso import lasso_admm
 from admm import ADMM
 from demix import *
 from scipy.linalg import dft
+from plots import plotVect
 
 # A few contrast functions
 f_contrasts = {
@@ -78,14 +79,15 @@ def sparseauxiva(X, S, mu, n_iter, proj_back=True, return_filters=False, lasso=T
         for i in range(n_src):
             Z[i, :] = np.array([W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
             print(Z[:,0])
+            #plotVect(Z[i,:])
             # I believe in your case A is the DFT matrix of size |S| x F, and x is the h_rtf in the time domain.
             #hrtf[:, i] = lasso_admm(DFT_matrix[S, :], np.expand_dims(Z[i, :], axis=1), mu, QUIET=False, MAX_ITER=50)
             hrtf[:, i] = ADMM(DFT_matrix[S, :], np.expand_dims(Z[i, :], axis=1))
             # print(hrtf[:,i].shape)
             # Then, after calculating hrtf you should transform it to the frequency domain to perform the demixing
             Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
-            print(Hrtf[0, i])
-            # Hrtf[:,i] = Z[i,:]
+            #print(Hrtf[0, i])
+            Hrtf[:,i] = Z[i,:]
             # Finally, you could assemble W
             for f in range(n_freq):
                 W[f, :, i] = np.conj([Hrtf[f, i], 1])

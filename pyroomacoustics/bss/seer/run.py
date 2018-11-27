@@ -115,6 +115,7 @@ y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, 
 
 # Compare SIR and SDR with our reference signal
 sdr, isr, sir, sar, perm = bss_eval_images(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+print('SDR: {0}, SIR: {1}'.format(sdr,sir))
 
 if(plot):
     plotComparaison(ref,y,room)
