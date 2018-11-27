@@ -123,6 +123,10 @@ PYBIND11_MODULE(libroom, m) {
 	m.def("angle_between", &angle_between,
 		"Computes the angle between two 2D or 3D vectors");
 	
+	m.def("dist_line_point", &dist_line_point,
+		"Computes the distance between a point and an infinite line");
+	
+	
 	// Routines for the utility packages
 	m.def("equation", &equation,
 		"Computes the a and b coefficients in the expression y=ax+b given two points lying on that line.");
@@ -132,5 +136,16 @@ PYBIND11_MODULE(libroom, m) {
 		
 	m.def("compute_reflected_end", &compute_reflected_end,
 		"This function operates when we know the vector [start, hit_point]. This function computes the end point E so that [hit_point, E] is the reflected vector of [start, hit_point] with the correct magnitude");
+	
+	m.def("intersects_mic", &intersects_mic,
+		"Determines if a segment intersects the microphone of specified center and radius");
+		
+	m.def("solve_quad", &solve_quad,
+		"Solves the quadratic system and outputs real roots");
+		
+	m.def("mic_intersection", &mic_intersection,
+		"Computes the intersection point between the ray and the microphone");
+	
+	
 }
 

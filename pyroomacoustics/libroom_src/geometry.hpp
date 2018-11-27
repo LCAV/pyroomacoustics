@@ -33,6 +33,10 @@ float area_2d_polygon(const Eigen::MatrixXf &corners);
 
 float angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2);
 
+float dist_line_point(const Eigen::VectorXf &start,
+					  const Eigen::VectorXf &end,
+					  const Eigen::VectorXf &point);
+
 
 
 #endif // __GEOMETRY_H__

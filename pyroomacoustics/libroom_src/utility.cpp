@@ -8,6 +8,7 @@
 #include "geometry.hpp"
 
 using namespace Eigen;
+extern float libroom_eps;
 
 double clamp(double value, double min, double max){
 	if (value < min)
@@ -70,7 +71,7 @@ VectorXf compute_reflected_end(const VectorXf &start,
 								   
 	VectorXf incident = (hit_point-start).normalized();
 	
-	VectorXf n = wall_normal;
+	VectorXf n = wall_normal.normalized();
 	
 	// Reverse the normal if the angle between the incoming ray and 
 	// the normal is more than PI/2 rad
@@ -82,4 +83,240 @@ VectorXf compute_reflected_end(const VectorXf &start,
 	return hit_point + length*( (incident - n*2*incident.dot(n)).normalized() );
 		
 }
-							  
+
+bool intersects_mic(const VectorXf &start,
+					const VectorXf &end,
+					const VectorXf &center,
+					float_t radius){
+	
+	/* This function checks if the segment between start and end
+	 * crosses the microphone. 
+	 * We must pay attention : the function dist_line_point considers
+	 * and infinite lines and we only have a segment here !
+	 * => Hence the additional conditions.*/
+					
+	 size_t s_start = start.size();
+	 size_t s_end = end.size();
+	 size_t s_center = center.size();
+	 	
+	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_center<2 or s_center>3){
+		std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		std::cerr << "Dim start = " << s_start <<std::endl;
+		std::cerr << "Dim end = " << s_end <<std::endl;
+		std::cerr << "Dim center = " << s_center <<std::endl;
+		throw std::exception();
+	 }
+	 
+	 if (s_start != s_center or s_start != s_end or s_end != s_center){
+		std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
+		std::cerr << "Dim start = " << s_start <<std::endl;
+		std::cerr << "Dim end = " << s_end <<std::endl;
+		std::cerr << "Dim center = " << s_center <<std::endl;
+		throw std::exception();
+	 }
+	 
+	 // Here we make sure that the ray hits the microphone 
+	 // We take a small margin to avoid bugs due to rounding errors
+	 // in the mic_intersection function
+	 if ((start-center).norm() < radius-libroom_eps
+		  or (end-center).norm() < radius-libroom_eps){
+		 std::cerr << "One of the end point is inside the mic !" << std::endl;
+	 }
+	 
+	 VectorXf start_end = end-start; // vector from start to end
+	 VectorXf start_center = center-start;
+	 VectorXf end_center = center-end;
+	 VectorXf end_start = (-1)*start_end;
+	 
+	 bool intersects = dist_line_point(start, end, center) <= radius-libroom_eps;
+	 
+	 
+	 // This boolean checks that the projection of the center of the mic
+	 // on the segment is between start and end points
+	 bool on_segment = (angle_between(start_end, start_center) <= M_PI_2
+						and angle_between(end_start, end_center) <= M_PI_2);
+	
+	return intersects and on_segment;	 
+}  
+
+
+Vector2f solve_quad(float A, float B, float C){
+	/* This function outputs the two solutions of the equation
+	 * Ax^2 + Bx + C = 0
+	 * 
+	 * We consider that no imaginary roots can be found since we are
+	 * dealing with real distances and coefficients
+	 * 
+	 * So if delta < 0 this will be because of rounding errors and we
+	 * will consider it to be 0*/
+	 
+	 float delta = B*B - 4*A*C;
+	 
+	 float sqrt_delta (0);
+	 
+	 if (delta > 0){
+		 sqrt_delta = sqrt(delta);
+	 }
+	 
+	 return Vector2f(-B-sqrt_delta, -B+sqrt_delta) / (2*A);
+	
+}
+
+
+VectorXf mic_intersection(const VectorXf &start,
+						  const VectorXf &end,
+						  const VectorXf &center,
+						  float_t radius){
+
+	/* This function computes the intersection point between the mic and the ray.
+	 * So in 2D : intersection between a line and a circle
+	 * So in 3D : intersection between a line and a sphere
+	 * 
+	 * This function is going to be called only if there is an intersection.*/
+	 
+	 size_t s_start = start.size();
+	 size_t s_end = end.size();
+	 size_t s_center = center.size();
+	 	
+	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_center<2 or s_center>3){
+		std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		std::cerr << "Dim start = " << s_start <<std::endl;
+		std::cerr << "Dim end = " << s_end <<std::endl;
+		std::cerr << "Dim center = " << s_center <<std::endl;
+		throw std::exception();
+	 }
+	 
+	 if (s_start != s_center or s_start != s_end or s_end != s_center){
+		std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
+		std::cerr << "Dim start = " << s_start <<std::endl;
+		std::cerr << "Dim end = " << s_end <<std::endl;
+		std::cerr << "Dim center = " << s_center <<std::endl;
+		throw std::exception();
+	 }
+	 
+	 // Here we make sure that the ray hits the microphone 
+	 // We take a small margin to avoid bugs due to rounding errors
+	 // in the mic_intersection function
+	 if ((start-center).norm() < radius-libroom_eps
+		  or (end-center).norm() < radius-libroom_eps){
+		 std::cerr << "One of the end point is inside the mic !" << std::endl;
+	 }
+	 
+	 if (start.size() == 2){
+		 
+		 Vector2f result1;
+		 Vector2f result2;
+		 
+		 float p = center[0];
+		 float q = center[1];
+		 
+		 // When the segment is vertical, we already know the x axis of the intersection point
+		 if (start[0] == end[0]){
+			 float A = 1;
+			 float B = (-2)*q;
+			 float C = q*q + (start[0]-p)*(start[0]-p) - radius*radius;
+			 
+			 Vector2f ys = solve_quad(A,B,C);
+			 result1 = Vector2f(start[0], ys[0]);
+			 result2 = Vector2f(start[0], ys[1]);
+			 
+			 
+		 // See the formulat in the first answer of this post :
+		 // https://math.stackexchange.com/questions/228841/how-do-i-calculate-the-intersections-of-a-straight-line-and-a-circle
+
+		 }else{
+			 
+			 Vector2f eq = equation(start, end);
+			 float m = eq[0];
+			 float c = eq[1];
+			 
+			 float A = m*m +1;
+			 float B = 2 * (m*c - m*q - p);
+			 float C = q*q - radius*radius + p*p - 2*c*q + c*c;
+			 
+			 Vector2f xs = solve_quad(A,B,C);
+			 Vector2f ys = Vector2f(m*xs[0] + c, m*xs[1] + c);
+			 
+			 result1 = Vector2f(xs[0], ys[0]);		 
+			 result2 = Vector2f(xs[1], ys[1]);		 
+		 }
+		 
+		 // Now we must return only the closest intersection point 
+		 // to the start of the segment
+
+		 if ( (start-result2).norm() < (start-result1).norm() ){
+			 return result2;
+		 }
+		 return result1;		 
+	 }
+	 
+	 
+	 if (start.size() == 3){
+		 
+		 Vector3f result1;
+		 Vector3f result2;
+		 
+		 // Here we are going to follow this formula :
+		 // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+		 // With respect to the formula given on this page :
+		 // o = start
+		 // c = center
+		 // r = radius
+		 
+		 // We can check the results with this app :
+		 // http://www.ambrsoft.com/TrigoCalc/Sphere/SpherLineIntersection_.htm
+
+		Vector3f l = (end-start).normalized();
+		
+        // We are searching d such that a point x on the sphere is also on the line
+        // ie : x = o + k*l  (recall l has unit norm)		
+		
+		 Vector3f o_c = start-center;
+		 float ocl_dot = o_c.dot(l);
+		 float delta = ocl_dot*ocl_dot - o_c.norm()*o_c.norm() + radius*radius;
+		 
+		 if (delta > 0){
+			 
+			 result1 = start - l*(ocl_dot + sqrt(delta));
+			 result2 = start - l*(ocl_dot - sqrt(delta));
+			 
+			 if ( (start-result2).norm() < (start-result1).norm() ){
+				 return result2;
+			 }
+			 return result1;
+		 }
+		 
+		 // As this function is only called when there is an intersection,
+		 // delta should not be negative, unless because of rounding errors.
+		 // If this happens, we consider the delta to be 0
+		 
+		 return start - l*ocl_dot;
+		 
+		 
+	 }
+	 
+	std::cerr << "Error : the vectors should be 2D or 3D" << s_center <<std::endl;
+	throw std::exception();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -38,9 +38,7 @@ class TestUtilityRoutines(unittest.TestCase):
 
         res = pra.libroom.compute_segment_end(start, length, phi, theta)
 
-        ok0 = abs(res[0] - (-2.0)) < eps
-        ok1 = abs(res[1] - .0) < eps
-        self.assertTrue(all([ok0, ok1]))
+        self.assertTrue(np.allclose(res, [-2.,0.], atol=eps))
 
     def test_segment_end3D(self):
 
@@ -63,13 +61,11 @@ class TestUtilityRoutines(unittest.TestCase):
         eps = 0.001
         start = [1,3]
         hit = [5,3]
-        normal = [1, 1]
+        normal = [-1, -1]
         length = 4
 
         res = pra.libroom.compute_reflected_end(start, hit, normal, length)
-        ok1 = res[0] - 5. < eps
-        ok2 = res[1] - 3. < eps
-        self.assertTrue(all([ok1, ok2]))
+        self.assertTrue(np.allclose(res, [5.,-1.], atol=eps))
 
     def test_reflected_end3D(self):
 
@@ -80,10 +76,95 @@ class TestUtilityRoutines(unittest.TestCase):
         length = 2*np.sqrt(2)
 
         res = pra.libroom.compute_reflected_end(start, hit, normal, length)
-        ok1 = res[0] - 1 < eps
-        ok2 = res[1] == 1.
-        ok3 = res[2] - 5. < eps
-        self.assertTrue(all([ok1, ok2, ok3]))
+        self.assertTrue(np.allclose(res, [1,1,5], atol=eps))
+
+    def test_intersects_mic3D_true(self):
+
+        start = [4,4,4]
+        end = [0,0,0]
+        center = [2,2,2.2]
+        radius = 0.5
+
+        self.assertTrue(pra.libroom.intersects_mic(start, end, center, radius))
+
+    def test_intersects_mic3D_false(self):
+
+        start = [4,4,4]
+        end = [0,0,0]
+        center = [2,-2,0]
+        radius = 1.5
+
+        self.assertTrue(not pra.libroom.intersects_mic(start, end, center, radius))
+
+    def test_intersects_mic2D_true(self):
+
+        start = [10,10]
+        end = [0,0]
+        center = [5,5]
+        radius = 2*np.sqrt(2)
+
+        self.assertTrue(pra.libroom.intersects_mic(start, end, center, radius))
+
+    def test_intersects_mic2D_false(self):
+
+        start = [0,0]
+        end = [0,2]
+        center = [5,5]
+        radius = 2*np.sqrt(2)
+
+        self.assertTrue(not pra.libroom.intersects_mic(start, end, center, radius))
+
+    def test_quad_solve(self):
+
+        eps = 0.001
+        res = pra.libroom.solve_quad(-1,0,1)
+
+        self.assertTrue(abs(res[0]-1)<eps and abs(res[1]+1)<eps)
+
+    def test_quad_solve_uniqueroot(self):
+
+        eps = 0.001
+        res = pra.libroom.solve_quad(1,0,0)
+
+        self.assertTrue(sum(abs(res)) < eps)
+
+    def test_mic_intersection_3D(self):
+
+        start = [5,-5,-1]
+        end = [0,10,2]
+        center = [0,0,0]
+        radius = 5.
+
+        res = pra.libroom.mic_intersection(start, end, center, radius)
+
+        # http://www.ambrsoft.com/TrigoCalc/Sphere/SpherLineIntersection_.htm
+        self.assertTrue(np.allclose(res, [4.21, -2.64, -0.53], atol=0.01))
+
+
+    def test_mic_intersection_2D(self):
+
+        start = [5,-5]
+        end = [-6,0]
+        center = [0,0]
+        radius = 5.
+
+        res = pra.libroom.mic_intersection(start, end, center, radius)
+
+        # http://www.ambrsoft.com/TrigoCalc/Sphere/SpherLineIntersection_.htm
+        self.assertTrue(np.allclose(res, [2.924 , -4.056], atol=0.01))
+
+    def test_mic_intersection_2D_samex(self):
+
+        start = [0,-6]
+        end = [0,6]
+        center = [0,0]
+        radius = 5.
+
+        res = pra.libroom.mic_intersection(start, end, center, radius)
+
+        # http://www.ambrsoft.com/TrigoCalc/Sphere/SpherLineIntersection_.htm
+        self.assertTrue(np.allclose(res, [0,-5], atol=0.01))
+
 
 if __name__ == '__main__':
     unittest.main()

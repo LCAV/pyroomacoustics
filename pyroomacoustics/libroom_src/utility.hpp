@@ -15,7 +15,18 @@ VectorXf compute_reflected_end(const VectorXf &start,
 							   const VectorXf &hit_point,
 							   const VectorXf &wall_normal,
 							   float_t length);
+							   
+							   
+bool intersects_mic(const VectorXf &start,
+					const VectorXf &end,
+					const VectorXf &center,
+					float_t radius);							   
 
+Vector2f solve_quad(float A, float B, float C);
 
+VectorXf mic_intersection(const VectorXf &start,
+					const VectorXf &end,
+					const VectorXf &center,
+					float_t radius);
 
 #endif // __UTILITY_H__
