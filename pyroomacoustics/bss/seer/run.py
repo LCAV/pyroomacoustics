@@ -7,6 +7,8 @@ from sparseauxiva import sparseauxiva
 import sounddevice as sd
 from plots import plotInitials, plotComparaison
 
+import matplotlib.pyplot as plt
+
 
 # Blind Source Separation techniques such as Independent Vector Analysis (IVA)
 # using an Auxiliary function are implemented in ´pyroomacoustics´. IVA based
@@ -89,6 +91,7 @@ L = 2048
 # Observation vector in the STFT domain
 X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
 X = np.moveaxis(X, 0, 2)
+
 
 
 # Reference signal to calculate performance of BSS
