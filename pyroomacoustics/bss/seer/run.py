@@ -90,16 +90,18 @@ L = 2048
 X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
 X = np.moveaxis(X, 0, 2)
 
+
 # Reference signal to calculate performance of BSS
 
 ref = np.moveaxis(separate_recordings, 1, 2)
+
 
 if(plot):
     plotInitials(ref, room)
 
 
 SDR, SIR = [], []
-ratio = 1
+ratio = 0.5
 average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
 k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
