@@ -43,7 +43,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     else:
         tau = np.tile(weights.T, (q, 1)).reshape(L)
 
-    maxiter = 50
+    maxiter = 200
     alphamax = 1e5  # maximum step - length parameter alpha
     alphamin = 1e-7  # minimum step - length parameteralpha
     tol = 1e-4
@@ -52,7 +52,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     G = np.fft.fft(g.flatten())
     Ag = np.concatenate((np.real(G[S]), np.imag(G[S])),axis=0)
     r = Ag - y.flatten()  # instead of r = A * g - y
-    aux[S] = np.expand_dims(r[0:int(M / 2)] + 1j * r[int(M / 2):None], axis=1)
+    aux[S] = np.expand_dims(r[0:M //2] + 1j * r[M//2:], axis=1)
     gradq = L / 2 * np.fft.irfft(aux.flatten(), L)  # instead of gradq = A'*r
     gradq = np.expand_dims(gradq, axis=1)
     alpha = 10
@@ -80,7 +80,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         dGd = Adg.flatten().conj().T @ Adg.flatten()
         alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
         support = g != 0
-        aux[S] = np.expand_dims(r[0: int(M / 2)] + 1j * r[int(M / 2): None], axis=1)
+        aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M //2:], axis=1)
         gradq = L / 2 * np.fft.irfft(aux.flatten(), L)
         gradq = np.expand_dims(gradq, axis=1)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
@@ -96,6 +96,8 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         print('Zero solution! Do you really like it?')
         print('Check input parameters such as weights, delay, gini or')
         print('internal parameters such as tol, alphamax, alphamin, etc.')
+
+    return g.flatten()
 
 
 def soft(x, T):
