@@ -93,7 +93,7 @@ def sparseauxiva(X, S, mu, n_iter, proj_back=True, return_filters=False, lasso=T
             hrtf[:,i] = SpaRIR(np.expand_dims(G[i,0:-1],axis=1),S)
             Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
             # print(Hrtf[0, i])
-            Hrtf[:,i] = Z[i,:]
+            #Hrtf[:,i] = Z[i,:]
             # Finally, you could assemble W
             for f in range(n_freq):
                 W[f, :, i] = np.conj([Hrtf[f, i], 1])

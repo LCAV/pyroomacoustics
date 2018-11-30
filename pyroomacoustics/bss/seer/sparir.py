@@ -19,7 +19,6 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         L = q * L
 
     y = np.concatenate((np.real(G[S]), np.imag(G[S])),axis=0)
-    print(y.shape)
     M = y.shape[0]
 
 
@@ -54,26 +53,19 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     Ag = np.concatenate((np.real(G[S]), np.imag(G[S])),axis=0)
     r = Ag - y.flatten()  # instead of r = A * g - y
     aux[S] = np.expand_dims(r[0:int(M / 2)] + 1j * r[int(M / 2):None], axis=1)
-    print('aux')
-    print(aux.flatten().shape)
     gradq = L / 2 * np.fft.irfft(aux.flatten(), L)  # instead of gradq = A'*r
     gradq = np.expand_dims(gradq, axis=1)
     alpha = 10
     support = g != 0
-    print('gradq')
-    print(gradq)
     iter = 0
 
     crit = np.zeros((maxiter, 1))
-    print("tau shape:", tau.shape)
-    print("g shape:", g.shape)
-    print("gradq shape:", gradq.shape)
-    print("support shape:", support.shape)
 
     criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-    crit[iter + 1] = np.sum(criterion ** 2)
+    crit[iter] = np.sum(criterion ** 2)
 
-    while (crit[iter + 1] > tol) and iter < maxiter:
+    while (crit[iter] > tol) and (iter < maxiter):
+        print(iter)
         prev_r = r
         prev_g = g
         g = soft(prev_g - gradq * (1 / alpha), tau / alpha)
@@ -86,21 +78,14 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         dd = dg.flatten().conj().T @ dg.flatten()
         dd = np.real(dd)
         dGd = Adg.flatten().conj().T @ Adg.flatten()
-        print("dd :", dd)
-        print("dGd:", dGd)
-        print("finfo min : ", dGd / (np.finfo(np.float32).eps + dd))
         alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
-        iter = iter + 1
         support = g != 0
         aux[S] = np.expand_dims(r[0: int(M / 2)] + 1j * r[int(M / 2): None], axis=1)
         gradq = L / 2 * np.fft.irfft(aux.flatten(), L)
         gradq = np.expand_dims(gradq, axis=1)
-        print("tau shape:", tau.shape)
-        print("g shape:", g.shape)
-        print("gradq shape:", gradq.shape)
-        print("support shape:", support.shape)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-        crit[iter + 1] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
+        crit[iter] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
+        iter = iter + 1
 
     if q > 1:
         g = q * resample(g, 1, q, 100)
