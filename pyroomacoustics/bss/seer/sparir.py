@@ -3,7 +3,7 @@ from scipy.signal import resample
 
 
 def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
-    L = G.shape[0]
+    L = G.shape[0] # n_freq
     print(G.shape)
 
     if np.mod(L, 2) == 1:
@@ -44,19 +44,20 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     else:
         tau = np.tile(weights.T, (q, 1)).reshape(L)
 
-    maxiter = 10000
+    maxiter = 50
     alphamax = 1e5  # maximum step - length parameter alpha
     alphamin = 1e-7  # minimum step - length parameteralpha
     tol = 1e-4
 
     aux = np.zeros((L, 1))
-    G = np.fft.fft(g)
+    G = np.fft.fft(g.flatten())
     Ag = np.concatenate((np.real(G[S]), np.imag(G[S])),axis=0)
-    r = Ag - y  # instead of r = A * g - y
-    aux[S] = r[0:int(M / 2)] + 1j * r[int(M / 2):None]
+    r = Ag - y.flatten()  # instead of r = A * g - y
+    aux[S] = np.expand_dims(r[0:int(M / 2)] + 1j * r[int(M / 2):None], axis=1)
     print('aux')
-    print(aux.shape)
-    gradq = L / 2 * np.fft.ifft(aux.flatten(), L)  # instead of gradq = A'*r
+    print(aux.flatten().shape)
+    gradq = L / 2 * np.fft.irfft(aux.flatten(), L)  # instead of gradq = A'*r
+    gradq = np.expand_dims(gradq, axis=1)
     alpha = 10
     support = g != 0
     print('gradq')
@@ -64,6 +65,11 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     iter = 0
 
     crit = np.zeros((maxiter, 1))
+    print("tau shape:", tau.shape)
+    print("g shape:", g.shape)
+    print("gradq shape:", gradq.shape)
+    print("support shape:", support.shape)
+
     criterion = -tau[support] * np.sign(g[support]) - gradq[support]
     crit[iter + 1] = np.sum(criterion ** 2)
 
@@ -71,17 +77,28 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         prev_r = r
         prev_g = g
         g = soft(prev_g - gradq * (1 / alpha), tau / alpha)
+        print("g:", g)
         dg = g - prev_g
-        DG = np.fft.fft(dg)
-        Adg = np.array([np.real(DG[S]), np.imag(DG[S])])
+
+        DG = np.fft.rfft(dg)
+        Adg = np.concatenate((np.real(G[S]), np.imag(G[S])),axis=0)
         r = prev_r + Adg  # faster than A * g - y
-        dd = dg.flatten().T @ dg.flatten()
-        dGd = Adg.flatten().T @ Adg.flatten()
-        alpha = np.min(alphamax, np.max(alphamin, dGd / (np.finfo(np.float32).min + dd)))
+        dd = dg.flatten().conj().T @ dg.flatten()
+        dd = np.real(dd)
+        dGd = Adg.flatten().conj().T @ Adg.flatten()
+        print("dd :", dd)
+        print("dGd:", dGd)
+        print("finfo min : ", dGd / (np.finfo(np.float32).eps + dd))
+        alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
         iter = iter + 1
         support = g != 0
-        aux[S] = r[0: int(M / 2)] + 1j * r[int(M / 2): None]
-        gradq = L / 2 * np.fft.ifft(aux, L)
+        aux[S] = np.expand_dims(r[0: int(M / 2)] + 1j * r[int(M / 2): None], axis=1)
+        gradq = L / 2 * np.fft.irfft(aux.flatten(), L)
+        gradq = np.expand_dims(gradq, axis=1)
+        print("tau shape:", tau.shape)
+        print("g shape:", g.shape)
+        print("gradq shape:", gradq.shape)
+        print("support shape:", support.shape)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
         crit[iter + 1] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
 
