@@ -10,7 +10,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         print('The length of G must be even.')
         exit()
 
-    #S = S[1:int(L / 2 + 1)]
+    # S = S[1:int(L / 2 + 1)]
     # S(k) and G(k) for k > L / 2 + 1 not used due to the symmetry of FFT (g is assumed to be real-valued)
 
     if q > 1:
@@ -56,11 +56,11 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     aux[S] = r[0:int(M / 2)] + 1j * r[int(M / 2):None]
     print('aux')
     print(aux.shape)
-    gradq = L / 2 * np.fft.ifft(aux, L)  # instead of gradq = A'*r
+    gradq = L / 2 * np.fft.ifft(aux.flatten(), L)  # instead of gradq = A'*r
     alpha = 10
     support = g != 0
     print('gradq')
-    print(gradq.shape)
+    print(gradq)
     iter = 0
 
     crit = np.zeros((maxiter, 1))
@@ -73,7 +73,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         g = soft(prev_g - gradq * (1 / alpha), tau / alpha)
         dg = g - prev_g
         DG = np.fft.fft(dg)
-        Adg = np.array([np.real(DG(S)), np.imag(DG(S))])
+        Adg = np.array([np.real(DG[S]), np.imag(DG[S])])
         r = prev_r + Adg  # faster than A * g - y
         dd = dg.flatten().T @ dg.flatten()
         dGd = Adg.flatten().T @ Adg.flatten()
