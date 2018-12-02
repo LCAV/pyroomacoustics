@@ -204,6 +204,7 @@ class SoundSource(object):
         and the microphone whose position is given as an
         argument.
         '''
+        print(Fs)
 
         # fractional delay length
         fdl = constants.get('frac_delay_length')
@@ -228,20 +229,24 @@ class SoundSource(object):
 
         try:
             # Try to use the Cython extension
-            from .build_rir import fast_rir_builder
+            from .build_rir import fast_rir_builder123
             fast_rir_builder(ir, time, alpha, visibility, Fs, fdl)
 
         except ImportError:
             print("Cython-extension build_rir unavailable. Falling back to pure python")
             # fallback to pure Python implemenation
             from .utilities import fractional_delay
-    
-            #for each wall
-            for i in range(time.shape[0]):
-                if visibility[i] == 1:
-                    time_ip = int(np.round(Fs * time[i])) #integer part
-                    time_fp = (Fs * time[i]) - time_ip    #fractional part
-                    ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[i]*fractional_delay(time_fp)
+            
+            #for each frequency
+            for f in range(constants.get('freq_table_length')):
+                #for each wall
+                for i in range(time.shape[0]):
+                        if visibility[i] == 1:
+                            time_ip = int(np.round(Fs * time[i])) #integer part
+                            time_fp = (Fs * time[i]) - time_ip #fractional part
+                            ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[f,i]                        \
+                            * np.cos(2*np.pi*constants.get('freq_table_frequencies')[f]*time_ip) \
+                            *fractional_delay(time_fp)
 
         return ir
 

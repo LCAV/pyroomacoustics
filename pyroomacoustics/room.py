@@ -294,7 +294,6 @@ class Room(object):
         :returns: (Room) instance of a 2D room
         '''
         
-        freq_absorption_table_size = 6
         
         corners = np.array(corners)
         if (corners.shape[0] != 2 or corners.shape[1] < 3):
@@ -309,15 +308,15 @@ class Room(object):
         absorption = np.array(absorption, dtype='float64')
         
         if (absorption.ndim == 0):
-            absorption = absorption * np.ones((corners.shape[1], freq_absorption_table_size))
+            absorption = absorption * np.ones((corners.shape[1], constants.get('freq_table_length')))
             
         elif (absorption.ndim == 1  and corners.shape[1] == len(absorption)):
-              absorption = np.array([absorption]).T * np.ones(freq_absorption_table_size)
+              absorption = np.array([absorption]).T * np.ones(constants.get('freq_table_length'))
         
         #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
         elif (absorption.ndim != 2 \
               or corners.shape[1] != absorption.shape[0] \
-              or absorption.shape[1] != freq_absorption_table_size):
+              or absorption.shape[1] != constants.get('freq_table_length')):
             raise ValueError('Arg absorption must be either a single value, a single value per corner, or a list per corner') 
 
         walls = []
@@ -388,19 +387,18 @@ class Room(object):
                 ]).T
             walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
 
-        freq_absorption_table_size = 6
         absorption = np.array(absorption)
         
         if absorption.ndim == 0:
-            absorption = absorption * np.ones((2, freq_absorption_table_size))
+            absorption = absorption * np.ones((2, constants.get('freq_table_length')))
             
         elif absorption.ndim == 1 and len(absorption) == 2:
-            absorption = np.array([absorption]).T * np.ones(freq_absorption_table_size)
+            absorption = np.array([absorption]).T * np.ones(constants.get('freq_table_length'))
             
         #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
         elif (absorption.ndim != 2 \
               or 2 != absorption.shape[0] \
-              or absorption.shape[1] != freq_absorption_table_size):
+              or absorption.shape[1] != constants.get('freq_table_length')):
             raise ValueError("The size of the absorption array must be 2 for extrude, for the floor and ceiling")
                 
         floor_corners = np.pad(floor_corners, ((0, 1),(0,0)), mode='constant')
@@ -611,7 +609,7 @@ class Room(object):
 
                 I = source.orders <= img_order
 
-                val = (np.log2(source.damping[I]) + 10.) / 10.
+                val = (np.log2(source.damping[0,I]) + 10.) / 10.
                 # plot the images
                 ax.scatter(source.images[0, I],
                     source.images[1, I],
@@ -693,12 +691,12 @@ class Room(object):
         images = source_position[:, np.newaxis] + 2 * d[:, ip > 0]
 
         # collect absorption factors of reflecting walls
-        damping = (1 - self.absorption[ip > 0][:,0])
+        damping = (1 - self.absorption[ip > 0])
 
         # collect the index of the wall corresponding to the new image
         wall_indices = np.arange(len(self.walls))[ip > 0]
 
-        return images, damping, wall_indices
+        return images, damping.T, wall_indices
 
 
     def image_source_model(self, use_libroom=False):
@@ -713,18 +711,17 @@ class Room(object):
             # Fall back to pure python if requested or C module unavailable
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
-                print("worked")
                 if self.max_order > 0:
 
                     # generate first order images
                     i, d, w = self.first_order_images(np.array(source.position))
+                    print("initial: "+str(d))
                     images = [i]
-                    damping = [d]
+                    damping = d
                     generators = [-np.ones(i.shape[1])]
                     wall_indices = [w]
-                    print("1: "+str(damping))
                     # generate all higher order images up to max_order
-                    o = 1
+                    o=1
                     while o < self.max_order:
                         # generate all images of images of previous order
                         img = np.zeros((self.dim, 0))
@@ -734,17 +731,14 @@ class Room(object):
                         for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                             i, d, w = self.first_order_images(si)
                             img = np.concatenate((img, i), axis=1)
-                            print(str(dmp))
-                            print(str(sd))
-                            dmp = np.concatenate((dmp, d * sd))
-                            print(str(o)+": "+str(dmp))
+                            dmp = np.concatenate((dmp, d * sd), axis=1) if dmp.size>0 else d*sd
                             gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
                             wal = np.concatenate((wal, w))
 
                         # sort
                         ordering = np.lexsort(img)
                         img = img[:, ordering]
-                        dmp = dmp[ordering]
+                        dmp = dmp[:,ordering]
                         gen = gen[ordering]
                         wal = wal[ordering]
 
@@ -769,7 +763,7 @@ class Room(object):
                             '''
                             # add to array of images
                             images.append(img)
-                            damping.append(dmp)
+                            damping = np.concatenate((damping,dmp), axis=1)
                             generators.append(gen)
                             wall_indices.append(wal)
 
@@ -783,9 +777,10 @@ class Room(object):
 
                     # linearize the arrays
                     images_lin = np.concatenate(images, axis=1)
-                    damping_lin = np.concatenate(damping)
+                    damping_lin = damping
                     generators_lin = np.concatenate(generators)
                     walls_lin = np.concatenate(wall_indices)
+                    
                     
                     # store the corresponding orders in another array
                     ordlist = []
@@ -795,15 +790,15 @@ class Room(object):
 
                     # add the direct source to the arrays
                     source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
-                    source.damping = np.concatenate(([1], damping_lin))
+                    source.damping = np.concatenate((np.array([np.ones(constants.get('freq_table_length'))]).T, damping_lin), axis=1)
+                    print("final: "+str(source.damping))
                     source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
                     source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
                     source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
-
                 else:
                     # when simulating free space, there is only the direct source
                     source.images = np.array([source.position]).T
-                    source.damping = np.ones(1)
+                    source.damping = np.array([np.ones(constants.get('freq_table_length'))]).T
                     source.generators = -np.ones(1, dtype=np.int)
                     source.walls = -np.ones(1, dtype=np.int)
                     source.orders = np.zeros(1, dtype=np.int)
@@ -828,14 +823,14 @@ class Room(object):
 
                 # Now we can get rid of the superfluous images
                 source.images = source.images[:,I]
-                source.damping = source.damping[I]
+                source.damping = source.damping[:,I]
                 source.generators = source.generators[I]
                 source.walls = source.walls[I]
                 source.orders = source.orders[I]
 
                 self.visibility[-1] = self.visibility[-1][:,I]
 
-
+#STOP
             else:
                 # if libroom is available, use it!
 
