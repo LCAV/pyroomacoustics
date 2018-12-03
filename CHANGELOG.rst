@@ -21,6 +21,7 @@ Changed
 Bugfix
 ~~~~~~
 
+- Corrects a typo in ``pyroomacoustics.SoundSource.add_signal``
 - Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
 - Corrects invalid memory access in the ``pyroomacoustics.build_rir`` cython accelerator
   and adds a unit test that checks the cython code output is correct
