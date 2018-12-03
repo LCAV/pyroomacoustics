@@ -78,7 +78,7 @@ class SoundSource(object):
         self.max_order = np.max(self.orders)
 
 
-    def add_signal(signal):
+    def add_signal(self, signal):
 
         self.signal = signal
 
