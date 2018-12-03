@@ -40,10 +40,10 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     else:
         tau = np.tile(weights.T, (q, 1)).reshape(L)
 
-    maxiter = 200
+    maxiter = 10000
     alphamax = 1e5  # maximum step - length parameter alpha
     alphamin = 1e-7  # minimum step - length parameteralpha
-    tol = 1e-4
+    tol = 1e-3
 
     aux = np.zeros((L, 1),dtype=complex)
     G = np.fft.fft(g.flatten())
@@ -62,12 +62,11 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
     crit[iter_] = np.sum(criterion ** 2)
 
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
-        print("iteration: ", iter_)
         prev_r = r
         prev_g = g
         g = soft(prev_g - gradq * (1 / alpha), tau / alpha)
         dg = g - prev_g
-        DG = np.fft.fft(dg, axis=0)
+        DG = np.fft.fft(dg.flatten())
         Adg = np.concatenate((np.real(DG[S]), np.imag(DG[S])), axis=0)
         r = prev_r + Adg.flatten()  # faster than A * g - y
         dd = dg.flatten().conj().T @ dg.flatten()
@@ -80,7 +79,7 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         gradq = np.expand_dims(gradq, axis=1)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
         crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
-
+        print("iteration: ", iter_+1, ", criterion: ", crit[iter_])
 
     if q > 1:
         g = q * resample(g, 1, q, 100)

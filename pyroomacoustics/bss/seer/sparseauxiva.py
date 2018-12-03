@@ -69,6 +69,11 @@ def sparseauxiva(X, S, mu, n_iter, proj_back=True, return_filters=False, lasso=T
     np.set_printoptions(precision=2)
 
     if lasso:
+        if S[-1] == 2048:
+            Sprim = S[0:-1]
+        else:
+            Sprim = S
+
         # Here comes Lassoooooooooo
         Z = np.zeros((n_src, k_freq), dtype=W.dtype)
         G = np.zeros((n_src, n_freq), dtype=Z.dtype)
@@ -86,7 +91,8 @@ def sparseauxiva(X, S, mu, n_iter, proj_back=True, return_filters=False, lasso=T
             # hrtf[:, i] = ADMM(DFT_matrix[S, :], np.expand_dims(Z[i, :], axis=1))
             # print(hrtf[:,i].shape)
             # Then, after calculating hrtf you should transform it to the frequency domain to perform the demixing
-            hrtf[:-1,i] = SpaRIR(np.expand_dims(G[i,0:-1],axis=1),S)
+
+            hrtf[:-1,i] = SpaRIR(np.expand_dims(G[i,0:-1],axis=1),Sprim)
 
             Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
             # print(Hrtf[0, i])
@@ -96,7 +102,6 @@ def sparseauxiva(X, S, mu, n_iter, proj_back=True, return_filters=False, lasso=T
                 W[f, :, i] = np.conj([Hrtf[f, i], 1])
 
         print(hrtf[0])
-    print(W[0,:,:])
 
     demix(Y, X, np.array(range(n_freq)), W)
 
