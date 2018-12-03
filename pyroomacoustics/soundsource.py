@@ -79,6 +79,7 @@ class SoundSource(object):
 
 
     def add_signal(self, signal):
+        ''' Sets SoundSource.signal attribute '''
 
         self.signal = signal
 
