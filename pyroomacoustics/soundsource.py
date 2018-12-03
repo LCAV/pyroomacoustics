@@ -4,6 +4,7 @@
 from __future__ import division, print_function
 
 import numpy as np
+from scipy import signal
 
 from .parameters import constants
 
@@ -204,7 +205,6 @@ class SoundSource(object):
         and the microphone whose position is given as an
         argument.
         '''
-        print(Fs)
 
         # fractional delay length
         fdl = constants.get('frac_delay_length')
@@ -214,6 +214,7 @@ class SoundSource(object):
         dist = self.distance(mic)
         time = dist / constants.get('c') + t0
         alpha = self.damping / (4.*np.pi*dist)
+        print(self.damping)
 
         # the number of samples needed
         if t_max is None:
@@ -225,8 +226,10 @@ class SoundSource(object):
         N += fdl
 
         t = np.arange(N) / float(Fs)
-        ir = np.zeros(t.shape)
-
+        ir = np.zeros((6,t.shape[0]))
+        ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
+        ranges[0][0] = 1
+        ranges[5][1] = Fs/2-2000
         try:
             # Try to use the Cython extension
             from .build_rir import fast_rir_builder123
@@ -239,15 +242,19 @@ class SoundSource(object):
             
             #for each frequency
             for f in range(constants.get('freq_table_length')):
-                #for each wall
+                taps = signal.firwin(numtaps=81,
+                                   cutoff=ranges[f],
+                                   fs=Fs,
+                                   pass_zero=False, 
+                                   window='hamming',
+                                   scale=False)
+                #for each 'ray'
                 for i in range(time.shape[0]):
                         if visibility[i] == 1:
                             time_ip = int(np.round(Fs * time[i])) #integer part
-                            time_fp = (Fs * time[i]) - time_ip #fractional part
-                            ir[time_ip-fdl2:time_ip+fdl2+1] += alpha[f,i]                        \
-                            * np.cos(2*np.pi*constants.get('freq_table_frequencies')[f]*time_ip) \
-                            *fractional_delay(time_fp)
-
+                            time_fp = (Fs * time[i]) - time_ip #fractional part        
+                            ir[f,time_ip-fdl2:time_ip+fdl2+1] += alpha[f,i]*taps
+        ir = np.sum(ir,axis=0)
         return ir
 
     def wall_sequence(self,i):

@@ -715,7 +715,6 @@ class Room(object):
 
                     # generate first order images
                     i, d, w = self.first_order_images(np.array(source.position))
-                    print("initial: "+str(d))
                     images = [i]
                     damping = d
                     generators = [-np.ones(i.shape[1])]
@@ -791,7 +790,6 @@ class Room(object):
                     # add the direct source to the arrays
                     source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
                     source.damping = np.concatenate((np.array([np.ones(constants.get('freq_table_length'))]).T, damping_lin), axis=1)
-                    print("final: "+str(source.damping))
                     source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
                     source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
                     source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
@@ -829,8 +827,6 @@ class Room(object):
                 source.orders = source.orders[I]
 
                 self.visibility[-1] = self.visibility[-1][:,I]
-
-#STOP
             else:
                 # if libroom is available, use it!
 
@@ -916,7 +912,7 @@ class Room(object):
         from scipy.signal import fftconvolve
 
         # Throw an error if we are missing some hardware in the room
-        if (len(self.sources) is 0):
+        if (len(self.sources) is 0): 
             raise ValueError('There are no sound sources in the room.')
         if (self.mic_array is None):
             raise ValueError('There is no microphone in the room.')

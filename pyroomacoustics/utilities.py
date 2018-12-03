@@ -35,7 +35,7 @@ def normalize(signal, bits=None):
 
     s = signal.copy()
 
-    s /= np.abs(s).max()
+    s = s/np.abs(s).max()
 
     # if one wants to scale for bits allocated
     if bits is not None:
