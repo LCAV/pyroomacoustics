@@ -101,16 +101,25 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
         # Compute Auxiliary Variable
-        for f in range(n_freq):
-            for s in range(n_src):
-                V[f,s,:,:] =  (np.dot(G_r[None,:,s] * X[:,f,:].T, np.conj(X[:,f,:]))) / X.shape[0]
+        V = np.mean(
+                (X[:,:,None,:,None] * G_r[:,None,:,None,None])
+                * np.conj(X[:,:,None,None,:]),
+                axis=0,
+                )
 
         # Update now the demixing matrix
-        for f in range(n_freq):
-            for s in range(n_src):
-                WV = np.dot(np.conj(W[f,:,:].T), V[f,s,:,:])
-                W[f,:,s] = np.linalg.solve(WV, I[:,s])
-                W[f,:,s] /= np.sqrt(np.inner(np.conj(W[f,:,s]), np.dot(V[f,s,:,:], W[f,:,s])))
+        for s in range(n_src):
+            W_H = np.conj(np.swapaxes(W, 1, 2))
+            WV = np.matmul(W_H, V[:,s,:,:])
+            rhs = I[None,:,s][[0] * WV.shape[0],:]
+            W[:,:,s] = np.linalg.solve(WV, rhs)
+
+            # normalize
+            P1 = np.conj(W[:,:,s])
+            P2 = np.sum(V[:,s,:,:] * W[:,None,:,s], axis=-1)
+            W[:,:,s] /= np.sqrt(
+                    np.sum(P1 * P2, axis=1)
+                    )[:,None]
 
     demix(Y, X, W)
 

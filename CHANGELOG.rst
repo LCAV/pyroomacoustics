@@ -16,6 +16,7 @@ Changed
 
 - Limits imports of matplotlib to within plotting functions so that the
   matplotlib backend can still be changed, even after importing pyroomacoustics
+- Better Vectorization of the computations in ``pyroomacoustics.bss.auxiva``
 
 Bugfix
 ~~~~~~
