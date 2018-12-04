@@ -37,7 +37,7 @@ def fast_rir_builder(
     fdl: int
         The length of the fractional delay filter (should be odd)
     lut_gran: int
-        The number of point per unit in the since interpolation table
+        The number of point per unit in the sinc interpolation table
     '''
 
     fdl2 = (fdl - 1) // 2
@@ -45,6 +45,13 @@ def fast_rir_builder(
 
     assert time.shape[0] == visibility.shape[0]
     assert time.shape[0] == alpha.shape[0]
+    assert fdl % 2 == 1
+
+    # check the size of the return array
+    max_sample = ceil(fs * np.max(time)) + fdl2
+    min_sample = floor(fs * np.min(time)) - fdl2
+    assert min_sample >= 0
+    assert max_sample < rir.shape[0]
 
     # create a look-up table of the sinc function and
     # then use linear interpolation
