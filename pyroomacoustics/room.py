@@ -165,7 +165,7 @@ can be obtained using the following code
     room.simulate(reference_mic=0, snr=10)
 
 Sometimes, more challenging normalizations are necessary. In that case,
-a custome callback function can be provided to simulate. For example,
+a custom callback function can be provided to simulate. For example,
 we can imagine a scenario where we have ``n_src`` out of which ``n_tgt``
 are the targets, the rest being interferers. We will assume all
 targets have unit variance, and all interferers have equal
@@ -192,8 +192,8 @@ implementing the example described.
 
     # the extra arguments are given in a dictionary
     callback_mix_kwargs = {
-            'snr' : 30,   # SNR target is 30 decibels
-            'sir' : SIR,  # SIR target is 10 decibels
+            'snr' : 30,  # SNR target is 30 decibels
+            'sir' : 10,  # SIR target is 10 decibels
             'n_src' : 6,
             'n_tgt' : 2,
             'ref_mic' : 0,
@@ -207,13 +207,13 @@ implementing the example described.
 
         # now compute the power of interference signal needed to achieve desired SIR
         sigma_i = np.sqrt(10 ** (- sir / 10) / (n_src - n_tgt))
-        premix[n_sources_target:n_sources,:,:] *= sigma_i
+        premix[n_tgt:n_src,:,:] *= sigma_i
 
         # compute noise variance
-        sigma_n = np.sqrt(n_src * 10 ** (- snr / 10))
+        sigma_n = np.sqrt(10 ** (- snr / 10))
 
         # Mix down the recorded signals
-        mix = np.sum(premix[:n_sources,:], axis=0) + sigma_n * np.random.randn(*premix.shape[1:])
+        mix = np.sum(premix[:n_src,:], axis=0) + sigma_n * np.random.randn(*premix.shape[1:])
 
         return mix
 
