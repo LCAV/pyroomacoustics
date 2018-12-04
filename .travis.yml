@@ -67,7 +67,7 @@ deploy:
     server: https://testpypi.python.org/pypi
     on:
       branch: pypi-test
-      tags: true
+      tags: false
     distributions: "sdist bdist_wheel"
     skip_existing: true
     user: "fakufaku"
