@@ -1,6 +1,8 @@
 build: false
 
 environment:
+  PYPI_PASSWORD:
+    secure: 9NqOJYSnExOsNW15tqSNOV/tLcIAeQOknx7PpXdZ0Vw=
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
@@ -65,7 +67,11 @@ deploy_script:
   # populate pypirc file for twine
   - echo [distutils]                                   > %USERPROFILE%\\.pypirc
   - echo index-servers =                              >> %USERPROFILE%\\.pypirc
+  - echo     pypi                                     >> %USERPROFILE%\\.pypirc
   - echo     pypitest                                 >> %USERPROFILE%\\.pypirc
+  - echo [pypi]                                       >> %USERPROFILE%\\.pypirc
+  - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
+  - echo password=%PYPI_PASSWORD%                     >> %USERPROFILE%\\.pypirc
   - echo [pypitest]                                   >> %USERPROFILE%\\.pypirc
   - echo repository=https://testpypi.python.org/pypi  >> %USERPROFILE%\\.pypirc
   - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
@@ -73,7 +79,8 @@ deploy_script:
   # upload to pypi for windows
   - set PATH=%BK_PATH%
   - set HOME=%USERPROFILE%
-  - ps: If ($env:APPVEYOR_REPO_TAG -eq "true" -And $env:APPVEYOR_REPO_BRANCH -eq "pypi-test") { Invoke-Expression "twine upload --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-test, won't deploy to pypitest"}
+  - ps: If ($env:APPVEYOR_REPO_BRANCH -eq "pypi-test") { Invoke-Expression "twine upload --repository pypitest --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-test, won't deploy to pypitest"}
+  - ps: If ($env:APPVEYOR_REPO_TAG -eq "true" -And $env:APPVEYOR_REPO_BRANCH -eq "pypi-release") { Invoke-Expression "twine upload --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-release, won't deploy to pypi"}
   - echo "Finished Artifact Deployment"
 
 notifications:
