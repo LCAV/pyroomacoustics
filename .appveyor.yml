@@ -79,7 +79,7 @@ deploy_script:
   # upload to pypi for windows
   - set PATH=%BK_PATH%
   - set HOME=%USERPROFILE%
-  - ps: If ($env:APPVEYOR_REPO_BRANCH -eq "pypi-test") { Invoke-Expression "twine upload --repository pypitest --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-test, won't deploy to pypitest"}
+  - ps: If ($env:APPVEYOR_REPO_BRANCH -eq "pypi-test") { Invoke-Expression "twine upload --repository pypitest --skip-existing dist/*.whl" } Else { write-output "Not on a tag on pypi-test, won't deploy to pypitest"}
   - ps: If ($env:APPVEYOR_REPO_TAG -eq "true" -And $env:APPVEYOR_REPO_BRANCH -eq "pypi-release") { Invoke-Expression "twine upload --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-release, won't deploy to pypi"}
   - echo "Finished Artifact Deployment"
 
