@@ -41,8 +41,12 @@ class Room
 
     // The microphones are in the room
     Eigen::MatrixXf microphones;
-    // Position format that fits the need of ray_tracing
+    
+    // Very useful for raytracing
+    // 1. Position format that fits the need of ray_tracing
     Eigen::VectorXf mic_pos;
+    // 2. A distance after which a ray must have hit at least 1 wall
+    float max_dist;
 
     // This is a list of image sources
     Eigen::MatrixXf sources;
@@ -80,12 +84,21 @@ class Room
 					
 	bool scat_ray(const Wall &last_wall,
 					const Eigen::VectorXf &last_hit,
-					float_t radius,
-					float_t scat_energy,
-					float_t travel_time,
-					float_t time_thres,
-					float_t sound_speed,
+					float radius,
+					float scat_energy,
+					float travel_time,
+					float time_thres,
+					float sound_speed,
 					std::vector<entry> &output);
+					
+	void simul_ray(float init_phi,
+				   float init_theta,
+				   Eigen::VectorXf source_pos,
+				   float mic_radius,
+				   float scatter_coef,
+				   float time_thres,
+				   float sound_speed,
+				   std::vector<entry> &output);
 					
 
   private:

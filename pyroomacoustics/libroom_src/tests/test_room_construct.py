@@ -42,13 +42,13 @@ def test_room_construct():
     obstructing_walls = []
     microphones = np.array([
         [ 1, ],
-        [ 1, ],
+        [ 2, ],
         [ 1, ],
         ])
 
     room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
-    print(room.microphones)
+    print(room.max_dist)
 
     return room
 

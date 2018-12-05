@@ -39,7 +39,7 @@ Vector2f equation(const Vector2f &p1, const Vector2f &p2){
 }
 
 
-VectorXf compute_segment_end(const VectorXf start, float_t length, float phi, float theta){
+VectorXf compute_segment_end(const VectorXf start, float length, float phi, float theta){
 						
 	/* Given a starting point, the length of the segment
 	 * and a 2D or 3D orientation, this function
@@ -68,7 +68,7 @@ VectorXf compute_segment_end(const VectorXf start, float_t length, float phi, fl
 VectorXf compute_reflected_end(const VectorXf &start,
 							   const VectorXf &hit_point,
 							   const VectorXf &wall_normal,
-							   float_t length){
+							   float length){
 								   
 	VectorXf incident = (hit_point-start).normalized();
 	
@@ -89,7 +89,7 @@ VectorXf compute_reflected_end(const VectorXf &start,
 bool intersects_mic(const VectorXf &start,
 					const VectorXf &end,
 					const VectorXf &center,
-					float_t radius){
+					float radius){
 	
 	/* This function checks if the segment between start and end
 	 * crosses the microphone. 
@@ -168,7 +168,7 @@ Vector2f solve_quad(float A, float B, float C){
 VectorXf mic_intersection(const VectorXf &start,
 						  const VectorXf &end,
 						  const VectorXf &center,
-						  float_t radius){
+						  float radius){
 
 	/* This function computes the intersection point between the mic and the ray.
 	 * So in 2D : intersection between a line and a circle
@@ -301,9 +301,9 @@ VectorXf mic_intersection(const VectorXf &start,
 }
 
 
-void update_travel_time(float_t &travel_time,
-						float_t hop_length,
-						float_t sound_speed){
+void update_travel_time(float &travel_time,
+						float hop_length,
+						float sound_speed){
 							
 	/* This function updates the travel time according to the newly 
 	 * travelled distance*/
@@ -312,7 +312,7 @@ void update_travel_time(float_t &travel_time,
 }
 
 
-void update_energy_wall(float_t &energy,
+void update_energy_wall(float &energy,
 						const Wall &wall){
 							
 	/* This function updates the travel time according to the newly 
@@ -322,7 +322,8 @@ void update_energy_wall(float_t &energy,
 }
 
 
-float compute_scat_energy(float_t energy, float_t scat_coef,
+float compute_scat_energy(float energy,
+						  float scat_coef,
 						  const Wall &wall, 
 						  const VectorXf &start,
 						  const VectorXf &hit_point,

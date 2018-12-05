@@ -808,11 +808,11 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 def simul_ray(room,
               ray_segment_length,
               init_phi,
-              init_energy,
-              mic_pos,
+              init_energy, # For c++ we can put it to 1000 directly as a constant
+              mic_pos, # already in the room object
               mic_radius,
               scatter_coef,
-              init_theta = PI/2,
+              init_theta = PI/2, # For c++ set it to PI/2 if room.dim == 2 in get_rir method !
               time_thres = 0.3,  # seconds
               sound_speed=340.,
               plot = False):

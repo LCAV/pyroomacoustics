@@ -364,7 +364,7 @@ Eigen::VectorXf Room::next_wall_hit(
 	next_wall_index[0] = -1;
 	
 	// Upperbound on the min distance that we could find
-	float_t min_dist(get_max_distance());
+	float min_dist(max_dist);
 	
 	for (size_t i(0); i < walls.size(); ++i){
 		
@@ -383,7 +383,7 @@ Eigen::VectorXf Room::next_wall_hit(
 		if (intersects and
 			(different_than_prev or not there_is_prev_wall)){
 				
-			float_t temp_dist = (start-temp_hit).norm();
+			float temp_dist = (start-temp_hit).norm();
 			
 			if (temp_dist < min_dist){
 				
@@ -400,11 +400,11 @@ Eigen::VectorXf Room::next_wall_hit(
 					
 bool Room::scat_ray(const Wall &last_wall,
 					const Eigen::VectorXf &last_hit,
-					float_t radius,
-					float_t scat_energy,
-					float_t travel_time,
-					float_t time_thres,
-					float_t sound_speed,
+					float radius,
+					float scat_energy,
+					float travel_time,
+					float time_thres,
+					float sound_speed,
 					std::vector<entry> &output){
 						
 	/*
@@ -451,6 +451,45 @@ bool Room::scat_ray(const Wall &last_wall,
 	return result;
 	
 }
+
+void Room::simul_ray(float phi,
+				   float theta,
+				   Eigen::VectorXf source_pos,
+				   float mic_radius,
+				   float scatter_coef,
+				   float time_thres,
+				   float sound_speed,
+				   std::vector<entry> &output){
+
+
+	// Init what we need to trace the ray
+	float energy = 1000;
+	VectorXf start = source_pos;
+	VectorXf end = compute_segment_end(start, max_dist, phi, theta);
+	
+	// The following choice is arbitrary and does not count since we set
+	// the boolean to false
+	Wall wall = walls[0];
+	bool there_is_prev_wall = false;
+	
+	// Init the ray's characteristics
+	float travel_time = 0;
+	float total_dist = 0;
+	
+}
+
+
+// In get_rir method, set init_theta to M_PI_2 for 2D rooms
+
+
+
+
+
+
+
+
+
+
 
 
 
