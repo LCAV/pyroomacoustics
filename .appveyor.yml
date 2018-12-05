@@ -73,7 +73,7 @@ deploy_script:
   - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
   - echo password=%PYPI_PASSWORD%                     >> %USERPROFILE%\\.pypirc
   - echo [pypitest]                                   >> %USERPROFILE%\\.pypirc
-  - echo repository=https://testpypi.python.org/pypi  >> %USERPROFILE%\\.pypirc
+  - echo repository=https://test.pypi.org/legacy      >> %USERPROFILE%\\.pypirc
   - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
   - echo password=%PYPITEST_PASSWORD%                 >> %USERPROFILE%\\.pypirc
   # upload to pypi for windows
