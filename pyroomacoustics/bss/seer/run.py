@@ -109,11 +109,10 @@ average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
 k = np.int_(average.shape[0] * ratio)
 S = np.argpartition(average, -k)[-k:]
 S = np.sort(S)
-mu = 0
 n_iter = 30
 
 # Run SparseAuxIva
-Y = sparseauxiva(X, S, mu, n_iter, lasso=True)
+Y = sparseauxiva(X, S, n_iter, lasso=True)
 
 # run iSTFT
 y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])

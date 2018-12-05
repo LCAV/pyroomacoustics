@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import resample
 
 
-def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
+def SpaRIR(G, S, delay=0, weights=np.array([]), q=1, gini=0):
     L = G.shape[0]  # n_freq
 
     if np.mod(L, 2) == 1:
@@ -79,7 +79,8 @@ def SpaRIR(G, S, delay=20, weights=np.array([]), q=1, gini=0):
         gradq = np.expand_dims(gradq, axis=1)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
         crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
-        print("iteration: ", iter_+1, ", criterion: ", crit[iter_])
+        if iter_ % 100 == 0:
+            print("iteration: ", iter_+1, ", criterion: ", crit[iter_])
 
     if q > 1:
         g = q * resample(g, 1, q, 100)
