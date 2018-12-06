@@ -55,6 +55,8 @@ PYBIND11_MODULE(libroom, m) {
       .def("get_max_distance", &Room::get_max_distance)
       .def("next_wall_hit", &Room::next_wall_hit)
       .def("scat_ray", &Room::scat_ray)
+      .def("simul_ray", &Room::simul_ray)
+      .def("get_rir_entries", &Room::get_rir_entries)     
       .def_readonly("sources", &Room::sources)
       .def_readonly("orders", &Room::orders)
       .def_readonly("attenuations", &Room::attenuations)

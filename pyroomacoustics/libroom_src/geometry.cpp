@@ -355,7 +355,9 @@ float angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2)
 	 int s2 = v2.size();
 	 
 	 if (s1<2 or s1>3 or s2<2 or s2>3 or s1 != s2){
-		 std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		 std::cerr << "size of v1 :" << s1 << std::endl;
+		 std::cerr << "size of v2 :" << s2 << std::endl;
+		 std::cerr << "angle_between : Only 2D and 3D vectors are supported" << std::endl;
 		throw std::exception();
 	 }
 
@@ -372,7 +374,7 @@ float dist_line_point(const Eigen::VectorXf &start,
 	 size_t s_point = point.size();
 	 
 	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_point<2 or s_point>3){
-		std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		std::cerr << "dist_line_point : Only 2D and 3D vectors are supported" << std::endl;
 		std::cerr << "Dim start = " << s_start <<std::endl;
 		std::cerr << "Dim end = " << s_end <<std::endl;
 		std::cerr << "Dim point = " << s_point <<std::endl;

@@ -100,7 +100,7 @@ bool intersects_mic(const VectorXf &start,
 	 size_t s_center = center.size();
 	 	
 	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_center<2 or s_center>3){
-		std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		std::cerr << "intersects_mic : Only 2D and 3D vectors are supported" << std::endl;
 		std::cerr << "Dim start = " << s_start <<std::endl;
 		std::cerr << "Dim end = " << s_end <<std::endl;
 		std::cerr << "Dim center = " << s_center <<std::endl;
@@ -179,7 +179,7 @@ VectorXf mic_intersection(const VectorXf &start,
 	 size_t s_center = center.size();
 	 	
 	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_center<2 or s_center>3){
-		std::cerr << "Only 2D and 3D vectors are supported" << std::endl;
+		std::cerr << "mic_intersection : Only 2D and 3D vectors are supported" << std::endl;
 		std::cerr << "Dim start = " << s_start <<std::endl;
 		std::cerr << "Dim end = " << s_end <<std::endl;
 		std::cerr << "Dim center = " << s_center <<std::endl;
@@ -327,9 +327,10 @@ float compute_scat_energy(float energy,
 						  const VectorXf &hit_point,
 						  const VectorXf &mic_pos){
 	
-	Vector2f n = wall.normal;
+	VectorXf n = wall.normal;
 	
 	// Make sure the normal points inside the room
+	
 	if (angle_between(start-hit_point, n) > M_PI_2){
 		n = (-1)*n;
 	}

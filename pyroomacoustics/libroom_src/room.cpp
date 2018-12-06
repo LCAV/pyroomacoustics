@@ -499,14 +499,25 @@ void Room::simul_ray(float phi,
 	
 	while(true){
 		
+		std::cout << "---\n" << "start : " << start[0] << " " << start[1] << " " << start[2] << std::endl;
+		std::cout << "end : " << end[0] << " " << end[1] << " " << end[2] << std::endl;
+		std::cout << "there_is_prev_wall : " <<  there_is_prev_wall <<std::endl;
+		std::cout << "next_wall_index : " <<  next_wall_index[0] <<std::endl;
+		
+		
 		VectorXf hit_point = next_wall_hit(start,
 										   end,
 										   there_is_prev_wall,
 										   wall,
 										   next_wall_index);
 
+
+
+		std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
+		
 		// The wall that has just been hit
 		wall = walls[next_wall_index[0]];
+		there_is_prev_wall = true;
 		float distance = (start - hit_point).norm();
 		
 		
@@ -516,6 +527,8 @@ void Room::simul_ray(float phi,
 		if (intersects_mic(start, hit_point, mic_pos, mic_radius)){
 			
 			hit_point = mic_intersection(start, hit_point, mic_pos, mic_radius);
+			
+			std::cout << "MICROPHONE hit_point : " << hit_point[0] << " "<< hit_point[1] << " "<< hit_point[2] << std::endl;
 			distance = (start - hit_point).norm();
 			
 			total_dist += distance;
@@ -600,9 +613,12 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
 		
+		std::cout << "\n===========\n" << "i = " << i << std::endl;
 		float phi = 2*M_PI/nb_phis;
 		
 		for (size_t j(0); j<nb_thetas; ++j){
+			
+			std::cout << "j = " << j << std::endl;
 			
 			float theta = M_PI/nb_thetas;
 			
