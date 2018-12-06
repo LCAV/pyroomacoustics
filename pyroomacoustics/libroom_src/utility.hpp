@@ -55,6 +55,6 @@ float compute_scat_energy(float energy, float scat_coef,
 						  const VectorXf &hit_point,
 						  const VectorXf &mic_pos);
 						  
-void append(float energy, float travel_time, std::vector<entry> &output);				
+void append(float travel_time, float energy,  std::vector<entry> &output);				
 
 #endif // __UTILITY_H__

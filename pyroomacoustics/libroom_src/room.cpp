@@ -354,7 +354,8 @@ Eigen::VectorXf Room::next_wall_hit(
 						
 	/* Computes the next next wall_hit position given a segment defined
 	 * by its endpoints. This method also stores the index of the wall
-	 * that contains this next hit point.
+	 * that contains this next hit point (we needed to pass it inside a 
+	 * Vector1i to be able to call this function from python).
 	 * 
 	 * If no wall is intersected, then the next_wall_index will be -1*/
 						
@@ -401,7 +402,7 @@ Eigen::VectorXf Room::next_wall_hit(
 					
 					
 bool Room::scat_ray(const Wall &last_wall,
-					const Eigen::VectorXf &last_hit,
+					const Eigen::VectorXf &hit_point,
 					float radius,
 					float scat_energy,
 					float travel_time,
@@ -428,14 +429,18 @@ bool Room::scat_ray(const Wall &last_wall,
 	bool result = false;
 	
 	Vector1i next_wall_idx(-1);
-	next_wall_hit(last_hit, mic_pos, true, last_wall, next_wall_idx);
+	
+	// Just to see the evolution of next_wall_idx
+	// parameter there_is_prev_wall is set to true since we consider
+	// scattered rays only when we hit a wall
+	next_wall_hit(hit_point, mic_pos, true, last_wall, next_wall_idx);
 	
 	
 	// No wall intersecting the direct scattered ray
 	if (next_wall_idx[0] == -1){
 		
-		VectorXf mic_hit = mic_intersection(last_hit, mic_pos, mic_pos, radius);
-		float hop_dist = (last_hit - mic_hit).norm();
+		VectorXf mic_hit = mic_intersection(hit_point, mic_pos, mic_pos, radius);
+		float hop_dist = (hit_point - mic_hit).norm();
 		
 		update_travel_time(travel_time, hop_dist, sound_speed);
 		
@@ -443,7 +448,7 @@ bool Room::scat_ray(const Wall &last_wall,
 		// performed once all the ray arrived.
 		
 		if (travel_time < time_thres){
-			append(scat_energy, travel_time, output);
+			append(travel_time, scat_energy, output);
 			result = true;
 						
 		}
@@ -499,10 +504,14 @@ void Room::simul_ray(float phi,
 	
 	while(true){
 		
+		
+		/* //Debugging
 		std::cout << "---\n" << "start : " << start[0] << " " << start[1] << " " << start[2] << std::endl;
 		std::cout << "end : " << end[0] << " " << end[1] << " " << end[2] << std::endl;
 		std::cout << "there_is_prev_wall : " <<  there_is_prev_wall <<std::endl;
 		std::cout << "next_wall_index : " <<  next_wall_index[0] <<std::endl;
+		* 
+		* */
 		
 		
 		VectorXf hit_point = next_wall_hit(start,
@@ -512,8 +521,8 @@ void Room::simul_ray(float phi,
 										   next_wall_index);
 
 
-
-		std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
+		// Debugging
+		//std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 		
 		// The wall that has just been hit
 		wall = walls[next_wall_index[0]];
@@ -528,23 +537,29 @@ void Room::simul_ray(float phi,
 			
 			hit_point = mic_intersection(start, hit_point, mic_pos, mic_radius);
 			
-			std::cout << "MICROPHONE hit_point : " << hit_point[0] << " "<< hit_point[1] << " "<< hit_point[2] << std::endl;
+			//std::cout << "MICROPHONE hit_point : " << hit_point[0] << " "<< hit_point[1] << " "<< hit_point[2] << std::endl;
 			distance = (start - hit_point).norm();
 			
 			total_dist += distance;
 			update_travel_time(travel_time, distance, sound_speed);
 			
 			if (travel_time < time_thres){
-				append(energy, travel_time, output);
+				append(travel_time, energy, output);
 			}
 			break;			
 		}
 		
 		
 		// Update the characteristics
+		
+		//std::cout << "\n\n-------\nprev travel time : " <<  travel_time <<std::endl;
+		//std::cout << "prev energy : " <<  energy <<std::endl;
 		total_dist += distance;
 		update_travel_time(travel_time, distance, sound_speed);
 		update_energy_wall(energy, wall);
+		
+		//std::cout << "post travel time : " <<  travel_time <<std::endl;
+		//std::cout << "post energy : " <<  energy <<std::endl;
 		
 		// Check if we reach the time threshold for this ray
 		if (travel_time > time_thres){
@@ -553,6 +568,7 @@ void Room::simul_ray(float phi,
 		
 		// Let's simulate the scattered ray induced by the rebound on
 		// the wall
+		
 		if (scatter_coef > 0){
 			
 			float ray_scat_energy = compute_scat_energy(energy,
@@ -564,7 +580,7 @@ void Room::simul_ray(float phi,
 														
 			// Shoot the scattered ray
 			scat_ray(wall,
-					 start,
+					 hit_point,
 					 mic_radius,
 					 ray_scat_energy,
 					 travel_time,
@@ -577,7 +593,7 @@ void Room::simul_ray(float phi,
 			energy = energy*(1-scatter_coef);
 			
 		}
-		
+				
 		// Now we just need to update the start and end positions for
 		// next hop
 		end = compute_reflected_end(start, hit_point, wall.normal, max_dist);
@@ -612,14 +628,13 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	output.reserve(10000);
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
-		
-		std::cout << "\n===========\n" << "i = " << i << std::endl;
+		//std::cout << "\n===============\ni="<< i << std::endl;
 		float phi = 2*M_PI/nb_phis;
 		
 		for (size_t j(0); j<nb_thetas; ++j){
 			
-			std::cout << "j = " << j << std::endl;
-			
+			//std::cout << "j=" << j << std::endl;
+						
 			float theta = M_PI/nb_thetas;
 			
 			// For 2D, this parameter means nothing, but we set it to

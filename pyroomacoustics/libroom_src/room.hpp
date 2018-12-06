@@ -83,7 +83,7 @@ class Room
 					Eigen::Ref<Vector1i> next_wall_index);
 					
 	bool scat_ray(const Wall &last_wall,
-					const Eigen::VectorXf &last_hit,
+					const Eigen::VectorXf &hit_point,
 					float radius,
 					float scat_energy,
 					float travel_time,

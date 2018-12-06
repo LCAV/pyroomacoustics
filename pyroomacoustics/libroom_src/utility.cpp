@@ -339,7 +339,7 @@ float compute_scat_energy(float energy,
 }
 
 
-void append(float energy, float travel_time, std::vector<entry> &output){
+void append(float travel_time, float energy, std::vector<entry> &output){
 	/* This function simply push_backs the value at the end of the vector
 	 * but in case the vector is at full capacity, we first double
 	 * the capacity*/
@@ -357,7 +357,7 @@ void append(float energy, float travel_time, std::vector<entry> &output){
 		 output.reserve(2*cap);
 	 }
 	 	 
-	 output.push_back(entry{{energy, travel_time}});
+	 output.push_back(entry{{travel_time, energy}});
 }
 
 
