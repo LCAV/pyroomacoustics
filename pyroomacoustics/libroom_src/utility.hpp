@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include "wall.hpp"
+#include "geometry.hpp"
 #include <vector>
 #include <array>
 
@@ -44,6 +45,9 @@ VectorXf mic_intersection(const VectorXf &start,
 void update_travel_time(float &travel_time,
 						const float hop_length,
 						const float sound_speed);
+						
+void update_energy_wall(float &energy,
+						const Wall &wall);						
 						
 float compute_scat_energy(float energy, float scat_coef,
 						  const Wall &wall, 

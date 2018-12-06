@@ -389,6 +389,8 @@ Eigen::VectorXf Room::next_wall_hit(
 				
 				min_dist = temp_dist;
 				result = temp_hit;
+				
+				// update the index of the wall that is hit
 				next_wall_index[0] = i;
 			}
 		}
@@ -460,21 +462,171 @@ void Room::simul_ray(float phi,
 				   float time_thres,
 				   float sound_speed,
 				   std::vector<entry> &output){
+					   
+					   
+	/*This function simulates one ray and fills the output vector with
+	 * all the entries that can be produced by this ray (either when the
+	 * ray reaches the microphone or all the scattered rays)
+	 * 
+	 * INPUT :
+	 * - phi and theta give the orientation of the ray (2D or 3D)
+	 * - source_pos is the location of the sound source (NOT AN IMAGE SOURCE)
+	 * - mic_radius is the radius of the microphone that is represented like a circle or a sphere
+	 * - scatter coef determines the amount of the energy that gets scattered every time the ray hits a wall
+	 * - time_thres is the upperbound on the travel time of the ray
+	 * - sound_speed is the speed of sound (may be dependent on humidity etc...)
+	 * - output is the vector that contains the entries for all the simulated rays */
 
 
-	// Init what we need to trace the ray
+	// ------------------ INIT --------------------
+	// What we need to trace the ray
 	float energy = 1000;
 	VectorXf start = source_pos;
 	VectorXf end = compute_segment_end(start, max_dist, phi, theta);
 	
-	// The following choice is arbitrary and does not count since we set
+	// The following initializations are arbitrary and does not count since we set
 	// the boolean to false
 	Wall wall = walls[0];
+	Vector1i next_wall_index(0);
 	bool there_is_prev_wall = false;
 	
-	// Init the ray's characteristics
+	// The ray's characteristics
 	float travel_time = 0;
 	float total_dist = 0;
+	//---------------------------------------------
+	
+	//------------------ RAY TRACING --------------------
+	
+	while(true){
+		
+		VectorXf hit_point = next_wall_hit(start,
+										   end,
+										   there_is_prev_wall,
+										   wall,
+										   next_wall_index);
+
+		// The wall that has just been hit
+		wall = walls[next_wall_index[0]];
+		float distance = (start - hit_point).norm();
+		
+		
+		
+		// Before updatign the ray's characteristic, we must see
+		// if the mic is intersected on the [start, hit_point] segment
+		if (intersects_mic(start, hit_point, mic_pos, mic_radius)){
+			
+			hit_point = mic_intersection(start, hit_point, mic_pos, mic_radius);
+			distance = (start - hit_point).norm();
+			
+			total_dist += distance;
+			update_travel_time(travel_time, distance, sound_speed);
+			
+			if (travel_time < time_thres){
+				append(energy, travel_time, output);
+			}
+			break;			
+		}
+		
+		
+		// Update the characteristics
+		total_dist += distance;
+		update_travel_time(travel_time, distance, sound_speed);
+		update_energy_wall(energy, wall);
+		
+		// Check if we reach the time threshold for this ray
+		if (travel_time > time_thres){
+			break;
+		}
+		
+		// Let's simulate the scattered ray induced by the rebound on
+		// the wall
+		if (scatter_coef > 0){
+			
+			float ray_scat_energy = compute_scat_energy(energy,
+														scatter_coef,
+														wall,
+														start,
+														hit_point,
+														mic_pos);
+														
+			// Shoot the scattered ray
+			scat_ray(wall,
+					 start,
+					 mic_radius,
+					 ray_scat_energy,
+					 travel_time,
+					 time_thres,
+					 sound_speed,
+					 output);
+			
+			// The overall ray's energy gets decreased by the total
+			// amount of scattered energy
+			energy = energy*(1-scatter_coef);
+			
+		}
+		
+		// Now we just need to update the start and end positions for
+		// next hop
+		end = compute_reflected_end(start, hit_point, wall.normal, max_dist);
+		start = hit_point;		
+	}
+	
+	
+}
+
+std::vector<entry> Room::get_rir_entries(size_t nb_phis,
+								   size_t nb_thetas,
+								   Eigen::VectorXf source_pos,
+								   float mic_radius,
+								   float scatter_coef,
+								   float time_thres,
+								   float sound_speed){
+									   
+	/*This method simulates a certain number of rays and output the
+	 * vector of entries produced by the latter.
+	 * 
+	 * INPUT
+	 * - nb_phis is the number of different planar directions that will be used
+	 * - nb_thetas is the number of different elevation angles that will be used
+	 *   (NOTE : nb_phis*nb_thetas is the number of simulated rays)*/
+	 
+	if ( (source_pos-mic_pos).norm() < mic_radius ){
+		std::cerr << "The source is inside the microphone ! " <<std::endl;
+		throw std::exception();
+	}
+	
+	std::vector<entry> output;
+	output.reserve(10000);
+	
+	for (size_t i(0); i<nb_phis; ++i)  {
+		
+		float phi = 2*M_PI/nb_phis;
+		
+		for (size_t j(0); j<nb_thetas; ++j){
+			
+			float theta = M_PI/nb_thetas;
+			
+			// For 2D, this parameter means nothing, but we set it to
+			// PI/2 to be consistent
+			if(dim==2){
+				theta = M_PI_2;
+			}
+			
+			
+			simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
+					  time_thres, sound_speed, output);
+			
+			
+			// if we work in 2D rooms, only 1 elevation angle is needed
+			if(dim==2){
+				break;
+			}
+		}
+		
+	}
+	
+	return output;
+
 	
 }
 

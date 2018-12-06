@@ -907,8 +907,9 @@ def simul_ray(room,
 
         # Let's apply the scattering coefficient
         if scatter_coef > 0:
+            total_scat = scatter_coef*energy;
             energy_scat = compute_scat_energy(energy, scatter_coef, wall, start, hit_point, mic_pos)
-            energy -= energy_scat
+            energy -= total_scat
 
             # Add the scattered ray to the output (if there is no wall between hit_point and mic_pos)
             output = output + scattering_ray(room, wall, hit_point, mic_pos, mic_radius, energy_scat, travel_time, time_thres, sound_speed)

@@ -99,6 +99,14 @@ class Room
 				   float time_thres,
 				   float sound_speed,
 				   std::vector<entry> &output);
+				   
+	std::vector<entry> get_rir_entries(size_t nb_phis,
+									   size_t nb_thetas,
+									   Eigen::VectorXf source_pos,
+								       float mic_radius,
+								       float scatter_coef,
+								       float time_thres,
+								       float sound_speed);
 					
 
   private:

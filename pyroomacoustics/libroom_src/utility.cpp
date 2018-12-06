@@ -3,9 +3,7 @@
  */
 
 #include <iostream>
-#include <cmath>
 #include "utility.hpp"
-#include "geometry.hpp"
 
 using namespace Eigen;
 extern float libroom_eps;
