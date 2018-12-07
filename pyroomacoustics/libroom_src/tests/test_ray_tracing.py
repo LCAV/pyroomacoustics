@@ -158,10 +158,10 @@ if __name__ == '__main__':
     room = test_room_construct()
 
     # parameters
-    nb_phis = 50
-    nb_thetas = 50
+    nb_phis = 20
+    nb_thetas = 20
     source_pos = [0.5,0.5,0.5]
-    mic_radius = 1.
+    mic_radius = .5
     scatter_coef = 0.1
     time_thres = 0.5 #s
     sound_speed = 340

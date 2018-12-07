@@ -1181,8 +1181,8 @@ def get_RT60(room):
 _3D = True
 max_order = 8
 
-nb_phis = 10
-nb_thetas = 10 if _3D else 1
+nb_phis = 80
+nb_thetas = 80 if _3D else 1
 
 scatter_coef = 0.1
 absor = 0.1

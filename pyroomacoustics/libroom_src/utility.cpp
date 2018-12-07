@@ -354,7 +354,9 @@ void append(float travel_time, float energy, std::vector<entry> &output){
 	 
 	 // Reserve memory
 	 if (sz == cap){
-		 output.reserve(2*cap);
+		 //std::cerr << "Resizing! We reached cap=" << cap << std::endl;
+		 output.reserve(cap*2);
+		 //std::cerr << "Done !" << std::endl;
 	 }
 	 	 
 	 output.push_back(entry{{travel_time, energy}});

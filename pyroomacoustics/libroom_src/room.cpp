@@ -448,6 +448,7 @@ bool Room::scat_ray(const Wall &last_wall,
 		// performed once all the ray arrived.
 		
 		if (travel_time < time_thres){
+			//std::cout << "appending scat rays : " <<std::endl;
 			append(travel_time, scat_energy, output);
 			result = true;
 						
@@ -505,13 +506,12 @@ void Room::simul_ray(float phi,
 	while(true){
 		
 		
-		/* //Debugging
+		/*//Debugging
 		std::cout << "---\n" << "start : " << start[0] << " " << start[1] << " " << start[2] << std::endl;
 		std::cout << "end : " << end[0] << " " << end[1] << " " << end[2] << std::endl;
 		std::cout << "there_is_prev_wall : " <<  there_is_prev_wall <<std::endl;
 		std::cout << "next_wall_index : " <<  next_wall_index[0] <<std::endl;
-		* 
-		* */
+		*/
 		
 		
 		VectorXf hit_point = next_wall_hit(start,
@@ -636,18 +636,18 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 		throw std::exception();
 	}
 	
-	std::vector<entry> output;
-	output.reserve(10000);
+	std::vector<entry> output(10000);
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
 		//std::cout << "\n===============\ni="<< i << std::endl;
-		float phi = i*2*M_PI/nb_phis;
+		float phi = 2*M_PI*i/nb_phis;
 		
 		for (size_t j(0); j<nb_thetas; ++j){
 			
 			//std::cout << "j=" << j << std::endl;
 						
-			float theta = j*M_PI/nb_thetas;
+			float theta = std::acos(2*((float)j/nb_thetas)-1);
+			
 			
 			// For 2D, this parameter means nothing, but we set it to
 			// PI/2 to be consistent
