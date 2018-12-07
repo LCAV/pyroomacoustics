@@ -93,14 +93,16 @@ def test_room_construct():
 def compute_rir(log, time_thres, fs, plot=True):
 
 
+    TIME = 0
+    ENERGY = 1
+
+    # ======= WITH FRACTIONAL PART =======
+
     # the python utilities to compute the rir
     fdl = pra.constants.get('frac_delay_length')
     fdl2 = (fdl - 1) // 2  # Integer division
 
     ir = np.zeros(int(time_thres * fs) + fdl)
-
-    TIME = 0
-    ENERGY = 1
 
     for entry in log:
         time_ip = int(np.floor(entry[TIME] * fs))
@@ -111,7 +113,7 @@ def compute_rir(log, time_thres, fs, plot=True):
         time_fp = (entry[TIME] * fs) - time_ip
 
         # Distance attenuation
-        ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp)) / (sound_speed * entry[TIME])
+        ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
 
     if plot :
@@ -124,7 +126,7 @@ def compute_rir(log, time_thres, fs, plot=True):
 
     return ir
 
-def apply_rir(rir, wav_file_name, fs, result_name="aaa.wav"):
+def apply_rir(rir, wav_file_name, fs, cutoff=200, result_name="aaa.wav"):
 
 
     fs0, audio_anechoic = wavfile.read(wav_file_name)
@@ -138,20 +140,27 @@ def apply_rir(rir, wav_file_name, fs, result_name="aaa.wav"):
     # Compute the convolution and set all coefficients between -1 and 1 (range for float32 .wav files)
     result = scipy.signal.fftconvolve(rir, audio_anechoic)
 
+    if cutoff > 0:
+        result = highpass(result, fs, cutoff)
+
     result /= np.abs(result).max()
     result -= np.mean(result)
     wavfile.write(result_name, rate=fs, data=result.astype('float32'))
 
-
+def highpass(audio, fs, cutoff=200, butter_order=5):
+    nyq = 0.5 * fs
+    fc_norm = cutoff / nyq
+    b, a = signal.butter(butter_order, fc_norm, btype="high", analog=False)
+    return signal.lfilter(b, a, audio)
 
 
 if __name__ == '__main__':
     room = test_room_construct()
 
     # parameters
-    nb_phis = 20
-    nb_thetas = 20
-    source_pos = [9,9,7]
+    nb_phis = 50
+    nb_thetas = 50
+    source_pos = [9,7,9]
     mic_radius = 0.05
     scatter_coef = 0.1
     time_thres = 0.5 #s
@@ -168,7 +177,10 @@ if __name__ == '__main__':
 
     rir = compute_rir(log, time_thres, fs, plot=True)
 
-    apply_rir(rir, "0riginal.wav", fs)
+    if len(rir) == 0:
+        raise ValueError("The room impulse response is empty !")
+
+    apply_rir(rir, "0riginal.wav", fs, cutoff=200)
 
 
 

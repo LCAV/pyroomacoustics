@@ -629,13 +629,13 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
 		//std::cout << "\n===============\ni="<< i << std::endl;
-		float phi = 2*M_PI/nb_phis;
+		float phi = i*2*M_PI/nb_phis;
 		
 		for (size_t j(0); j<nb_thetas; ++j){
 			
 			//std::cout << "j=" << j << std::endl;
 						
-			float theta = M_PI/nb_thetas;
+			float theta = j*M_PI/nb_thetas;
 			
 			// For 2D, this parameter means nothing, but we set it to
 			// PI/2 to be consistent
@@ -654,6 +654,11 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 			}
 		}
 		
+	}
+	
+	// Now we must apply the distance attenuation for every ray
+	for (size_t k(0); k < output.size(); k++){
+		output[k][1] /= (output[k][0] * sound_speed);
 	}
 	
 	return output;
