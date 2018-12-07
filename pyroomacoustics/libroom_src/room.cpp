@@ -527,26 +527,33 @@ void Room::simul_ray(float phi,
 		// The wall that has just been hit
 		wall = walls[next_wall_index[0]];
 		there_is_prev_wall = true;
-		float distance = (start - hit_point).norm();
+		
+		// Initialization needed for the next if
+		float distance(0);
+		
 		
 		
 		
 		// Before updatign the ray's characteristic, we must see
 		// if the mic is intersected on the [start, hit_point] segment
+		
+		// - If yes, we compute the energy at the mic_intersection point
+		// and we continue the ray
 		if (intersects_mic(start, hit_point, mic_pos, mic_radius)){
 			
-			hit_point = mic_intersection(start, hit_point, mic_pos, mic_radius);
+			Eigen::VectorXf hit_point_mic = mic_intersection(start, hit_point, mic_pos, mic_radius);
 			
-			//std::cout << "MICROPHONE hit_point : " << hit_point[0] << " "<< hit_point[1] << " "<< hit_point[2] << std::endl;
-			distance = (start - hit_point).norm();
+			//std::cout << "MICROPHONE hit_point : " << hit_point_mic[0] << " "<< hit_point_mic[1] << " "<< hit_point_mic[2] << std::endl;
+			distance = (start - hit_point_mic).norm();
 			
-			total_dist += distance;
-			update_travel_time(travel_time, distance, sound_speed);
+			float travel_time_to_mic = travel_time;
+
+			update_travel_time(travel_time_to_mic, distance, sound_speed);
 			
-			if (travel_time < time_thres){
-				append(travel_time, energy, output);
+			if (travel_time_to_mic < time_thres){
+				append(travel_time_to_mic, energy, output);
 			}
-			break;			
+			
 		}
 		
 		
@@ -554,6 +561,7 @@ void Room::simul_ray(float phi,
 		
 		//std::cout << "\n\n-------\nprev travel time : " <<  travel_time <<std::endl;
 		//std::cout << "prev energy : " <<  energy <<std::endl;
+		distance = (start - hit_point).norm();
 		total_dist += distance;
 		update_travel_time(travel_time, distance, sound_speed);
 		update_energy_wall(energy, wall);
@@ -617,7 +625,11 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	 * INPUT
 	 * - nb_phis is the number of different planar directions that will be used
 	 * - nb_thetas is the number of different elevation angles that will be used
-	 *   (NOTE : nb_phis*nb_thetas is the number of simulated rays)*/
+	 *   (NOTE : nb_phis*nb_thetas is the number of simulated raysUT
+	 * 
+	 * OUTPUT 
+	 * - a 2D vector where each entry is a tuple (time, energy)
+	 * reprensenting a ray (scattered or not) reaching the microphone*/
 	 
 	if ( (source_pos-mic_pos).norm() < mic_radius ){
 		std::cerr << "The source is inside the microphone ! " <<std::endl;
