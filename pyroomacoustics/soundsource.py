@@ -214,7 +214,6 @@ class SoundSource(object):
         dist = self.distance(mic)
         time = dist / constants.get('c') + t0
         alpha = self.damping / (4.*np.pi*dist)
-        print(self.damping)
 
         # the number of samples needed
         if t_max is None:
