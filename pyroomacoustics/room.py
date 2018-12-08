@@ -174,6 +174,7 @@ from __future__ import print_function
 
 import numpy as np
 import scipy.spatial as spatial
+from scipy.signal import lfilter, firwin
 import ctypes
 
 #import .beamforming as bf
@@ -645,20 +646,22 @@ class Room(object):
 
         M = self.mic_array.M
         S = len(self.sources)
-        for r in range(M):
-            for s in range(S):
-                h = self.rir[r][s]
-                plt.subplot(M, S, r*S + s + 1)
-                if not FD:
-                    plt.plot(np.arange(len(h)) / float(self.fs), h)
-                else:
-                    u.real_spectrum(h)
-                plt.title('RIR: mic'+str(r)+' source'+str(s))
-                if r == M-1:
+        for f in range(6):
+            for r in range(M):
+                for s in range(S):
+                    h = self.rir[r][s][f]
+                    plt.subplot(M, S, r*S + s + 1)
                     if not FD:
-                        plt.xlabel('Time [s]')
+                        plt.plot(np.arange(len(h)) / float(self.fs), h)
                     else:
-                        plt.xlabel('Normalized frequency')
+                        u.real_spectrum(h)
+                    plt.title('RIR: mic'+str(r)+' source'+str(s)+' freq:'+str(constants.get('freq_table_frequencies')[f]))
+                    if r == M-1:
+                        if not FD:
+                            plt.xlabel('Time [s]')
+                        else:
+                            plt.xlabel('Normalized frequency')
+            plt.show()
 
         plt.tight_layout()
 
@@ -927,8 +930,8 @@ class Room(object):
 
         # compute the maximum signal length
         from itertools import product
-        max_len_rir = np.array([len(self.rir[i][j])
-                                for i, j in product(range(M), range(S))]).max()
+        max_len_rir = np.array([len(self.rir[i][j][k])
+                                for i, j, k in product(range(M), range(S),range(constants.get('freq_table_length')))]).max()
         f = lambda i: len(
             self.sources[i].signal) + np.floor(self.sources[i].delay * self.fs)
         max_sig_len = np.array([f(i) for i in range(S)]).max()
@@ -938,7 +941,22 @@ class Room(object):
 
         # the array that will receive all the signals
         signals = np.zeros((M, L))
-
+        
+        
+        ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
+        ranges[0][0] = 1
+        ranges[5][1] = self.fs/2-1000
+        taps= np.zeros((constants.get('freq_table_length'),512))
+        #compute the bandpass filters
+        for freq in range(constants.get('freq_table_length')):
+            taps[freq] = firwin(numtaps=512,
+                               cutoff=ranges[freq],
+                               fs=self.fs,
+                               pass_zero=False, 
+                               window='hamming',
+                               scale=False)
+            
+            
         # compute the signal at every microphone in the array
         for m in np.arange(M):
             rx = signals[m]
@@ -947,8 +965,9 @@ class Room(object):
                 if sig is None:
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
-                h = self.rir[m][s]
-                rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
+                for freq in range(constants.get('freq_table_length')):
+                    h = lfilter(taps[freq],1,self.rir[m][s][freq])
+                    rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h,sig)
 
             # add white gaussian noise if necessary
             if self.sigma2_awgn is not None:

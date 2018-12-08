@@ -225,10 +225,7 @@ class SoundSource(object):
         N += fdl
 
         t = np.arange(N) / float(Fs)
-        ir = np.zeros((6,t.shape[0]))
-        ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
-        ranges[0][0] = 1
-        ranges[5][1] = Fs/2-2000
+        irs = np.zeros((constants.get('freq_table_length'),t.shape[0]))
         try:
             # Try to use the Cython extension
             from .build_rir import fast_rir_builder123
@@ -241,20 +238,13 @@ class SoundSource(object):
             
             #for each frequency
             for f in range(constants.get('freq_table_length')):
-                taps = signal.firwin(numtaps=81,
-                                   cutoff=ranges[f],
-                                   fs=Fs,
-                                   pass_zero=False, 
-                                   window='hamming',
-                                   scale=False)
                 #for each 'ray'
                 for i in range(time.shape[0]):
                         if visibility[i] == 1:
                             time_ip = int(np.round(Fs * time[i])) #integer part
                             time_fp = (Fs * time[i]) - time_ip #fractional part        
-                            ir[f,time_ip-fdl2:time_ip+fdl2+1] += alpha[f,i]*taps
-        ir = np.sum(ir,axis=0)
-        return ir
+                            irs[f,time_ip-fdl2:time_ip+fdl2+1] += alpha[f,i]*fractional_delay(time_fp)
+        return irs
 
     def wall_sequence(self,i):
         '''
