@@ -223,7 +223,6 @@ class SoundSource(object):
             N = np.ceil((t_max - t0) * Fs)
 
         N += fdl
-
         t = np.arange(N) / float(Fs)
         irs = np.zeros((constants.get('freq_table_length'),t.shape[0]))
         try:

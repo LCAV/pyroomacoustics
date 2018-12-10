@@ -174,12 +174,13 @@ from __future__ import print_function
 
 import numpy as np
 import scipy.spatial as spatial
-from scipy.signal import lfilter, firwin
+from scipy.signal import lfilter, firwin, butter, sosfilt
 import ctypes
 
 #import .beamforming as bf
 from . import beamforming as bf
 from . import geometry as geom
+from . import utilities as utils
 from .soundsource import SoundSource
 from .wall import Wall
 from .geometry import area, ccw3p
@@ -946,15 +947,20 @@ class Room(object):
         ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
         ranges[0][0] = 1
         ranges[5][1] = self.fs/2-1000
+        rangesW = [[(fr[0])*2/self.fs,(fr[1])*2/self.fs] for fr in ranges]
         taps= np.zeros((constants.get('freq_table_length'),512))
+        sos= np.zeros((constants.get('freq_table_length'),5,6))
         #compute the bandpass filters
         for freq in range(constants.get('freq_table_length')):
-            taps[freq] = firwin(numtaps=512,
+            """taps[freq] = firwin(numtaps=512,
                                cutoff=ranges[freq],
                                fs=self.fs,
                                pass_zero=False, 
                                window='hamming',
-                               scale=False)
+                               scale=False)"""
+            sos[freq] = butter( 5,
+                                rangesW[freq],
+                                btype='band', output = 'sos')
             
             
         # compute the signal at every microphone in the array
@@ -966,7 +972,9 @@ class Room(object):
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 for freq in range(constants.get('freq_table_length')):
-                    h = lfilter(taps[freq],1,self.rir[m][s][freq])
+                    norm = utils.normalize(self.rir[m][s][freq])
+                    #h = lfilter(taps[freq],1,self.rir[m][s][freq]
+                    h = sosfilt(sos[freq], norm)
                     rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h,sig)
 
             # add white gaussian noise if necessary
