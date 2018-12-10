@@ -963,7 +963,7 @@ def get_rir_rt(room,
 
     phis = np.linspace(1, 2 * PI, nb_phis)
     thetas = np.linspace(0, PI, nb_thetas)  # For 3D rooms
-    parallelize = not plot_rays
+    parallelize = False#not plot_rays
 
     if room.dim == 2:
         thetas = [PI/2]

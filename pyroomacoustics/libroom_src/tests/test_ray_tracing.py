@@ -73,19 +73,35 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.1]*len(wall_corners_strange)
+absorptions = [0.8]*len(wall_corners_strange)
 
 
 def test_room_construct():
-    walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
-    obstructing_walls = []
-    microphones = np.array([
-        [5, ],
-        [5, ],
-        [5, ],
-    ])
 
-    room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+    # Choose which room to use
+    cube = True
+
+    if cube :
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
+        obstructing_walls = []
+        microphones = np.array([
+            [5, ],
+            [5, ],
+            [5, ],
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+    else :
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_strange, absorptions)]
+        obstructing_walls = []
+        microphones = np.array([
+            [2.5, ],
+            [7, ],
+            [1., ],
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
     return room
 
@@ -123,7 +139,6 @@ def compute_rir(log, time_thres, fs, plot=True):
         plt.title("RIR")
         plt.show()
 
-
     return ir
 
 def apply_rir(rir, wav_file_name, fs, cutoff=200, result_name="aaa.wav"):
@@ -158,11 +173,11 @@ if __name__ == '__main__':
     room = test_room_construct()
 
     # parameters
-    nb_phis = 20
-    nb_thetas = 20
+    nb_phis = 50
+    nb_thetas = 50
     source_pos = [0.5,0.5,0.5]
     mic_radius = .5
-    scatter_coef = 0.1
+    scatter_coef = 0
     time_thres = 0.5 #s
     sound_speed = 340
 
@@ -180,7 +195,7 @@ if __name__ == '__main__':
     if len(rir) == 0:
         raise ValueError("The room impulse response is empty !")
 
-    apply_rir(rir, "0riginal.wav", fs, cutoff=50)
+    apply_rir(rir, "0riginal.wav", fs, cutoff=0)
 
 
 
