@@ -7,6 +7,8 @@
 #include "wall.hpp"
 #include "utility.hpp"
 
+extern float libroom_eps;
+
 typedef Eigen::Matrix<int, Eigen::Dynamic, 1> VectorXi;
 typedef Eigen::Matrix<int, 1, 1> Vector1i;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
@@ -78,8 +80,6 @@ class Room
 	Eigen::VectorXf next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					bool there_is_prev_wall,
-					const Wall &previous_wall,
 					Eigen::Ref<Vector1i> next_wall_index);
 					
 	bool scat_ray(const Wall &last_wall,

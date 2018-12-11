@@ -183,7 +183,7 @@ class TestRoomWalls(unittest.TestCase):
 
         wall_idx = np.zeros(1, dtype=np.int32)
 
-        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
+        result = np.array(room.next_wall_hit(start, end, wall_idx))
 
         correct_result = np.allclose(result, [0,2,1], atol=eps)
         correct_next_wall = wall_idx[0] == 4
@@ -213,7 +213,7 @@ class TestRoomWalls(unittest.TestCase):
 
         wall_idx = np.zeros(1, dtype=np.int32)
 
-        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
+        result = np.array(room.next_wall_hit(start, end, wall_idx))
 
         self.assertTrue(wall_idx[0] == -1)
 
@@ -240,7 +240,7 @@ class TestRoomWalls(unittest.TestCase):
 
         wall_idx = np.zeros(1, dtype=np.int32)
 
-        result = np.array(room.next_wall_hit(start, end, False, room.get_wall(0), wall_idx))
+        result = np.array(room.next_wall_hit(start, end, wall_idx))
 
         correct_result = sum(abs(result-np.array([0,-1./3]))) < eps
         correct_next_wall = wall_idx[0] == 4
@@ -271,6 +271,7 @@ class TestRoomWalls(unittest.TestCase):
         sound_speed = 340.
 
         self.assertTrue(not np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
+
 
     def test_scat_ray_ok(self):
 

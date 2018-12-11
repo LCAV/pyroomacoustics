@@ -348,8 +348,6 @@ float Room::get_max_distance(){
 Eigen::VectorXf Room::next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					bool there_is_prev_wall,
-					const Wall &previous_wall,
 					Eigen::Ref<Vector1i> next_wall_index){
 						
 	/* Computes the next next wall_hit position given a segment defined
@@ -371,22 +369,25 @@ Eigen::VectorXf Room::next_wall_hit(
 		
 		Wall w = walls[i];
 		
-		// To store the results of this iteration
+		// To store the result of this iteration
 		Eigen::VectorXf temp_hit;
 		temp_hit.resize(dim);
-		
-		// The 2 conditions for wall hit (temp_hit computed as a side effect)
-		bool different_than_prev = there_is_prev_wall and not w.same_as(previous_wall);
+
+
+		// As a side effect, temp_hit gets a value (VectorXf) here
 		bool intersects = (w.intersection(start, end, temp_hit) > -1);
 		
-		
-		
-		if (intersects and
-			(different_than_prev or not there_is_prev_wall)){
+		//~ std::cout << "\n\n\ntemp_hit : " << temp_hit[0]<< " " << temp_hit[1]<< " " << temp_hit[2] << std::endl;
+		//~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
+		//~ std::cout << "end : " << end[0]<< " " << end[1]<< " " << end[2] << std::endl;
+
+		if (intersects){
 				
+			
+			
 			float temp_dist = (start-temp_hit).norm();
 			
-			if (temp_dist < min_dist){
+			if (temp_dist > libroom_eps and temp_dist < min_dist){
 				
 				min_dist = temp_dist;
 				result = temp_hit;
@@ -430,10 +431,7 @@ bool Room::scat_ray(const Wall &last_wall,
 	
 	Vector1i next_wall_idx(-1);
 	
-	// Just to see the evolution of next_wall_idx
-	// parameter there_is_prev_wall is set to true since we consider
-	// scattered rays only when we hit a wall
-	next_wall_hit(hit_point, mic_pos, true, last_wall, next_wall_idx);
+	next_wall_hit(hit_point, mic_pos, next_wall_idx);
 	
 	
 	// No wall intersecting the direct scattered ray
@@ -494,7 +492,6 @@ void Room::simul_ray(float phi,
 	// the boolean to false
 	Wall wall = walls[0];
 	Vector1i next_wall_index(0);
-	bool there_is_prev_wall = false;
 	
 	// The ray's characteristics
 	float travel_time = 0;
@@ -516,8 +513,6 @@ void Room::simul_ray(float phi,
 		
 		VectorXf hit_point = next_wall_hit(start,
 										   end,
-										   there_is_prev_wall,
-										   wall,
 										   next_wall_index);
 
 
@@ -525,8 +520,15 @@ void Room::simul_ray(float phi,
 		//std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 		
 		// The wall that has just been hit
+		if(next_wall_index[0] == -1){
+			std::cout << "No wall intersected" << std::endl;
+			//~ std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
+			//~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
+			//~ std::cout << "end : " << end[0]<< " " << end[1]<< " " << end[2] << std::endl;
+			break;
+		}
+		
 		wall = walls[next_wall_index[0]];
-		there_is_prev_wall = true;
 		
 		// Initialization needed for the next if
 		float distance(0);
@@ -551,6 +553,7 @@ void Room::simul_ray(float phi,
 			update_travel_time(travel_time_to_mic, distance, sound_speed);
 			
 			if (travel_time_to_mic < time_thres){
+				//std::cout << "We append something" << std::endl;
 				append(travel_time_to_mic, energy, output);
 			}
 			
@@ -640,7 +643,7 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
 		//std::cout << "\n===============\ni="<< i << std::endl;
-		float phi = 2*M_PI*i/nb_phis;
+		float phi = 2*M_PI*(float)i/nb_phis;
 		
 		for (size_t j(0); j<nb_thetas; ++j){
 			
@@ -677,9 +680,6 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 
 	
 }
-
-
-// In get_rir method, set init_theta to M_PI_2 for 2D rooms
 
 
 

@@ -73,21 +73,19 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.8]*len(wall_corners_strange)
+absorptions = [0.1]*len(wall_corners_strange)
 
 
-def test_room_construct():
+def test_room_construct(cube):
 
     # Choose which room to use
-    cube = True
-
     if cube :
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
         obstructing_walls = []
         microphones = np.array([
-            [5, ],
-            [5, ],
-            [5, ],
+            [6., ],
+            [8., ],
+            [5., ],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
@@ -104,7 +102,6 @@ def test_room_construct():
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
     return room
-
 
 def compute_rir(log, time_thres, fs, plot=True):
 
@@ -170,15 +167,21 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 
 if __name__ == '__main__':
-    room = test_room_construct()
+
+    cube = True
+    room = test_room_construct(cube)
 
     # parameters
     nb_phis = 50
     nb_thetas = 50
-    source_pos = [0.5,0.5,0.5]
-    mic_radius = .5
-    scatter_coef = 0
-    time_thres = 0.5 #s
+    source_pos = [1.5,0.5,0.5]
+    mic_radius = 0.5
+
+
+    scatter_coef = 0.
+
+
+    time_thres = 0.8 #s
     sound_speed = 340
 
     fs = 16000
