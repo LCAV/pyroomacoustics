@@ -361,6 +361,9 @@ class Room(object):
         # check which walls are part of the convex hull
         self.convex_hull()
 
+        # initialize the attribute for the impulse responses
+        self.rir = None
+
     @classmethod
     def from_corners(
             cls,

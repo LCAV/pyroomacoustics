@@ -22,9 +22,9 @@ def get_room_constructor_args():
             room_dim,
             absorption=absorption,
             fs=fs,
-            max_order=max_order, 
-            sources=[source], 
-            mics=mics
+            max_order=max_order,
+            sources=[source],
+            mics=mics,
             )
 
     shoebox.image_source_model()
