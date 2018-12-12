@@ -28,6 +28,7 @@ Changed
 Bugfix
 ~~~~~~
 
+- Corrects a bug that causes different behavior whether sources are provided to the constructor of ``Room`` or to the ``add_source`` method
 - Corrects a typo in ``pyroomacoustics.SoundSource.add_signal``
 - Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
 - Corrects invalid memory access in the ``pyroomacoustics.build_rir`` cython accelerator

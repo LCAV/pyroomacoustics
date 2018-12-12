@@ -335,7 +335,7 @@ class Room(object):
         else:
             self.t0 = t0
         
-        if (sources is list):
+        if sources is not None and isinstance(sources, list):
             self.sources = sources
         else:
             self.sources = []
@@ -345,12 +345,6 @@ class Room(object):
         self.normals = np.array([wall.normal for wall in self.walls]).T
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
-
-        # Pre-compute RIR if needed
-        if (len(self.sources) > 0 and self.mic_array is not None):
-            self.compute_rir()
-        else:
-            self.rir = None
 
         # in the beginning, nothing has been 
         self.visibility = None
