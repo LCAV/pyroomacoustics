@@ -31,7 +31,7 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 
 float area_2d_polygon(const Eigen::MatrixXf &corners);
 
-float angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2);
+float cos_angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2);
 
 float dist_line_point(const Eigen::VectorXf &start,
 					  const Eigen::VectorXf &end,

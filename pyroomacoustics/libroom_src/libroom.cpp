@@ -9,7 +9,6 @@
 
 #include "geometry.hpp"
 #include "utility.hpp"
-#include "ray_tracing.hpp"
 #include "wall.hpp"
 #include "room.hpp"
 
@@ -133,7 +132,7 @@ PYBIND11_MODULE(libroom, m) {
     m.def("area_2d_polygon", &area_2d_polygon,
         "Compute the signed area of a planar polygon");
 		
-	m.def("angle_between", &angle_between,
+	m.def("cos_angle_between", &cos_angle_between,
 		"Computes the angle between two 2D or 3D vectors");
 	
 	m.def("dist_line_point", &dist_line_point,
@@ -157,12 +156,7 @@ PYBIND11_MODULE(libroom, m) {
 		"Solves the quadratic system and outputs real roots");
 		
 	m.def("mic_intersection", &mic_intersection,
-		"Computes the intersection point between the ray and the microphone");
-		
-		
-	// Routines for the ray_tracing package
-	m.def("bilbo", &bilbo,"Computes the bilbo");
-	
+		"Computes the intersection point between the ray and the microphone");	
 	
 }
 

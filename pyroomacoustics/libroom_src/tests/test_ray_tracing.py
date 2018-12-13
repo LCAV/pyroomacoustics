@@ -73,7 +73,7 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.1]*len(wall_corners_strange)
+absorptions = [0.01]*len(wall_corners_strange)
 
 
 def test_room_construct(cube):

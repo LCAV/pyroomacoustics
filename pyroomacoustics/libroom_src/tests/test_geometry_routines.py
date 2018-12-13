@@ -161,25 +161,25 @@ class TestGeometryRoutines(unittest.TestCase):
         self.assertTrue(all([ret == -1]))
 
 
-    def test_angleBetween2D_orthog(self):
+    def test_cosangleBetween2D(self):
         eps = 0.001
-        result = pra.libroom.angle_between([1.,0.],[-1.,-1.])
-        self.assertTrue(all([abs(result-3*np.pi/4) < eps]))
+        result = pra.libroom.cos_angle_between([1.,0.],[-1.,-1.])
+        self.assertTrue(np.allclose(result, -np.sqrt(2)/2., atol=eps))
 
-    def test_angleBetween3D_orthog(self):
+    def test_cosangleBetween3D_orthog(self):
         eps = 0.001
-        result = pra.libroom.angle_between([1.,0.,0.],[0.,0.,1.])
-        self.assertTrue(all([abs(result-np.pi/2) < eps]))
+        result = pra.libroom.cos_angle_between([1.,0.,0.],[0.,0.,1.])
+        self.assertTrue(np.allclose(result, 0, atol=eps))
 
-    def test_angleBetween3D_colinear(self):
+    def test_cosangleBetween3D_colinear(self):
         eps = 0.001
-        result = pra.libroom.angle_between([1.,1.,0.],[-1.,-1.,0.])
-        self.assertTrue(all([abs(result-np.pi) < eps]))
+        result = pra.libroom.cos_angle_between([1.,1.,0.],[-1.,-1.,0.])
+        self.assertTrue(np.allclose(result, -1, atol=eps))
 
-    def test_angleBetween3D_special(self):
+    def test_cosangleBetween3D_special(self):
         eps = 0.001
-        result = pra.libroom.angle_between([36.,1.,-4.],[12.,-1.,2.])
-        self.assertTrue(all([abs(result-0.29656619639789794) < eps]))
+        result = pra.libroom.cos_angle_between([36.,1.,-4.],[12.,-1.,2.])
+        self.assertTrue(np.allclose(result,0.956345613,  atol=eps))
 
 
     def test_dist_line_point2D(self):

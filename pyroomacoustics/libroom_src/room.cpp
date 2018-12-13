@@ -490,7 +490,7 @@ void Room::simul_ray(float phi,
 	
 	// The following initializations are arbitrary and does not count since we set
 	// the boolean to false
-	Wall wall = walls[0];
+	Wall &wall = walls[0];
 	Vector1i next_wall_index(0);
 	
 	// The ray's characteristics
@@ -521,7 +521,7 @@ void Room::simul_ray(float phi,
 		
 		// The wall that has just been hit
 		if(next_wall_index[0] == -1){
-			std::cout << "No wall intersected" << std::endl;
+			//std::cout << "No wall intersected" << std::endl;
 			//~ std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 			//~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
 			//~ std::cout << "end : " << end[0]<< " " << end[1]<< " " << end[2] << std::endl;
@@ -753,12 +753,9 @@ bool Room::contains(const Eigen::VectorXf point){
 	size_t n_intersections(0);
 	bool ambiguous_intersection = false;
 	
-	std::cout<<"\n\nNew case" << std::endl;
 	
 	do{
-		
-		std::cout<< "New try" <<std::endl;
-		
+				
 		n_intersections = 0;
 		ambiguous_intersection = false;
 		
@@ -773,7 +770,6 @@ bool Room::contains(const Eigen::VectorXf point){
 			outside_point[2] -= (float) (rand() % 24/47);
 		}
 		
-		std::cout<< "Outside : [" <<outside_point[0] << ", " <<outside_point[1] << ", " << outside_point[2] << "]" << std::endl;
 			
 		for (size_t i(0); i<n_walls; ++i){
 			
@@ -784,8 +780,6 @@ bool Room::contains(const Eigen::VectorXf point){
 			ambiguous_intersection = ambiguous_intersection or result>0;
 			
 			if ( result > -1){
-				std::cout << "\nresult = " << result << std::endl;
-				std::cout << "Wall : " << i << "is intersected" << std::endl;
 				n_intersections++;
 			}
 		}

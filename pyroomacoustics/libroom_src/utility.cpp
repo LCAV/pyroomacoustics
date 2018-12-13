@@ -75,7 +75,7 @@ VectorXf compute_reflected_end(const VectorXf &start,
 	// Reverse the normal if the angle between the incoming ray and 
 	// the normal is more than PI/2 rad
 	
-	if (angle_between((-1)*incident, n) > M_PI_2){
+	if (cos_angle_between((-1)*incident, n) < 0.){
 		n = (-1)*wall_normal;
 	}
 	
@@ -133,8 +133,8 @@ bool intersects_mic(const VectorXf &start,
 	 
 	 // This boolean checks that the projection of the center of the mic
 	 // on the segment is between start and end points
-	 bool on_segment = (angle_between(start_end, start_center) <= M_PI_2
-						and angle_between(end_start, end_center) <= M_PI_2);
+	 bool on_segment = (cos_angle_between(start_end, start_center) >= 0.
+						and cos_angle_between(end_start, end_center) >= 0.);
 	
 	return intersects and on_segment;	 
 }  
@@ -331,11 +331,11 @@ float compute_scat_energy(float energy,
 	
 	// Make sure the normal points inside the room
 	
-	if (angle_between(start-hit_point, n) > M_PI_2){
+	if (cos_angle_between(start-hit_point, n) < 0.){
 		n = (-1)*n;
 	}
 	
-	return energy * scat_coef * cos(angle_between(n, mic_pos-hit_point));
+	return energy * scat_coef * cos_angle_between(n, mic_pos-hit_point);
 }
 
 
