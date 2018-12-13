@@ -297,11 +297,66 @@ class TestRoomWalls(unittest.TestCase):
 
         self.assertTrue(np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
 
+    def test_contains_2D(self):
 
-    def test_bilbo(self):
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [0.5],
+            [0.2]
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+        self.assertTrue(room.contains(room.mic_pos))
 
 
-        res = (pra.libroom.bilbo())
+    def test_notcontains_2D(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [1.],
+            [1.7]
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+        self.assertTrue(not room.contains(room.mic_pos))
+
+
+    def test_contains_3D(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [1.],
+            [1.],
+            [1.]
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+
+
+        self.assertTrue(room.contains(room.mic_pos))
+
+
+    def test_notcontains_3D(self):
+
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        obstructing_walls = []
+        microphones = np.array([
+            [5.],
+            [7.],
+            [40]
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+
+
+        self.assertTrue(not room.contains(room.mic_pos))
 
 if __name__ == '__main__':
     unittest.main()

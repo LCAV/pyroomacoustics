@@ -174,7 +174,13 @@ if __name__ == '__main__':
     # parameters
     nb_phis = 50
     nb_thetas = 50
+
+    #Good one
     source_pos = [1.5,0.5,0.5]
+
+    #Wrong one to test exception
+    #source_pos = [400,500,3]
+
     mic_radius = 0.5
 
 
@@ -194,9 +200,6 @@ if __name__ == '__main__':
 
 
     rir = compute_rir(log, time_thres, fs, plot=True)
-
-    if len(rir) == 0:
-        raise ValueError("The room impulse response is empty !")
 
     apply_rir(rir, "0riginal.wav", fs, cutoff=0)
 

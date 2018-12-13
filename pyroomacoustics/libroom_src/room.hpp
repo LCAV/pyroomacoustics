@@ -93,7 +93,7 @@ class Room
 					
 	void simul_ray(float init_phi,
 				   float init_theta,
-				   Eigen::VectorXf source_pos,
+				   const Eigen::VectorXf source_pos,
 				   float mic_radius,
 				   float scatter_coef,
 				   float time_thres,
@@ -102,11 +102,13 @@ class Room
 				   
 	std::vector<entry> get_rir_entries(size_t nb_phis,
 									   size_t nb_thetas,
-									   Eigen::VectorXf source_pos,
+									   const Eigen::VectorXf source_pos,
 								       float mic_radius,
 								       float scatter_coef,
 								       float time_thres,
 								       float sound_speed);
+								       
+	bool contains(const Eigen::VectorXf point);
 					
 
   private:

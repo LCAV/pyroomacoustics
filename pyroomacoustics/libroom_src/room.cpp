@@ -460,7 +460,7 @@ bool Room::scat_ray(const Wall &last_wall,
 
 void Room::simul_ray(float phi,
 				   float theta,
-				   Eigen::VectorXf source_pos,
+				   const Eigen::VectorXf source_pos,
 				   float mic_radius,
 				   float scatter_coef,
 				   float time_thres,
@@ -616,7 +616,7 @@ void Room::simul_ray(float phi,
 
 std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 								   size_t nb_thetas,
-								   Eigen::VectorXf source_pos,
+								   const Eigen::VectorXf source_pos,
 								   float mic_radius,
 								   float scatter_coef,
 								   float time_thres,
@@ -636,6 +636,16 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	 
 	if ( (source_pos-mic_pos).norm() < mic_radius ){
 		std::cerr << "The source is inside the microphone ! " <<std::endl;
+		throw std::exception();
+	}
+	
+	if (not contains(mic_pos)){
+		std::cerr << "The microphone is not inside the room ! " <<std::endl;
+		throw std::exception();
+	}
+	
+	if (not contains(source_pos)){
+		std::cerr << "The source is not inside the room ! " <<std::endl;
 		throw std::exception();
 	}
 	
@@ -681,7 +691,111 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 	
 }
 
+bool Room::contains(const Eigen::VectorXf point){
+	
+	/*This methods returns true if the point is contained in the room*/
+	
+	// ===========================================
+	// First we need to build a point outside the room
+	// For this we take the min x,y,z and remove 1 to each of them
+	
+	float minX(0), minY(0), minZ(0);
+	
+	
+	size_t n_walls = walls.size();
+	
+	for (size_t i(0); i<n_walls; ++i){
+		Wall wi = this -> get_wall(i);
+		
+		Eigen::Vector3f min_coord(0,0,0);
+		
+		if (this -> dim == 2){
+			min_coord.head(2) = wi.corners.rowwise().minCoeff();
+		}else{
+			min_coord = wi.corners.rowwise().minCoeff();
+		}
+		
+		// First iteration		
+		if (i == 0){
+			minX = min_coord[0];
+			minY = min_coord[1];
+			minZ = min_coord[2];
+			
+		// Other iterations
+		}else{
 
+			if (min_coord[0] < minX)
+				minX = min_coord[0];
+			if (min_coord[1] < minY)
+				minY = min_coord[1];
+			if (min_coord[2] < minZ)
+				minZ = min_coord[2];
+		}	
+	}
+	
+	Eigen::VectorXf outside_point;
+	outside_point.resize(dim);
+	
+	outside_point[0] = minX-0.4;
+	outside_point[1] = minY-0.4;
+	
+	if (dim == 3){
+		outside_point[2] = minZ-0.4;
+	}
+	
+	
+	
+	// ===========================================
+	
+	// Now we build a segment between outside_point and point and 
+	// we look at the number of intersected walls
+	
+	size_t n_intersections(0);
+	bool ambiguous_intersection = false;
+	
+	std::cout<<"\n\nNew case" << std::endl;
+	
+	do{
+		
+		std::cout<< "New try" <<std::endl;
+		
+		n_intersections = 0;
+		ambiguous_intersection = false;
+		
+		
+		// We randomize the outside point to avoid finding ambiguous
+		// intersections
+		
+		outside_point[0] -= (float) (rand() % 27)/50;
+		outside_point[1] -= (float) (rand() % 22)/26;
+
+		if (dim == 3){
+			outside_point[2] -= (float) (rand() % 24/47);
+		}
+		
+		std::cout<< "Outside : [" <<outside_point[0] << ", " <<outside_point[1] << ", " << outside_point[2] << "]" << std::endl;
+			
+		for (size_t i(0); i<n_walls; ++i){
+			
+			Wall &w = walls[i];
+					
+			int result = w.intersects(outside_point, point);
+			
+			ambiguous_intersection = ambiguous_intersection or result>0;
+			
+			if ( result > -1){
+				std::cout << "\nresult = " << result << std::endl;
+				std::cout << "Wall : " << i << "is intersected" << std::endl;
+				n_intersections++;
+			}
+		}
+	}while(ambiguous_intersection);
+	
+	
+	// The point is in the room if an odd number of walls have been interseted
+	return ((n_intersections%2) == 1);
+	
+}
 
 
 
