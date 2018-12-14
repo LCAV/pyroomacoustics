@@ -28,8 +28,8 @@ def test_sparseauxiva():
     signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32, order='C') for f in source_files])
                for source_files in wav_files]
 
-    wavfile.write('audio/sample1.wav', fs, np.asarray(signals[0], dtype=np.int16))
-    wavfile.write('audio/sample2.wav', fs, np.asarray(signals[1], dtype=np.int16))
+    wavfile.write('sample1.wav', fs, np.asarray(signals[0], dtype=np.int16))
+    wavfile.write('sample2.wav', fs, np.asarray(signals[1], dtype=np.int16))
 
     # Define an anechoic room envrionment, as well as the microphone array and source locations.
 
@@ -69,11 +69,11 @@ def test_sparseauxiva():
     mics_signals = np.sum(separate_recordings, axis=0)
 
     # save mixed signals as wav files
-    wavfile.write('audio/mix1.wav', fs, np.asarray(mics_signals[0].T, dtype=np.int16))
-    wavfile.write('audio/mix2.wav', fs, np.asarray(mics_signals[1].T, dtype=np.int16))
-    wavfile.write('audio/mix1_norm.wav', fs,
+    wavfile.write('mix1.wav', fs, np.asarray(mics_signals[0].T, dtype=np.int16))
+    wavfile.write('mix2.wav', fs, np.asarray(mics_signals[1].T, dtype=np.int16))
+    wavfile.write('mix1_norm.wav', fs,
                   np.asarray(mics_signals[0].T / np.max(np.abs(mics_signals[0].T)) * 32767, dtype=np.int16))
-    wavfile.write('audio/mix2_norm.wav', fs,
+    wavfile.write('mix2_norm.wav', fs,
                   np.asarray(mics_signals[1].T / np.max(np.abs(mics_signals[1].T)) * 32767, dtype=np.int16))
 
     # STFT frame length
@@ -108,10 +108,10 @@ def test_sparseauxiva():
     sdr, isr, sir, sar, perm = bss_eval_images(ref[:, :y.shape[1] - L // 2, 0], y[:, L // 2:ref.shape[1] + L // 2])
     print('SDR: {0}, SIR: {1}'.format(sdr, sir))
 
-    wavfile.write('audio/demix1.wav', fs, np.asarray(y[0].T, dtype=np.int16))
-    wavfile.write('audio/demix2.wav', fs, np.asarray(y[1].T, dtype=np.int16))
-    wavfile.write('audio/demix1_norm.wav', fs, np.asarray(y[0].T / np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
-    wavfile.write('audio/demix2_norm.wav', fs, np.asarray(y[1].T / np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
+    wavfile.write('demix1.wav', fs, np.asarray(y[0].T, dtype=np.int16))
+    wavfile.write('demix2.wav', fs, np.asarray(y[1].T, dtype=np.int16))
+    wavfile.write('demix1_norm.wav', fs, np.asarray(y[0].T / np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
+    wavfile.write('demix2_norm.wav', fs, np.asarray(y[1].T / np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
 
 
 if __name__ == '__main__':
