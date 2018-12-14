@@ -384,35 +384,18 @@ float dist_line_point(const Eigen::VectorXf &start,
 	 
 	 if (s_start != s_point or s_start != s_end or s_end != s_point){
 		std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
-		std::cerr << "Dim start = " << s_start <<std::endl;
+        std::cerr << "Dim start = " << s_start <<std::endl;
 		std::cerr << "Dim end = " << s_end <<std::endl;
 		std::cerr << "Dim point = " << s_point <<std::endl;
 		throw std::exception();
 	 }
 	 
-	 if (s_start == 2){
-		 
-		 // Here the line is parallel to y-axis,
-		 // we cannot use lineal algebra
-		 if (start[0] == end[0]){
-			 return std::abs(point[0] - start[0]);
-		 }
-		 
-		 Eigen::Vector2f line_coef = equation(start, end);
-		 float a = line_coef[0];
-		 float b = line_coef[1];
-		 float num = std::abs(point[1] - a*point[0] - b);
-		 float denom = sqrt(a*a +1);
-		 
-		 return num/denom;
-	 }
+	 Eigen::VectorXf unit_vec = (end - start).normalized();  // vector
+	 Eigen::VectorXf v = point - start;  // vector
 	 
-	 // 3D case
-	 
-	 float num = cross(point-start, point-end).norm();
-	 float denom = (end-start).norm();
-	 
-	 return num/denom;
+	 float proj = v.adjoint() * unit_vec;  // scalar
+	 	 
+	 return (v - proj * unit_vec).norm();  // scalar
 }						  
 
 

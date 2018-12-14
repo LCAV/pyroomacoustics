@@ -80,7 +80,8 @@ class Room
 	Eigen::VectorXf next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					Eigen::Ref<Vector1i> next_wall_index);
+					Eigen::Ref<Vector1i> next_wall_index,
+					bool scattered_ray);
 					
 	bool scat_ray(const Wall &last_wall,
 					const Eigen::VectorXf &hit_point,

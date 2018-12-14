@@ -348,7 +348,8 @@ float Room::get_max_distance(){
 Eigen::VectorXf Room::next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					Eigen::Ref<Vector1i> next_wall_index){
+					Eigen::Ref<Vector1i> next_wall_index,
+					bool scattered_ray){
 						
 	/* Computes the next next wall_hit position given a segment defined
 	 * by its endpoints. This method also stores the index of the wall
@@ -367,7 +368,7 @@ Eigen::VectorXf Room::next_wall_hit(
 	
 	for (size_t i(0); i < walls.size(); ++i){
 		
-		Wall w = walls[i];
+		Wall &w = walls[i];
 		
 		// To store the result of this iteration
 		Eigen::VectorXf temp_hit;
@@ -376,23 +377,14 @@ Eigen::VectorXf Room::next_wall_hit(
 
 		// As a side effect, temp_hit gets a value (VectorXf) here
 		bool intersects = (w.intersection(start, end, temp_hit) > -1);
-		
-		//~ std::cout << "\n\n\ntemp_hit : " << temp_hit[0]<< " " << temp_hit[1]<< " " << temp_hit[2] << std::endl;
-		//~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
-		//~ std::cout << "end : " << end[0]<< " " << end[1]<< " " << end[2] << std::endl;
 
 		if (intersects){
-				
-			
 			
 			float temp_dist = (start-temp_hit).norm();
 			
 			if (temp_dist > libroom_eps and temp_dist < min_dist){
-				
 				min_dist = temp_dist;
 				result = temp_hit;
-				
-				// update the index of the wall that is hit
 				next_wall_index[0] = i;
 			}
 		}
@@ -431,7 +423,7 @@ bool Room::scat_ray(const Wall &last_wall,
 	
 	Vector1i next_wall_idx(-1);
 	
-	next_wall_hit(hit_point, mic_pos, next_wall_idx);
+	next_wall_hit(hit_point, mic_pos, next_wall_idx, true);
 	
 	
 	// No wall intersecting the direct scattered ray
@@ -447,7 +439,7 @@ bool Room::scat_ray(const Wall &last_wall,
 		
 		if (travel_time < time_thres){
 			//std::cout << "appending scat rays : " <<std::endl;
-			append(travel_time, scat_energy, output);
+			output.push_back(entry{{travel_time, scat_energy}});
 			result = true;
 						
 		}
@@ -513,7 +505,8 @@ void Room::simul_ray(float phi,
 		
 		VectorXf hit_point = next_wall_hit(start,
 										   end,
-										   next_wall_index);
+										   next_wall_index,
+										   false);
 
 
 		// Debugging
@@ -553,8 +546,7 @@ void Room::simul_ray(float phi,
 			update_travel_time(travel_time_to_mic, distance, sound_speed);
 			
 			if (travel_time_to_mic < time_thres){
-				//std::cout << "We append something" << std::endl;
-				append(travel_time_to_mic, energy, output);
+				output.push_back(entry{{travel_time, energy}});
 			}
 			
 		}
@@ -649,7 +641,12 @@ std::vector<entry> Room::get_rir_entries(size_t nb_phis,
 		throw std::exception();
 	}
 	
-	std::vector<entry> output(10000);
+	
+	for (auto elem : obstructing_walls)
+		std::cout << "obstructing : " << elem << std::endl;
+		
+		
+	std::vector<entry> output;
 	
 	for (size_t i(0); i<nb_phis; ++i)  {
 		//std::cout << "\n===============\ni="<< i << std::endl;
@@ -793,7 +790,8 @@ bool Room::contains(const Eigen::VectorXf point){
 
 
 
-
+// TODO : modify next_wall_hit when it is called for scattered rays !
+// Use the obstructing walls once we have Robin's answer.
 
 
 

@@ -6,6 +6,7 @@ import time
 import scipy
 from scipy.io import wavfile
 from scipy import signal
+from pyroomacoustics import build_rir
 
 wall_corners_strange = [
     np.array([  # front
@@ -104,6 +105,34 @@ def test_room_construct(cube):
     return room
 
 def compute_rir(log, time_thres, fs, plot=True):
+    # TIME = 0
+    # ENERGY = 1
+    #
+    # time = np.array([e[TIME] for e in log], dtype=np.float)
+    # alpha = np.array([e[ENERGY] for e in log], dtype=np.float)
+    # visibility = np.ones(time.shape[0], dtype=np.int32)
+    #
+    # # ======= WITH FRACTIONAL PART =======
+    #
+    # # the python utilities to compute the rir
+    # fdl = pra.constants.get('frac_delay_length')
+    # fdl2 = (fdl - 1) // 2  # Integer division
+    #
+    # ir = np.zeros(int(time_thres * fs) + fdl)
+    #
+    # print(np.floor(fs * np.min(time)) - fdl2)
+    #
+    #
+    # build_rir.fast_rir_builder(ir, time, alpha, visibility, fs, fdl)
+    #
+    # if plot:
+    #     x = np.arange(len(ir)) / fs
+    #     plt.figure()
+    #     plt.plot(x, ir)
+    #     plt.title("RIR")
+    #     plt.show()
+    #
+    # return ir
 
 
     TIME = 0
@@ -172,8 +201,8 @@ if __name__ == '__main__':
     room = test_room_construct(cube)
 
     # parameters
-    nb_phis = 50
-    nb_thetas = 50
+    nb_phis = 100
+    nb_thetas = 100
 
     #Good one
     source_pos = [1.5,0.5,0.5]

@@ -6,6 +6,7 @@ import time
 import scipy
 from scipy.io import wavfile
 from scipy import signal
+from pyroomacoustics import build_rir
 
 wall_corners_L_shape = [
     np.array([  # left
