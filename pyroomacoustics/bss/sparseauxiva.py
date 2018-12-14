@@ -16,12 +16,6 @@ f_contrasts = {
 }
 
 
-def demix(Y, X, S, W):
-    freq = S.shape[0]
-    for f in range(freq):
-        Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
-
-
 def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True):
     n_frames, n_freq, n_chan = X.shape
 
@@ -46,7 +40,7 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
 
     for epoch in range(n_iter):
 
-        demix(Y, X, S, W)
+        demixsparse(Y, X, S, W)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -96,7 +90,7 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
             for f in range(n_freq):
                 W[f, :, i] = np.conj([Hrtf[f, i], -1])
 
-    demix(Y, X, np.array(range(n_freq)), W)
+    demixsparse(Y, X, np.array(range(n_freq)), W)
 
     # applying projection_back in the end to solve the scale ambiguity
     if proj_back:
@@ -107,6 +101,12 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
         return Y, W
     else:
         return Y
+
+    
+def demixsparse(Y, X, S, W):
+    freq = S.shape[0]
+    for f in range(freq):
+        Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
 
 def sparir(G, S, delay=0, weights=np.array([]), gini=0):

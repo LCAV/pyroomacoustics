@@ -34,8 +34,8 @@ References
 
 '''
 
+from .sparseauxiva import sparseauxiva, demixsparse, sparir
 from .trinicon import trinicon
 from .auxiva import auxiva, f_contrasts
 from .ilrma import ilrma
 from .common import projection_back
-from .sparseauxiva import sparseauxiva
