@@ -166,5 +166,11 @@ class TestUtilityRoutines(unittest.TestCase):
         self.assertTrue(np.allclose(res, [0,-5], atol=0.01))
 
 
+    def test_tuple(self):
+
+        a = pra.libroom.test_tuple(-15)
+        print(a)
+
+
 if __name__ == '__main__':
     unittest.main()

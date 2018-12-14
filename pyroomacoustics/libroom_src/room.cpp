@@ -345,10 +345,9 @@ float Room::get_max_distance(){
 
 
 
-Eigen::VectorXf Room::next_wall_hit(
+std::tuple<Eigen::VectorXf, int> Room::next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					Eigen::Ref<Vector1i> next_wall_index,
 					bool scattered_ray){
 						
 	/* Computes the next next wall_hit position given a segment defined
@@ -361,7 +360,9 @@ Eigen::VectorXf Room::next_wall_hit(
 	Eigen::VectorXf result;
 	result.resize(dim);
 	
-	next_wall_index[0] = -1;
+	
+	
+	int next_wall_index = -1;
 	
 	// Upperbound on the min distance that we could find
 	float min_dist(max_dist);
@@ -385,12 +386,12 @@ Eigen::VectorXf Room::next_wall_hit(
 			if (temp_dist > libroom_eps and temp_dist < min_dist){
 				min_dist = temp_dist;
 				result = temp_hit;
-				next_wall_index[0] = i;
+				next_wall_index = i;
 			}
 		}
 		
 	}
-	return result;
+	return std::make_tuple(result, next_wall_index);
 }					
 					
 					
@@ -421,13 +422,14 @@ bool Room::scat_ray(const Wall &last_wall,
 	
 	bool result = false;
 	
-	Vector1i next_wall_idx(-1);
+	Eigen::VectorXf dont_care;
+	int next_wall_index(-1);
 	
-	next_wall_hit(hit_point, mic_pos, next_wall_idx, true);
+	std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
 	
 	
 	// No wall intersecting the direct scattered ray
-	if (next_wall_idx[0] == -1){
+	if (next_wall_index == -1){
 		
 		VectorXf mic_hit = mic_intersection(hit_point, mic_pos, mic_pos, radius);
 		float hop_dist = (hit_point - mic_hit).norm();
@@ -483,7 +485,7 @@ void Room::simul_ray(float phi,
 	// The following initializations are arbitrary and does not count since we set
 	// the boolean to false
 	Wall &wall = walls[0];
-	Vector1i next_wall_index(0);
+	int next_wall_index(0);
 	
 	// The ray's characteristics
 	float travel_time = 0;
@@ -503,17 +505,15 @@ void Room::simul_ray(float phi,
 		*/
 		
 		
-		VectorXf hit_point = next_wall_hit(start,
-										   end,
-										   next_wall_index,
-										   false);
+		VectorXf hit_point;
+		std::tie(hit_point, next_wall_index) = next_wall_hit(start, end, false);
 
 
 		// Debugging
 		//std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 		
 		// The wall that has just been hit
-		if(next_wall_index[0] == -1){
+		if(next_wall_index == -1){
 			//std::cout << "No wall intersected" << std::endl;
 			//~ std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 			//~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
@@ -521,7 +521,7 @@ void Room::simul_ray(float phi,
 			break;
 		}
 		
-		wall = walls[next_wall_index[0]];
+		wall = walls[next_wall_index];
 		
 		// Initialization needed for the next if
 		float distance(0);

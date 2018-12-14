@@ -8,6 +8,7 @@
 #include <array>
 
 
+
 /* The 'entry' type is simply defined as an array of 2 floats.
  * It represents an entry that is logged by the microphone
  * during the ray_tracing execution.
@@ -53,8 +54,6 @@ float compute_scat_energy(float energy, float scat_coef,
 						  const Wall &wall, 
 						  const VectorXf &start,
 						  const VectorXf &hit_point,
-						  const VectorXf &mic_pos);
-						  
-void append(float travel_time, float energy,  std::vector<entry> &output);				
+						  const VectorXf &mic_pos);						  
 
 #endif // __UTILITY_H__

@@ -181,12 +181,10 @@ class TestRoomWalls(unittest.TestCase):
         # end at the same (x,y) but very high in the sky
         end = [5,-3,1]
 
-        wall_idx = np.zeros(1, dtype=np.int32)
+        ttuple = np.array(room.next_wall_hit(start, end, False))
 
-        result = np.array(room.next_wall_hit(start, end, wall_idx))
-
-        correct_result = np.allclose(result, [0,2,1], atol=eps)
-        correct_next_wall = wall_idx[0] == 4
+        correct_result = np.allclose(ttuple[0], [0,2,1], atol=eps)
+        correct_next_wall = ttuple[1] == 4
 
         self.assertTrue(correct_next_wall and correct_result)
 
@@ -211,11 +209,9 @@ class TestRoomWalls(unittest.TestCase):
         # end outside the room
         end = [-2,-3,-1]
 
-        wall_idx = np.zeros(1, dtype=np.int32)
+        ttuple = np.array(room.next_wall_hit(start, end, False))
 
-        result = np.array(room.next_wall_hit(start, end, wall_idx))
-
-        self.assertTrue(wall_idx[0] == -1)
+        self.assertTrue(ttuple[1] == -1)
 
 
     def test_next_wall_hit2D(self):
@@ -238,12 +234,10 @@ class TestRoomWalls(unittest.TestCase):
         # end at the same (x,y) but very high in the sky
         end = [0,4]
 
-        wall_idx = np.zeros(1, dtype=np.int32)
+        ttuple = np.array(room.next_wall_hit(start, end, False))
 
-        result = np.array(room.next_wall_hit(start, end, wall_idx))
-
-        correct_result = sum(abs(result-np.array([0,-1./3]))) < eps
-        correct_next_wall = wall_idx[0] == 4
+        correct_result = np.allclose(ttuple[0], [0, -1./3], atol=eps)
+        correct_next_wall = ttuple[1] == 4
 
         self.assertTrue(correct_next_wall and correct_result )
 

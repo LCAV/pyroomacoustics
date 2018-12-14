@@ -156,7 +156,7 @@ PYBIND11_MODULE(libroom, m) {
 		"Solves the quadratic system and outputs real roots");
 		
 	m.def("mic_intersection", &mic_intersection,
-		"Computes the intersection point between the ray and the microphone");	
+		"Computes the intersection point between the ray and the microphone");
 	
 }
 

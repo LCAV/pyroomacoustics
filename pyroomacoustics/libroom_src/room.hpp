@@ -3,9 +3,11 @@
 
 #include <vector>
 #include <stack>
+#include <tuple>
 #include <Eigen/Dense>
 #include "wall.hpp"
 #include "utility.hpp"
+
 
 extern float libroom_eps;
 
@@ -77,10 +79,9 @@ class Room
         
     float get_max_distance();
     
-	Eigen::VectorXf next_wall_hit(
+	std::tuple<Eigen::VectorXf, int> next_wall_hit(
 					const Eigen::VectorXf &start,
 					const Eigen::VectorXf &end,
-					Eigen::Ref<Vector1i> next_wall_index,
 					bool scattered_ray);
 					
 	bool scat_ray(const Wall &last_wall,
