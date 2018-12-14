@@ -355,12 +355,15 @@ std::tuple<Eigen::VectorXf, int> Room::next_wall_hit(
 	 * that contains this next hit point (we needed to pass it inside a 
 	 * Vector1i to be able to call this function from python).
 	 * 
-	 * If no wall is intersected, then the next_wall_index will be -1*/
+	 * If no wall is intersected, then the next_wall_index will be -1
+	 * 
+	 * Whis function is called by scattered_rays() to see if a wall
+	 * is intersected by any scattered ray. In this case we are only
+	 * interested in the second element of the return tuple.
+	 * This is why we only care about obstructing wall in that case.*/
 						
 	Eigen::VectorXf result;
 	result.resize(dim);
-	
-	
 	
 	int next_wall_index = -1;
 	
@@ -368,6 +371,12 @@ std::tuple<Eigen::VectorXf, int> Room::next_wall_hit(
 	float min_dist(max_dist);
 	
 	for (size_t i(0); i < walls.size(); ++i){
+		
+		// Scattered rays can only intersects obstructing walls
+		// So if the wall is not obstructing, we need no further computations
+		if(scattered_ray and (std::find(obstructing_walls.begin(), obstructing_walls.end(), i) == obstructing_walls.end())) {
+			continue;
+		}
 		
 		Wall &w = walls[i];
 		
@@ -431,8 +440,9 @@ bool Room::scat_ray(const Wall &last_wall,
 	// No wall intersecting the direct scattered ray
 	if (next_wall_index == -1){
 		
-		VectorXf mic_hit = mic_intersection(hit_point, mic_pos, mic_pos, radius);
-		float hop_dist = (hit_point - mic_hit).norm();
+		// As the ray is shot towards the microphone center,
+		// the hop dist can be easily computed
+		float hop_dist = (hit_point - mic_pos).norm() - radius;
 		
 		update_travel_time(travel_time, hop_dist, sound_speed);
 		

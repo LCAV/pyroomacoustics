@@ -6,7 +6,7 @@
 #include "geometry.hpp"
 #include <vector>
 #include <array>
-
+#include <forward_list>
 
 
 /* The 'entry' type is simply defined as an array of 2 floats.
@@ -54,6 +54,18 @@ float compute_scat_energy(float energy, float scat_coef,
 						  const Wall &wall, 
 						  const VectorXf &start,
 						  const VectorXf &hit_point,
-						  const VectorXf &mic_pos);						  
+						  const VectorXf &mic_pos);	
+						  
+std::forward_list< entry > test();
+
+
+
+
+
+
+
+
+
+
 
 #endif // __UTILITY_H__

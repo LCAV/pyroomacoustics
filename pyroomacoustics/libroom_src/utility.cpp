@@ -339,6 +339,19 @@ float compute_scat_energy(float energy,
 }
 
 
+std::forward_list< entry > test(){
+	
+  std::forward_list< entry > mylist;
+  mylist.push_front(entry{{1., 2.}});
+  mylist.push_front(entry{{13., 2.5}});
+  mylist.push_front(entry{{7., 7.}});
+  
+  return mylist;
+  
+  
+}
+
+
 
 
 

@@ -157,6 +157,8 @@ PYBIND11_MODULE(libroom, m) {
 		
 	m.def("mic_intersection", &mic_intersection,
 		"Computes the intersection point between the ray and the microphone");
+		
+	m.def("test", &test, "Test different functions");
 	
 }
 

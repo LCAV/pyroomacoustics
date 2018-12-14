@@ -154,7 +154,6 @@ def compute_rir(log, time_thres, fs, plot=True):
 
         time_fp = (entry[TIME] * fs) - time_ip
 
-        # Distance attenuation
         ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
 
@@ -213,7 +212,7 @@ if __name__ == '__main__':
     mic_radius = 0.5
 
 
-    scatter_coef = 0.
+    scatter_coef = 0.1
 
 
     time_thres = 0.8 #s

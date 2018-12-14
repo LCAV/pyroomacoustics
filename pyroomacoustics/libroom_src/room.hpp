@@ -5,6 +5,7 @@
 #include <stack>
 #include <tuple>
 #include <Eigen/Dense>
+#include <algorithm>
 #include "wall.hpp"
 #include "utility.hpp"
 
@@ -12,7 +13,6 @@
 extern float libroom_eps;
 
 typedef Eigen::Matrix<int, Eigen::Dynamic, 1> VectorXi;
-typedef Eigen::Matrix<int, 1, 1> Vector1i;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
 
