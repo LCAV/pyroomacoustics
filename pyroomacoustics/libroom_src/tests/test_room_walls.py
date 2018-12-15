@@ -245,7 +245,7 @@ class TestRoomWalls(unittest.TestCase):
     def test_scat_ray_blocked(self):
 
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
-        obstructing_walls = []
+        obstructing_walls = [1,2] # index of the 2 possibly obstructing walls
         microphones = np.array([
             [1.5 ],
             [1.2 ]
@@ -270,7 +270,7 @@ class TestRoomWalls(unittest.TestCase):
     def test_scat_ray_ok(self):
 
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
-        obstructing_walls = []
+        obstructing_walls = [1,2]
         microphones = np.array([
             [0.5 ],
             [0.2 ]

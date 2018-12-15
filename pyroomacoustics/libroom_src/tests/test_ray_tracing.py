@@ -212,7 +212,7 @@ if __name__ == '__main__':
     mic_radius = 0.5
 
 
-    scatter_coef = 0.1
+    scatter_coef = 0.
 
 
     time_thres = 0.8 #s
