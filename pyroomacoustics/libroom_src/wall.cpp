@@ -3,40 +3,38 @@
 #include <iostream>
 #include <cmath>
 
-Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string &_name)
-  : absorption(_absorption), name(_name), corners(_corners)
-{
+Wall::Wall(const Eigen::MatrixXf & _corners, float _absorption,
+  const std::string & _name): absorption(_absorption), name(_name), corners(_corners) {
+	  
   // corners should be D x N for N corners in D dimensions
-  dim = corners.rows();  // assign the attribute
+  dim = corners.rows(); // assign the attribute
   int n_corners = corners.cols();
 
   // Sanity check
-  if (dim == 2 && n_corners != 2)
-  {
+  if (dim == 2 && n_corners != 2) {
     fprintf(stderr, "2D walls have only two corners.\n");
     throw std::exception();
-  }
-  else if (dim < 2 || dim > 3)
-  {
+    
+  } else if (dim < 2 || dim > 3) {
     fprintf(stderr, "Only 2D and 3D walls are supported.\n");
     throw std::exception();
   }
 
   // Construction is different for 2D and 3D
-  if (dim == 2)
-  {
+  if (dim == 2) {
+	  
     // Pick one of the corners as the origin of the wall
     origin.resize(2);
     origin = corners.col(0);
 
     // compute normal (difference of 2 corners, swap x-y, change 1 sign)
     normal.resize(2);
-    normal.coeffRef(0) = corners.coeff(1,1) - corners.coeff(1,0);
-    normal.coeffRef(1) = corners.coeff(0,0) - corners.coeff(0,1);
+    normal.coeffRef(0) = corners.coeff(1, 1) - corners.coeff(1, 0);
+    normal.coeffRef(1) = corners.coeff(0, 0) - corners.coeff(0, 1);
     normal = normal.normalized();
-  }
-  else if (dim == 3)
-  {
+    
+  } else if (dim == 3) {
+	  
     // In 3D things are a little more complicated
     // We need to compute a 2D basis for the plane and find the normal
 
@@ -44,11 +42,10 @@ Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string
     origin = corners.col(0);
 
     // The basis and normal are found by SVD
-    Eigen::JacobiSVD<Eigen::MatrixXf> svd(corners.colwise() - origin, Eigen::ComputeThinU);
+    Eigen::JacobiSVD < Eigen::MatrixXf > svd(corners.colwise() - origin, Eigen::ComputeThinU);
 
     // The corners matrix should be rank defficient, check the smallest eigen value
-    if (svd.singularValues().coeff(2) > libroom_eps)
-    {
+    if (svd.singularValues().coeff(2) > libroom_eps) {
       fprintf(stderr, "The corners of the wall should lie in a plane");
       throw std::exception();
     }
@@ -68,8 +65,7 @@ Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string
     // around the normal. In that case, the area computation should be positive.
     // If it is positive, we need to swap the basis.
     float a = area();
-    if (a < 0)
-    {
+    if (a < 0) {
       // exchange the other two basis vectors
       basis.rowwise().reverseInPlace();
       flat_corners.colwise().reverseInPlace();
@@ -80,52 +76,45 @@ Wall::Wall(const Eigen::MatrixXf &_corners, float _absorption, const std::string
   }
 }
 
-float Wall::area()
-{
-  if (dim == 2)
-  {
+float Wall::area() {
+  if (dim == 2) {
     return (corners.col(1) - corners.col(0)).norm();
-  }
-  else // dim == 3
+  } else // dim == 3
   {
     return area_2d_polygon(flat_corners);
   }
 }
 
 int Wall::intersection(
-    const Eigen::VectorXf &p1, const Eigen::VectorXf &p2,
-    Eigen::Ref<Eigen::VectorXf> intersection)
-{
-  if (p1.size() != dim || p2.size() != dim)
-  {
+  const Eigen::VectorXf & p1,
+  const Eigen::VectorXf & p2,
+  Eigen::Ref < Eigen::VectorXf > intersection) {
+	  
+  if (p1.size() != dim || p2.size() != dim) {
     std::cerr << "The wall and points dimensionalities differ" << std::endl;
     std::cerr << "  - p1: " << p1 << std::endl;
     std::cerr << "  - p2: " << p2 << std::endl;
     throw std::exception();
   }
 
-  if (dim == 2)
-  {
+  if (dim == 2) {
     return intersection_2d_segments(p1, p2, corners.col(0), corners.col(1), intersection);
-  }
-  else // dim == 3
+  } else // dim == 3
   {
     return _intersection_segment_3d(p1, p2, intersection);
   }
-  
+
   return -1;
 }
 
-int Wall::intersects(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2)
-{
+int Wall::intersects(const Eigen::VectorXf & p1,
+  const Eigen::VectorXf & p2) {
   Eigen::VectorXf v;
   v.resize(dim);
   return intersection(p1, p2, v);
 }
 
-
-int Wall::reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflected)
-{
+int Wall::reflect(const Eigen::VectorXf & p, Eigen::Ref < Eigen::VectorXf > p_reflected) {
   /*
    * Reflects point p across the wall 
    *
@@ -153,10 +142,8 @@ int Wall::reflect(const Eigen::VectorXf &p, Eigen::Ref<Eigen::VectorXf> p_reflec
     return 0;
 }
 
-
 /* checks on which side of a wall a point is */
-int Wall::side(const Eigen::VectorXf &p)
-{
+int Wall::side(const Eigen::VectorXf & p) {
   // Essentially, returns the sign of the inner product with the normal vector
   float ip = (p - origin).adjoint() * normal;
 
@@ -168,11 +155,10 @@ int Wall::side(const Eigen::VectorXf &p)
     return 0;
 }
 
-
-int Wall::_intersection_segment_3d(  // intersection routine specialized for 3D
-    const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
-    Eigen::Ref<Eigen::VectorXf> intersection)
-{
+int Wall::_intersection_segment_3d( // intersection routine specialized for 3D
+  const Eigen::VectorXf & a1,
+  const Eigen::VectorXf & a2,
+  Eigen::Ref < Eigen::VectorXf > intersection) {
   /*
     Computes the intersection between a line segment and a polygon surface in 3D.
 
@@ -204,9 +190,9 @@ int Wall::_intersection_segment_3d(  // intersection routine specialized for 3D
   ret1 = intersection_3d_segment_plane(a1, a2, origin, normal, intersection);
 
   if (ret1 == -1)
-    return -1;  // there is no intersection
+    return -1; // there is no intersection
 
-  if (ret1 == 1)  // intersection at endpoint of segment
+  if (ret1 == 1) // intersection at endpoint of segment
     ret = 1;
 
   /* project intersection into plane basis */
@@ -215,28 +201,28 @@ int Wall::_intersection_segment_3d(  // intersection routine specialized for 3D
   /* check in flatland if intersection is in the polygon */
   ret2 = is_inside_2d_polygon(flat_intersection, flat_corners);
 
-  if (ret2 < 0)  // intersection is outside of the wall
+  if (ret2 < 0) // intersection is outside of the wall
     return -1;
 
   if (ret2 == 1) // intersection is on the boundary of the wall
     ret |= 2;
 
-  return ret;  // no intersection
+  return ret; // no intersection
 }
 
-bool Wall::same_as(const Wall &that){
-	
-	if (dim != that.dim){
-		std::cerr << "The two walls are not of the same dimensions !" << std::endl;
-		throw std::exception();
-	}
-	
-	// Not the same number of corners
-	if(corners.cols() != that.corners.cols()){
-		return false;
-	}
-	
-	return (corners - that.corners).cwiseAbs().sum() == 0.;
+bool Wall::same_as(const Wall & that) {
+
+  if (dim != that.dim) {
+    std::cerr << "The two walls are not of the same dimensions !" << std::endl;
+    throw std::exception();
+  }
+
+  // Not the same number of corners
+  if (corners.cols() != that.corners.cols()) {
+    return false;
+  }
+
+  return (corners - that.corners).cwiseAbs().sum() == 0.;
 }
 
 

@@ -17,8 +17,9 @@
 #include "geometry.hpp"
 
 
-int ccw3p(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2, const Eigen::VectorXf &p3)
-{
+int ccw3p(const Eigen::VectorXf & p1,
+  const Eigen::VectorXf & p2,
+  const Eigen::VectorXf & p3) {
   /*
      Computes the orientation of three 2D points.
 
@@ -34,8 +35,8 @@ int ccw3p(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2, const Eigen::Vec
      :ref: https://en.wikipedia.org/wiki/Curve_orientation
      */
 
-  float d = (p2.coeff(0) - p1.coeff(0)) * (p3.coeff(1) - p1.coeff(1))
-    - (p3.coeff(0) - p1.coeff(0)) * (p2.coeff(1) - p1.coeff(1));
+  float d = (p2.coeff(0) - p1.coeff(0)) * (p3.coeff(1) - p1.coeff(1)) -
+    (p3.coeff(0) - p1.coeff(0)) * (p2.coeff(1) - p1.coeff(1));
 
   if (d < libroom_eps && d > -libroom_eps)
     return 0;
@@ -46,10 +47,11 @@ int ccw3p(const Eigen::VectorXf &p1, const Eigen::VectorXf &p2, const Eigen::Vec
 }
 
 int check_intersection_2d_segments(
-    const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
-    const Eigen::VectorXf &b1, const Eigen::VectorXf &b2
-    )
-{
+  const Eigen::VectorXf & a1,
+  const Eigen::VectorXf & a2,
+  const Eigen::VectorXf & b1,
+  const Eigen::VectorXf & b2
+) {
   /*
    * Returns:
    * -1: no intersection
@@ -72,19 +74,20 @@ int check_intersection_2d_segments(
 
   // At this point, there is intersection, but we need to check limit cases
   ret = 0;
-  if (b1b2a1 == 0 || b1b2a2 == 0) ret |= 1;  // a1 or a2 between (b1,b2)
-  if (a1a2b1 == 0 || a1a2b2 == 0) ret |= 2;  // b1 or b2 between (a1, a2)
+  if (b1b2a1 == 0 || b1b2a2 == 0) ret |= 1; // a1 or a2 between (b1,b2)
+  if (a1a2b1 == 0 || a1a2b2 == 0) ret |= 2; // b1 or b2 between (a1, a2)
 
   return ret;
 
 }
 
 int intersection_2d_segments(
-    const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
-    const Eigen::VectorXf &b1, const Eigen::VectorXf &b2,
-    Eigen::Ref<Eigen::VectorXf> intersection
-    )
-{
+  const Eigen::VectorXf & a1,
+  const Eigen::VectorXf & a2,
+  const Eigen::VectorXf & b1,
+  const Eigen::VectorXf & b2,
+  Eigen::Ref<Eigen::VectorXf> intersection
+) {
   /*
     Computes the intersection between two 2D line segments.
 
@@ -116,7 +119,7 @@ int intersection_2d_segments(
 
   ret = check_intersection_2d_segments(a1, a2, b1, b2);
 
-  if (ret < 0)  // no intersection
+  if (ret < 0) // no intersection
     return ret;
 
   // normal to a1 <-> a2 segment
@@ -138,12 +141,12 @@ int intersection_2d_segments(
   return ret;
 }
 
-
 int intersection_3d_segment_plane(
-    const Eigen::VectorXf &a1, const Eigen::VectorXf &a2,
-    const Eigen::VectorXf &p, const Eigen::VectorXf &normal,
-    Eigen::Ref<Eigen::VectorXf> intersection)
-{
+  const Eigen::VectorXf & a1,
+  const Eigen::VectorXf & a2,
+  const Eigen::VectorXf & p,
+  const Eigen::VectorXf & normal,
+  Eigen::Ref<Eigen::VectorXf> intersection) {
   /*
      Computes the intersection between a line segment and a plane in 3D.
 
@@ -165,45 +168,40 @@ int intersection_3d_segment_plane(
                 1: intersection and one of the end points of the segment is in the plane
     */
 
-  float num=0, denom=0;
+  float num = 0, denom = 0;
 
   Eigen::Vector3f u = a2 - a1;
   denom = normal.adjoint() * u;
 
-  if (fabsf(denom) > libroom_eps)
-  {
+  if (fabsf(denom) > libroom_eps) {
 
     Eigen::Vector3f w = a1 - p;
-    num = - normal.adjoint() * w;
+    num = -normal.adjoint() * w;
 
     float s = num / denom;
 
-    if (0-libroom_eps <= s && s <= 1+libroom_eps)
-    {
+    if (0 - libroom_eps <= s && s <= 1 + libroom_eps) {
       // compute intersection point
       intersection = s * u + a1;
 
       // check limit case
       if (fabsf(s) < libroom_eps || fabsf(s - 1) < libroom_eps)
-        return 1;  // a1 or a2 belongs to plane
+        return 1; // a1 or a2 belongs to plane
       else
-        return 0;  // plane is between a1 and a2
+        return 0; // plane is between a1 and a2
     }
   }
 
-  return -1;  // no intersection
+  return -1; // no intersection
 }
 
-
-Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2)
-{
+Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2) {
   /* Convenience function to take cross product of two vectors */
   return v1.cross(v2);
 }
 
-int is_inside_2d_polygon(const Eigen::Vector2f &p,
-    const Eigen::MatrixXf &corners)
-{
+int is_inside_2d_polygon(const Eigen::Vector2f & p,
+  const Eigen::MatrixXf & corners) {
   /*
     Checks if a given point is inside a given polygon in 2D.
 
@@ -225,28 +223,26 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     1 : the point is on the boundary
     */
 
-  if (corners.rows() != 2)
-  {
+  if (corners.rows() != 2) {
     std::cerr << "Only 2D polygons are supported" << std::endl;
     throw std::exception();
   }
 
-  if (corners.cols() < 3)
-  {
+  if (corners.cols() < 3) {
     std::cerr << "The polygon should have more than 2 points" << std::endl;
     throw std::exception();
   }
 
-  bool is_inside = false;  // initialize point not in the polygon
+  bool is_inside = false; // initialize point not in the polygon
   int c1c2p, c1c2p0, pp0c1, pp0c2;
   int n_corners = corners.cols();
 
   // find a point outside the polygon
   int i_min;
-  corners.row(0).minCoeff(&i_min);
+  corners.row(0).minCoeff( & i_min);
   Eigen::Vector2f p_out;
   p_out.resize(2);
-  p_out.coeffRef(0) = corners.coeff(0,i_min) - 1;
+  p_out.coeffRef(0) = corners.coeff(0, i_min) - 1;
   p_out.coeffRef(1) = p.coeff(1);
 
   /*
@@ -255,42 +251,38 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
   std::cout << "Aux point: " << p_out << std::endl;
   */
 
-
   // Now count intersections
-  for (int i = 0, j = n_corners-1 ; i < n_corners ; j=i++)
-  {
+  for (int i = 0, j = n_corners - 1; i < n_corners; j = i++) {
 
     // Check first if the point is on the segment
     // We count the border as inside the polygon
     c1c2p = ccw3p(corners.col(i), corners.col(j), p);
-    if (c1c2p == 0)
-    {
+    if (c1c2p == 0) {
       // Here we know that p is co-linear with the two corners
       float x_down, x_up, y_down, y_up;
-      x_down = fminf(corners.coeff(0,i), corners.coeff(0,j));
-      x_up = fmaxf(corners.coeff(0,i), corners.coeff(0,j));
-      y_down = fminf(corners.coeff(1,i), corners.coeff(1,j));
-      y_up = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
+      x_down = fminf(corners.coeff(0, i), corners.coeff(0, j));
+      x_up = fmaxf(corners.coeff(0, i), corners.coeff(0, j));
+      y_down = fminf(corners.coeff(1, i), corners.coeff(1, j));
+      y_up = fmaxf(corners.coeff(1, i), corners.coeff(1, j));
       if (x_down <= p.coeff(0) && p.coeff(0) <= x_up && y_down <= p.coeff(1) && p.coeff(1) <= y_up)
         return 1;
     }
 
     // Now check intersection with standard method
     c1c2p0 = ccw3p(corners.col(i), corners.col(j), p_out);
-    if (c1c2p == c1c2p0)  // no intersection
+    if (c1c2p == c1c2p0) // no intersection
       continue;
 
     pp0c1 = ccw3p(p, p_out, corners.col(i));
     pp0c2 = ccw3p(p, p_out, corners.col(j));
-    if (pp0c1 == pp0c2)  // no intersection
+    if (pp0c1 == pp0c2) // no intersection
       continue;
 
     // at this point we are sure there is an intersection
 
     // the second condition takes care of horizontal edges and intersection on vertex
-    float c_max = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
-    if (p.coeff(1) + libroom_eps < c_max)
-    {
+    float c_max = fmaxf(corners.coeff(1, i), corners.coeff(1, j));
+    if (p.coeff(1) + libroom_eps < c_max) {
       /*
       std::cout << "wall " << j << " " << i 
         << " p[1]=" << p.coeff(1) << " c1[1]=" << corners.coeff(1,i)
@@ -305,14 +297,12 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 
   // for a odd number of intersections, the point is in the polygon
   if (is_inside)
-    return 0;  // point strictly inside
+    return 0; // point strictly inside
   else
     return -1; // point is outside
 }
 
-
-float area_2d_polygon(const Eigen::MatrixXf &corners)
-{
+float area_2d_polygon(const Eigen::MatrixXf & corners) {
   /*
     Computes the signed area of a 2D surface represented by its corners.
     
@@ -322,21 +312,18 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
         positive area means anti-clockwise ordered corners.
         negative area means clockwise ordered corners.
    */
-  if (corners.rows() != 2)
-  {
+  if (corners.rows() != 2) {
     std::cerr << "Only 2D polygons are supported" << std::endl;
     throw std::exception();
   }
 
-  if (corners.cols() < 3)
-  {
+  if (corners.cols() < 3) {
     std::cerr << "The corners should have more than 2 points" << std::endl;
     throw std::exception();
   }
 
   float a = 0;
-  for (int c1 = 0 ; c1 < corners.cols() ; c1++)
-  {
+  for (int c1 = 0; c1 < corners.cols(); c1++) {
     int c2 = (c1 == corners.cols() - 1) ? 0 : c1 + 1;
     float base = 0.5 * (corners.coeff(1, c2) + corners.coeff(1, c1));
     float height = corners.coeff(0, c2) - corners.coeff(0, c1);
@@ -345,57 +332,55 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
   return a;
 }
 
+float cos_angle_between(const Eigen::VectorXf & v1,
+  const Eigen::VectorXf & v2) {
+  /* Function that takes 2 vectors with 3 components and computes the 
+   * cosine of the angle between them.
+   * The result belongs to the [-1; 1] interval*/
 
-float cos_angle_between(const Eigen::VectorXf &v1, const Eigen::VectorXf &v2)
-{
-	/* Function that takes 2 vectors with 3 components and computes the 
-	 * cosine of the angle between them.
-	 * The result belongs to the [-1; 1] interval*/
-	 
-	 int s1 = v1.size();
-	 int s2 = v2.size();
-	 
-	 if (s1<2 or s1>3 or s2<2 or s2>3 or s1 != s2){
-		 std::cerr << "size of v1 :" << s1 << std::endl;
-		 std::cerr << "size of v2 :" << s2 << std::endl;
-		 std::cerr << "cos_angle_between() : Only 2D and 3D vectors are supported" << std::endl;
-		throw std::exception();
-	 }
+  int s1 = v1.size();
+  int s2 = v2.size();
 
-	return 	clamp(v1.normalized().dot(v2.normalized()), -1., 1.);
+  if (s1 < 2 or s1 > 3 or s2 < 2 or s2 > 3 or s1 != s2) {
+    std::cerr << "size of v1 :" << s1 << std::endl;
+    std::cerr << "size of v2 :" << s2 << std::endl;
+    std::cerr << "cos_angle_between() : Only 2D and 3D vectors are supported" << std::endl;
+    throw std::exception();
+  }
+
+  return clamp(v1.normalized().dot(v2.normalized()), -1., 1.);
 }
 
+float dist_line_point(const Eigen::VectorXf & start,
+  const Eigen::VectorXf & end,
+  const Eigen::VectorXf & point) {
 
-float dist_line_point(const Eigen::VectorXf &start,
-					  const Eigen::VectorXf &end,
-					  const Eigen::VectorXf &point){
-						  
-	 size_t s_start = start.size();
-	 size_t s_end = end.size();
-	 size_t s_point = point.size();
-	 
-	 if (s_start<2 or s_start>3 or s_end<2 or s_end>3 or s_point<2 or s_point>3){
-		std::cerr << "dist_line_point : Only 2D and 3D vectors are supported" << std::endl;
-		std::cerr << "Dim start = " << s_start <<std::endl;
-		std::cerr << "Dim end = " << s_end <<std::endl;
-		std::cerr << "Dim point = " << s_point <<std::endl;
-		throw std::exception();
-	 }
-	 
-	 if (s_start != s_point or s_start != s_end or s_end != s_point){
-		std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
-        std::cerr << "Dim start = " << s_start <<std::endl;
-		std::cerr << "Dim end = " << s_end <<std::endl;
-		std::cerr << "Dim point = " << s_point <<std::endl;
-		throw std::exception();
-	 }
-	 
-	 Eigen::VectorXf unit_vec = (end - start).normalized();  // vector
-	 Eigen::VectorXf v = point - start;  // vector
-	 
-	 float proj = v.adjoint() * unit_vec;  // scalar
-	 	 
-	 return (v - proj * unit_vec).norm();  // scalar
+  size_t s_start = start.size();
+  size_t s_end = end.size();
+  size_t s_point = point.size();
+
+  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_point < 2 or s_point > 3) {
+    std::cerr << "dist_line_point : Only 2D and 3D vectors are supported" << std::endl;
+    std::cerr << "Dim start = " << s_start << std::endl;
+    std::cerr << "Dim end = " << s_end << std::endl;
+    std::cerr << "Dim point = " << s_point << std::endl;
+    throw std::exception();
+  }
+
+  if (s_start != s_point or s_start != s_end or s_end != s_point) {
+    std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
+    std::cerr << "Dim start = " << s_start << std::endl;
+    std::cerr << "Dim end = " << s_end << std::endl;
+    std::cerr << "Dim point = " << s_point << std::endl;
+    throw std::exception();
+  }
+
+  Eigen::VectorXf unit_vec = (end - start).normalized(); // vector
+  Eigen::VectorXf v = point - start; // vector
+
+  float proj = v.adjoint() * unit_vec; // scalar
+
+  return (v - proj * unit_vec).norm(); // scalar
 }						  
 
 
