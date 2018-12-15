@@ -74,7 +74,7 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.01]*len(wall_corners_strange)
+absorptions = [0.001]*len(wall_corners_strange)
 
 
 def test_room_construct(cube):
@@ -200,8 +200,8 @@ if __name__ == '__main__':
     room = test_room_construct(cube)
 
     # parameters
-    nb_phis = 100
-    nb_thetas = 100
+    nb_phis = 50
+    nb_thetas = 50
 
     #Good one
     source_pos = [1.5,0.5,0.5]
@@ -209,10 +209,10 @@ if __name__ == '__main__':
     #Wrong one to test exception
     #source_pos = [400,500,3]
 
-    mic_radius = 0.5
+    mic_radius = 0.05
 
 
-    scatter_coef = 0.
+    scatter_coef = 0.1
 
 
     time_thres = 0.8 #s
@@ -226,8 +226,21 @@ if __name__ == '__main__':
     print(nb_phis*nb_thetas, " rays traced in ", time.time()-chrono, " seconds" )
     print(len(log), " entries to build the rir")
 
+    # summ = 0
+    # for elem in log :
+    #     if elem[1] > 0 :
+    #         summ = summ+1
+    #
+    # print(summ, "non null energy")
 
     rir = compute_rir(log, time_thres, fs, plot=True)
+
+    # summ = 0
+    # for elem in rir :
+    #     if elem > 0 :
+    #         summ = summ+1
+    #
+    # print(summ, "non null entries in rir")
 
     apply_rir(rir, "0riginal.wav", fs, cutoff=0)
 

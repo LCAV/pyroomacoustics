@@ -388,7 +388,7 @@ bool Room::scat_ray(const Wall & last_wall,
     float travel_time,
     float time_thres,
     float sound_speed,
-    std::vector < entry > & output) {
+    std::vector<entry> & output) {
 
   /*
 	 * Trace a one-hop scattering ray from the last wall hit to the microphone.
@@ -427,12 +427,7 @@ bool Room::scat_ray(const Wall & last_wall,
 
     if (travel_time < time_thres) {
       //std::cout << "appending scat rays : " <<std::endl;
-      output.push_back(entry {
-        {
-          travel_time,
-          scat_energy
-        }
-      });
+      output.push_back(entry {{travel_time,scat_energy}});
       result = true;
 
     }
@@ -529,12 +524,8 @@ void Room::simul_ray(float phi,
       update_travel_time(travel_time_to_mic, distance, sound_speed);
 
       if (travel_time_to_mic < time_thres) {
-        output.push_back(entry {
-          {
-            travel_time,
-            energy
-          }
-        });
+        output.push_back(entry {{travel_time_to_mic,energy}});
+        std::cout << "\nAdded direct ray" <<std::endl;
       }
 
     }
