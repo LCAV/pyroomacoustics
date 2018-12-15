@@ -295,7 +295,6 @@ class Room(object):
         :returns: (Room) instance of a 2D room
         '''
         
-        
         corners = np.array(corners)
         if (corners.shape[0] != 2 or corners.shape[1] < 3):
             raise ValueError('Arg corners must be more than two 2D points.')
@@ -307,7 +306,6 @@ class Room(object):
         cls.dim = corners.shape[0] 
             
         absorption = np.array(absorption, dtype='float64')
-        
         if (absorption.ndim == 0):
             absorption = absorption * np.ones((corners.shape[1], constants.get('freq_table_length')))
             
@@ -389,7 +387,6 @@ class Room(object):
             walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
 
         absorption = np.array(absorption)
-        
         if absorption.ndim == 0:
             absorption = absorption * np.ones((2, constants.get('freq_table_length')))
             
@@ -646,7 +643,7 @@ class Room(object):
 
         M = self.mic_array.M
         S = len(self.sources)
-        for f in range(6):
+        for f in range(constants.get('freq_table_length')):
             for r in range(M):
                 for s in range(S):
                     h = self.rir[r][s][f]
@@ -702,7 +699,7 @@ class Room(object):
         return images, damping.T, wall_indices
 
 
-    def image_source_model(self, use_libroom=False):
+    def image_source_model(self, use_libroom=True):
 
         self.visibility = []
 
@@ -723,7 +720,7 @@ class Room(object):
                     generators = [-np.ones(i.shape[1])]
                     wall_indices = [w]
                     # generate all higher order images up to max_order
-                    o=1
+                    o = 1
                     while o < self.max_order:
                         # generate all images of images of previous order
                         img = np.zeros((self.dim, 0))
@@ -755,7 +752,8 @@ class Room(object):
 
                             # add to array of images
                             images.append(img[:, ui])
-                            damping.append(dmp[ui])
+                            #damping.append(dmp[ui])
+                            damping = np.concatenate((damping,dmp[:,ui]), axis=1)
                             generators.append(gen[ui])
                             wall_indices.append(wal[ui])
 
@@ -908,7 +906,7 @@ class Room(object):
                 h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 
-    def simulate(self, recompute_rir=False):
+    def simulate(self, recompute_rir=False, filter_method = 'firwin'):
         ''' Simulates the microphone signal at every microphone in the array '''
 
         # import convolution routine
@@ -919,6 +917,8 @@ class Room(object):
             raise ValueError('There are no sound sources in the room.')
         if (self.mic_array is None):
             raise ValueError('There is no microphone in the room.')
+        if filter_method not in ['firwin', 'butter']:
+            raise ValueError("the filter method should be either 'firwin' or 'butter'")
 
         # compute RIR if necessary
         if self.rir is None or len(self.rir) == 0 or recompute_rir:
@@ -942,25 +942,30 @@ class Room(object):
         # the array that will receive all the signals
         signals = np.zeros((M, L))
         
-        
+        # compute frequency ranges for the bandpass filters
         ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
         ranges[0][0] = 1
-        ranges[5][1] = self.fs/2-1000
-        rangesW = [[(fr[0])*2/self.fs,(fr[1])*2/self.fs] for fr in ranges]
-        taps= np.zeros((constants.get('freq_table_length'),512))
-        sos= np.zeros((constants.get('freq_table_length'),5,6))
+        ranges[5][1] = self.fs/2-1000 # to allow decay before nquist frequency
+        
+        if filter_method == 'butter':
+            ranges = [((fr[0])*2/self.fs,(fr[1])*2/self.fs) for fr in ranges]
+            
+        support = np.zeros((constants.get('freq_table_length'),512)) if (filter_method=='firwin') else np.zeros((constants.get('freq_table_length'),5,6))
+        
         #compute the bandpass filters
         for freq in range(constants.get('freq_table_length')):
-            """taps[freq] = firwin(numtaps=512,
-                               cutoff=ranges[freq],
-                               fs=self.fs,
-                               pass_zero=False, 
-                               window='hamming',
-                               scale=False)"""
-            sos[freq] = butter( 5,
-                                rangesW[freq],
-                                btype='band', 
-                                output = 'sos')
+            if filter_method == 'firwin':
+                support[freq] = firwin(numtaps=512,
+                                   cutoff=ranges[freq],
+                                   fs=self.fs,
+                                   pass_zero=False, 
+                                   window='hamming',
+                                   scale=False)
+            else:
+                support[freq] = butter( 5,
+                                    ranges[freq],
+                                    btype='band', 
+                                    output = 'sos')
             
             
         # compute the signal at every microphone in the array
@@ -973,8 +978,7 @@ class Room(object):
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 for freq in range(constants.get('freq_table_length')):
                     norm = utils.normalize(self.rir[m][s][freq])
-                    #h = lfilter(taps[freq],1,self.rir[m][s][freq]
-                    h = sosfilt(sos[freq], norm)
+                    h = lfilter(support[freq],1, norm) if filter_method == 'firwin' else sosfilt(support[freq], norm)
                     rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h,sig)
 
             # add white gaussian noise if necessary
