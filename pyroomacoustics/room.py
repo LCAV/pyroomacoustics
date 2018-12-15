@@ -281,7 +281,6 @@ class Room(object):
             corners,
             absorption=0.,
             fs=8000,
-            blop=0,
             t0=0.,
             max_order=1,
             sigma2_awgn=None,
@@ -960,7 +959,8 @@ class Room(object):
                                scale=False)"""
             sos[freq] = butter( 5,
                                 rangesW[freq],
-                                btype='band', output = 'sos')
+                                btype='band', 
+                                output = 'sos')
             
             
         # compute the signal at every microphone in the array
