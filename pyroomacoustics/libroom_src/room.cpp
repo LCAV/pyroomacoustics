@@ -566,7 +566,8 @@ void Room::simul_ray(float phi,
         wall,
         start,
         hit_point,
-        mic_pos);
+        mic_pos,
+        mic_radius);
 
       // Shoot the scattered ray
       scat_ray(wall,

@@ -308,7 +308,8 @@ float compute_scat_energy(float energy,
   const Wall & wall,
   const VectorXf & start,
   const VectorXf & hit_point,
-  const VectorXf & mic_pos) {
+  const VectorXf & mic_pos,
+  float radius) {
 
   VectorXf n = wall.normal;
 
@@ -317,8 +318,28 @@ float compute_scat_energy(float energy,
   if (cos_angle_between(start - hit_point, n) < 0.) {
     n = (-1) * n;
   }
+  
+  /* The formula is the following (considering that we already applied
+   * the wall's absorption coef) and that we consider no air attenuation : 
+   * E_scat = E . scat_coef . 2 . cos(theta) . ( 1 - cos(gamma/2) ) 
+   * 
+   * where :
+   * - theta is the angle between the wall normal and the vector r (wall_hit -> mic_pos)
+   * - gamma is the opening angle, ie the angle between the two tangent lines 
+   *    of the microphone (circle) that pass through the wall_hit point
+   * 
+   * Luckily, the term cos(gamma/2) can be written without any call to trigo functions :
+   * cos(gamma/2) = sqrt(B*B - radius*radius) / B
+   * 
+   * where B is the distance between wall_hit and mic_pos*/
+   
+   VectorXf r = mic_pos - hit_point;
+   
+   float cos_theta = cos_angle_between(n, r);
+   float B = r.norm();
+   float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
 
-  return energy * scat_coef * cos_angle_between(n, mic_pos - hit_point);
+  return energy * scat_coef * 2 * cos_theta * gamma_term;
 }
 
 std::forward_list < entry > test() {

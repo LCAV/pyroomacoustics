@@ -52,7 +52,8 @@ float compute_scat_energy(float energy, float scat_coef,
   const Wall & wall,
   const VectorXf & start,
   const VectorXf & hit_point,
-  const VectorXf & mic_pos);
+  const VectorXf & mic_pos,
+  float radius);
 
 std::forward_list < entry > test();
 
