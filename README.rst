@@ -7,6 +7,27 @@ Pyroomacoustics
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
 
+Important note about this Repo
+------------------------------
+
+This is a fork of Pyroomacoustics from LCAV containing our contribution on BSS. It's the results of our project for the
+Audio and Acoustics Signal Process course at EPFL. We implemented SparseAuxIva proposed by:
+
+J. Janský, Z. Koldovský, N. Ono. *A computationaly cheaper method for blind speech separation based on auxiva and incomplete demixing transform*. Liberec, Czech Republic, 2016.
+
+The implementation can be found at pyroomacoustics/bss/sparseauxiva.py
+
+To run the test file::
+
+    python pyroomacoustics/bss/tests/test_sparseauxiva.py
+
+The sparseauxiva directory contains a jupyter notebook presenting the work and a collection of papers used during the development.
+
+Authors:
+
+* Virgile Hernicot
+* Yaron Dibner
+
 Summary
 -------
 
