@@ -15,7 +15,11 @@ Audio and Acoustics Signal Process course at EPFL. We implemented SparseAuxIva p
 
 J. Janský, Z. Koldovský, N. Ono. *A computationaly cheaper method for blind speech separation based on auxiva and incomplete demixing transform*. Liberec, Czech Republic, 2016.
 
-The implementation can be found at pyroomacoustics/bss/sparseauxiva.py
+The implementation can be found at pyroomacoustics/bss/sparseauxiva.py.
+
+Since the implementation doesn't exist in the official pyroomacoustics to we refer to it as it is, add the source files to your PYTHONPATH or run::
+
+    pip install .
 
 To run the test file::
 

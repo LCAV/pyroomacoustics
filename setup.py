@@ -67,7 +67,7 @@ setup_kwargs = dict(
             ],
 
         # Libroom C extension
-        ext_modules=[libroom_ext] + cythonize(cython_ext),
+        # ext_modules=[libroom_ext] + cythonize(cython_ext),
 
         # Necessary to keep the source files
         package_data={
