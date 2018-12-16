@@ -174,11 +174,13 @@ from __future__ import print_function
 
 import numpy as np
 import scipy.spatial as spatial
+from scipy.signal import lfilter, firwin, butter, sosfilt
 import ctypes
 
 #import .beamforming as bf
 from . import beamforming as bf
 from . import geometry as geom
+from . import utilities as utils
 from .soundsource import SoundSource
 from .wall import Wall
 from .geometry import area, ccw3p
@@ -305,10 +307,17 @@ class Room(object):
             
         absorption = np.array(absorption, dtype='float64')
         if (absorption.ndim == 0):
-            absorption = absorption * np.ones(corners.shape[1])
-        elif (absorption.ndim >= 1 and corners.shape[1] != len(absorption)):
-            raise ValueError('Arg absorption must be the same size as corners or must be a single value.')
+            absorption = absorption * np.ones((corners.shape[1], constants.get('freq_table_length')))
+            
+        elif (absorption.ndim == 1  and corners.shape[1] == len(absorption)):
+              absorption = np.array([absorption]).T * np.ones(constants.get('freq_table_length'))
         
+        #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
+        elif (absorption.ndim != 2 \
+              or corners.shape[1] != absorption.shape[0] \
+              or absorption.shape[1] != constants.get('freq_table_length')):
+            raise ValueError('Arg absorption must be either a single value, a single value per corner, or a list per corner') 
+
         walls = []
         for i in range(corners.shape[1]):
             walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
@@ -379,10 +388,17 @@ class Room(object):
 
         absorption = np.array(absorption)
         if absorption.ndim == 0:
-            absorption = absorption * np.ones(2)
-        elif absorption.ndim == 1 and absorption.shape[0] != 2:
+            absorption = absorption * np.ones((2, constants.get('freq_table_length')))
+            
+        elif absorption.ndim == 1 and len(absorption) == 2:
+            absorption = np.array([absorption]).T * np.ones(constants.get('freq_table_length'))
+            
+        #if absorption is of dimension 2 and has a correct shape, keep it unchanged. Else, error.
+        elif (absorption.ndim != 2 \
+              or 2 != absorption.shape[0] \
+              or absorption.shape[1] != constants.get('freq_table_length')):
             raise ValueError("The size of the absorption array must be 2 for extrude, for the floor and ceiling")
-
+                
         floor_corners = np.pad(floor_corners, ((0, 1),(0,0)), mode='constant')
         ceiling_corners = (floor_corners.T + height*v_vec).T
 
@@ -591,7 +607,7 @@ class Room(object):
 
                 I = source.orders <= img_order
 
-                val = (np.log2(source.damping[I]) + 10.) / 10.
+                val = (np.log2(source.damping[0,I]) + 10.) / 10.
                 # plot the images
                 ax.scatter(source.images[0, I],
                     source.images[1, I],
@@ -627,20 +643,22 @@ class Room(object):
 
         M = self.mic_array.M
         S = len(self.sources)
-        for r in range(M):
-            for s in range(S):
-                h = self.rir[r][s]
-                plt.subplot(M, S, r*S + s + 1)
-                if not FD:
-                    plt.plot(np.arange(len(h)) / float(self.fs), h)
-                else:
-                    u.real_spectrum(h)
-                plt.title('RIR: mic'+str(r)+' source'+str(s))
-                if r == M-1:
+        for f in range(constants.get('freq_table_length')):
+            for r in range(M):
+                for s in range(S):
+                    h = self.rir[r][s][f]
+                    plt.subplot(M, S, r*S + s + 1)
                     if not FD:
-                        plt.xlabel('Time [s]')
+                        plt.plot(np.arange(len(h)) / float(self.fs), h)
                     else:
-                        plt.xlabel('Normalized frequency')
+                        u.real_spectrum(h)
+                    plt.title('RIR: mic'+str(r)+' source'+str(s)+' freq:'+str(constants.get('freq_table_frequencies')[f]))
+                    if r == M-1:
+                        if not FD:
+                            plt.xlabel('Time [s]')
+                        else:
+                            plt.xlabel('Normalized frequency')
+            plt.show()
 
         plt.tight_layout()
 
@@ -678,7 +696,7 @@ class Room(object):
         # collect the index of the wall corresponding to the new image
         wall_indices = np.arange(len(self.walls))[ip > 0]
 
-        return images, damping, wall_indices
+        return images, damping.T, wall_indices
 
 
     def image_source_model(self, use_libroom=True):
@@ -693,16 +711,14 @@ class Room(object):
             # Fall back to pure python if requested or C module unavailable
             if not use_libroom or not libroom_available:
                 # Then do it in pure python
-
                 if self.max_order > 0:
 
                     # generate first order images
                     i, d, w = self.first_order_images(np.array(source.position))
                     images = [i]
-                    damping = [d]
+                    damping = d
                     generators = [-np.ones(i.shape[1])]
                     wall_indices = [w]
-
                     # generate all higher order images up to max_order
                     o = 1
                     while o < self.max_order:
@@ -714,14 +730,14 @@ class Room(object):
                         for ind, si, sd in zip(range(images[o-1].shape[1]), images[o - 1].T, damping[o - 1]):
                             i, d, w = self.first_order_images(si)
                             img = np.concatenate((img, i), axis=1)
-                            dmp = np.concatenate((dmp, d * sd))
+                            dmp = np.concatenate((dmp, d * sd), axis=1) if dmp.size>0 else d*sd
                             gen = np.concatenate((gen, ind*np.ones(i.shape[1])))
                             wal = np.concatenate((wal, w))
 
                         # sort
                         ordering = np.lexsort(img)
                         img = img[:, ordering]
-                        dmp = dmp[ordering]
+                        dmp = dmp[:,ordering]
                         gen = gen[ordering]
                         wal = wal[ordering]
 
@@ -736,7 +752,8 @@ class Room(object):
 
                             # add to array of images
                             images.append(img[:, ui])
-                            damping.append(dmp[ui])
+                            #damping.append(dmp[ui])
+                            damping = np.concatenate((damping,dmp[:,ui]), axis=1)
                             generators.append(gen[ui])
                             wall_indices.append(wal[ui])
 
@@ -746,7 +763,7 @@ class Room(object):
                             '''
                             # add to array of images
                             images.append(img)
-                            damping.append(dmp)
+                            damping = np.concatenate((damping,dmp), axis=1)
                             generators.append(gen)
                             wall_indices.append(wal)
 
@@ -760,9 +777,10 @@ class Room(object):
 
                     # linearize the arrays
                     images_lin = np.concatenate(images, axis=1)
-                    damping_lin = np.concatenate(damping)
+                    damping_lin = damping
                     generators_lin = np.concatenate(generators)
                     walls_lin = np.concatenate(wall_indices)
+                    
                     
                     # store the corresponding orders in another array
                     ordlist = []
@@ -772,15 +790,14 @@ class Room(object):
 
                     # add the direct source to the arrays
                     source.images = np.concatenate((np.array([source.position]).T, images_lin), axis=1)
-                    source.damping = np.concatenate(([1], damping_lin))
+                    source.damping = np.concatenate((np.array([np.ones(constants.get('freq_table_length'))]).T, damping_lin), axis=1)
                     source.generators = np.concatenate(([-1], generators_lin+1)).astype(np.int)
                     source.walls = np.concatenate(([-1], walls_lin)).astype(np.int)
                     source.orders = np.array(np.concatenate(([0], orders_lin)), dtype=np.int)
-
                 else:
                     # when simulating free space, there is only the direct source
                     source.images = np.array([source.position]).T
-                    source.damping = np.ones(1)
+                    source.damping = np.array([np.ones(constants.get('freq_table_length'))]).T
                     source.generators = -np.ones(1, dtype=np.int)
                     source.walls = -np.ones(1, dtype=np.int)
                     source.orders = np.zeros(1, dtype=np.int)
@@ -805,14 +822,12 @@ class Room(object):
 
                 # Now we can get rid of the superfluous images
                 source.images = source.images[:,I]
-                source.damping = source.damping[I]
+                source.damping = source.damping[:,I]
                 source.generators = source.generators[I]
                 source.walls = source.walls[I]
                 source.orders = source.orders[I]
 
                 self.visibility[-1] = self.visibility[-1][:,I]
-
-
             else:
                 # if libroom is available, use it!
 
@@ -891,17 +906,19 @@ class Room(object):
                 h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 
-    def simulate(self, recompute_rir=False):
+    def simulate(self, recompute_rir=False, filter_method = 'firwin'):
         ''' Simulates the microphone signal at every microphone in the array '''
 
         # import convolution routine
         from scipy.signal import fftconvolve
 
         # Throw an error if we are missing some hardware in the room
-        if (len(self.sources) is 0):
+        if (len(self.sources) is 0): 
             raise ValueError('There are no sound sources in the room.')
         if (self.mic_array is None):
             raise ValueError('There is no microphone in the room.')
+        if filter_method not in ['firwin', 'butter']:
+            raise ValueError("the filter method should be either 'firwin' or 'butter'")
 
         # compute RIR if necessary
         if self.rir is None or len(self.rir) == 0 or recompute_rir:
@@ -913,8 +930,8 @@ class Room(object):
 
         # compute the maximum signal length
         from itertools import product
-        max_len_rir = np.array([len(self.rir[i][j])
-                                for i, j in product(range(M), range(S))]).max()
+        max_len_rir = np.array([len(self.rir[i][j][k])
+                                for i, j, k in product(range(M), range(S),range(constants.get('freq_table_length')))]).max()
         f = lambda i: len(
             self.sources[i].signal) + np.floor(self.sources[i].delay * self.fs)
         max_sig_len = np.array([f(i) for i in range(S)]).max()
@@ -924,7 +941,33 @@ class Room(object):
 
         # the array that will receive all the signals
         signals = np.zeros((M, L))
-
+        
+        # compute frequency ranges for the bandpass filters
+        ranges = [[fr*3/4,fr*3/2] for fr in constants.get('freq_table_frequencies')]
+        ranges[0][0] = 1
+        ranges[5][1] = self.fs/2-1000 # to allow decay before nquist frequency
+        
+        if filter_method == 'butter':
+            ranges = [((fr[0])*2/self.fs,(fr[1])*2/self.fs) for fr in ranges]
+            
+        support = np.zeros((constants.get('freq_table_length'),512)) if (filter_method=='firwin') else np.zeros((constants.get('freq_table_length'),5,6))
+        
+        #compute the bandpass filters
+        for freq in range(constants.get('freq_table_length')):
+            if filter_method == 'firwin':
+                support[freq] = firwin(numtaps=512,
+                                   cutoff=ranges[freq],
+                                   fs=self.fs,
+                                   pass_zero=False, 
+                                   window='hamming',
+                                   scale=False)
+            else:
+                support[freq] = butter( 5,
+                                    ranges[freq],
+                                    btype='band', 
+                                    output = 'sos')
+            
+            
         # compute the signal at every microphone in the array
         for m in np.arange(M):
             rx = signals[m]
@@ -933,8 +976,10 @@ class Room(object):
                 if sig is None:
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
-                h = self.rir[m][s]
-                rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
+                for freq in range(constants.get('freq_table_length')):
+                    norm = utils.normalize(self.rir[m][s][freq])
+                    h = lfilter(support[freq],1, norm) if filter_method == 'firwin' else sosfilt(support[freq], norm)
+                    rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h,sig)
 
             # add white gaussian noise if necessary
             if self.sigma2_awgn is not None:

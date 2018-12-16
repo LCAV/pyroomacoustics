@@ -13,7 +13,7 @@ class Wall(object):
     This class represents a wall instance. A room instance is formed by these.
     
     :attribute corners: (np.array dim 2x2 or 3xN, N>2) endpoints forming the wall
-    :attribute absorption: (float) attenuation reflection factor
+    :attribute absorption: (array of floats) attenuation reflection factors for 125, 250, 500, 1000, 2000, 4000 Hz
     :attribute name: (string) name given to the wall, which can be reused to reference it in the Room object
     :attribute normal: (np.array dim 2 or 3) normal vector pointing outward the room
     :attribute dim: (int) dimension of the wall (2 or 3, meaning 2D or 3D)
@@ -23,7 +23,7 @@ class Wall(object):
     def __init__(
         self,
         corners,
-        absorption = 1.,
+        absorption = np.ones(6),
         name = None):
         
         self.corners = np.array(corners, order='F', dtype=np.float32)
@@ -125,3 +125,8 @@ class Wall(object):
             raise NameError('Wall.side input error : dimension of p and the wall must match.')
 
         return geom.side(p, self.corners[:,0], self.normal)
+    
+    def print_wall(self):
+        print("name"+self.name)
+        print("abs"+str(self.absorption))
+        print("corners"+str(self.corners))
