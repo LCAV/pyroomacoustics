@@ -211,10 +211,16 @@ int Wall::_intersection_segment_3d( // intersection routine specialized for 3D
 }
 
 bool Wall::same_as(const Wall & that) {
+  /*
+  Checks if two walls are the same, based on the corners of the walls.
+  Be careful : it will return true for two identical walls that belongs
+  to two different rooms !
+  */
 
   if (dim != that.dim) {
     std::cerr << "The two walls are not of the same dimensions !" << std::endl;
     throw std::exception();
+    return false;
   }
 
   // Not the same number of corners

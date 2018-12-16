@@ -261,11 +261,15 @@ int Room::image_source_shoebox(
 float Room::get_max_distance() {
 
   /* This function outputs a value L that is strictly larger than any distance
-   * that a ray could travel in straight line in the 2D or 3D room without
-   * hitting anything.
-   * As we are sure that a ray reflecting from a hit_point H will hit
-   * another wall in less than L meters, we can use the wall intersection
-   * functions with the segment starting at H and of length V*/
+   that a ray could travel in straight line in the 2D or 3D room without
+   hitting anything.
+   In other words, this function outputs the diagonal of the bounding box 
+   of this room.
+   
+   As we are sure that a ray reflecting from a hit_point H will hit
+   another wall in less than L meters, we can use the wall intersection
+   functions with the segment starting at H and of length L
+  */
 
   // Useless initialization to avoid compilation warnings
   float maxX(0), maxY(0), maxZ(0);
@@ -326,20 +330,40 @@ float Room::get_max_distance() {
 
 std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
   const Eigen::VectorXf & start,
-    const Eigen::VectorXf & end,
-      bool scattered_ray) {
+  const Eigen::VectorXf & end,
+  bool scattered_ray) {
 
-  /* Computes the next next wall_hit position given a segment defined
-   * by its endpoints. This method also stores the index of the wall
-   * that contains this next hit point (we needed to pass it inside a 
-   * Vector1i to be able to call this function from python).
+  /* This function is called in 2 different contexts :
    * 
-   * If no wall is intersected, then the next_wall_index will be -1
+   * 1) When we trace the main ray : it computes the next next wall_hit
+   * position given a segment defined by its endpoints.It also returns the
+   * index of the wall that contains this next hit point.
    * 
-   * Whis function is called by scattered_rays() to see if a wall
-   * is intersected by any scattered ray. In this case we are only
-   * interested in the second element of the return tuple.
-   * This is why we only care about obstructing wall in that case.*/
+   * start: (array size 2 or 3) the start point of the segment
+   * end: (array size 2 or 3) the end point of the segment. Recall that 
+   * 		this point must be set so that a wall is intersected between
+   * 		start and end.
+   * scattered_ray: false
+   * 
+   * :return: tuple <next_wall_hit_position, next_wall_index>
+   * 
+   * ==================================================================
+   * 
+   * 2) When we trace a scattered ray from the previous wall_hit point
+   * back to the microphone : it checks if an (obstructing) wall stands
+   * between the last wall_hit position and the center of the microphone.
+   * In that case, the scattered ray cannot reach the microphone.
+   * 
+   * start: (array size 2 or 3) the last wall_hit position
+   * end: (array size 2 or 3) the end point of the segment. Here it is 
+   * 		just the center of the microphone.
+   * scattered_ray: true
+   * 
+   * :return: tuple <potentially_obstructing_wall_hit_position, potentially_obstructing_wall_index>
+   * If no wall is intersected, then potentially_obstructing_wall_index will be -1
+   * 
+   * In fact here we are only interested in the second element of the tuple.
+   * */
 
   Eigen::VectorXf result;
   result.resize(dim);
@@ -383,27 +407,28 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
 
 bool Room::scat_ray(const Wall & last_wall,
   const Eigen::VectorXf & hit_point,
-    float radius,
-    float scat_energy,
-    float travel_time,
-    float time_thres,
-    float sound_speed,
-    std::vector<entry> & output) {
+  float radius,
+  float scat_energy,
+  float travel_time,
+  float time_thres,
+  float sound_speed,
+  std::vector<entry> & output) {
 
   /*
-	 * Trace a one-hop scattering ray from the last wall hit to the microphone.
-	 * In case the scattering ray can reach the microphone (no wall in
-	 * between), then we add an entry to the output passed by reference.
-	 * 
-    - last_wall: The wall object where last_hit is located
-    - radius : The radius of the circle/sphere microphone
-    - last_hit: An array of length 2 or 3 defining the last wall hit position
-    - scat_energy: The energy of the scattering ray
-    - actual_travel_time: The cumulated travel time of the ray
-    - time_thresh: The time threshold of the ray
-    - sound_speed: The speed of sound
-    * 
-    * Return : true if the scattered ray reached the mic, false otw
+	Traces a one-hop scattering ray from the last wall hit to the microphone.
+	In case the scattering ray can indeed reach the microphone (no wall in
+	between), then we add an entry to the output passed by reference.
+	
+    last_wall: The wall object where last_hit is located
+    radius : The radius of the circle/sphere microphone
+    last_hit: (array size 2 or 3) defines the last wall hit position
+    scat_energy: The energy of the scattering ray
+    actual_travel_time: The cumulated travel time of the ray until the last wall hit
+    time_thresh: The time threshold for the ray
+    sound_speed: The speed of sound
+    output: the std::vector containing the time/energy entries to build the rir
+     
+    :return : true if the scattered ray reached the mic, false otw
 	*/
 
   bool result = false;
@@ -441,24 +466,23 @@ bool Room::scat_ray(const Wall & last_wall,
 void Room::simul_ray(float phi,
   float theta,
   const Eigen::VectorXf source_pos,
-    float mic_radius,
-    float scatter_coef,
-    float time_thres,
-    float sound_speed,
-    std::vector < entry > & output) {
+  float mic_radius,
+  float scatter_coef,
+  float time_thres,
+  float sound_speed,
+  std::vector < entry > & output) {
 
   /*This function simulates one ray and fills the output vector with
-   * all the entries that can be produced by this ray (either when the
-   * ray reaches the microphone or all the scattered rays)
-   * 
-   * INPUT :
-   * - phi and theta give the orientation of the ray (2D or 3D)
-   * - source_pos is the location of the sound source (NOT AN IMAGE SOURCE)
-   * - mic_radius is the radius of the microphone that is represented like a circle or a sphere
-   * - scatter coef determines the amount of the energy that gets scattered every time the ray hits a wall
-   * - time_thres is the upperbound on the travel time of the ray
-   * - sound_speed is the speed of sound (may be dependent on humidity etc...)
-   * - output is the vector that contains the entries for all the simulated rays */
+   all the entries produced by this ray (when the "direct"
+   ray or any scattered ray reaches the microphone)
+    
+   phi and theta : give the orientation of the ray (2D or 3D)
+   source_pos: (array size 2 or 3) is the location of the sound source (NOT AN IMAGE SOURCE)
+   mic_radius: (array size 2 or 3) is the radius of the microphone that is represented like a circle or a sphere
+   scatter coef: determines the amount of the energy that gets scattered every time the ray hits a wall
+   time_thres: is the upperbound on the travel time of the ray
+   sound_speed: is the speed of sound (may be dependent on humidity etc...)
+   output: is the std::vector that contains the entries for all the simulated rays */
 
   // ------------------ INIT --------------------
   // What we need to trace the ray
@@ -525,7 +549,7 @@ void Room::simul_ray(float phi,
 
       if (travel_time_to_mic < time_thres) {
         output.push_back(entry {{travel_time_to_mic,energy}});
-        std::cout << "\nAdded direct ray" <<std::endl;
+        //std::cout << "\nAdded direct ray" <<std::endl;
       }
 
     }
@@ -592,17 +616,22 @@ std::vector < entry > Room::get_rir_entries(size_t nb_phis,
     float time_thres,
     float sound_speed) {
 
-  /*This method simulates a certain number of rays and output the
-   * vector of entries produced by the latter.
-   * 
-   * INPUT
-   * - nb_phis is the number of different planar directions that will be used
-   * - nb_thetas is the number of different elevation angles that will be used
-   *   (NOTE : nb_phis*nb_thetas is the number of simulated raysUT
-   * 
-   * OUTPUT 
-   * - a 2D vector where each entry is a tuple (time, energy)
-   * reprensenting a ray (scattered or not) reaching the microphone*/
+  /*This method produced all the time/energy entries needed to compute
+   the RIR using ray-tracing with the following parameters
+    
+   nb_phis: the number of different planar directions that will be used
+   nb_thetas: the number of different elevation angles that will be used
+     (NOTE: nb_phis*nb_thetas is the number of simulated rays
+   source_pos: (array size 2 or 3) represents the position of the sound source
+   mic_radius: the radius of the circular(2D) or spherical(3D) microphone
+   scatter_coef: the scattering coefficients used for the walls of the room
+   time_thres: the simulation time threshold for each ray
+   sound_speed: the constant speed of sound
+    
+   :returns: 
+   a std::vector where each entry is a tuple (time, energy)
+   reprensenting a ray (scattered or not) reaching the microphone
+   */
 
   if ((source_pos - mic_pos).norm() < mic_radius) {
     std::cerr << "The source is inside the microphone ! " << std::endl;
@@ -662,18 +691,29 @@ std::vector < entry > Room::get_rir_entries(size_t nb_phis,
 
 bool Room::contains(const Eigen::VectorXf point) {
 
-  /*This methods returns true if the point is contained in the room*/
+  /*This methods checks if a point is contained in the room
+   * 
+   * point: (array size 2 or 3) representing a point in the room
+   * 
+   * :returs: true if the point is inside the room, false otherwise*/
+   
+   
+  // Sanity check
+  if (dim != point.size()) {
+    std::cerr << "Error in Room::contains()\nThe room and the point have different dimensions !" << std::endl;
+    throw std::exception();
+  }
 
-  // ===========================================
+  // ======= USING RAY CASTING ALGO =======
   // First we need to build a point outside the room
-  // For this we take the min x,y,z and remove 1 to each of them
+  // For this we take the min (x,y,z) point and subtract 1 (arbitrary) to each coordinate
 
   float minX(0), minY(0), minZ(0);
 
   size_t n_walls = walls.size();
 
   for (size_t i(0); i < n_walls; ++i) {
-    Wall wi = this -> get_wall(i);
+    Wall &wi = this -> get_wall(i);
 
     Eigen::Vector3f min_coord(0, 0, 0);
 
@@ -704,11 +744,11 @@ bool Room::contains(const Eigen::VectorXf point) {
   Eigen::VectorXf outside_point;
   outside_point.resize(dim);
 
-  outside_point[0] = minX - 0.4;
-  outside_point[1] = minY - 0.4;
+  outside_point[0] = minX - 1.;
+  outside_point[1] = minY - 1.;
 
   if (dim == 3) {
-    outside_point[2] = minZ - 0.4;
+    outside_point[2] = minZ - 1.;
   }
 
   // ===========================================
@@ -720,12 +760,16 @@ bool Room::contains(const Eigen::VectorXf point) {
   bool ambiguous_intersection = false;
 
   do {
-
+	  
+	// We restart the computation with a modified output_point as long as we find
+	// an ambiguous intersection (on the edge or on the endpoint of a segment)
+	// Note : ambiguous intersection means that Wall::intersects() method
+	// gives a result strictly above 0
+	
     n_intersections = 0;
     ambiguous_intersection = false;
 
-    // We randomize the outside point to avoid finding ambiguous
-    // intersections
+
 
     outside_point[0] -= (float)(rand() % 27) / 50;
     outside_point[1] -= (float)(rand() % 22) / 26;
@@ -748,10 +792,9 @@ bool Room::contains(const Eigen::VectorXf point) {
     }
   } while (ambiguous_intersection);
 
-  // The point is in the room if an odd number of walls have been interseted
+  // If an odd number of walls have been intersected,
+  // then the point is in the room  => return true
   return ((n_intersections % 2) == 1);
 
 }
 
-// TODO : modify next_wall_hit when it is called for scattered rays !
-// Use the obstructing walls once we have Robin's answer.

@@ -334,9 +334,14 @@ float area_2d_polygon(const Eigen::MatrixXf & corners) {
 
 float cos_angle_between(const Eigen::VectorXf & v1,
   const Eigen::VectorXf & v2) {
-  /* Function that takes 2 vectors with 3 components and computes the 
-   * cosine of the angle between them.
-   * The result belongs to the [-1; 1] interval*/
+	  
+  /* This function computes the cosinus of the angle between two vectors.
+   
+   v1: array of length N defining the first vector
+   v2: array of length N defining the second vector
+    
+   :returns: a value in [-1;1] representing the cosinus of the angle
+     between the two vectors*/
 
   int s1 = v1.size();
   int s2 = v2.size();
@@ -354,6 +359,16 @@ float cos_angle_between(const Eigen::VectorXf & v1,
 float dist_line_point(const Eigen::VectorXf & start,
   const Eigen::VectorXf & end,
   const Eigen::VectorXf & point) {
+	  
+  /* This function computes the smallest distance between a point and an 
+   endless line.
+    
+   start: (array size 2 or 3) defines one point on the line.
+   end: (array size 2 or 3) defines a second point on the line.
+   point: (array size 2 or 3) defines the point not on the line
+    
+   :returns: the smallest distance between 'point' and the line defined
+     by 'start' and 'end'*/
 
   size_t s_start = start.size();
   size_t s_end = end.size();
