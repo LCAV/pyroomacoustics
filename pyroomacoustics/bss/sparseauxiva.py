@@ -17,6 +17,16 @@ f_contrasts = {
 
 
 def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True):
+    """
+
+    :param X: STFT transform of the mixed signal from the mics
+    :param S: Index set of frequency bins used in auxiva
+    :param n_iter: Number of iteratios in auxiva
+    :param proj_back: whether it performs the back projection or not
+    :param return_filters: return filters
+    :param lasso: if it runs
+    :return:
+    """
     n_frames, n_freq, n_chan = X.shape
 
     k_freq = S.shape[0]
@@ -36,7 +46,7 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
-    print("Init done, proceeding to sparse AuxIVA...")
+    # print("Init done, proceeding to sparse AuxIVA...")
 
     for epoch in range(n_iter):
 
@@ -61,7 +71,7 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
                 W[S[f], :, s] = np.linalg.solve(WV, I[:, s])
                 W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
 
-    print("Successfully computed the sparse weights, proceeding to lasso...")
+    # print("Successfully computed the sparse weights, proceeding to lasso...")
 
     np.set_printoptions(precision=2)
 
@@ -71,25 +81,25 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
         G = np.zeros((n_src, n_freq, 1), dtype=Z.dtype)
         hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)  # h in the time domain
         Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)  # H in the frequency domain
-        DFT_matrix = dft(n_freq)
-        # print(np.all(np.linalg.eigvals(DFT_matrix.T.dot(DFT_matrix)) > 0))
+
         for i in range(n_src):
 
             # sparse relative transfer function
             Z[i, :] = np.array([-W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
 
+            # put the elements of Z in G
             G[i, S] = (np.expand_dims(Z[i, :], axis=1))
 
             # compute the extrapolated relative impulse response solving LASSO
             hrtf[:, i] = sparir(G[i, :], S)
 
             # convert to transfer function
-            Hrtf[:, i] = np.dot(DFT_matrix, hrtf[:, i])
-
+            Hrtf[:, i] = np.fft.fft(hrtf[:, i])
             # Finally, you could assemble W
             for f in range(n_freq):
                 W[f, :, i] = np.conj([Hrtf[f, i], -1])
 
+    # final demixing
     demixsparse(Y, X, np.array(range(n_freq)), W)
 
     # applying projection_back in the end to solve the scale ambiguity
@@ -104,12 +114,29 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
 
     
 def demixsparse(Y, X, S, W):
+    """
+
+    :param Y:
+    :param X:
+    :param S:
+    :param W:
+    :return:
+    """
     freq = S.shape[0]
     for f in range(freq):
         Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
 
 def sparir(G, S, delay=0, weights=np.array([]), gini=0):
+    """
+
+    :param G:
+    :param S:
+    :param delay:
+    :param weights:
+    :param gini:
+    :return:
+    """
     L = G.shape[0]  # n_freq
 
     y = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
@@ -121,10 +148,7 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
     else:
         g = gini
 
-    if weights == 0:
-        tau = np.sqrt(L) / (y.conj().T.dot(y))  # * ones(L,1)
-        tau = tau * np.exp(0.11 * np.abs((np.arange(1., L + 1.).T - delay)) ** 0.3)
-    elif weights.size == 0:
+    if weights.size == 0:
         tau = np.sqrt(L) / (y.conj().T.dot(y))
         tau = tau * np.exp(0.11 * np.abs((np.arange(1., L + 1.).T - delay)) ** 0.3)
         tau = tau.T
@@ -166,7 +190,7 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
         prev_r = r
         prev_g = g
-        g = soft(prev_g - gradq * (1 / alpha), tau / alpha)
+        g = soft(prev_g - gradq * (1.0 / alpha), tau / alpha)
         dg = g - prev_g
         DG = np.fft.fft(dg.flatten())
         Adg = np.concatenate((np.real(DG[S]), np.imag(DG[S])), axis=0)
@@ -184,6 +208,6 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
         # if iter_ % 100 == 0:
         # print("iteration: ", iter_+1, ", criterion: ", crit[iter_])
 
-    print('SpaRIR: {0} iterations done.'.format(iter_))
+    # print('SpaRIR: {0} iterations done.'.format(iter_+1))
 
     return g.flatten()
