@@ -90,6 +90,7 @@ class Room {
     float scat_energy,
     float travel_time,
     float time_thres,
+    float energy_thres,
     float sound_speed,
     std::list<entry> & output);
 
@@ -99,6 +100,7 @@ class Room {
     float mic_radius,
     float scatter_coef,
     float time_thres,
+    float energy_thres,
     float sound_speed,
     std::list <entry> & output);
 
@@ -108,6 +110,7 @@ class Room {
     float mic_radius,
     float scatter_coef,
     float time_thres,
+    float energy_thres,
     float sound_speed);
 
   bool contains(const Eigen::VectorXf point);

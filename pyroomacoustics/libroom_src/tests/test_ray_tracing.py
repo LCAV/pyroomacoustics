@@ -74,7 +74,7 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.001]*len(wall_corners_strange)
+absorptions = [0.1]*len(wall_corners_strange)
 
 
 def test_room_construct(cube):
@@ -84,9 +84,9 @@ def test_room_construct(cube):
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
         obstructing_walls = []
         microphones = np.array([
-            [6., ],
-            [8., ],
-            [5., ],
+            [9., ],
+            [9., ],
+            [9., ],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
@@ -196,7 +196,7 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    cube = True
+    cube = False
     room = test_room_construct(cube)
 
     # parameters
@@ -204,44 +204,30 @@ if __name__ == '__main__':
     nb_thetas = 50
 
     #Good one
-    source_pos = [1.5,0.5,0.5]
+    source_pos = [2,2,1]
 
-    #Wrong one to test exception
-    #source_pos = [400,500,3]
-
-    mic_radius = 0.05
+    mic_radius = 0.5
 
 
     scatter_coef = 0.1
 
 
-    time_thres = 0.8 #s
+    time_thres = 0.5 #s
+    energy_thres = 0.001;
     sound_speed = 340
 
     fs = 16000
 
     # compute the log with the C++ code
     chrono = time.time()
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, sound_speed)
+
+
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
     print(nb_phis*nb_thetas, " rays traced in ", time.time()-chrono, " seconds" )
     print(len(log), " entries to build the rir")
 
-    # summ = 0
-    # for elem in log :
-    #     if elem[1] > 0 :
-    #         summ = summ+1
-    #
-    # print(summ, "non null energy")
 
     rir = compute_rir(log, time_thres, fs, plot=True)
-
-    # summ = 0
-    # for elem in rir :
-    #     if elem > 0 :
-    #         summ = summ+1
-    #
-    # print(summ, "non null entries in rir")
-
     apply_rir(rir, "0riginal.wav", fs, cutoff=0)
 
 

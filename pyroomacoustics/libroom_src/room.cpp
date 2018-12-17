@@ -441,6 +441,7 @@ bool Room::scat_ray(const Wall & last_wall,
   float scat_energy,
   float travel_time,
   float time_thres,
+  float energy_thres,
   float sound_speed,
   std::list<entry> & output)
   {
@@ -456,6 +457,7 @@ bool Room::scat_ray(const Wall & last_wall,
     scat_energy: The energy of the scattering ray
     actual_travel_time: The cumulated travel time of the ray until the last wall hit
     time_thresh: The time threshold for the ray
+    energy_thresh: The energy threshold for the ray
     sound_speed: The speed of sound
     output: the std::vector containing the time/energy entries to build the rir
      
@@ -482,7 +484,7 @@ bool Room::scat_ray(const Wall & last_wall,
     // Remember that the energy distance attenuation will be 
     // performed once all the ray arrived.
 
-    if (travel_time < time_thres)
+    if (travel_time < time_thres and scat_energy > energy_thres)
     {
       //std::cout << "appending scat rays : " <<std::endl;
       output.push_back(entry {{travel_time,scat_energy}});
@@ -500,6 +502,7 @@ void Room::simul_ray(float phi,
   float mic_radius,
   float scatter_coef,
   float time_thres,
+  float energy_thres,
   float sound_speed,
   std::list < entry > & output)
   {
@@ -513,6 +516,7 @@ void Room::simul_ray(float phi,
    mic_radius: (array size 2 or 3) is the radius of the microphone that is represented like a circle or a sphere
    scatter coef: determines the amount of the energy that gets scattered every time the ray hits a wall
    time_thres: is the upperbound on the travel time of the ray
+   energy_thresh: The energy threshold for the ray
    sound_speed: is the speed of sound (may be dependent on humidity etc...)
    output: is the std::vector that contains the entries for all the simulated rays */
 
@@ -563,6 +567,8 @@ void Room::simul_ray(float phi,
     wall = walls[next_wall_index];
 
     // Initialization needed for the next if
+    
+    // length of the actual hop
     float distance(0);
 
     // Before updatign the ray's characteristic, we must see
@@ -575,16 +581,14 @@ void Room::simul_ray(float phi,
 
       Eigen::VectorXf hit_point_mic = mic_intersection(start, hit_point, mic_pos, mic_radius);
 
-      //std::cout << "MICROPHONE hit_point : " << hit_point_mic[0] << " "<< hit_point_mic[1] << " "<< hit_point_mic[2] << std::endl;
       distance = (start - hit_point_mic).norm();
 
       float travel_time_to_mic = travel_time;
 
       update_travel_time(travel_time_to_mic, distance, sound_speed);
 
-      if (travel_time_to_mic < time_thres) {
+      if (travel_time_to_mic < time_thres and energy > energy_thres) {
         output.push_back(entry {{travel_time_to_mic,energy}});
-        //std::cout << "\nAdded direct ray" <<std::endl;
       }
     }
 
@@ -600,8 +604,8 @@ void Room::simul_ray(float phi,
     //std::cout << "post travel time : " <<  travel_time <<std::endl;
     //std::cout << "post energy : " <<  energy <<std::endl;
 
-    // Check if we reach the time threshold for this ray
-    if (travel_time > time_thres)
+    // Check if we reach the thresholds for this ray
+    if (travel_time > time_thres or energy < energy_thres)
     {
       break;
     }
@@ -627,6 +631,7 @@ void Room::simul_ray(float phi,
         ray_scat_energy,
         travel_time,
         time_thres,
+        energy_thres,
         sound_speed,
         output);
 
@@ -650,6 +655,7 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
   float mic_radius,
   float scatter_coef,
   float time_thres,
+  float energy_thres,
   float sound_speed)
   {
 
@@ -663,6 +669,7 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
    mic_radius: the radius of the circular(2D) or spherical(3D) microphone
    scatter_coef: the scattering coefficients used for the walls of the room
    time_thres: the simulation time threshold for each ray
+   energy_thresh: The energy threshold for the ray
    sound_speed: the constant speed of sound
     
    :returns: 
@@ -712,11 +719,12 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
       }
 
       simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-        time_thres, sound_speed, output);
+        time_thres, energy_thres, sound_speed, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       if (dim == 2)
       {
+		// Get out of the theta loop
         break;
       }
     }

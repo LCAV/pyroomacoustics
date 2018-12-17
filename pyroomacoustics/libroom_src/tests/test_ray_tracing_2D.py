@@ -164,13 +164,14 @@ if __name__ == '__main__':
 
 
     time_thres = 0.8 #s
+    energy_thres = 0.001
     sound_speed = 340
 
     fs = 16000
 
     # compute the log with the C++ code
     chrono = time.time()
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, sound_speed)
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
     print(nb_phis*nb_thetas, " rays traced in ", time.time()-chrono, " seconds" )
     print(len(log), " entries to build the rir")
 
