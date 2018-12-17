@@ -574,22 +574,30 @@ void Room::simul_ray(float phi,
     // Before updatign the ray's characteristic, we must see
     // if the mic is intersected on the [start, hit_point] segment
 
-    // - If yes, we compute the energy at the mic_intersection point
+    // If yes, we compute the energy contribution at the mic
     // and we continue the ray
     if (intersects_mic(start, hit_point, mic_pos, mic_radius))
     {
 
-      Eigen::VectorXf hit_point_mic = mic_intersection(start, hit_point, mic_pos, mic_radius);
+      distance = (start - mic_pos).norm();
+      
+      float travel_time_at_mic = travel_time;
+      update_travel_time(travel_time_at_mic, distance, sound_speed);
+      
+      //Now we compute the gamma term with B defining the total distance
+      // (we don't want to confuse with the other total_dist that should
+      // not be modified here)
+      // Also 'energy' should not be modified : we need another variable
+      
+      float B = total_dist + distance;
+      float energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
 
-      distance = (start - hit_point_mic).norm();
-
-      float travel_time_to_mic = travel_time;
-
-      update_travel_time(travel_time_to_mic, distance, sound_speed);
-
-      if (travel_time_to_mic < time_thres and energy > energy_thres) {
-        output.push_back(entry {{travel_time_to_mic,energy}});
+      if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+      {
+        output.push_back(entry {{travel_time_at_mic, energy_at_mic}});
       }
+      
+      
     }
 
     // Update the characteristics
@@ -728,12 +736,6 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
         break;
       }
     }
-  }
-
-  // Now we must apply the distance attenuation for every ray
-  for (auto it = output.begin(); it != output.end(); ++it)
-  {
-    (*it)[1] /= (*it)[0]*sound_speed;
   }
   
   return output;

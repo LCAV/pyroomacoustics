@@ -204,7 +204,7 @@ if __name__ == '__main__':
     nb_thetas = 50
 
     #Good one
-    source_pos = [2,2,1]
+    source_pos = [0.5,1,0.5]
 
     mic_radius = 0.5
 
