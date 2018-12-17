@@ -1,7 +1,8 @@
 #include <iostream>
 #include "room.hpp"
 
-int Room::image_source_model(const Eigen::VectorXf & source_location, int max_order) {
+int Room::image_source_model(const Eigen::VectorXf & source_location, int max_order)
+{
   /*
    * This is the top-level method to run the image source model
    */
@@ -27,7 +28,9 @@ int Room::image_source_model(const Eigen::VectorXf & source_location, int max_or
   return fill_sources();
 }
 
-int Room::fill_sources() {
+
+int Room::fill_sources()
+{
   int n_sources = visible_sources.size();
 
   // Create linear arrays to store the image sources
@@ -39,7 +42,8 @@ int Room::fill_sources() {
     attenuations.resize(n_sources);
     visible_mics.resize(microphones.cols(), n_sources);
 
-    for (int i = n_sources - 1; i >= 0; i--) {
+    for (int i = n_sources - 1; i >= 0; i--)
+    {
       ImageSource & top = visible_sources.top(); // sample top of stack
 
       // fill the arrays
@@ -56,7 +60,9 @@ int Room::fill_sources() {
   return 0;
 }
 
-void Room::image_sources_dfs(ImageSource &is, int max_order) {
+
+void Room::image_sources_dfs(ImageSource &is, int max_order)
+{
   /*
    * This function runs a depth first search (DFS) on the tree of image sources
    */
@@ -80,7 +86,8 @@ void Room::image_sources_dfs(ImageSource &is, int max_order) {
     return;
 
   // Then, check all the reflections across the walls
-  for (size_t wi = 0; wi < walls.size(); wi++) {
+  for (size_t wi = 0; wi < walls.size(); wi++)
+  {
     int dir = walls[wi].reflect(is.loc, new_is.loc); // the reflected location
 
     // We only check valid reflections (normals should point outward from the room
@@ -98,7 +105,9 @@ void Room::image_sources_dfs(ImageSource &is, int max_order) {
   }
 }
 
-bool Room::is_visible_dfs(const Eigen::VectorXf & p, ImageSource & is) {
+
+bool Room::is_visible_dfs(const Eigen::VectorXf & p, ImageSource & is)
+{
   /*
      Returns true if the given sound source (with image source id) is visible from point p.
 
@@ -114,7 +123,8 @@ bool Room::is_visible_dfs(const Eigen::VectorXf & p, ImageSource & is) {
   if (is_obstructed_dfs(p, is))
     return false;
 
-  if (is.parent != NULL) {
+  if (is.parent != NULL)
+  {
     Eigen::VectorXf intersection;
     intersection.resize(dim);
 
@@ -137,7 +147,9 @@ bool Room::is_visible_dfs(const Eigen::VectorXf & p, ImageSource & is) {
   return true;
 }
 
-bool Room::is_obstructed_dfs(const Eigen::VectorXf & p, ImageSource & is) {
+
+bool Room::is_obstructed_dfs(const Eigen::VectorXf & p, ImageSource & is)
+{
   /*
      Checks if there is a wall obstructing the line of sight going from a source to a point.
 
@@ -162,8 +174,10 @@ bool Room::is_obstructed_dfs(const Eigen::VectorXf & p, ImageSource & is) {
       int ret = walls[wall_id].intersection(is.loc, p, intersection);
 
       // There is an intersection and it is distinct from segment endpoints
-      if (ret == Wall::Isect::VALID || ret == Wall::Isect::BNDRY) {
-        if (is.parent != NULL) {
+      if (ret == Wall::Isect::VALID || ret == Wall::Isect::BNDRY)
+      {
+        if (is.parent != NULL)
+        {
           // Test if the intersection point and the image are on
           // opposite sides of the generating wall 
           // We ignore the obstruction if it is inside the
@@ -182,12 +196,13 @@ bool Room::is_obstructed_dfs(const Eigen::VectorXf & p, ImageSource & is) {
   return false;
 }
 
+
 int Room::image_source_shoebox(
   const Eigen::VectorXf & source,
-    const Eigen::VectorXf & room_size,
-      const Eigen::VectorXf & absorption,
-        int max_order
-) {
+  const Eigen::VectorXf & room_size,
+  const Eigen::VectorXf & absorption,
+  int max_order)
+{
   // precompute powers of the absorption coefficients
   std::vector < float > transmission_pwr((max_order + 1) * 2 * dim);
   for (int d = 0; d < 2 * dim; d++)
@@ -201,11 +216,7 @@ int Room::image_source_shoebox(
     visible_sources.pop();
 
   // L1 ball of room images
-  int point[3] = {
-    0,
-    0,
-    0
-  };
+  int point[3] = {0,0,0};
 
   // Take 2D case into account
   int z_max = max_order;
@@ -213,13 +224,16 @@ int Room::image_source_shoebox(
     z_max = 0;
 
   // Walk on all the points of the discrete L! ball of radius max_order
-  for (point[2] = -z_max; point[2] <= z_max; point[2]++) {
+  for (point[2] = -z_max; point[2] <= z_max; point[2]++)
+  {
     int y_max = max_order - abs(point[2]);
-    for (point[1] = -y_max; point[1] <= y_max; point[1]++) {
+    for (point[1] = -y_max; point[1] <= y_max; point[1]++)
+    {
       int x_max = y_max - abs(point[1]);
       if (x_max < 0) x_max = 0;
 
-      for (point[0] = -x_max; point[0] <= x_max; point[0]++) {
+      for (point[0] = -x_max; point[0] <= x_max; point[0]++)
+      {
         visible_sources.push(ImageSource());
         ImageSource & is = visible_sources.top();
         is.loc.resize(dim);
@@ -230,7 +244,8 @@ int Room::image_source_shoebox(
         is.gen_wall = -1;
 
         // Now compute the reflection, the order, and the multiplicative constant
-        for (int d = 0; d < dim; d++) {
+        for (int d = 0; d < dim; d++)
+        {
           // Compute the reflected source
           float step = abs(point[d]) % 2 == 1 ? room_size.coeff(d) - source.coeff(d) : source.coeff(d);
           is.loc[d] = point[d] * room_size.coeff(d) + step;
@@ -240,10 +255,12 @@ int Room::image_source_shoebox(
 
           // attenuation can also be computed this way
           int p1 = 0, p2 = 0;
-          if (point[d] > 0) {
+          if (point[d] > 0)
+          {
             p1 = point[d] / 2;
             p2 = (point[d] + 1) / 2;
-          } else if (point[d] < 0) {
+          } else if (point[d] < 0)
+          {
             p1 = abs((point[d] - 1) / 2);
             p2 = abs(point[d] / 2);
           }
@@ -258,7 +275,9 @@ int Room::image_source_shoebox(
   return fill_sources();
 }
 
-float Room::get_max_distance() {
+
+float Room::get_max_distance()
+{
 
   /* This function outputs a value L that is strictly larger than any distance
    that a ray could travel in straight line in the 2D or 3D room without
@@ -277,21 +296,25 @@ float Room::get_max_distance() {
 
   size_t n_walls = walls.size();
 
-  for (size_t i(0); i < n_walls; ++i) {
+  for (size_t i(0); i < n_walls; ++i)
+  {
     Wall wi = this -> get_wall(i);
 
     Eigen::Vector3f max_coord(0, 0, 0);
     Eigen::Vector3f min_coord(0, 0, 0);
 
-    if (this -> dim == 2) {
+    if (this -> dim == 2)
+    {
       max_coord.head(2) = wi.corners.rowwise().maxCoeff();
       min_coord.head(2) = wi.corners.rowwise().minCoeff();
-    } else {
+    } else
+    {
       max_coord = wi.corners.rowwise().maxCoeff();
       min_coord = wi.corners.rowwise().minCoeff();
     }
 
-    if (i == 0) {
+    if (i == 0)
+    {
       maxX = max_coord[0];
       minX = min_coord[0];
       maxY = max_coord[1];
@@ -299,7 +322,9 @@ float Room::get_max_distance() {
       maxZ = max_coord[2];
       minZ = min_coord[2];
 
-    } else {
+    }
+    else
+    {
 
       // Update max point
       if (max_coord[0] > maxX)
@@ -328,10 +353,12 @@ float Room::get_max_distance() {
 
 }
 
+
 std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
   const Eigen::VectorXf & start,
   const Eigen::VectorXf & end,
-  bool scattered_ray) {
+  bool scattered_ray)
+  {
 
   /* This function is called in 2 different contexts :
    * 
@@ -373,7 +400,8 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
   // Upperbound on the min distance that we could find
   float min_dist(max_dist);
 
-  for (size_t i(0); i < walls.size(); ++i) {
+  for (size_t i(0); i < walls.size(); ++i)
+  {
 
     // Scattered rays can only intersects obstructing walls
     // So if the wall is not obstructing, we need no further computations
@@ -390,11 +418,12 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
     // As a side effect, temp_hit gets a value (VectorXf) here
     bool intersects = (w.intersection(start, end, temp_hit) > -1);
 
-    if (intersects) {
-
+    if (intersects)
+    {
       float temp_dist = (start - temp_hit).norm();
 
-      if (temp_dist > libroom_eps and temp_dist < min_dist) {
+      if (temp_dist > libroom_eps and temp_dist < min_dist)
+      {
         min_dist = temp_dist;
         result = temp_hit;
         next_wall_index = i;
@@ -405,6 +434,7 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
   return std::make_tuple(result, next_wall_index);
 }
 
+
 bool Room::scat_ray(const Wall & last_wall,
   const Eigen::VectorXf & hit_point,
   float radius,
@@ -412,7 +442,8 @@ bool Room::scat_ray(const Wall & last_wall,
   float travel_time,
   float time_thres,
   float sound_speed,
-  std::vector<entry> & output) {
+  std::list<entry> & output)
+  {
 
   /*
 	Traces a one-hop scattering ray from the last wall hit to the microphone.
@@ -439,7 +470,8 @@ bool Room::scat_ray(const Wall & last_wall,
   std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
 
   // No wall intersecting the direct scattered ray
-  if (next_wall_index == -1) {
+  if (next_wall_index == -1)
+  {
 
     // As the ray is shot towards the microphone center,
     // the hop dist can be easily computed
@@ -450,18 +482,17 @@ bool Room::scat_ray(const Wall & last_wall,
     // Remember that the energy distance attenuation will be 
     // performed once all the ray arrived.
 
-    if (travel_time < time_thres) {
+    if (travel_time < time_thres)
+    {
       //std::cout << "appending scat rays : " <<std::endl;
       output.push_back(entry {{travel_time,scat_energy}});
       result = true;
-
     }
-
   }
 
   return result;
-
 }
+
 
 void Room::simul_ray(float phi,
   float theta,
@@ -470,7 +501,8 @@ void Room::simul_ray(float phi,
   float scatter_coef,
   float time_thres,
   float sound_speed,
-  std::vector < entry > & output) {
+  std::list < entry > & output)
+  {
 
   /*This function simulates one ray and fills the output vector with
    all the entries produced by this ray (when the "direct"
@@ -502,7 +534,8 @@ void Room::simul_ray(float phi,
 
   //------------------ RAY TRACING --------------------
 
-  while (true) {
+  while (true)
+  {
 
     /*//Debugging
     std::cout << "---\n" << "start : " << start[0] << " " << start[1] << " " << start[2] << std::endl;
@@ -518,7 +551,8 @@ void Room::simul_ray(float phi,
     //std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
 
     // The wall that has just been hit
-    if (next_wall_index == -1) {
+    if (next_wall_index == -1)
+    {
       //std::cout << "No wall intersected" << std::endl;
       //~ std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
       //~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
@@ -536,7 +570,8 @@ void Room::simul_ray(float phi,
 
     // - If yes, we compute the energy at the mic_intersection point
     // and we continue the ray
-    if (intersects_mic(start, hit_point, mic_pos, mic_radius)) {
+    if (intersects_mic(start, hit_point, mic_pos, mic_radius))
+    {
 
       Eigen::VectorXf hit_point_mic = mic_intersection(start, hit_point, mic_pos, mic_radius);
 
@@ -551,7 +586,6 @@ void Room::simul_ray(float phi,
         output.push_back(entry {{travel_time_to_mic,energy}});
         //std::cout << "\nAdded direct ray" <<std::endl;
       }
-
     }
 
     // Update the characteristics
@@ -567,14 +601,16 @@ void Room::simul_ray(float phi,
     //std::cout << "post energy : " <<  energy <<std::endl;
 
     // Check if we reach the time threshold for this ray
-    if (travel_time > time_thres) {
+    if (travel_time > time_thres)
+    {
       break;
     }
 
     // Let's simulate the scattered ray induced by the rebound on
     // the wall
 
-    if (scatter_coef > 0) {
+    if (scatter_coef > 0)
+    {
 
       float ray_scat_energy = compute_scat_energy(energy,
         scatter_coef,
@@ -605,16 +641,17 @@ void Room::simul_ray(float phi,
     end = compute_reflected_end(start, hit_point, wall.normal, max_dist);
     start = hit_point;
   }
-
 }
 
-std::vector < entry > Room::get_rir_entries(size_t nb_phis,
+
+std::list < entry > Room::get_rir_entries(size_t nb_phis,
   size_t nb_thetas,
   const Eigen::VectorXf source_pos,
-    float mic_radius,
-    float scatter_coef,
-    float time_thres,
-    float sound_speed) {
+  float mic_radius,
+  float scatter_coef,
+  float time_thres,
+  float sound_speed)
+  {
 
   /*This method produced all the time/energy entries needed to compute
    the RIR using ray-tracing with the following parameters
@@ -633,17 +670,20 @@ std::vector < entry > Room::get_rir_entries(size_t nb_phis,
    reprensenting a ray (scattered or not) reaching the microphone
    */
 
-  if ((source_pos - mic_pos).norm() < mic_radius) {
+  if ((source_pos - mic_pos).norm() < mic_radius)
+  {
     std::cerr << "The source is inside the microphone ! " << std::endl;
     throw std::exception();
   }
 
-  if (not contains(mic_pos)) {
+  if (not contains(mic_pos))
+  {
     std::cerr << "The microphone is not inside the room ! " << std::endl;
     throw std::exception();
   }
 
-  if (not contains(source_pos)) {
+  if (not contains(source_pos))
+  {
     std::cerr << "The source is not inside the room ! " << std::endl;
     throw std::exception();
   }
@@ -651,14 +691,16 @@ std::vector < entry > Room::get_rir_entries(size_t nb_phis,
   for (auto elem: obstructing_walls)
     std::cout << "obstructing : " << elem << std::endl;
 
-  std::vector < entry > output;
+  std::list <entry> output;
 
-  for (size_t i(0); i < nb_phis; ++i) {
+  for (size_t i(0); i < nb_phis; ++i)
+  {
     //std::cout << "\n===============\ni="<< i << std::endl;
     float phi = 2 * M_PI * (float) i / nb_phis;
 
-    for (size_t j(0); j < nb_thetas; ++j) {
 
+    for (size_t j(0); j < nb_thetas; ++j)
+    {
       //std::cout << "j=" << j << std::endl;
 
       float theta = std::acos(2 * ((float) j / nb_thetas) - 1);
@@ -673,23 +715,26 @@ std::vector < entry > Room::get_rir_entries(size_t nb_phis,
         time_thres, sound_speed, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
-      if (dim == 2) {
+      if (dim == 2)
+      {
         break;
       }
     }
-
   }
 
   // Now we must apply the distance attenuation for every ray
-  for (size_t k(0); k < output.size(); k++) {
-    output[k][1] /= (output[k][0] * sound_speed);
+  for (auto it = output.begin(); it != output.end(); ++it)
+  {
+    (*it)[1] /= (*it)[0]*sound_speed;
   }
-
+  
   return output;
 
 }
 
-bool Room::contains(const Eigen::VectorXf point) {
+
+bool Room::contains(const Eigen::VectorXf point)
+{
 
   /*This methods checks if a point is contained in the room
    * 
@@ -699,7 +744,8 @@ bool Room::contains(const Eigen::VectorXf point) {
    
    
   // Sanity check
-  if (dim != point.size()) {
+  if (dim != point.size())
+  {
     std::cerr << "Error in Room::contains()\nThe room and the point have different dimensions !" << std::endl;
     throw std::exception();
   }
@@ -712,25 +758,32 @@ bool Room::contains(const Eigen::VectorXf point) {
 
   size_t n_walls = walls.size();
 
-  for (size_t i(0); i < n_walls; ++i) {
+  for (size_t i(0); i < n_walls; ++i)
+  {
     Wall &wi = this -> get_wall(i);
 
     Eigen::Vector3f min_coord(0, 0, 0);
 
-    if (this -> dim == 2) {
+    if (this -> dim == 2)
+    {
       min_coord.head(2) = wi.corners.rowwise().minCoeff();
-    } else {
+    } 
+    else
+    {
       min_coord = wi.corners.rowwise().minCoeff();
     }
 
     // First iteration		
-    if (i == 0) {
+    if (i == 0)
+    {
       minX = min_coord[0];
       minY = min_coord[1];
       minZ = min_coord[2];
 
       // Other iterations
-    } else {
+    }
+    else
+    {
 
       if (min_coord[0] < minX)
         minX = min_coord[0];
@@ -759,8 +812,8 @@ bool Room::contains(const Eigen::VectorXf point) {
   size_t n_intersections(0);
   bool ambiguous_intersection = false;
 
-  do {
-	  
+  do
+  {
 	// We restart the computation with a modified output_point as long as we find
 	// an ambiguous intersection (on the edge or on the endpoint of a segment)
 	// Note : ambiguous intersection means that Wall::intersects() method
@@ -774,19 +827,20 @@ bool Room::contains(const Eigen::VectorXf point) {
     outside_point[0] -= (float)(rand() % 27) / 50;
     outside_point[1] -= (float)(rand() % 22) / 26;
 
-    if (dim == 3) {
+    if (dim == 3)
+    {
       outside_point[2] -= (float)(rand() % 24 / 47);
     }
 
-    for (size_t i(0); i < n_walls; ++i) {
+    for (size_t i(0); i < n_walls; ++i)
+    {
 
       Wall & w = walls[i];
-
       int result = w.intersects(outside_point, point);
-
       ambiguous_intersection = ambiguous_intersection or result > 0;
 
-      if (result > -1) {
+      if (result > -1)
+      {
         n_intersections++;
       }
     }
@@ -795,6 +849,5 @@ bool Room::contains(const Eigen::VectorXf point) {
   // If an odd number of walls have been intersected,
   // then the point is in the room  => return true
   return ((n_intersections % 2) == 1);
-
 }
 

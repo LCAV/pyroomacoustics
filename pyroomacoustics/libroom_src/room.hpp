@@ -91,7 +91,7 @@ class Room {
     float travel_time,
     float time_thres,
     float sound_speed,
-    std::vector<entry> & output);
+    std::list<entry> & output);
 
   void simul_ray(float init_phi,
     float init_theta,
@@ -100,9 +100,9 @@ class Room {
     float scatter_coef,
     float time_thres,
     float sound_speed,
-    std::vector <entry> & output);
+    std::list <entry> & output);
 
-  std::vector<entry> get_rir_entries(size_t nb_phis,
+  std::list<entry> get_rir_entries(size_t nb_phis,
     size_t nb_thetas,
     const Eigen::VectorXf source_pos,
     float mic_radius,

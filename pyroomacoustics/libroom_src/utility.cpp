@@ -8,7 +8,8 @@
 using namespace Eigen;
 extern float libroom_eps;
 
-double clamp(double value, double min, double max) {
+double clamp(double value, double min, double max)
+{
   if (value < min)
     return min;
   if (value > max)
@@ -17,12 +18,14 @@ double clamp(double value, double min, double max) {
 }
 
 Vector2f equation(const Vector2f & p1,
-  const Vector2f & p2) {
+  const Vector2f & p2)
+  {
   /* Function that computes the 'a' and 'b' coefficients in the expression
   y = a*x + b that defines the line passing by the points p1 and p2.
   */
 
-  if (p1[0] == p2[0]) {
+  if (p1[0] == p2[0])
+  {
     std::cerr << "The line passing by those two points cannot be described by a linear function of x." << std::endl;
     throw std::exception();
   }
@@ -34,7 +37,9 @@ Vector2f equation(const Vector2f & p1,
   return result;
 }
 
-VectorXf compute_segment_end(const VectorXf start, float length, float phi, float theta) {
+
+VectorXf compute_segment_end(const VectorXf start, float length, float phi, float theta)
+{
 
   /* Given a starting point, the length of the segment and a 2D or 3D
    orientation, this function computes the end point of the segment.
@@ -47,12 +52,14 @@ VectorXf compute_segment_end(const VectorXf start, float length, float phi, floa
    :returns:
    an array of size 2 or 3 corresponding to the end point of this segment*/
 
-  if (start.size() == 2) {
+  if (start.size() == 2)
+  {
     return start + length * Vector2f(cos(phi), sin(phi));
     //return 0;
   }
 
-  if (start.size() == 3) {
+  if (start.size() == 3)
+  {
     return start + length * Vector3f(sin(theta) * cos(phi),
       sin(theta) * sin(phi),
       cos(theta));
@@ -66,7 +73,8 @@ VectorXf compute_segment_end(const VectorXf start, float length, float phi, floa
 VectorXf compute_reflected_end(const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & wall_normal,
-  float length) {
+  float length)
+  {
 	  
   /* This method computes the reflection of one point with respect to
    a precise hit_point on a wall. Also, the distance between the
@@ -90,7 +98,8 @@ VectorXf compute_reflected_end(const VectorXf & start,
   // Reverse the normal if the angle between the incoming ray and 
   // the normal is more than PI/2 rad
 
-  if (cos_angle_between((-1) * incident, n) < 0.) {
+  if (cos_angle_between((-1) * incident, n) < 0.)
+  {
     n = (-1) * wall_normal;
   }
 
@@ -98,10 +107,12 @@ VectorXf compute_reflected_end(const VectorXf & start,
 
 }
 
+
 bool intersects_mic(const VectorXf & start,
   const VectorXf & end,
   const VectorXf & center,
-  float radius) {
+  float radius)
+  {
 
   /* This function checks if a segment crosses the microphone. 
    We must pay attention : the function dist_line_point considers
@@ -120,7 +131,8 @@ bool intersects_mic(const VectorXf & start,
   size_t s_end = end.size();
   size_t s_center = center.size();
 
-  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_center < 2 or s_center > 3) {
+  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_center < 2 or s_center > 3)
+  {
     std::cerr << "intersects_mic : Only 2D and 3D vectors are supported" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
     std::cerr << "Dim end = " << s_end << std::endl;
@@ -128,7 +140,8 @@ bool intersects_mic(const VectorXf & start,
     throw std::exception();
   }
 
-  if (s_start != s_center or s_start != s_end or s_end != s_center) {
+  if (s_start != s_center or s_start != s_end or s_end != s_center)
+  {
     std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
     std::cerr << "Dim end = " << s_end << std::endl;
@@ -139,7 +152,8 @@ bool intersects_mic(const VectorXf & start,
   // Here we make sure that the ray hits the microphone 
   // We take a small margin to avoid bugs due to rounding errors
   // in the mic_intersection function
-  if ((start - center).norm() < radius - libroom_eps or(end - center).norm() < radius - libroom_eps) {
+  if ((start - center).norm() < radius - libroom_eps or(end - center).norm() < radius - libroom_eps)
+  {
     std::cerr << "One of the end point is inside the mic !" << std::endl;
   }
 
@@ -158,7 +172,9 @@ bool intersects_mic(const VectorXf & start,
   return intersects and on_segment;
 }
 
-Vector2f solve_quad(float A, float B, float C) {
+
+Vector2f solve_quad(float A, float B, float C)
+{
   /* This function outputs the two solutions of the equation
    Ax^2 + Bx + C = 0
     
@@ -184,10 +200,12 @@ Vector2f solve_quad(float A, float B, float C) {
 
 }
 
+
 VectorXf mic_intersection(const VectorXf & start,
   const VectorXf & end,
   const VectorXf & center,
-  float radius) {
+  float radius)
+  {
 
   /* This function computes the precise intersection point between the mic and the ray.
    This function should ONLY be called only if there is an intersection.
@@ -204,7 +222,8 @@ VectorXf mic_intersection(const VectorXf & start,
   size_t s_end = end.size();
   size_t s_center = center.size();
 
-  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_center < 2 or s_center > 3) {
+  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_center < 2 or s_center > 3)
+  {
     std::cerr << "mic_intersection : Only 2D and 3D vectors are supported" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
     std::cerr << "Dim end = " << s_end << std::endl;
@@ -212,7 +231,8 @@ VectorXf mic_intersection(const VectorXf & start,
     throw std::exception();
   }
 
-  if (s_start != s_center or s_start != s_end or s_end != s_center) {
+  if (s_start != s_center or s_start != s_end or s_end != s_center)
+  {
     std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
     std::cerr << "Dim end = " << s_end << std::endl;
@@ -223,11 +243,13 @@ VectorXf mic_intersection(const VectorXf & start,
   // Here we make sure that the ray hits the microphone 
   // We take a small margin to avoid bugs due to rounding errors
   // in the mic_intersection function
-  if ((start - center).norm() < radius - libroom_eps) {
+  if ((start - center).norm() < radius - libroom_eps)
+  {
     std::cerr << "The start point is inside the mic !" << std::endl;
   }
 
-  if (start.size() == 2) {
+  if (start.size() == 2)
+  {
 
     Vector2f result1;
     Vector2f result2;
@@ -248,7 +270,8 @@ VectorXf mic_intersection(const VectorXf & start,
       // See the formulat in the first answer of this post :
       // https://math.stackexchange.com/questions/228841/how-do-i-calculate-the-intersections-of-a-straight-line-and-a-circle
 
-    } else {
+    } else
+    {
 
       Vector2f eq = equation(start, end);
       float m = eq[0];
@@ -268,13 +291,15 @@ VectorXf mic_intersection(const VectorXf & start,
     // Now we must return only the closest intersection point 
     // to the start of the segment
 
-    if ((start - result2).norm() < (start - result1).norm()) {
+    if ((start - result2).norm() < (start - result1).norm())
+    {
       return result2;
     }
     return result1;
   }
 
-  if (start.size() == 3) {
+  if (start.size() == 3)
+  {
 
     Vector3f result1;
     Vector3f result2;
@@ -298,12 +323,14 @@ VectorXf mic_intersection(const VectorXf & start,
     float ocl_dot = o_c.dot(l);
     float delta = ocl_dot * ocl_dot - o_c.norm() * o_c.norm() + radius * radius;
 
-    if (delta > 0) {
+    if (delta > 0)
+    {
 
       result1 = start - l * (ocl_dot + sqrt(delta));
       result2 = start - l * (ocl_dot - sqrt(delta));
 
-      if ((start - result2).norm() < (start - result1).norm()) {
+      if ((start - result2).norm() < (start - result1).norm())
+      {
         return result2;
       }
       return result1;
@@ -321,7 +348,9 @@ VectorXf mic_intersection(const VectorXf & start,
   throw std::exception();
 }
 
-void update_travel_time(float & travel_time, float hop_length, float sound_speed) {
+
+void update_travel_time(float & travel_time, float hop_length, float sound_speed)
+{
 
   /* This function updates the travel time according to the newly 
    travelled distance
@@ -333,8 +362,10 @@ void update_travel_time(float & travel_time, float hop_length, float sound_speed
   travel_time = travel_time + hop_length / sound_speed;
 }
 
+
 void update_energy_wall(float & energy,
-  const Wall & wall) {
+  const Wall & wall)
+  {
 
   /* This function updates the ray's energy with respect to the wall's
    absorption coefficient.
@@ -351,7 +382,8 @@ float compute_scat_energy(float energy,
   const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
-  float radius) {
+  float radius)
+  {
 	  
   /* This function computes the energy of a scattered ray. This energy
    * depends on several factors as explained below
@@ -368,7 +400,8 @@ float compute_scat_energy(float energy,
    
   // Make sure the normal points inside the room
   VectorXf n = wall.normal;
-  if (cos_angle_between(start - hit_point, n) < 0.) {
+  if (cos_angle_between(start - hit_point, n) < 0.)
+  {
     n = (-1) * n;
   }
   
@@ -395,13 +428,21 @@ float compute_scat_energy(float energy,
   return energy * scat_coef * 2 * cos_theta * gamma_term;
 }
 
-std::forward_list < entry > test() {
 
-  std::forward_list < entry > mylist;
-  mylist.push_front(entry {{1.,2.}});
-  mylist.push_front(entry {{4.,2.}});
-  mylist.push_front(entry {{5.,2.}});
+std::list < entry > test()
+{
 
+  std::list < entry > mylist;
+  mylist.push_back(entry {{1.,2.}});
+  mylist.push_back(entry {{4.,2.}});
+  mylist.push_back(entry {{5.,2.}});
+  
+  
+  for (auto it = mylist.begin(); it != mylist.end(); ++it)
+  {
+    (*it)[0] = (*it)[0]+3;
+  }
+  
   return mylist;
 
 }

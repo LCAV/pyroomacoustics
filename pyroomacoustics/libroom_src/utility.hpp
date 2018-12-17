@@ -6,7 +6,9 @@
 #include "geometry.hpp"
 #include <vector>
 #include <array>
-#include <forward_list>
+#include <list>
+
+
 
 
 /* The 'entry' type is simply defined as an array of 2 floats.
@@ -18,6 +20,7 @@ typedef std::array<float,2> entry;
 
 
 using namespace Eigen;
+using namespace std;
 
 double clamp(double value, double min, double max);
 
@@ -55,7 +58,7 @@ float compute_scat_energy(float energy, float scat_coef,
   const VectorXf & mic_pos,
   float radius);
 
-std::forward_list < entry > test();
+std::list <entry> test();
 
 
 
