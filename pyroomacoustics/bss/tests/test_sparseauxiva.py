@@ -12,14 +12,19 @@ from mir_eval.separation import bss_eval_images
 
 # First, open and concatanate wav files from the CMU dataset.
 # concatanate audio samples to make them look long enough
-wav_files = [
+wav_files_full = [
+    ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+     'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
+     'examples/input_samples/cmu_arctic_us_aew_a0003.wav', ],
     ['examples/input_samples/cmu_arctic_us_axb_a0004.wav',
      'examples/input_samples/cmu_arctic_us_axb_a0005.wav',
      'examples/input_samples/cmu_arctic_us_axb_a0006.wav', ],
-    ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
-     'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
-     'examples/input_samples/cmu_arctic_us_aew_a0003.wav', ]
+    ['examples/input_samples/arctic_a0007.wav',
+     'examples/input_samples/arctic_a0008.wav',
+     'examples/input_samples/arctic_a0009.wav', ]
 ]
+
+wav_files = wav_files_full[0:3:2]
 
 
 def test_sparseauxiva():
