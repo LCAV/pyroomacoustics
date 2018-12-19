@@ -56,7 +56,7 @@ class Room {
 
   // Very useful for raytracing
   // 1. Position format that fits the need of ray_tracing
-  int n_mics;
+  uint n_mics;
   // 2. A distance after which a ray must have hit at least 1 wall
   float max_dist;
 
@@ -100,26 +100,24 @@ class Room {
 	const Wall & last_wall,
 	const Eigen::VectorXf & start,
 	const Eigen::VectorXf & hit_point,
-	const Eigen::VectorXf & mic_pos,
 	float radius,
 	float travel_time,
 	float time_thres,
 	float energy_thres,
 	float sound_speed,
-	mic_log & output);
+	room_log & output);
 
   void simul_ray(float init_phi,
     float init_theta,
     const Eigen::VectorXf source_pos,
-    const Eigen::VectorXf mic_pos,
     float mic_radius,
     float scatter_coef,
     float time_thres,
     float energy_thres,
     float sound_speed,
-    mic_log & output);
+    room_log & output);
 
-  mic_log get_rir_entries(size_t nb_phis,
+  room_log get_rir_entries(size_t nb_phis,
     size_t nb_thetas,
     const Eigen::VectorXf source_pos,
     float mic_radius,

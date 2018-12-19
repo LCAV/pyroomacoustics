@@ -441,13 +441,12 @@ bool Room::scat_ray(
   const Wall & wall,
   const Eigen::VectorXf & prev_last_hit,
   const Eigen::VectorXf & hit_point,
-  const Eigen::VectorXf & mic_pos,
   float radius,
   float travel_time,
   float time_thres,
   float energy_thres,
   float sound_speed,
-  mic_log & output)
+  room_log & output)
   {
 
   /*
@@ -462,7 +461,6 @@ bool Room::scat_ray(
     prev_last_hit: (array size 2 or 3) the previous last wall hit_point position (needed to check that 
       the wall normal is correctly oriented)
     hit_point: (array size 2 or 3) defines the last wall hit position
-    mic_pos: (array size 2 or 3) defines the microphone position
     radius : The radius of the circle/sphere microphone    
     travel_time: The cumulated travel time of the ray until the last wall hit
     time_thresh: The time threshold for the ray
@@ -473,7 +471,13 @@ bool Room::scat_ray(
     :return : true if the scattered ray reached the mic, false otw
 	*/
 
-  float scat_energy = compute_scat_energy(energy,
+  bool result = true;
+
+  for(uint k(0); k < n_mics; ++k){
+	  
+	Eigen::VectorXf mic_pos = microphones.col(k);  
+	
+    float scat_energy = compute_scat_energy(energy,
 		scatter_coef,
         wall,
         prev_last_hit,
@@ -481,31 +485,36 @@ bool Room::scat_ray(
         mic_pos,
         radius);
         
-  bool result = false;
+    
 
-  Eigen::VectorXf dont_care;
-  int next_wall_index(-1);
+    Eigen::VectorXf dont_care;
+    int next_wall_index(-1);
 
-  std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
+    std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
 
-  // No wall intersecting the direct scattered ray
-  if (next_wall_index == -1)
-  {
-
-    // As the ray is shot towards the microphone center,
-    // the hop dist can be easily computed
-    float hop_dist = (hit_point - mic_pos).norm() - radius;
-
-    update_travel_time(travel_time, hop_dist, sound_speed);
-
-    // Remember that the energy distance attenuation will be 
-    // performed once all the ray arrived.
-
-    if (travel_time < time_thres and scat_energy > energy_thres)
+    // No wall intersecting the direct scattered ray
+    if (next_wall_index == -1)
     {
-      //std::cout << "appending scat rays : " <<std::endl;
-      output.push_back(entry {{travel_time,scat_energy}});
-      result = true;
+
+      // As the ray is shot towards the microphone center,
+     // the hop dist can be easily computed
+      float hop_dist = (hit_point - mic_pos).norm() - radius;
+
+      update_travel_time(travel_time, hop_dist, sound_speed);
+
+      // Remember that the energy distance attenuation will be 
+      // performed once all the ray arrived.
+
+      if (travel_time < time_thres and scat_energy > energy_thres)
+      {
+        //std::cout << "appending scat rays : " <<std::endl;
+        output[k].push_back(entry {{travel_time,scat_energy}});
+        result = result and true;
+      }
+      else
+      {
+	    result = false;
+	  }
     }
   }
 
@@ -516,18 +525,17 @@ bool Room::scat_ray(
 void Room::simul_ray(float phi,
   float theta,
   const Eigen::VectorXf source_pos,
-  const Eigen::VectorXf mic_pos,
   float mic_radius,
   float scatter_coef,
   float time_thres,
   float energy_thres,
   float sound_speed,
-  mic_log & output)
+  room_log & output)
   {
 
-  /*This function simulates one ray and fills the output vector with
-   all the entries produced by this ray (when the "direct"
-   ray or any scattered ray reaches the microphone)
+  /*This function simulates one ray and fills the output vectors of 
+   every microphone with all the entries produced by this ray
+   (when the "direct" ray or any scattered ray reaches a microphone)
     
    phi and theta : give the orientation of the ray (2D or 3D)
    source_pos: (array size 2 or 3) is the location of the sound source (NOT AN IMAGE SOURCE)
@@ -590,34 +598,41 @@ void Room::simul_ray(float phi,
     float distance(0);
 
     // Before updatign the ray's characteristic, we must see
-    // if the mic is intersected on the [start, hit_point] segment
+    // if any mic is intersected by the [start, hit_point] segment
 
-    // If yes, we compute the energy contribution at the mic
-    // and we continue the ray
-    if (intersects_mic(start, hit_point, mic_pos, mic_radius))
+
+    for(uint k(0); k<n_mics; k++)
     {
-
-      distance = (start - mic_pos).norm();
-      
-      float travel_time_at_mic = travel_time;
-      update_travel_time(travel_time_at_mic, distance, sound_speed);
-      
-      //Now we compute the gamma term with B defining the total distance
-      // (we don't want to confuse with the other total_dist that should
-      // not be modified here)
-      // Also 'energy' should not be modified : we need another variable
-      
-      float B = total_dist + distance;
-      float energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
-
-      if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+		
+	  Eigen::VectorXf mic_pos = microphones.col(k);
+	   	
+      // If yes, we compute the ray's energy at the mic
+      // and we continue the ray
+      if (intersects_mic(start, hit_point, mic_pos, mic_radius))
       {
-        output.push_back(entry {{travel_time_at_mic, energy_at_mic}});
-      }
-      
-      
-    }
 
+        distance = (start - mic_pos).norm();
+      
+        float travel_time_at_mic = travel_time;
+        update_travel_time(travel_time_at_mic, distance, sound_speed);
+      
+        //Now we compute the gamma term with B defining the total distance
+        // (we don't want to confuse with the other total_dist that should
+        // not be modified here)
+        // Also 'energy' should not be modified : we need another variable
+      
+        float B = total_dist + distance;
+        float energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
+
+        if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+        {
+          output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
+        }
+      
+      
+      }
+
+    }
     // Update the characteristics
 
     //std::cout << "\n\n-------\nprev travel time : " <<  travel_time <<std::endl;
@@ -639,27 +654,26 @@ void Room::simul_ray(float phi,
     // Let's simulate the scattered ray induced by the rebound on
     // the wall
 
-    if (scatter_coef > 0)
-    {
-      // Shoot the scattered ray
-      scat_ray(
-        energy,
-        scatter_coef,
-        wall,
-        start,
-        hit_point,
-        mic_pos,
-        mic_radius,
-        travel_time,
-        time_thres,
-        energy_thres,
-        sound_speed,
-        output);
 
-      // The overall ray's energy gets decreased by the total
-      // amount of scattered energy
-      energy = energy * (1 - scatter_coef);
+	if (scatter_coef > 0)
+	{
+	// Shoot the scattered ray
+	scat_ray(
+	  energy,
+	  scatter_coef,
+	  wall,
+	  start,
+	  hit_point,
+	  mic_radius,
+	  travel_time,
+	  time_thres,
+	  energy_thres,
+	  sound_speed,
+	  output);
 
+	  // The overall ray's energy gets decreased by the total
+	  // amount of scattered energy
+	  energy = energy * (1 - scatter_coef);
     }
 
     // Now we just need to update the start and end positions for
@@ -670,7 +684,7 @@ void Room::simul_ray(float phi,
 }
 
 
-mic_log Room::get_rir_entries(size_t nb_phis,
+room_log Room::get_rir_entries(size_t nb_phis,
   size_t nb_thetas,
   const Eigen::VectorXf source_pos,
   float mic_radius,
@@ -698,7 +712,8 @@ mic_log Room::get_rir_entries(size_t nb_phis,
    reprensenting a ray (scattered or not) reaching the microphone
    */
 
-	
+  room_log output;
+  
   VectorXf mic_pos = microphones.col(0);
   if ((source_pos - mic_pos).norm() < mic_radius)
   {
@@ -706,10 +721,16 @@ mic_log Room::get_rir_entries(size_t nb_phis,
     throw std::exception();
   }
 
-  if (not contains(mic_pos))
-  {
-    std::cerr << "The microphone is not inside the room ! " << std::endl;
-    throw std::exception();
+
+  for (uint k(0); k<n_mics; k++){
+	
+	output.push_back(mic_log());
+    
+    if (not contains(microphones.col(k)))
+    {
+      std::cerr << "One microphone is not inside the room ! " << std::endl;
+      throw std::exception();
+    }
   }
 
   if (not contains(source_pos))
@@ -721,7 +742,7 @@ mic_log Room::get_rir_entries(size_t nb_phis,
   for (auto elem: obstructing_walls)
     std::cout << "obstructing : " << elem << std::endl;
 
-  mic_log output;
+  
 
   for (size_t i(0); i < nb_phis; ++i)
   {
@@ -741,7 +762,7 @@ mic_log Room::get_rir_entries(size_t nb_phis,
         theta = M_PI_2;
       }
 
-      simul_ray(phi, theta, source_pos, mic_pos, mic_radius, scatter_coef,
+      simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
         time_thres, energy_thres, sound_speed, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed

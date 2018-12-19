@@ -84,9 +84,9 @@ def test_room_construct(cube):
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
         obstructing_walls = []
         microphones = np.array([
-            [9., ],
-            [9., ],
-            [9., ],
+            [9., 4.3 ],
+            [9., 8.],
+            [9., 6.],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
@@ -95,16 +95,16 @@ def test_room_construct(cube):
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_strange, absorptions)]
         obstructing_walls = []
         microphones = np.array([
-            [2.5, ],
-            [7, ],
-            [1., ],
+            [2.5, 1.],
+            [7, 3.],
+            [1., 0.5 ],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
     return room
 
-def compute_rir(log, time_thres, fs, plot=True):
+def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
     # TIME = 0
     # ENERGY = 1
     #
@@ -161,7 +161,7 @@ def compute_rir(log, time_thres, fs, plot=True):
         x = np.arange(len(ir)) / fs
         plt.figure()
         plt.plot(x, ir)
-        plt.title("RIR")
+        plt.title("RIR for microphone " + str(mic_id))
         plt.show()
 
     return ir
@@ -196,7 +196,7 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    cube = False
+    cube = True
     room = test_room_construct(cube)
 
     # parameters
@@ -204,9 +204,13 @@ if __name__ == '__main__':
     nb_thetas = 50
 
     #Good one
-    source_pos = [0.5,1,0.5]
 
-    mic_radius = 0.5
+    if cube:
+        source_pos = [1.5, 7, 2.]
+    else:
+        source_pos = [0.5, 1, 0.5]
+
+    mic_radius = 0.05
 
 
     scatter_coef = 0.1
@@ -223,12 +227,24 @@ if __name__ == '__main__':
 
 
     log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
-    print(nb_phis*nb_thetas, " rays traced in ", time.time()-chrono, " seconds" )
-    print(len(log), " entries to build the rir")
 
 
-    rir = compute_rir(log, time_thres, fs, plot=True)
-    apply_rir(rir, "0riginal.wav", fs, cutoff=0)
+    print("\nNumber of phi : ", nb_phis)
+    print("Number of theta :", nb_thetas)
+    print("\nWe had ", len(log), " microphone(s).")
+    print(len(log) * nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
+
+    print("------------------\n")
+
+    # For all microphones
+    for k in range(len(log)):
+
+
+        mic_log = log[k]
+        print("For microphone n° ", k+1, ": ", len(mic_log), " entries to build the rir")
+
+        rir = compute_rir(mic_log, time_thres, fs, mic_id = k+1, plot=True)
+        apply_rir(rir, "0riginal.wav", fs, cutoff=0, result_name="aaa_mic"+str(k+1))
 
 
 
