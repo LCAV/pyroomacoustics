@@ -182,7 +182,26 @@ from .soundsource import SoundSource
 from .parameters import constants, eps
 
 from . import libroom
-from .libroom import Wall
+from .libroom import Wall, Wall2D
+
+def room_factory(walls, obstructing_walls, mic_locs):
+    ''' Call the correct method according to room dimension '''
+    if walls[0].dim == 3:
+        return libroom.Room(walls, obstructing_walls, mic_locs)
+    elif walls[0].dim == 2:
+        return libroom.Room2D(walls, obstructing_walls, mic_locs)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
+def wall_factory(corners, absorption, name=""):
+    ''' Call the correct method according to wall dimension '''
+    if corners.shape[0] == 3:
+        return Wall(corners, absorption, name)
+    elif corners.shape[0] == 2:
+        return Wall2D(corners, absorption, name)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
 
 class Room(object):
     '''
@@ -308,7 +327,12 @@ class Room(object):
         
         walls = []
         for i in range(corners.shape[1]):
-            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
+            walls.append(wall_factory(
+                np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T,
+                absorption[i],
+                "wall_"+str(i),
+                ))
+
             
         return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
@@ -372,7 +396,7 @@ class Room(object):
                 np.r_[floor_corners[:,(i+1)%nw], 0] + height*v_vec,
                 np.r_[floor_corners[:,i], 0] + height*v_vec
                 ]).T
-            walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
+            walls.append(wall_factory(corners, self.walls[i].absorption, name=str(i)))
 
         absorption = np.array(absorption)
         if absorption.ndim == 0:
@@ -386,8 +410,8 @@ class Room(object):
         # we need the floor corners to ordered clockwise (for the normal to point outward)
         floor_corners = np.fliplr(floor_corners)
 
-        walls.append(Wall(floor_corners, absorption[0], name='floor'))
-        walls.append(Wall(ceiling_corners, absorption[1], name='ceiling'))
+        walls.append(wall_factory(floor_corners, absorption[0], name='floor'))
+        walls.append(wall_factory(ceiling_corners, absorption[1], name='ceiling'))
 
         self.walls = walls
         self.dim = 3
@@ -662,7 +686,7 @@ class Room(object):
 
         self.visibility = []
 
-        c_room = libroom.Room(self.walls, self.obstructing_walls, self.mic_array.R)
+        c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
 
         for source in self.sources:
 
@@ -983,19 +1007,19 @@ class ShoeBox(Room):
         if self.dim == 2:
             walls = []
             # seems the order of walls is important here, don't change!
-            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
+            walls.append(wall_factory(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
+            walls.append(wall_factory(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
 
         elif self.dim == 3:
             walls = []
-            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
+            walls.append(wall_factory(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
+            walls.append(wall_factory(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
 
         else:
             raise ValueError("Only 2D and 3D rooms are supported.")

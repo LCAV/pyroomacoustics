@@ -1,7 +1,8 @@
 #include <iostream>
 #include "room.hpp"
 
-int Room::image_source_model(const Eigen::VectorXf &source_location, int max_order)
+template<size_t D>
+int Room<D>::image_source_model(const Eigen::Matrix<float,D,1> &source_location, int max_order)
 {
   /*
    * This is the top-level method to run the image source model
@@ -12,8 +13,7 @@ int Room::image_source_model(const Eigen::VectorXf &source_location, int max_ord
     visible_sources.pop();
 
   // add the original (real) source
-  ImageSource real_source;
-  real_source.loc.resize(dim);
+  ImageSource<D> real_source;
 
   real_source.loc = source_location;
   real_source.attenuation = 1.;
@@ -28,7 +28,8 @@ int Room::image_source_model(const Eigen::VectorXf &source_location, int max_ord
   return fill_sources();
 }
 
-int Room::fill_sources()
+template<size_t D>
+int Room<D>::fill_sources()
 {
   int n_sources = visible_sources.size();
 
@@ -36,7 +37,7 @@ int Room::fill_sources()
   if (n_sources > 0)
   {
     // resize all the arrays
-    sources.resize(dim, n_sources);
+    sources.resize(D, n_sources);
     orders.resize(n_sources);
     gen_walls.resize(n_sources);
     attenuations.resize(n_sources);
@@ -44,7 +45,7 @@ int Room::fill_sources()
 
     for (int i = n_sources - 1 ; i >= 0 ; i--)
     {
-      ImageSource &top = visible_sources.top();  // sample top of stack
+      ImageSource<D> &top = visible_sources.top();  // sample top of stack
 
       // fill the arrays
       sources.col(i) = top.loc;
@@ -60,14 +61,14 @@ int Room::fill_sources()
   return 0;
 }
 
-void Room::image_sources_dfs(ImageSource &is, int max_order)
+template<size_t D>
+void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 {
   /*
    * This function runs a depth first search (DFS) on the tree of image sources
    */
 
-  ImageSource new_is;
-  new_is.loc.resize(dim);
+  ImageSource<D> new_is;
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
@@ -105,7 +106,8 @@ void Room::image_sources_dfs(ImageSource &is, int max_order)
   }
 }
 
-bool Room::is_visible_dfs(const Eigen::VectorXf &p, ImageSource &is)
+template<size_t D>
+bool Room<D>::is_visible_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is)
 {
   /*
      Returns true if the given sound source (with image source id) is visible from point p.
@@ -124,8 +126,7 @@ bool Room::is_visible_dfs(const Eigen::VectorXf &p, ImageSource &is)
 
   if (is.parent != NULL)
   {
-    Eigen::VectorXf intersection;
-    intersection.resize(dim);
+    Eigen::Matrix<float,D,1> intersection;
 
     // get generating wall id
     int wall_id = is.gen_wall;
@@ -146,7 +147,8 @@ bool Room::is_visible_dfs(const Eigen::VectorXf &p, ImageSource &is)
   return true;
 }
 
-bool Room::is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is)
+template<size_t D>
+bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is)
 {
   /*
      Checks if there is a wall obstructing the line of sight going from a source to a point.
@@ -169,12 +171,11 @@ bool Room::is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is)
     // generating wall can't be obstructive
     if (wall_id != gen_wall_id)
     {
-      Eigen::VectorXf intersection;
-      intersection.resize(dim);
+      Eigen::Matrix<float,D,1> intersection;
       int ret = walls[wall_id].intersection(is.loc, p, intersection);
 
       // There is an intersection and it is distinct from segment endpoints
-      if (ret == Wall::Isect::VALID || ret == Wall::Isect::BNDRY)
+      if (ret == Wall<D>::Isect::VALID || ret == Wall<D>::Isect::BNDRY)
       {
         if (is.parent != NULL)
         {
@@ -197,20 +198,21 @@ bool Room::is_obstructed_dfs(const Eigen::VectorXf &p, ImageSource &is)
   return false;
 }
 
-int Room::image_source_shoebox(
-    const Eigen::VectorXf &source,
-    const Eigen::VectorXf &room_size,
-    const Eigen::VectorXf &absorption,
+template<size_t D>
+int Room<D>::image_source_shoebox(
+    const Eigen::Matrix<float,D,1> &source,
+    const Eigen::Matrix<float,D,1> &room_size,
+    const Eigen::Matrix<float,2*D,1> &absorption,
     int max_order
     )
 {
   // precompute powers of the absorption coefficients
-  std::vector<float> transmission_pwr((max_order + 1) * 2 * dim);
-  for (int d = 0 ; d < 2 * dim ; d++)
+  std::vector<float> transmission_pwr((max_order + 1) * 2 * D);
+  for (int d = 0 ; d < 2 * D ; d++)
     transmission_pwr[d] = 1.;
   for (int i = 1 ; i <= max_order ; i++)
-    for (int d = 0 ; d < 2 * dim ; d++)
-      transmission_pwr[i * 2 * dim + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*dim + d];
+    for (int d = 0 ; d < 2 * D ; d++)
+      transmission_pwr[i * 2 * D + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*D + d];
 
   // make sure the list is empty
   while (visible_sources.size() > 0)
@@ -221,7 +223,7 @@ int Room::image_source_shoebox(
 
   // Take 2D case into account
   int z_max = max_order;
-  if (dim == 2)
+  if (D == 2)
     z_max = 0;
 
   // Walk on all the points of the discrete L! ball of radius max_order
@@ -235,9 +237,8 @@ int Room::image_source_shoebox(
 
       for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
-        visible_sources.push(ImageSource());
-        ImageSource &is = visible_sources.top();
-        is.loc.resize(dim);
+        visible_sources.push(ImageSource<D>());
+        ImageSource<D> &is = visible_sources.top();
         is.visible_mics = VectorXb::Ones(microphones.cols());  // everything is visible
 
         is.order = 0;
@@ -245,7 +246,7 @@ int Room::image_source_shoebox(
         is.gen_wall = -1;
 
         // Now compute the reflection, the order, and the multiplicative constant
-        for (int d = 0 ; d < dim ; d++)
+        for (int d = 0 ; d < D ; d++)
         {
           // Compute the reflected source
           float step = abs(point[d]) % 2 == 1 ? room_size.coeff(d) - source.coeff(d) : source.coeff(d);
@@ -266,8 +267,8 @@ int Room::image_source_shoebox(
             p1 = abs((point[d]-1)/2);
             p2 = abs(point[d]/2);
           }
-          is.attenuation *= transmission_pwr[2 * dim * p1 + 2*d];  // 'west' absorption factor
-          is.attenuation *= transmission_pwr[2 * dim * p2 + 2*d+1];  // 'east' absorption factor
+          is.attenuation *= transmission_pwr[2 * D * p1 + 2*d];  // 'west' absorption factor
+          is.attenuation *= transmission_pwr[2 * D * p2 + 2*d+1];  // 'east' absorption factor
         }
       }
     }

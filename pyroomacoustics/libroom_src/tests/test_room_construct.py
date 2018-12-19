@@ -38,7 +38,7 @@ absorptions = [ 0.1, 0.25, 0.25, 0.25, 0.2, 0.15 ]
 
 def test_room_construct():
 
-    walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners, absorptions)]
+    walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners, absorptions)]
     obstructing_walls = []
     microphones = np.array([
         [ 1, ],
@@ -46,7 +46,7 @@ def test_room_construct():
         [ 1, ],
         ])
 
-    room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+    room = pra.room_factory(walls, obstructing_walls, microphones)
 
     return room
 
