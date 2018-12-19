@@ -214,10 +214,10 @@ int Room<D>::image_source_shoebox(
 {
   // precompute powers of the absorption coefficients
   std::vector<float> transmission_pwr((max_order + 1) * 2 * D);
-  for (int d = 0 ; d < 2 * D ; d++)
+  for (size_t d = 0 ; d < 2 * D ; d++)
     transmission_pwr[d] = 1.;
   for (int i = 1 ; i <= max_order ; i++)
-    for (int d = 0 ; d < 2 * D ; d++)
+    for (size_t d = 0 ; d < 2 * D ; d++)
       transmission_pwr[i * 2 * D + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*D + d];
 
   // make sure the list is empty
@@ -252,7 +252,7 @@ int Room<D>::image_source_shoebox(
         is.gen_wall = -1;
 
         // Now compute the reflection, the order, and the multiplicative constant
-        for (int d = 0 ; d < D ; d++)
+        for (size_t d = 0 ; d < D ; d++)
         {
           // Compute the reflected source
           float step = abs(point[d]) % 2 == 1 ? room_size.coeff(d) - source.coeff(d) : source.coeff(d);
