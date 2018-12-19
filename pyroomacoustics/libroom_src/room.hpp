@@ -6,6 +6,7 @@
 #include <tuple>
 #include <Eigen/Dense>
 #include <algorithm>
+
 #include "wall.hpp"
 #include "utility.hpp"
 
@@ -15,11 +16,11 @@ extern float libroom_eps;
 /* The 'entry' type is simply defined as an array of 2 floats.
  * It represents an entry that is logged by the microphone
  * during the ray_tracing execution.
- * The first one of those float will be the energy of a ray reaching
- * the microphone. The second one will be the travel time of this ray.*/
+ * The first one of those float will be the travel time of a ray reaching
+ * the microphone. The second one will be the energy of this ray.*/
 typedef std::array<float,2> entry;
-
 typedef std::list<entry> mic_log;
+typedef std::vector<mic_log> room_log;
 
 typedef Eigen::Matrix < int, Eigen::Dynamic, 1 > VectorXi;
 typedef Eigen::Matrix < bool, Eigen::Dynamic, Eigen::Dynamic > MatrixXb;
@@ -93,16 +94,19 @@ class Room {
     const Eigen::VectorXf & end,
     bool scattered_ray);
 
-  bool scat_ray(const Wall & last_wall,
-    const Eigen::VectorXf & hit_point,
-    const Eigen::VectorXf & mic_pos,
-    float radius,
-    float scat_energy,
-    float travel_time,
-    float time_thres,
-    float energy_thres,
-    float sound_speed,
-    mic_log & output);
+  bool scat_ray(
+	float energy,
+	float scatter_coef,
+	const Wall & last_wall,
+	const Eigen::VectorXf & start,
+	const Eigen::VectorXf & hit_point,
+	const Eigen::VectorXf & mic_pos,
+	float radius,
+	float travel_time,
+	float time_thres,
+	float energy_thres,
+	float sound_speed,
+	mic_log & output);
 
   void simul_ray(float init_phi,
     float init_theta,

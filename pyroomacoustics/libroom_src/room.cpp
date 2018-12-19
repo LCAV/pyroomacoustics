@@ -435,11 +435,14 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
 }
 
 
-bool Room::scat_ray(const Wall & last_wall,
+bool Room::scat_ray(
+  float energy,
+  float scatter_coef,
+  const Wall & wall,
+  const Eigen::VectorXf & prev_last_hit,
   const Eigen::VectorXf & hit_point,
   const Eigen::VectorXf & mic_pos,
   float radius,
-  float scat_energy,
   float travel_time,
   float time_thres,
   float energy_thres,
@@ -452,11 +455,16 @@ bool Room::scat_ray(const Wall & last_wall,
 	In case the scattering ray can indeed reach the microphone (no wall in
 	between), then we add an entry to the output passed by reference.
 	
-    last_wall: The wall object where last_hit is located
-    radius : The radius of the circle/sphere microphone
-    last_hit: (array size 2 or 3) defines the last wall hit position
-    scat_energy: The energy of the scattering ray
-    actual_travel_time: The cumulated travel time of the ray until the last wall hit
+	float energy: The energy of the ray right after last_wall has absorbed
+	  a part of it
+	scatter_coef: The scattering coefficient
+    wall: The wall object where last_hit is located
+    prev_last_hit: (array size 2 or 3) the previous last wall hit_point position (needed to check that 
+      the wall normal is correctly oriented)
+    hit_point: (array size 2 or 3) defines the last wall hit position
+    mic_pos: (array size 2 or 3) defines the microphone position
+    radius : The radius of the circle/sphere microphone    
+    travel_time: The cumulated travel time of the ray until the last wall hit
     time_thresh: The time threshold for the ray
     energy_thresh: The energy threshold for the ray
     sound_speed: The speed of sound
@@ -465,6 +473,14 @@ bool Room::scat_ray(const Wall & last_wall,
     :return : true if the scattered ray reached the mic, false otw
 	*/
 
+  float scat_energy = compute_scat_energy(energy,
+		scatter_coef,
+        wall,
+        prev_last_hit,
+        hit_point,
+        mic_pos,
+        radius);
+        
   bool result = false;
 
   Eigen::VectorXf dont_care;
@@ -625,21 +641,15 @@ void Room::simul_ray(float phi,
 
     if (scatter_coef > 0)
     {
-
-      float ray_scat_energy = compute_scat_energy(energy,
+      // Shoot the scattered ray
+      scat_ray(
+        energy,
         scatter_coef,
         wall,
         start,
         hit_point,
         mic_pos,
-        mic_radius);
-
-      // Shoot the scattered ray
-      scat_ray(wall,
-        hit_point,
-        mic_pos,
         mic_radius,
-        ray_scat_energy,
         travel_time,
         time_thres,
         energy_thres,
@@ -865,4 +875,18 @@ bool Room::contains(const Eigen::VectorXf point)
   // then the point is in the room  => return true
   return ((n_intersections % 2) == 1);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

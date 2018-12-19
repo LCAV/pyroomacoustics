@@ -388,7 +388,7 @@ float compute_scat_energy(float energy,
   /* This function computes the energy of a scattered ray. This energy
    * depends on several factors as explained below
    * 
-   * energy: the ray's energy (wall absorption  taken into account)
+   * energy: the ray's energy (wall absorption already taken into account)
    * scat_coef: the scattering coefficients of the wall
    * wall: the wall being intersected (we need its normal vector)
    * start: (array size 2 or 3) the previous wall hit_point position (needed to check that 

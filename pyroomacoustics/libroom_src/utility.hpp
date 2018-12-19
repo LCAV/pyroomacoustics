@@ -7,7 +7,7 @@
 #include <vector>
 #include <array>
 #include <list>
-
+#include <vector>
 
 using namespace Eigen;
 using namespace std;
