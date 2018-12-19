@@ -1,5 +1,6 @@
 # The header files for the compiled extension
 include pyroomacoustics/libroom_src/*.hpp
+include pyroomacoustics/libroom_src/*.cpp
 
 # The compiled extension code rely on Eigen, which is included
 include pyroomacoustics/libroom_src/ext/eigen/COPYING.*
