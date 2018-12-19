@@ -429,22 +429,9 @@ float compute_scat_energy(float energy,
 }
 
 
-std::list < entry > test()
+int test()
 {
-
-  std::list < entry > mylist;
-  mylist.push_back(entry {{1.,2.}});
-  mylist.push_back(entry {{4.,2.}});
-  mylist.push_back(entry {{5.,2.}});
-  
-  
-  for (auto it = mylist.begin(); it != mylist.end(); ++it)
-  {
-    (*it)[0] = (*it)[0]+3;
-  }
-  
-  return mylist;
-
+  return 1;
 }
 
 

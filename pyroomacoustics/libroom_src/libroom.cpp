@@ -33,9 +33,9 @@ Room *create_room(py::list _walls, py::list _obstructing_walls, const Eigen::Mat
     room->obstructing_walls.push_back(owall.cast<int>());
 
   room->dim = room->walls[0].dim;
-  
+  room->n_mics = _microphones.cols();  
   // Specific to ray tracing
-  room->mic_pos = _microphones.col(0);
+
   room->max_dist = room->get_max_distance();
 
   return room;
@@ -65,7 +65,7 @@ PYBIND11_MODULE(libroom, m) {
       .def_readonly("walls", &Room::walls)
       .def_readonly("obstructing_walls", &Room::obstructing_walls)
       .def_readonly("microphones", &Room::microphones)
-      .def_readonly("mic_pos", &Room::mic_pos)
+      .def_readonly("n_mics", &Room::n_mics)
       .def_readonly("max_dist", &Room::max_dist)
       
       ;

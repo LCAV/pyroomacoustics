@@ -9,16 +9,6 @@
 #include <list>
 
 
-
-
-/* The 'entry' type is simply defined as an array of 2 floats.
- * It represents an entry that is logged by the microphone
- * during the ray_tracing execution.
- * The first one of those float will be the energy of a ray reaching
- * the microphone. The second one will be the travel time of this ray.*/
-typedef std::array<float,2> entry;
-
-
 using namespace Eigen;
 using namespace std;
 
@@ -58,7 +48,7 @@ float compute_scat_energy(float energy, float scat_coef,
   const VectorXf & mic_pos,
   float radius);
 
-std::list <entry> test();
+int test();
 
 
 

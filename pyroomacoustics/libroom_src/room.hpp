@@ -12,6 +12,15 @@
 
 extern float libroom_eps;
 
+/* The 'entry' type is simply defined as an array of 2 floats.
+ * It represents an entry that is logged by the microphone
+ * during the ray_tracing execution.
+ * The first one of those float will be the energy of a ray reaching
+ * the microphone. The second one will be the travel time of this ray.*/
+typedef std::array<float,2> entry;
+
+typedef std::list<entry> mic_log;
+
 typedef Eigen::Matrix < int, Eigen::Dynamic, 1 > VectorXi;
 typedef Eigen::Matrix < bool, Eigen::Dynamic, Eigen::Dynamic > MatrixXb;
 typedef Eigen::Matrix < bool, Eigen::Dynamic, 1 > VectorXb;
@@ -46,7 +55,7 @@ class Room {
 
   // Very useful for raytracing
   // 1. Position format that fits the need of ray_tracing
-  Eigen::VectorXf mic_pos;
+  int n_mics;
   // 2. A distance after which a ray must have hit at least 1 wall
   float max_dist;
 
@@ -86,25 +95,27 @@ class Room {
 
   bool scat_ray(const Wall & last_wall,
     const Eigen::VectorXf & hit_point,
+    const Eigen::VectorXf & mic_pos,
     float radius,
     float scat_energy,
     float travel_time,
     float time_thres,
     float energy_thres,
     float sound_speed,
-    std::list<entry> & output);
+    mic_log & output);
 
   void simul_ray(float init_phi,
     float init_theta,
     const Eigen::VectorXf source_pos,
+    const Eigen::VectorXf mic_pos,
     float mic_radius,
     float scatter_coef,
     float time_thres,
     float energy_thres,
     float sound_speed,
-    std::list <entry> & output);
+    mic_log & output);
 
-  std::list<entry> get_rir_entries(size_t nb_phis,
+  mic_log get_rir_entries(size_t nb_phis,
     size_t nb_thetas,
     const Eigen::VectorXf source_pos,
     float mic_radius,

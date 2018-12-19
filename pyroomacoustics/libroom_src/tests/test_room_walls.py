@@ -251,6 +251,8 @@ class TestRoomWalls(unittest.TestCase):
             [1.2 ]
             ])
 
+
+        mic_pos = microphones[:,0]
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
         radius = 0.1
@@ -261,10 +263,11 @@ class TestRoomWalls(unittest.TestCase):
 
         # Very high => will not be reached
         time_thres = 200.
+        energy_thres = 0.001
 
         sound_speed = 340.
 
-        self.assertTrue(not np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
+        self.assertTrue(not np.array(room.scat_ray(prev_wall, last_hit, mic_pos, radius, scat_energy, travel_time, time_thres, energy_thres, sound_speed,[])))
 
 
     def test_scat_ray_ok(self):
@@ -277,6 +280,7 @@ class TestRoomWalls(unittest.TestCase):
             ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        mic_pos = microphones[:, 0]
 
         radius = 0.1
         scat_energy = 100.
@@ -286,10 +290,11 @@ class TestRoomWalls(unittest.TestCase):
 
         # Very high => will not be reached
         time_thres = 200.
+        energy_thres = 0.001
 
         sound_speed = 340.
 
-        self.assertTrue(np.array(room.scat_ray(prev_wall, last_hit, radius, scat_energy, travel_time, time_thres, sound_speed,[])))
+        self.assertTrue(np.array(room.scat_ray(prev_wall, last_hit, mic_pos, radius, scat_energy, travel_time, time_thres, energy_thres, sound_speed,[])))
 
     def test_contains_2D(self):
 
@@ -302,7 +307,7 @@ class TestRoomWalls(unittest.TestCase):
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
-        self.assertTrue(room.contains(room.mic_pos))
+        self.assertTrue(room.contains(microphones[:,0]))
 
 
     def test_notcontains_2D(self):
@@ -316,7 +321,7 @@ class TestRoomWalls(unittest.TestCase):
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
-        self.assertTrue(not room.contains(room.mic_pos))
+        self.assertTrue(not room.contains(microphones[:,0]))
 
 
     def test_contains_3D(self):
@@ -333,7 +338,7 @@ class TestRoomWalls(unittest.TestCase):
 
 
 
-        self.assertTrue(room.contains(room.mic_pos))
+        self.assertTrue(room.contains(microphones[:,0]))
 
 
     def test_notcontains_3D(self):
@@ -350,7 +355,7 @@ class TestRoomWalls(unittest.TestCase):
 
 
 
-        self.assertTrue(not room.contains(room.mic_pos))
+        self.assertTrue(not room.contains(microphones[:,0]))
 
 if __name__ == '__main__':
     unittest.main()

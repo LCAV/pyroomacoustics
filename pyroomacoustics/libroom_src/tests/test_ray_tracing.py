@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
 
     time_thres = 0.5 #s
-    energy_thres = 0.001;
+    energy_thres = 0.001
     sound_speed = 340
 
     fs = 16000

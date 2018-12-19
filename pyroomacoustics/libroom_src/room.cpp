@@ -437,13 +437,14 @@ std::tuple < Eigen::VectorXf, int > Room::next_wall_hit(
 
 bool Room::scat_ray(const Wall & last_wall,
   const Eigen::VectorXf & hit_point,
+  const Eigen::VectorXf & mic_pos,
   float radius,
   float scat_energy,
   float travel_time,
   float time_thres,
   float energy_thres,
   float sound_speed,
-  std::list<entry> & output)
+  mic_log & output)
   {
 
   /*
@@ -499,12 +500,13 @@ bool Room::scat_ray(const Wall & last_wall,
 void Room::simul_ray(float phi,
   float theta,
   const Eigen::VectorXf source_pos,
+  const Eigen::VectorXf mic_pos,
   float mic_radius,
   float scatter_coef,
   float time_thres,
   float energy_thres,
   float sound_speed,
-  std::list < entry > & output)
+  mic_log & output)
   {
 
   /*This function simulates one ray and fills the output vector with
@@ -635,6 +637,7 @@ void Room::simul_ray(float phi,
       // Shoot the scattered ray
       scat_ray(wall,
         hit_point,
+        mic_pos,
         mic_radius,
         ray_scat_energy,
         travel_time,
@@ -657,7 +660,7 @@ void Room::simul_ray(float phi,
 }
 
 
-std::list < entry > Room::get_rir_entries(size_t nb_phis,
+mic_log Room::get_rir_entries(size_t nb_phis,
   size_t nb_thetas,
   const Eigen::VectorXf source_pos,
   float mic_radius,
@@ -685,6 +688,8 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
    reprensenting a ray (scattered or not) reaching the microphone
    */
 
+	
+  VectorXf mic_pos = microphones.col(0);
   if ((source_pos - mic_pos).norm() < mic_radius)
   {
     std::cerr << "The source is inside the microphone ! " << std::endl;
@@ -706,7 +711,7 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
   for (auto elem: obstructing_walls)
     std::cout << "obstructing : " << elem << std::endl;
 
-  std::list <entry> output;
+  mic_log output;
 
   for (size_t i(0); i < nb_phis; ++i)
   {
@@ -726,7 +731,7 @@ std::list < entry > Room::get_rir_entries(size_t nb_phis,
         theta = M_PI_2;
       }
 
-      simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
+      simul_ray(phi, theta, source_pos, mic_pos, mic_radius, scatter_coef,
         time_thres, energy_thres, sound_speed, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
