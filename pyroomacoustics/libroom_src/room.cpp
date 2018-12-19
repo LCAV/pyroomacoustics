@@ -72,11 +72,17 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
-  is.visible_mics.resize(microphones.cols());
   for (int mic = 0 ; mic < microphones.cols() ; mic++)
   {
-    is.visible_mics.coeffRef(mic) = is_visible_dfs(microphones.col(mic), is);
-    any_visible = any_visible || is.visible_mics.coeff(mic);
+    bool is_visible = is_visible_dfs(microphones.col(mic), is);
+    if (is_visible && !any_visible)
+    {
+      any_visible = is_visible;
+      is.visible_mics.resize(microphones.cols());
+      is.visible_mics.setZero();
+    }
+    if (any_visible)
+      is.visible_mics.coeffRef(mic) = is_visible;
   }
 
   if (any_visible)

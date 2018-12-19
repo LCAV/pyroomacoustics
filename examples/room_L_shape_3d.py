@@ -34,7 +34,6 @@ room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
 room.image_source_model()
 
-'''
 room.compute_rir()
 
 room.plot_rir()
@@ -43,4 +42,3 @@ room.plot_rir()
 room.plot()
 
 plt.show()
-'''

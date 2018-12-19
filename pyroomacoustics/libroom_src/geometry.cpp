@@ -200,7 +200,7 @@ Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2)
 }
 
 int is_inside_2d_polygon(const Eigen::Vector2f &p,
-    const Eigen::MatrixXf &corners)
+    const Eigen::Matrix<float,2,Eigen::Dynamic> &corners)
 {
   /*
     Checks if a given point is inside a given polygon in 2D.
@@ -222,18 +222,6 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     0 : the point is inside
     1 : the point is on the boundary
     */
-
-  if (corners.rows() != 2)
-  {
-    std::cerr << "Only 2D polygons are supported" << std::endl;
-    throw std::exception();
-  }
-
-  if (corners.cols() < 3)
-  {
-    std::cerr << "The polygon should have more than 2 points" << std::endl;
-    throw std::exception();
-  }
 
   bool is_inside = false;  // initialize point not in the polygon
   int c1c2p, c1c2p0, pp0c1, pp0c2;

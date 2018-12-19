@@ -26,7 +26,7 @@ int intersection_3d_segment_plane(
 Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2);
 
 int is_inside_2d_polygon(const Eigen::Vector2f &p,
-    const Eigen::MatrixXf &corners);
+    const Eigen::Matrix<float,2,Eigen::Dynamic> &corners);
 
 float area_2d_polygon(const Eigen::MatrixXf &corners);
 
