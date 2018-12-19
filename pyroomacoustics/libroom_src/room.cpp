@@ -472,11 +472,12 @@ bool Room::scat_ray(
 	*/
 
   bool result = true;
-
+  
   for(uint k(0); k < n_mics; ++k){
 	  
-	Eigen::VectorXf mic_pos = microphones.col(k);  
-	
+	Eigen::VectorXf mic_pos = microphones.col(k);
+	mic_pos.resize(dim);
+		
     float scat_energy = compute_scat_energy(energy,
 		scatter_coef,
         wall,
@@ -485,30 +486,34 @@ bool Room::scat_ray(
         mic_pos,
         radius);
         
-    
-
+    // If we have multiple microphones, we must keep travel_time untouched !
+    float travel_time_at_mic = travel_time;
+       
     Eigen::VectorXf dont_care;
     int next_wall_index(-1);
 
     std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
 
+	
     // No wall intersecting the direct scattered ray
     if (next_wall_index == -1)
     {
+		
 
       // As the ray is shot towards the microphone center,
-     // the hop dist can be easily computed
+      // the hop dist can be easily computed
       float hop_dist = (hit_point - mic_pos).norm() - radius;
 
-      update_travel_time(travel_time, hop_dist, sound_speed);
+      update_travel_time(travel_time_at_mic, hop_dist, sound_speed);
 
       // Remember that the energy distance attenuation will be 
       // performed once all the ray arrived.
 
-      if (travel_time < time_thres and scat_energy > energy_thres)
+      if (travel_time_at_mic < time_thres and scat_energy > energy_thres)
       {
         //std::cout << "appending scat rays : " <<std::endl;
-        output[k].push_back(entry {{travel_time,scat_energy}});
+        output[k].push_back(entry{{travel_time_at_mic,scat_energy}});
+        
         result = result and true;
       }
       else
@@ -516,6 +521,11 @@ bool Room::scat_ray(
 	    result = false;
 	  }
     }
+    else
+    {
+	  // if a wall intersects the scattered ray, we return false
+	  result = false;
+	}
   }
 
   return result;
@@ -593,8 +603,7 @@ void Room::simul_ray(float phi,
     wall = walls[next_wall_index];
 
     // Initialization needed for the next if
-    
-    // length of the actual hop
+    // => length of the actual hop
     float distance(0);
 
     // Before updatign the ray's characteristic, we must see
@@ -626,6 +635,7 @@ void Room::simul_ray(float phi,
 
         if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
         {
+		  std::cout<<"Adding a specular ray"<<std::endl;
           output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
         }
       

@@ -210,7 +210,7 @@ if __name__ == '__main__':
     else:
         source_pos = [0.5, 1, 0.5]
 
-    mic_radius = 0.05
+    mic_radius = 0.1
 
 
     scatter_coef = 0.1
@@ -231,8 +231,8 @@ if __name__ == '__main__':
 
     print("\nNumber of phi : ", nb_phis)
     print("Number of theta :", nb_thetas)
-    print("\nWe had ", len(log), " microphone(s).")
-    print(len(log) * nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
+    print("\nThere are", len(log), " microphone(s).")
+    print(len(log), "* (", nb_phis, "*", nb_thetas,") =", len(log) * nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
 
     print("------------------\n")
 

@@ -251,23 +251,30 @@ class TestRoomWalls(unittest.TestCase):
             [1.2 ]
             ])
 
-
-        mic_pos = microphones[:,0]
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
         radius = 0.1
-        scat_energy = 100.
+
         prev_wall = room.get_wall(0)
+
+        prev_last_hit = [2,0.2]
         last_hit = [0, 1.9]
-        travel_time = 100.
+
+
+        energy = 1000000.
+        energy_thres = 0.001
+        scatter_coef = 0.1
 
         # Very high => will not be reached
+        travel_time = 100.
         time_thres = 200.
-        energy_thres = 0.001
+
+
 
         sound_speed = 340.
+        output = [[[1., 2.]]] # arbitrary initialisation to have the correct shape
 
-        self.assertTrue(not np.array(room.scat_ray(prev_wall, last_hit, mic_pos, radius, scat_energy, travel_time, time_thres, energy_thres, sound_speed,[])))
+        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
 
 
     def test_scat_ray_ok(self):
@@ -280,21 +287,27 @@ class TestRoomWalls(unittest.TestCase):
             ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
-        mic_pos = microphones[:, 0]
-
         radius = 0.1
-        scat_energy = 100.
+
         prev_wall = room.get_wall(0)
+
+        prev_last_hit = [2,0.2]
         last_hit = [0, 1.9]
-        travel_time = 100.
+
+
+        energy = 1000000.
+        energy_thres = 0.001
+        scatter_coef = 0.1
 
         # Very high => will not be reached
+        travel_time = 100.
         time_thres = 200.
-        energy_thres = 0.001
 
         sound_speed = 340.
 
-        self.assertTrue(np.array(room.scat_ray(prev_wall, last_hit, mic_pos, radius, scat_energy, travel_time, time_thres, energy_thres, sound_speed,[])))
+        output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
+        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
+
 
     def test_contains_2D(self):
 
