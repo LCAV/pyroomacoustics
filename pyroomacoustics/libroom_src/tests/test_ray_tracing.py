@@ -74,30 +74,80 @@ wall_corners_cube = [
     ]),
 ]
 
-absorptions = [0.1]*len(wall_corners_strange)
+wall_corners_real = [
+    np.array([  # front
+        [0, 7, 7, 0],
+        [0, 0, 0, 0],
+        [0, 0, 3, 3],
+    ]),
+    np.array([  # back
+        [0, 7, 7, 0],
+        [6, 6, 6, 6],
+        [0, 0, 3, 3],
+    ]),
+    np.array([  # floor
+        [0, 0, 7, 7, ],
+        [0, 6, 6, 0, ],
+        [0, 0, 0, 0, ],
+    ]),
+    np.array([  # ceiling
+        [0, 0, 7, 7, ],
+        [0, 6, 6, 0, ],
+        [3, 3, 3, 3, ],
+    ]),
+    np.array([  # left
+        [0, 0, 0, 0, ],
+        [0, 0, 6, 6, ],
+        [0, 3, 3, 0, ],
+    ]),
+    np.array([  # right
+        [10, 10, 10, 10, ],
+        [0, 10, 10, 0, ],
+        [0, 0, 10, 10, ],
+    ]),
+]
+
+absorptions = [0.001]*len(wall_corners_strange)
 
 
-def test_room_construct(cube):
+def test_room_construct(room_shape):
 
     # Choose which room to use
-    if cube :
+    if room_shape == 0 :
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
         obstructing_walls = []
+        # microphones = np.array([
+        #     [9.5,5.4],
+        #     [9.5, 6.4],
+        #     [9.55, .3],
+        # ])
+
         microphones = np.array([
-            [9., 4.3 ],
-            [9., 8.],
-            [9., 6.],
+            [6.7],
+            [2.],
+            [1.],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
 
-    else :
+    elif room_shape == 1 :
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_strange, absorptions)]
         obstructing_walls = []
         microphones = np.array([
             [2.5, 1.],
             [7, 3.],
             [1., 0.5 ],
+        ])
+
+        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+
+    elif room_shape == 2 :
+        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_real, absorptions)]
+        obstructing_walls = []
+        microphones = np.array([
+            [6, 3.5], # like students sitting
+            [2, 5.],
+            [1., 1. ],
         ])
 
         room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
@@ -196,28 +246,29 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    cube = True
-    room = test_room_construct(cube)
+    room_shape = 2
+
+    if room_shape == 0:
+        source_pos = [1.5, 7, 2.]
+    elif room_shape == 1:
+        source_pos = [0.5, 1, 1.]
+    elif room_shape == 2:
+        source_pos = [1, 3, 1.6] #like a teacher speaking
+
+    room = test_room_construct(room_shape)
 
     # parameters
-    nb_phis = 50
-    nb_thetas = 50
+    nb_phis = 160
+    nb_thetas = 160
 
-    #Good one
-
-    if cube:
-        source_pos = [1.5, 7, 2.]
-    else:
-        source_pos = [0.5, 1, 0.5]
-
-    mic_radius = 0.1
+    mic_radius = 0.05
 
 
     scatter_coef = 0.1
 
 
-    time_thres = 0.5 #s
-    energy_thres = 0.001
+    time_thres = 0.9 #s
+    energy_thres = 0.000001
     sound_speed = 340
 
     fs = 16000
@@ -232,7 +283,7 @@ if __name__ == '__main__':
     print("\nNumber of phi : ", nb_phis)
     print("Number of theta :", nb_thetas)
     print("\nThere are", len(log), " microphone(s).")
-    print(len(log), "* (", nb_phis, "*", nb_thetas,") =", len(log) * nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
+    print("(", nb_phis, "*", nb_thetas,") =", nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
 
     print("------------------\n")
 

@@ -101,6 +101,7 @@ class Room {
 	const Eigen::VectorXf & start,
 	const Eigen::VectorXf & hit_point,
 	float radius,
+	float total_dist,
 	float travel_time,
 	float time_thres,
 	float energy_thres,

@@ -37,7 +37,7 @@ Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2);
 int is_inside_2d_polygon(const Eigen::Vector2f & p,
   const Eigen::MatrixXf & corners);
 
-float area_2d_polygon(const Eigen::MatrixXf & corners);
+float area_2d_polygon(const Eigen::MatrixXf &);
 
 float cos_angle_between(const Eigen::VectorXf & v1,
   const Eigen::VectorXf & v2);

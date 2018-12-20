@@ -8,6 +8,7 @@
 #include <array>
 #include <list>
 #include <vector>
+#include <cmath>
 
 using namespace Eigen;
 using namespace std;
@@ -46,7 +47,8 @@ float compute_scat_energy(float energy, float scat_coef,
   const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
-  float radius);
+  float radius,
+  float total_dist);
 
 int test();
 

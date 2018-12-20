@@ -442,6 +442,7 @@ bool Room::scat_ray(
   const Eigen::VectorXf & prev_last_hit,
   const Eigen::VectorXf & hit_point,
   float radius,
+  float total_dist,
   float travel_time,
   float time_thres,
   float energy_thres,
@@ -461,7 +462,8 @@ bool Room::scat_ray(
     prev_last_hit: (array size 2 or 3) the previous last wall hit_point position (needed to check that 
       the wall normal is correctly oriented)
     hit_point: (array size 2 or 3) defines the last wall hit position
-    radius : The radius of the circle/sphere microphone    
+    radius : The radius of the circle/sphere microphone
+    total_dist: The total distance travelled by the ray until this wall hit 
     travel_time: The cumulated travel time of the ray until the last wall hit
     time_thresh: The time threshold for the ray
     energy_thresh: The energy threshold for the ray
@@ -484,7 +486,8 @@ bool Room::scat_ray(
         prev_last_hit,
         hit_point,
         mic_pos,
-        radius);
+        radius,
+        total_dist);
         
     // If we have multiple microphones, we must keep travel_time untouched !
     float travel_time_at_mic = travel_time;
@@ -635,7 +638,7 @@ void Room::simul_ray(float phi,
 
         if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
         {
-		  std::cout<<"Adding a specular ray"<<std::endl;
+		  //std::cout<<"Adding a specular ray"<<std::endl;
           output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
         }
       
@@ -675,6 +678,7 @@ void Room::simul_ray(float phi,
 	  start,
 	  hit_point,
 	  mic_radius,
+	  total_dist,
 	  travel_time,
 	  time_thres,
 	  energy_thres,
@@ -756,14 +760,12 @@ room_log Room::get_rir_entries(size_t nb_phis,
 
   for (size_t i(0); i < nb_phis; ++i)
   {
-    //std::cout << "\n===============\ni="<< i << std::endl;
     float phi = 2 * M_PI * (float) i / nb_phis;
 
 
     for (size_t j(0); j < nb_thetas; ++j)
     {
-      //std::cout << "j=" << j << std::endl;
-
+	  // Having a 3D linear sampling of the sphere surrounding the room
       float theta = std::acos(2 * ((float) j / nb_thetas) - 1);
 
       // For 2D, this parameter means nothing, but we set it to

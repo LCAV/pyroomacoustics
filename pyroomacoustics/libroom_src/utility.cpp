@@ -382,7 +382,8 @@ float compute_scat_energy(float energy,
   const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
-  float radius)
+  float radius,
+  float total_dist)
   {
 	  
   /* This function computes the energy of a scattered ray. This energy
@@ -425,7 +426,7 @@ float compute_scat_energy(float energy,
    float B = r.norm();
    float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
 
-  return energy * scat_coef * 2 * cos_theta * gamma_term;
+  return energy * scat_coef * 2 * cos_theta * gamma_term ;
 }
 
 
