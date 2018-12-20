@@ -33,37 +33,37 @@ walls = [
 def test_wall_3d_construct_0():
     ''' Tests construction of a wall '''
     w_info = walls[0]
-    wall = pra.libroom.Wall(w_info['corners'], 0.2)
+    wall = pra.wall_factory(w_info['corners'], 0.2)
 
     return wall
 
 def test_wall_3d_construct_1():
     ''' Tests construction of a wall '''
     w_info = walls[1]
-    wall = pra.libroom.Wall(w_info['corners'], 0.2)
+    wall = pra.wall_factory(w_info['corners'], 0.2)
 
     return wall
 
 def test_wall_3d_area_0():
     ''' Tests the area computation '''
     w_info = walls[0]
-    wall = pra.libroom.Wall(w_info['corners'], w_info['absorption'])
+    wall = pra.wall_factory(w_info['corners'], w_info['absorption'])
     err = abs(wall.area() - w_info['area'])
     assert err < 1, 'The error is {}'.format(err)
 
 def test_wall_3d_area_1():
     ''' Tests the area computation '''
     w_info = walls[1]
-    wall = pra.libroom.Wall(w_info['corners'], w_info['absorption'])
+    wall = pra.wall_factory(w_info['corners'], w_info['absorption'])
     err = abs(wall.area() - w_info['area'])
     assert err < 1, 'The error is {}'.format(err)
 
 def test_wall_3d_normal_0():
     ''' Tests direction of normal wrt to point arrangement '''
     w_info = walls[0]
-    wall1 = pra.libroom.Wall(w_info['corners'], 0.2)
+    wall1 = pra.wall_factory(w_info['corners'], 0.2)
     # the same wall with normal pointing the other way
-    wall2 = pra.libroom.Wall(w_info['corners'][:,::-1], 0.2)
+    wall2 = pra.wall_factory(w_info['corners'][:,::-1], 0.2)
 
     err = np.linalg.norm(wall1.normal + wall2.normal)
     assert err < eps, 'The error is {}'.format(err)
@@ -71,9 +71,9 @@ def test_wall_3d_normal_0():
 def test_wall_3d_normal_1():
     ''' Tests direction of normal wrt to point arrangement '''
     w_info = walls[1]
-    wall1 = pra.libroom.Wall(w_info['corners'], 0.2)
+    wall1 = pra.wall_factory(w_info['corners'], 0.2)
     # the same wall with normal pointing the other way
-    wall2 = pra.libroom.Wall(w_info['corners'][:,::-1], 0.2)
+    wall2 = pra.wall_factory(w_info['corners'][:,::-1], 0.2)
 
     err = np.linalg.norm(wall1.normal + wall2.normal)
     assert err < eps, 'The error is {}'.format(err)
