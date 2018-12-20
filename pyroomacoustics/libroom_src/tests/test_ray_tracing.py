@@ -107,7 +107,7 @@ wall_corners_real = [
     ]),
 ]
 
-absorptions = [0.001]*len(wall_corners_strange)
+absorptions = [0.1]*len(wall_corners_strange)
 
 
 def test_room_construct(room_shape):
@@ -258,8 +258,8 @@ if __name__ == '__main__':
     room = test_room_construct(room_shape)
 
     # parameters
-    nb_phis = 160
-    nb_thetas = 160
+    nb_phis = 150
+    nb_thetas = 150
 
     mic_radius = 0.05
 
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     scatter_coef = 0.1
 
 
-    time_thres = 0.9 #s
+    time_thres = 0.6 #s
     energy_thres = 0.000001
     sound_speed = 340
 
