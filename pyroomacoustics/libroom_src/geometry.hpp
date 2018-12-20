@@ -39,6 +39,4 @@ float dist_line_point(const Eigen::VectorXf & start,
   const Eigen::VectorXf & point);
 
 
-#include "geometry.cpp"
-
 #endif // __GEOMETRY_H__

@@ -141,6 +141,5 @@ class Room
 
 };
 
-#include "room.cpp"
 
 #endif // __ROOM_H__

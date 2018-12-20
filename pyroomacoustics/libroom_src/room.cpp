@@ -315,19 +315,19 @@ float Room<D>::get_max_distance()
 
   for (size_t i(0); i < n_walls; ++i)
   {
-    Wall wi = this -> get_wall(i);
+    Wall<D> wi = this -> get_wall(i);
 
     Eigen::Vector3f max_coord(0, 0, 0);
     Eigen::Vector3f min_coord(0, 0, 0);
 
-    if (this -> dim == 2)
+    if (D == 2)
     {
-      max_coord.head(2) = wi.corners.rowwise().maxCoeff();
-      min_coord.head(2) = wi.corners.rowwise().minCoeff();
+      max_coord.head(2) = wi.corners.topRows(D).rowwise().maxCoeff();
+      min_coord.head(2) = wi.corners.topRows(D).rowwise().minCoeff();
     } else
     {
-      max_coord = wi.corners.rowwise().maxCoeff();
-      min_coord = wi.corners.rowwise().minCoeff();
+      max_coord = wi.corners.topRows(D).rowwise().maxCoeff();
+      min_coord = wi.corners.topRows(D).rowwise().minCoeff();
     }
 
     if (i == 0)
@@ -787,7 +787,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
 
       // For 2D, this parameter means nothing, but we set it to
       // PI/2 to be consistent
-      if (dim == 2) {
+      if (D == 2) {
         theta = M_PI_2;
       }
 
@@ -795,7 +795,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
         time_thres, energy_thres, sound_speed, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
-      if (dim == 2)
+      if (D == 2)
       {
 		// Get out of the theta loop
         break;
@@ -835,17 +835,17 @@ bool Room<D>::contains(const Eigen::VectorXf point)
 
   for (size_t i(0); i < n_walls; ++i)
   {
-    Wall &wi = this -> get_wall(i);
+    Wall<D> &wi = this -> get_wall(i);
 
     Eigen::Vector3f min_coord(0, 0, 0);
 
-    if (this -> dim == 2)
+    if (D == 2)
     {
-      min_coord.head(2) = wi.corners.rowwise().minCoeff();
+      min_coord.head(2) = wi.corners.topRows(D).rowwise().minCoeff();
     } 
     else
     {
-      min_coord = wi.corners.rowwise().minCoeff();
+      min_coord = wi.corners.topRows(D).rowwise().minCoeff();
     }
 
     // First iteration		
@@ -870,12 +870,12 @@ bool Room<D>::contains(const Eigen::VectorXf point)
   }
 
   Eigen::VectorXf outside_point;
-  outside_point.resize(dim);
+  outside_point.resize(D);
 
   outside_point[0] = minX - 1.;
   outside_point[1] = minY - 1.;
 
-  if (dim == 3) {
+  if (D == 3) {
     outside_point[2] = minZ - 1.;
   }
 
@@ -902,7 +902,7 @@ bool Room<D>::contains(const Eigen::VectorXf point)
     outside_point[0] -= (float)(rand() % 27) / 50;
     outside_point[1] -= (float)(rand() % 22) / 26;
 
-    if (dim == 3)
+    if (D == 3)
     {
       outside_point[2] -= (float)(rand() % 24 / 47);
     }
@@ -910,7 +910,7 @@ bool Room<D>::contains(const Eigen::VectorXf point)
     for (size_t i(0); i < n_walls; ++i)
     {
 
-      Wall & w = walls[i];
+      Wall<D> & w = walls[i];
       int result = w.intersects(outside_point, point);
       ambiguous_intersection = ambiguous_intersection or result > 0;
 

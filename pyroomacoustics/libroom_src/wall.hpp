@@ -74,6 +74,4 @@ class Wall
 
 }; 
 
-#include "wall.cpp"
-
 #endif // __CWALL_H__

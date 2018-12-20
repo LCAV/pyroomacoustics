@@ -63,7 +63,7 @@ PYBIND11_MODULE(libroom, m) {
     // The 3D Room class
     py::class_<Room<3>>(m, "Room")
       //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
-      .def(py::init(&create_room_2D))
+      .def(py::init(&create_room_3D))
       .def("image_source_model", &Room<3>::image_source_model)
       .def("image_source_shoebox", &Room<3>::image_source_shoebox)
       .def("get_wall", &Room<3>::get_wall)
