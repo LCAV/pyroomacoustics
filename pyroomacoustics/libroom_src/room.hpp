@@ -56,8 +56,7 @@ class Room
     Eigen::Matrix<float,D,Eigen::Dynamic> microphones;
     
     // Very useful for raytracing
-	// 1. Position format that fits the need of ray_tracing
-    uint n_mics;
+    int n_mics;
     // 2. A distance after which a ray must have hit at least 1 wall
     float max_dist;
 

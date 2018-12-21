@@ -109,12 +109,14 @@ wall_corners_real = [
 
 absorptions = [0.1]*len(wall_corners_strange)
 
+room_shape = 0
 
-def test_room_construct(room_shape):
+def test_room_construct():
 
+    global room_shape
     # Choose which room to use
     if room_shape == 0 :
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
         obstructing_walls = []
         # microphones = np.array([
         #     [9.5,5.4],
@@ -128,10 +130,10 @@ def test_room_construct(room_shape):
             [1.],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
     elif room_shape == 1 :
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_strange, absorptions)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_strange, absorptions)]
         obstructing_walls = []
         microphones = np.array([
             [2.5, 1.],
@@ -139,10 +141,10 @@ def test_room_construct(room_shape):
             [1., 0.5 ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
     elif room_shape == 2 :
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_real, absorptions)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_real, absorptions)]
         obstructing_walls = []
         microphones = np.array([
             [6, 3.5], # like students sitting
@@ -150,7 +152,7 @@ def test_room_construct(room_shape):
             [1., 1. ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
     return room
 
@@ -206,6 +208,11 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
         ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
+    # for i in range(0, int(0.05*fs) ):
+    #     ir[i] = 0
+    #
+    # for i in range(0,len(ir),2):
+    #     ir[i] = - abs(ir[i])
 
     if plot :
         x = np.arange(len(ir)) / fs
@@ -246,16 +253,16 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    room_shape = 2
+    room_shape = 1
 
     if room_shape == 0:
-        source_pos = [1.5, 7, 2.]
+        source_pos = [9., 7, 2.]
     elif room_shape == 1:
         source_pos = [0.5, 1, 1.]
     elif room_shape == 2:
         source_pos = [1, 3, 1.6] #like a teacher speaking
 
-    room = test_room_construct(room_shape)
+    room = test_room_construct()
 
     # parameters
     nb_phis = 150
@@ -273,10 +280,7 @@ if __name__ == '__main__':
 
     fs = 16000
 
-    # compute the log with the C++ code
     chrono = time.time()
-
-
     log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
 
 
@@ -289,15 +293,8 @@ if __name__ == '__main__':
 
     # For all microphones
     for k in range(len(log)):
-
-
         mic_log = log[k]
         print("For microphone n° ", k+1, ": ", len(mic_log), " entries to build the rir")
 
         rir = compute_rir(mic_log, time_thres, fs, mic_id = k+1, plot=True)
         apply_rir(rir, "0riginal.wav", fs, cutoff=0, result_name="aaa_mic"+str(k+1))
-
-
-
-
-

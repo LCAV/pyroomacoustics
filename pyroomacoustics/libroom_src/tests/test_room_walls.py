@@ -243,13 +243,12 @@ class TestRoomWalls(unittest.TestCase):
 
 
     def test_scat_ray_blocked(self):
-
         walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
-        obstructing_walls = [1,2] # index of the 2 possibly obstructing walls
+        obstructing_walls = [1, 2]  # index of the 2 possibly obstructing walls
         microphones = np.array([
-            [1.5 ],
-            [1.2 ]
-            ])
+            [1.5],
+            [1.2]
+        ])
 
         room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
@@ -257,24 +256,23 @@ class TestRoomWalls(unittest.TestCase):
 
         prev_wall = room.get_wall(0)
 
-        prev_last_hit = [2,0.2]
+        prev_last_hit = [0.5, 0.]
         last_hit = [0, 1.9]
-
+        total_dist = 0.
 
         energy = 1000000.
         energy_thres = 0.001
         scatter_coef = 0.1
 
         # Very high => will not be reached
-        travel_time = 100.
+        travel_time = 1.
         time_thres = 200.
 
-
-
         sound_speed = 340.
-        output = [[[1., 2.]]] # arbitrary initialisation to have the correct shape
+        output = [[[1., 2.]]]  # arbitrary initialisation to have the correct shape
 
-        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
+        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time,
+                              time_thres, energy_thres, sound_speed, output))
 
 
     def test_scat_ray_ok(self):
@@ -293,6 +291,7 @@ class TestRoomWalls(unittest.TestCase):
 
         prev_last_hit = [2,0.2]
         last_hit = [0, 1.9]
+        total_dist = 10
 
 
         energy = 1000000.
@@ -306,7 +305,7 @@ class TestRoomWalls(unittest.TestCase):
         sound_speed = 340.
 
         output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
-        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
+        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time, time_thres, energy_thres, sound_speed,output))
 
 
     def test_contains_2D(self):
@@ -372,3 +371,5 @@ class TestRoomWalls(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+

@@ -292,6 +292,7 @@ int Room<D>::image_source_shoebox(
   return fill_sources();
 }
 
+
 template<size_t D>
 float Room<D>::get_max_distance()
 {
@@ -370,6 +371,7 @@ float Room<D>::get_max_distance()
 
 }
 
+
 template<size_t D>
 std::tuple < Eigen::VectorXf, int > Room<D>::next_wall_hit(
   const Eigen::VectorXf & start,
@@ -413,7 +415,7 @@ std::tuple < Eigen::VectorXf, int > Room<D>::next_wall_hit(
   result.resize(D);
 
   int next_wall_index = -1;
-
+  
   // Upperbound on the min distance that we could find
   float min_dist(max_dist);
 
@@ -441,6 +443,8 @@ std::tuple < Eigen::VectorXf, int > Room<D>::next_wall_hit(
 
       if (temp_dist > libroom_eps and temp_dist < min_dist)
       {
+		  
+		//std::cout<<"i="<<i<<endl;
         min_dist = temp_dist;
         result = temp_hit;
         next_wall_index = i;
@@ -450,6 +454,7 @@ std::tuple < Eigen::VectorXf, int > Room<D>::next_wall_hit(
   }
   return std::make_tuple(result, next_wall_index);
 }
+
 
 template<size_t D>
 bool Room<D>::scat_ray(
@@ -490,9 +495,8 @@ bool Room<D>::scat_ray(
     :return : true if the scattered ray reached the mic, false otw
 	*/
 
-  bool result = true;
-  
-  for(uint k(0); k < n_mics; ++k){
+  bool result = true;  
+  for(int k(0); k < n_mics; ++k){
 	  
 	Eigen::VectorXf mic_pos = microphones.col(k);
 	mic_pos.resize(D);
@@ -512,6 +516,7 @@ bool Room<D>::scat_ray(
     Eigen::VectorXf dont_care;
     int next_wall_index(-1);
 
+	//std::cout<<"Entering next_wall_hit for mic=" << k << std::endl;
     std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
 
 	
@@ -538,18 +543,21 @@ bool Room<D>::scat_ray(
       }
       else
       {
+		//std::cout<<"Threshold met"<<std::endl;
 	    result = false;
 	  }
     }
     else
     {
 	  // if a wall intersects the scattered ray, we return false
+	  //std::cout<<"Blocking wall"<<std::endl;
 	  result = false;
 	}
   }
 
   return result;
 }
+
 
 template<size_t D>
 void Room<D>::simul_ray(float phi,
@@ -630,7 +638,7 @@ void Room<D>::simul_ray(float phi,
     // if any mic is intersected by the [start, hit_point] segment
 
 
-    for(uint k(0); k<n_mics; k++)
+    for(int k(0); k<n_mics; k++)
     {
 		
 	  Eigen::VectorXf mic_pos = microphones.col(k);
@@ -744,26 +752,30 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
    */
 
   room_log output;
-  
-  VectorXf mic_pos = microphones.col(0);
-  if ((source_pos - mic_pos).norm() < mic_radius)
-  {
-    std::cerr << "The source is inside the microphone ! " << std::endl;
-    throw std::exception();
-  }
 
+  std::cout<<"n_mics"<<n_mics<<std::endl;
 
-  for (uint k(0); k<n_mics; k++){
+  for (int k(0); k<n_mics; k++){
+	  
+	VectorXf mic_pos = microphones.col(k);
 	
 	output.push_back(mic_log());
     
-    if (not contains(microphones.col(k)))
+    if (not contains(mic_pos))
     {
       std::cerr << "One microphone is not inside the room ! " << std::endl;
       throw std::exception();
     }
+    
+    
+    if ((source_pos - mic_pos).norm() < mic_radius)
+    {
+      std::cerr << "The source is inside the microphone ! " << std::endl;
+      throw std::exception();
+    }
   }
-
+  
+  
   if (not contains(source_pos))
   {
     std::cerr << "The source is not inside the room ! " << std::endl;
@@ -773,15 +785,16 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   for (auto elem: obstructing_walls)
     std::cout << "obstructing : " << elem << std::endl;
 
-  
 
   for (size_t i(0); i < nb_phis; ++i)
   {
+	//std::cout<<"i = " << i<<std::endl;
     float phi = 2 * M_PI * (float) i / nb_phis;
 
 
     for (size_t j(0); j < nb_thetas; ++j)
     {
+	  //std::cout<<"j = " <<j<<std::endl;
 	  // Having a 3D linear sampling of the sphere surrounding the room
       float theta = std::acos(2 * ((float) j / nb_thetas) - 1);
 

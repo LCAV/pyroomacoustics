@@ -14,6 +14,8 @@
 
 namespace py = pybind11;
 
+int unused = 9;
+
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
 Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf &_microphones)
@@ -33,6 +35,7 @@ Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eige
     room->obstructing_walls.push_back(owall.cast<int>());
 
   room->max_dist = room->get_max_distance();
+  room ->n_mics = room->microphones.cols();
   return room;
 }
 
@@ -52,6 +55,7 @@ Room<2> *create_room_2D(py::list _walls, py::list _obstructing_walls, const Eige
     room->obstructing_walls.push_back(owall.cast<int>());
     
   room->max_dist = room->get_max_distance();
+  room ->n_mics = room->microphones.cols();
 
   return room;
 }
