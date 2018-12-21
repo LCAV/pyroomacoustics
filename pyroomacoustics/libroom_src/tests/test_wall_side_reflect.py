@@ -60,7 +60,7 @@ def run_side(label):
     r_exp = points[label]['expect']
     d = points[label]['d']
 
-    wall = pra.libroom.Wall(corners[d], 0.1)
+    wall = pra.wall_factory(corners[d], 0.1)
     r = wall.side(p)
 
     assert r == r_exp, 'failed side - {} : returned={} expected={}'.format(label, r, r_exp)
@@ -72,7 +72,7 @@ def run_reflect(label):
     r_exp = points[label]['expect']
     d = points[label]['d']
 
-    wall = pra.libroom.Wall(corners[d], 0.1)
+    wall = pra.wall_factory(corners[d], 0.1)
 
     x = np.zeros(wall.dim, dtype=np.float32)
     wall.reflect(p, x)

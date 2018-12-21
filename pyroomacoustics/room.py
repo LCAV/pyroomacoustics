@@ -180,9 +180,29 @@ import ctypes
 from . import beamforming as bf
 from .soundsource import SoundSource
 from .parameters import constants, eps
+from .utilities import fractional_delay
 
 from . import libroom
-from .libroom import Wall
+from .libroom import Wall, Wall2D
+
+def room_factory(walls, obstructing_walls, mic_locs):
+    ''' Call the correct method according to room dimension '''
+    if walls[0].dim == 3:
+        return libroom.Room(walls, obstructing_walls, mic_locs)
+    elif walls[0].dim == 2:
+        return libroom.Room2D(walls, obstructing_walls, mic_locs)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
+def wall_factory(corners, absorption, name=""):
+    ''' Call the correct method according to wall dimension '''
+    if corners.shape[0] == 3:
+        return Wall(corners, absorption, name)
+    elif corners.shape[0] == 2:
+        return Wall2D(corners, absorption, name)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
 
 class Room(object):
     '''
@@ -308,7 +328,12 @@ class Room(object):
         
         walls = []
         for i in range(corners.shape[1]):
-            walls.append(Wall(np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T, absorption[i], "wall_"+str(i)))
+            walls.append(wall_factory(
+                np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T,
+                absorption[i],
+                "wall_"+str(i),
+                ))
+
             
         return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
@@ -372,7 +397,7 @@ class Room(object):
                 np.r_[floor_corners[:,(i+1)%nw], 0] + height*v_vec,
                 np.r_[floor_corners[:,i], 0] + height*v_vec
                 ]).T
-            walls.append(Wall(corners, self.walls[i].absorption, name=str(i)))
+            walls.append(wall_factory(corners, self.walls[i].absorption, name=str(i)))
 
         absorption = np.array(absorption)
         if absorption.ndim == 0:
@@ -386,8 +411,8 @@ class Room(object):
         # we need the floor corners to ordered clockwise (for the normal to point outward)
         floor_corners = np.fliplr(floor_corners)
 
-        walls.append(Wall(floor_corners, absorption[0], name='floor'))
-        walls.append(Wall(ceiling_corners, absorption[1], name='ceiling'))
+        walls.append(wall_factory(floor_corners, absorption[0], name='floor'))
+        walls.append(wall_factory(ceiling_corners, absorption[1], name='ceiling'))
 
         self.walls = walls
         self.dim = 3
@@ -662,7 +687,7 @@ class Room(object):
 
         self.visibility = []
 
-        c_room = libroom.Room(self.walls, self.obstructing_walls, self.mic_array.R)
+        c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
 
         for source in self.sources:
 
@@ -713,20 +738,78 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self):
-        ''' Compute the room impulse response between every source and microphone '''
+    def compute_rir(self, mode='ism', nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+        ''' Compute the room impulse response between every source and microphone.
+        :param mode: a string that defines which method to use to compute the RIR.
+                    It can take values :
+                    'ism' for pure image source method,
+                    'rt' for pure ray tracing,
+                    'hybrid' for a mix of both methods
+
+        All other default params are needed for the ray tracing method'''
         
         self.rir = []
 
-        # Run image source model if this hasn't been done
-        if self.visibility is None:
-            self.image_source_model()
+        if mode=='ism':
+            # Run image source model if this hasn't been done
+            if self.visibility is None:
+                self.image_source_model()
 
-        for m, mic in enumerate(self.mic_array.R.T):
-            h = []
-            for s, source in enumerate(self.sources):
-                h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
-            self.rir.append(h)
+            for m, mic in enumerate(self.mic_array.R.T):
+                h = []
+                for s, source in enumerate(self.sources):
+                    h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
+                self.rir.append(h)
+
+
+        elif mode == 'rt':
+
+            # Initialize the rir array for M microphones and S sources
+            self.rir = [ [ [] ]*len(self.sources) ]*self.mic_array.M
+
+            # the python utilities to compute the rir
+            fdl = constants.get('frac_delay_length')
+            fdl2 = (fdl - 1) // 2  # Integer division
+            max_dim = int(time_thres * self.fs) + fdl
+
+
+            c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
+
+            for src_id,source in enumerate(self.sources):
+
+                source_pos = source.position.astype(np.float32)
+
+                print("Starting Ray Tracing")
+                room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
+                                           energy_thres, sound_speed)
+
+                print("Ray Tracing over.\n\nStarting computing RIR")
+
+                for mic_id in range(len(room_log)) :
+
+                    mic_log = room_log[mic_id]
+
+                    TIME = 0
+                    ENERGY = 1
+
+                    self.rir[mic_id][src_id] = np.zeros(max_dim)
+
+                    for entry in mic_log:
+                        time_ip = int(np.floor(entry[TIME] * self.fs))
+
+                        if time_ip > max_dim - fdl2 or time_ip < fdl2:
+                            continue
+
+                        time_fp = (entry[TIME] * self.fs) - time_ip
+                        self.rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
+
+                    print(".. ok for microphone number", mic_id, "( with", len(mic_log), "entries)")
+
+        elif mode == 'hybrid':
+            a = 0
+
+        else:
+            raise ValueError("The mode parameter can only take 3 values : ['ism','rt','hybrid']")
 
 
     def simulate(self, recompute_rir=False):
@@ -983,19 +1066,19 @@ class ShoeBox(Room):
         if self.dim == 2:
             walls = []
             # seems the order of walls is important here, don't change!
-            walls.append(Wall(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
+            walls.append(wall_factory(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
+            walls.append(wall_factory(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
 
         elif self.dim == 3:
             walls = []
-            walls.append(Wall(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
-            walls.append(Wall(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
-            walls.append(Wall(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
-            walls.append(Wall(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
+            walls.append(wall_factory(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
+            walls.append(wall_factory(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
+            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
+            walls.append(wall_factory(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
 
         else:
             raise ValueError("Only 2D and 3D rooms are supported.")

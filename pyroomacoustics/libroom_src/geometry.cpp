@@ -17,10 +17,8 @@
 #include "geometry.hpp"
 
 
-int ccw3p(const Eigen::VectorXf & p1,
-  const Eigen::VectorXf & p2,
-  const Eigen::VectorXf & p3)
-  {
+int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vector2f &p3)
+{
   /*
      Computes the orientation of three 2D points.
 
@@ -48,11 +46,11 @@ int ccw3p(const Eigen::VectorXf & p1,
 }
 
 int check_intersection_2d_segments(
-  const Eigen::VectorXf & a1,
-  const Eigen::VectorXf & a2,
-  const Eigen::VectorXf & b1,
-  const Eigen::VectorXf & b2
-) {
+
+    const Eigen::Vector2f &a1, const Eigen::Vector2f &a2,
+    const Eigen::Vector2f &b1, const Eigen::Vector2f &b2
+    )
+{
   /*
    * Returns:
    * -1: no intersection
@@ -83,12 +81,12 @@ int check_intersection_2d_segments(
 }
 
 int intersection_2d_segments(
-  const Eigen::VectorXf & a1,
-  const Eigen::VectorXf & a2,
-  const Eigen::VectorXf & b1,
-  const Eigen::VectorXf & b2,
-  Eigen::Ref<Eigen::VectorXf> intersection)
-  {
+
+    const Eigen::Vector2f &a1, const Eigen::Vector2f &a2,
+    const Eigen::Vector2f &b1, const Eigen::Vector2f &b2,
+    Eigen::Ref<Eigen::Vector2f> intersection
+    )
+{
   /*
     Computes the intersection between two 2D line segments.
 
@@ -143,12 +141,11 @@ int intersection_2d_segments(
 }
 
 int intersection_3d_segment_plane(
-  const Eigen::VectorXf & a1,
-  const Eigen::VectorXf & a2,
-  const Eigen::VectorXf & p,
-  const Eigen::VectorXf & normal,
-  Eigen::Ref<Eigen::VectorXf> intersection)
-  {
+
+    const Eigen::Vector3f &a1, const Eigen::Vector3f &a2,
+    const Eigen::Vector3f &p, const Eigen::Vector3f &normal,
+    Eigen::Ref<Eigen::Vector3f> intersection)
+{
   /*
      Computes the intersection between a line segment and a plane in 3D.
 
@@ -205,9 +202,10 @@ Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2)
   return v1.cross(v2);
 }
 
-int is_inside_2d_polygon(const Eigen::Vector2f & p,
-  const Eigen::MatrixXf & corners)
-  {
+
+int is_inside_2d_polygon(const Eigen::Vector2f &p,
+    const Eigen::Matrix<float,2,Eigen::Dynamic> &corners)
+{
   /*
     Checks if a given point is inside a given polygon in 2D.
 
@@ -229,19 +227,8 @@ int is_inside_2d_polygon(const Eigen::Vector2f & p,
     1 : the point is on the boundary
     */
 
-  if (corners.rows() != 2)
-  {
-    std::cerr << "Only 2D polygons are supported" << std::endl;
-    throw std::exception();
-  }
 
-  if (corners.cols() < 3)
-  {
-    std::cerr << "The polygon should have more than 2 points" << std::endl;
-    throw std::exception();
-  }
-
-  bool is_inside = false; // initialize point not in the polygon
+  bool is_inside = false;  // initialize point not in the polygon
   int c1c2p, c1c2p0, pp0c1, pp0c2;
   int n_corners = corners.cols();
 
@@ -252,12 +239,6 @@ int is_inside_2d_polygon(const Eigen::Vector2f & p,
   p_out.resize(2);
   p_out.coeffRef(0) = corners.coeff(0, i_min) - 1;
   p_out.coeffRef(1) = p.coeff(1);
-
-  /*
-  std::cout << "The corners: " << corners << std::endl;
-  std::cout << "The point: " << p << std::endl;
-  std::cout << "Aux point: " << p_out << std::endl;
-  */
 
   // Now count intersections
   for (int i = 0, j = n_corners - 1; i < n_corners; j = i++)
@@ -293,13 +274,6 @@ int is_inside_2d_polygon(const Eigen::Vector2f & p,
     float c_max = fmaxf(corners.coeff(1, i), corners.coeff(1, j));
     if (p.coeff(1) + libroom_eps < c_max)
     {
-      /*
-      std::cout << "wall " << j << " " << i 
-        << " p[1]=" << p.coeff(1) << " c1[1]=" << corners.coeff(1,i)
-        << " c2[1]=" << corners.coeff(1,j) << " c_max=" << c_max
-        << " p[1] < c_max:" << (p.coeff(1) < c_max)
-        << " diff=" << (c_max - p.coeff(1)) << std::endl;
-      */
       is_inside = !is_inside;
     }
 

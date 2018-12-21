@@ -362,9 +362,9 @@ void update_travel_time(float & travel_time, float hop_length, float sound_speed
   travel_time = travel_time + hop_length / sound_speed;
 }
 
-
+template<size_t D>
 void update_energy_wall(float & energy,
-  const Wall & wall)
+  const Wall<D> & wall)
   {
 
   /* This function updates the ray's energy with respect to the wall's
@@ -376,9 +376,11 @@ void update_energy_wall(float & energy,
   energy = energy * sqrt(1 - wall.absorption);
 }
 
+
+template<size_t D>
 float compute_scat_energy(float energy,
   float scat_coef,
-  const Wall & wall,
+  const Wall<D> & wall,
   const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,

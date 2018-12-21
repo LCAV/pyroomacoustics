@@ -230,7 +230,7 @@ cases = {
 def run_intersect(lbl):
 
     case = cases[lbl]
-    wall = pra.libroom.Wall(case['corners'], case['absorption'])
+    wall = pra.wall_factory(case['corners'], case['absorption'])
     p1, p2 = case['seg']
 
     isect_exp = case['intersect']

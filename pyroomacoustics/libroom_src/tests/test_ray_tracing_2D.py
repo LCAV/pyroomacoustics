@@ -64,59 +64,30 @@ def test_room_construct():
     if room_shape == 0 :
 
         absorptions = [0.1] * len(wall_corners_square)
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_square, absorptions)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_square, absorptions)]
         obstructing_walls = []
         microphones = np.array([
             [3.2, ],
             [0.7, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
     else :
         absorptions = [0.1] * len(wall_corners_L_shape)
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_L_shape, absorptions)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_L_shape, absorptions)]
         obstructing_walls = []
         microphones = np.array([
             [3.9, ],
             [4.1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
     return room
 
 
-def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
-    # TIME = 0
-    # ENERGY = 1
-    #
-    # time = np.array([e[TIME] for e in log], dtype=np.float)
-    # alpha = np.array([e[ENERGY] for e in log], dtype=np.float)
-    # visibility = np.ones(time.shape[0], dtype=np.int32)
-    #
-    # # ======= WITH FRACTIONAL PART =======
-    #
-    # # the python utilities to compute the rir
-    # fdl = pra.constants.get('frac_delay_length')
-    # fdl2 = (fdl - 1) // 2  # Integer division
-    #
-    # ir = np.zeros(int(time_thres * fs) + fdl)
-    #
-    # print(np.floor(fs * np.min(time)) - fdl2)
-    #
-    #
-    # build_rir.fast_rir_builder(ir, time, alpha, visibility, fs, fdl)
-    #
-    # if plot:
-    #     x = np.arange(len(ir)) / fs
-    #     plt.figure()
-    #     plt.plot(x, ir)
-    #     plt.title("RIR")
-    #     plt.show()
-    #
-    # return ir
-
+def compute_rir(mic_log, time_thres, fs, mic_id=1, plot=True):
 
     TIME = 0
     ENERGY = 1
@@ -129,7 +100,7 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
     ir = np.zeros(int(time_thres * fs) + fdl)
 
-    for entry in log:
+    for entry in mic_log:
         time_ip = int(np.floor(entry[TIME] * fs))
 
         if time_ip > len(ir) - fdl2 or time_ip < fdl2:
@@ -188,7 +159,7 @@ if __name__ == '__main__':
     mic_radius = 0.5
 
 
-    scatter_coef = 0.
+    scatter_coef = 0.1
 
 
     time_thres = 0.8 #s

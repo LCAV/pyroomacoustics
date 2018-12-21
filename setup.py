@@ -46,7 +46,9 @@ ext_modules = [
         Extension(
             'pyroomacoustics.libroom',
             [ os.path.join(libroom_src_dir, f)
-                for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp', 'utility.cpp']],
+                #for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp', 'utility.cpp']],
+                for f in ['libroom.cpp'] ],
+                #for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp']],
             include_dirs=[
                 '.',
                 libroom_src_dir,
@@ -134,8 +136,6 @@ class BuildExt(build_ext):
 
 setup_kwargs = dict(
         name='pyroomacoustics',
-
-        version=__version__,
 
         description='A simple framework for room acoustics and audio processing in Python.',
         long_description=long_description,

@@ -40,10 +40,12 @@ void update_travel_time(float & travel_time,
   const float hop_length,
   const float sound_speed);
 
-void update_energy_wall(float & energy, const Wall & wall);
+template<size_t D>
+void update_energy_wall(float & energy, const Wall<D> & wall);
 
+template<size_t D>
 float compute_scat_energy(float energy, float scat_coef,
-  const Wall & wall,
+  const Wall<D> & wall,
   const VectorXf & start,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
@@ -54,7 +56,7 @@ int test();
 
 
 
-
+#include "utility.cpp"
 
 
 
