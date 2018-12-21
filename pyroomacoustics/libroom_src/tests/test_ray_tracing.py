@@ -107,11 +107,13 @@ wall_corners_real = [
     ]),
 ]
 
-absorptions = [0.01]*len(wall_corners_strange)
+absorptions = [0.1]*len(wall_corners_strange)
 
+room_shape = 0
 
-def test_room_construct(room_shape):
+def test_room_construct():
 
+    global room_shape
     # Choose which room to use
     if room_shape == 0 :
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_cube, absorptions)]
@@ -206,11 +208,11 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
         ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
-    for i in range(0, int(0.05*fs) ):
-        ir[i] = 0
-
-    for i in range(0,len(ir),2):
-        ir[i] = - abs(ir[i])
+    # for i in range(0, int(0.05*fs) ):
+    #     ir[i] = 0
+    #
+    # for i in range(0,len(ir),2):
+    #     ir[i] = - abs(ir[i])
 
     if plot :
         x = np.arange(len(ir)) / fs
@@ -251,8 +253,6 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    room_shape = 2
-
     if room_shape == 0:
         source_pos = [9., 7, 2.]
     elif room_shape == 1:
@@ -260,11 +260,11 @@ if __name__ == '__main__':
     elif room_shape == 2:
         source_pos = [1, 3, 1.6] #like a teacher speaking
 
-    room = test_room_construct(room_shape)
+    room = test_room_construct()
 
     # parameters
-    nb_phis = 50
-    nb_thetas = 50
+    nb_phis = 150
+    nb_thetas = 150
 
     mic_radius = 0.5
 
@@ -278,10 +278,7 @@ if __name__ == '__main__':
 
     fs = 16000
 
-    # compute the log with the C++ code
     chrono = time.time()
-
-
     log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
 
 

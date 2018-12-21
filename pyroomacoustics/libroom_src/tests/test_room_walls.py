@@ -257,9 +257,10 @@ class TestRoomWalls(unittest.TestCase):
 
         prev_wall = room.get_wall(0)
 
-        prev_last_hit = [2,0.2]
-        last_hit = [0, 1.9]
+        prev_last_hit = [2.,0.2]
+        last_hit = [0., 1.9]
 
+        total_dist = 10.
 
         energy = 1000000.
         energy_thres = 0.001
@@ -274,7 +275,7 @@ class TestRoomWalls(unittest.TestCase):
         sound_speed = 340.
         output = [[[1., 2.]]] # arbitrary initialisation to have the correct shape
 
-        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
+        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time, time_thres, energy_thres, sound_speed,output))
 
 
     def test_scat_ray_ok(self):
@@ -291,9 +292,9 @@ class TestRoomWalls(unittest.TestCase):
 
         prev_wall = room.get_wall(0)
 
-        prev_last_hit = [2,0.2]
-        last_hit = [0, 1.9]
-
+        prev_last_hit = [2.,0.2]
+        last_hit = [0., 1.9]
+        total_dist = 10.
 
         energy = 1000000.
         energy_thres = 0.001
@@ -306,7 +307,7 @@ class TestRoomWalls(unittest.TestCase):
         sound_speed = 340.
 
         output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
-        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, travel_time, time_thres, energy_thres, sound_speed,output))
+        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time, time_thres, energy_thres, sound_speed,output))
 
 
     def test_contains_2D(self):

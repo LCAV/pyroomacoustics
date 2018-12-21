@@ -56,11 +56,12 @@ wall_corners_square = [
 
 absorptions = [0.1]*len(wall_corners_L_shape)
 
+room_shape = 0
+def test_room_construct():
 
-def test_room_construct(square):
-
+    global room_shape
     # Choose which room to use
-    if square :
+    if room_shape == 0 :
 
         absorptions = [0.1] * len(wall_corners_square)
         walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_square, absorptions)]
@@ -85,7 +86,36 @@ def test_room_construct(square):
 
     return room
 
-def compute_rir(log, time_thres, fs, plot=True):
+
+def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
+    # TIME = 0
+    # ENERGY = 1
+    #
+    # time = np.array([e[TIME] for e in log], dtype=np.float)
+    # alpha = np.array([e[ENERGY] for e in log], dtype=np.float)
+    # visibility = np.ones(time.shape[0], dtype=np.int32)
+    #
+    # # ======= WITH FRACTIONAL PART =======
+    #
+    # # the python utilities to compute the rir
+    # fdl = pra.constants.get('frac_delay_length')
+    # fdl2 = (fdl - 1) // 2  # Integer division
+    #
+    # ir = np.zeros(int(time_thres * fs) + fdl)
+    #
+    # print(np.floor(fs * np.min(time)) - fdl2)
+    #
+    #
+    # build_rir.fast_rir_builder(ir, time, alpha, visibility, fs, fdl)
+    #
+    # if plot:
+    #     x = np.arange(len(ir)) / fs
+    #     plt.figure()
+    #     plt.plot(x, ir)
+    #     plt.title("RIR")
+    #     plt.show()
+    #
+    # return ir
 
 
     TIME = 0
@@ -107,7 +137,6 @@ def compute_rir(log, time_thres, fs, plot=True):
 
         time_fp = (entry[TIME] * fs) - time_ip
 
-        # Distance attenuation
         ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
 
@@ -115,7 +144,7 @@ def compute_rir(log, time_thres, fs, plot=True):
         x = np.arange(len(ir)) / fs
         plt.figure()
         plt.plot(x, ir)
-        plt.title("RIR")
+        plt.title("RIR for microphone " + str(mic_id))
         plt.show()
 
     return ir
@@ -150,8 +179,7 @@ def highpass(audio, fs, cutoff=200, butter_order=5):
 
 if __name__ == '__main__':
 
-    square = False
-    room = test_room_construct(square)
+    room = test_room_construct()
 
     # parameters
     nb_phis = 50
@@ -172,15 +200,22 @@ if __name__ == '__main__':
     # compute the log with the C++ code
     chrono = time.time()
     log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
-    print(nb_phis*nb_thetas, " rays traced in ", time.time()-chrono, " seconds" )
-    print(len(log), " entries to build the rir")
 
 
-    rir = compute_rir(log, time_thres, fs, plot=True)
+    print("\nNumber of phi : ", nb_phis)
+    print("Number of theta :", nb_thetas)
+    print("\nThere are", len(log), " microphone(s).")
+    print("(", nb_phis, "*", nb_thetas,") =", nb_phis * nb_thetas, " rays traced in ", time.time() - chrono, " seconds")
 
-    apply_rir(rir, "0riginal.wav", fs, cutoff=0)
+    print("------------------\n")
 
+    # For all microphones
+    for k in range(len(log)):
+        mic_log = log[k]
+        print("For microphone n° ", k+1, ": ", len(mic_log), " entries to build the rir")
 
+        rir = compute_rir(mic_log, time_thres, fs, mic_id = k+1, plot=True)
+        apply_rir(rir, "0riginal.wav", fs, cutoff=0, result_name="aaa_mic"+str(k+1))
 
 
 
