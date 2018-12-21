@@ -780,9 +780,6 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
     throw std::exception();
   }
 
-  for (auto elem: obstructing_walls)
-    std::cout << "obstructing : " << elem << std::endl;
-
 
   for (size_t i(0); i < nb_phis; ++i)
   {

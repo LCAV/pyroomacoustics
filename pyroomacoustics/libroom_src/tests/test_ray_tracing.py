@@ -156,7 +156,7 @@ def test_room_construct():
 
     return room
 
-def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
+def compute_rir(mic_log, time_thres, fs, mic_id=1, plot=True):
     # TIME = 0
     # ENERGY = 1
     #
@@ -198,7 +198,7 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
     ir = np.zeros(int(time_thres * fs) + fdl)
 
-    for entry in log:
+    for entry in mic_log:
         time_ip = int(np.floor(entry[TIME] * fs))
 
         if time_ip > len(ir) - fdl2 or time_ip < fdl2:
@@ -281,7 +281,9 @@ if __name__ == '__main__':
     fs = 16000
 
     chrono = time.time()
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
+    log = np.array(room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed))
+
+    print(log.shape)
 
 
     print("\nNumber of phi : ", nb_phis)
@@ -298,3 +300,4 @@ if __name__ == '__main__':
 
         rir = compute_rir(mic_log, time_thres, fs, mic_id = k+1, plot=True)
         apply_rir(rir, "0riginal.wav", fs, cutoff=0, result_name="aaa_mic"+str(k+1))
+

@@ -87,7 +87,7 @@ def test_room_construct():
     return room
 
 
-def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
+def compute_rir(mic_log, time_thres, fs, mic_id=1, plot=True):
 
 
     TIME = 0
@@ -101,7 +101,7 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
     ir = np.zeros(int(time_thres * fs) + fdl)
 
-    for entry in log:
+    for entry in mic_log:
         time_ip = int(np.floor(entry[TIME] * fs))
 
         if time_ip > len(ir) - fdl2 or time_ip < fdl2:
