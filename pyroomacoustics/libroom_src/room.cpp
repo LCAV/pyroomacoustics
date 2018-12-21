@@ -753,8 +753,6 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
 
   room_log output;
 
-  std::cout<<"n_mics"<<n_mics<<std::endl;
-
   for (int k(0); k<n_mics; k++){
 	  
 	VectorXf mic_pos = microphones.col(k);
