@@ -107,7 +107,7 @@ wall_corners_real = [
     ]),
 ]
 
-absorptions = [0.1]*len(wall_corners_strange)
+absorptions = [0.01]*len(wall_corners_strange)
 
 
 def test_room_construct(room_shape):
@@ -206,6 +206,11 @@ def compute_rir(log, time_thres, fs, mic_id=1, plot=True):
 
         ir[time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
 
+    for i in range(0, int(0.05*fs) ):
+        ir[i] = 0
+
+    for i in range(0,len(ir),2):
+        ir[i] = - abs(ir[i])
 
     if plot :
         x = np.arange(len(ir)) / fs
@@ -249,7 +254,7 @@ if __name__ == '__main__':
     room_shape = 2
 
     if room_shape == 0:
-        source_pos = [1.5, 7, 2.]
+        source_pos = [9., 7, 2.]
     elif room_shape == 1:
         source_pos = [0.5, 1, 1.]
     elif room_shape == 2:
@@ -258,10 +263,10 @@ if __name__ == '__main__':
     room = test_room_construct(room_shape)
 
     # parameters
-    nb_phis = 150
-    nb_thetas = 150
+    nb_phis = 50
+    nb_thetas = 50
 
-    mic_radius = 0.05
+    mic_radius = 0.5
 
 
     scatter_coef = 0.1
@@ -289,15 +294,8 @@ if __name__ == '__main__':
 
     # For all microphones
     for k in range(len(log)):
-
-
         mic_log = log[k]
         print("For microphone n° ", k+1, ": ", len(mic_log), " entries to build the rir")
 
         rir = compute_rir(mic_log, time_thres, fs, mic_id = k+1, plot=True)
         apply_rir(rir, "0riginal.wav", fs, cutoff=0, result_name="aaa_mic"+str(k+1))
-
-
-
-
-

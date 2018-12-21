@@ -423,7 +423,7 @@ float compute_scat_energy(float energy,
    VectorXf r = mic_pos - hit_point;
    
    float cos_theta = cos_angle_between(n, r);
-   float B = r.norm();
+   float B = total_dist + r.norm();
    float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
 
   return energy * scat_coef * 2 * cos_theta * gamma_term ;
