@@ -169,8 +169,6 @@ class TestUtilityRoutines(unittest.TestCase):
     def test_test(self):
 
         a = pra.libroom.test()
-        print(a)
-        print(type(a))
 
 
 if __name__ == '__main__':

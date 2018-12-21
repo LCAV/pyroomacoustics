@@ -102,7 +102,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_max_dist_3D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -110,7 +110,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
         eps = 0.001
         result = room.get_max_distance()
@@ -120,32 +120,32 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_max_dist_2D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
             [1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
         eps = 0.001
         result = room.get_max_distance()
         self.assertEqual(result, np.sqrt(25)+1)
 
     def test_same_wall_true3D(self):
-        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
         self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_true2D(self):
-        w1 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
-        w2 = pra.libroom_new.Wall(wall_corners_2D[0], absorptions_3D[0])
+        w1 = pra.libroom.Wall2D(wall_corners_2D[0], absorptions_3D[0])
+        w2 = pra.libroom.Wall2D(wall_corners_2D[0], absorptions_3D[0])
         self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_false3D(self):
-        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom_new.Wall(wall_corners_3D[1], absorptions_3D[0])
+        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom.Wall(wall_corners_3D[1], absorptions_3D[0])
         self.assertTrue(not w1.same_as(w2))
 
     def test_same_wall_false3D_more_corners(self):
@@ -156,14 +156,14 @@ class TestRoomWalls(unittest.TestCase):
             [0, 0, 0, 0, 0],
             [0, 0, 2, 1.5, 2]])
 
-        w1 = pra.libroom_new.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom_new.Wall(c1, absorptions_3D[0])
+        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.libroom.Wall(c1, absorptions_3D[0])
         self.assertTrue(not w1.same_as(w2))
 
 
     def test_next_wall_hit(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -171,7 +171,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -191,7 +191,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_next_wall_nohit(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -199,7 +199,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -216,7 +216,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_next_wall_hit2D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -224,7 +224,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -244,14 +244,14 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_scat_ray_blocked(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = [1,2] # index of the 2 possibly obstructing walls
         microphones = np.array([
             [1.5 ],
             [1.2 ]
             ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
         radius = 0.1
 
@@ -279,14 +279,14 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_scat_ray_ok(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = [1,2]
         microphones = np.array([
             [0.5 ],
             [0.2 ]
             ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
         radius = 0.1
 
         prev_wall = room.get_wall(0)
@@ -311,35 +311,35 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_contains_2D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [0.5],
             [0.2]
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
         self.assertTrue(room.contains(microphones[:,0]))
 
 
     def test_notcontains_2D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1.],
             [1.7]
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
 
         self.assertTrue(not room.contains(microphones[:,0]))
 
 
     def test_contains_3D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1.],
@@ -347,7 +347,7 @@ class TestRoomWalls(unittest.TestCase):
             [1.]
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
 
 
@@ -356,7 +356,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_notcontains_3D(self):
 
-        walls = [pra.libroom_new.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [5.],
@@ -364,7 +364,7 @@ class TestRoomWalls(unittest.TestCase):
             [40]
         ])
 
-        room = pra.libroom_new.Room(walls, obstructing_walls, microphones)
+        room = pra.libroom.Room(walls, obstructing_walls, microphones)
 
 
 
