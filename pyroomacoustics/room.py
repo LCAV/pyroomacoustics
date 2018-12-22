@@ -275,6 +275,7 @@ class Room(object):
         else:
             self.rir = None
 
+
         # in the beginning, nothing has been 
         self.visibility = None
 
@@ -738,7 +739,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=50, nb_thetas=50, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
@@ -750,7 +751,10 @@ class Room(object):
         
         self.rir = []
 
-        if mode=='ism':
+        def ism():
+
+            temp_rir = []
+
             # Run image source model if this hasn't been done
             if self.visibility is None:
                 self.image_source_model()
@@ -759,40 +763,40 @@ class Room(object):
                 h = []
                 for s, source in enumerate(self.sources):
                     h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
-                self.rir.append(h)
+                temp_rir.append(h)
 
+            return temp_rir
 
-        elif mode == 'rt':
+        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
 
             # Initialize the rir array for M microphones and S sources
-            self.rir = [ [ [] ]*len(self.sources) ]*self.mic_array.M
+            temp_rir = [[[]] * len(self.sources)] * self.mic_array.M
 
             # the python utilities to compute the rir
             fdl = constants.get('frac_delay_length')
             fdl2 = (fdl - 1) // 2  # Integer division
             max_dim = int(time_thres * self.fs) + fdl
 
-
             c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
 
-            for src_id,source in enumerate(self.sources):
+            for src_id, source in enumerate(self.sources):
 
                 source_pos = source.position.astype(np.float32)
 
-                print("Starting Ray Tracing")
+                print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
-                                           energy_thres, sound_speed)
+                                                  energy_thres, sound_speed)
 
                 print("Ray Tracing over.\n\nStarting computing RIR")
 
-                for mic_id in range(len(room_log)) :
+                for mic_id in range(len(room_log)):
 
                     mic_log = room_log[mic_id]
 
                     TIME = 0
                     ENERGY = 1
 
-                    self.rir[mic_id][src_id] = np.zeros(max_dim)
+                    temp_rir[mic_id][src_id] = np.zeros(max_dim)
 
                     for entry in mic_log:
                         time_ip = int(np.floor(entry[TIME] * self.fs))
@@ -801,15 +805,66 @@ class Room(object):
                             continue
 
                         time_fp = (entry[TIME] * self.fs) - time_ip
-                        self.rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (entry[ENERGY] * fractional_delay(time_fp))
+                        temp_rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (
+                                    entry[ENERGY] * fractional_delay(time_fp))
 
                     print(".. ok for microphone number", mic_id, "( with", len(mic_log), "entries)")
 
+            return temp_rir
+
+        if mode=='ism':
+            self.rir = ism()
+
+        elif mode == 'rt':
+            self.rir = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
+                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed)
+
         elif mode == 'hybrid':
-            a = 0
+            rir_ism = ism()
+            rir_rt = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
+                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed)
+
+
+
+            # print(len(rir_ism[0]), len(rir_ism[0][0]))
+            # print(len(rir_rt[0]), len(rir_rt[0][0]))
+            #
+            # print(len(rir_ism[0]), len(rir_ism[1][0]))
+            # print(len(rir_rt[0]), len(rir_rt[1][0]))
+            print(type(rir_rt[0][0]))
+
+            self.rir = [[[]] * len(self.sources)] * self.mic_array.M
+
+            # First we need to scale the energy of each ray in rir_rt
+            for src_id, source in enumerate(self.sources):
+                for mic_id, mic in enumerate(self.mic_array.R.T):
+
+                    r = np.linalg.norm(mic - source.position.astype(np.float32))
+                    gamma_term = 1 - np.sqrt(r*r - mic_radius*mic_radius)/r
+
+                    rir_rt[mic_id][src_id] *= (2 / (r*r*gamma_term) )
+
+            # Now we must fit both shapes
+            for s in range(len(self.sources)):
+                for m in range(self.mic_array.M):
+
+                    rt_dim = len(rir_rt[m][s])
+                    ism_dim = len(rir_ism[m][s])
+
+                    if (rt_dim > ism_dim):
+                        self.rir[m][s] = np.zeros(rt_dim)
+
+                    else :
+                        self.rir[m][s] = np.zeros(ism_dim)
+
+
+                    self.rir[m][s][:ism_dim] += rir_ism[m][s]
+
+                    # Now we add the rt component only if it has still not be taken into account by ism
+                    self.rir[m][s][:rt_dim] += (self.rir[m][s]==0)*rir_rt[m][s]
 
         else:
-            raise ValueError("The mode parameter can only take 3 values : ['ism','rt','hybrid']")
+            raise ValueError("The mode parameter can only take 3 values : 'ism', 'rt' or 'hybrid'")
 
 
     def simulate(self, recompute_rir=False):
