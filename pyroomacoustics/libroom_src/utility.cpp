@@ -377,68 +377,6 @@ void update_energy_wall(float & energy,
 }
 
 
-template<size_t D>
-float compute_scat_energy(float energy,
-  float scat_coef,
-  const Wall<D> & wall,
-  const VectorXf & start,
-  const VectorXf & hit_point,
-  const VectorXf & mic_pos,
-  float radius,
-  float total_dist,
-  bool for_hybrid_rir)
-  {
-	  
-  /* This function computes the energy of a scattered ray. This energy
-   * depends on several factors as explained below
-   * 
-   * energy: the ray's energy (wall absorption already taken into account)
-   * scat_coef: the scattering coefficients of the wall
-   * wall: the wall being intersected (we need its normal vector)
-   * start: (array size 2 or 3) the previous wall hit_point position (needed to check that 
-   *   the wall normal is correctly oriented)
-   * hit_point: (array size 2 or 3) the actual wall hit_point position
-   * mic_pos: (array size 2 or 3) the position of the microphone's center
-   * radius: the radius of the microphone
-   *  */
-   
-  // Make sure the normal points inside the room
-  VectorXf n = wall.normal;
-  if (cos_angle_between(start - hit_point, n) < 0.)
-  {
-    n = (-1) * n;
-  }
-  
-  /* The formula is the following (considering that we already applied
-   * the wall's absorption coef) and that we consider no air attenuation : 
-   * E_scat = E . scat_coef . 2 . cos(theta) . ( 1 - cos(gamma/2) ) 
-   * 
-   * where :
-   * - theta is the angle between the wall normal and the vector r (wall_hit -> mic_pos)
-   * - gamma is the opening angle, ie the angle between the two tangent lines 
-   *    to the microphone (circle) that pass through hit_point
-   * 
-   * Luckily, the term cos(gamma/2) can be written without any call to trigo functions :
-   * cos(gamma/2) = sqrt(B*B - radius*radius) / B
-   * 
-   * where B is the distance between wall_hit and mic_pos*/
-   
-  VectorXf r = mic_pos - hit_point;
-   
-  float cos_theta = cos_angle_between(n, r);
-  float B = total_dist + r.norm();
-  float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
-  
-  if (for_hybrid_rir)
-  {
-    return energy*scat_coef*cos_theta/(4*M_PI*B);
-    
-  }
-
-  return energy * scat_coef * 2 * cos_theta * gamma_term ;
-}
-
-
 int test()
 {
   return 1;

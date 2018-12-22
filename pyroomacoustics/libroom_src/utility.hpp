@@ -43,26 +43,11 @@ void update_travel_time(float & travel_time,
 template<size_t D>
 void update_energy_wall(float & energy, const Wall<D> & wall);
 
-template<size_t D>
-float compute_scat_energy(float energy, float scat_coef,
-  const Wall<D> & wall,
-  const VectorXf & start,
-  const VectorXf & hit_point,
-  const VectorXf & mic_pos,
-  float radius,
-  float total_dist,
-  bool for_hybrid_rir);
+
 
 int test();
 
 
-
 #include "utility.cpp"
-
-
-
-
-
-
 
 #endif // __UTILITY_H__

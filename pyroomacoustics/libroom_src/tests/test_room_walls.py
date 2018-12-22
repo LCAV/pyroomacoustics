@@ -94,8 +94,30 @@ e4 = np.array([  # side5
             ])
 
 wall_corners_2D_non_convex = [e0, e1, e2, e3, e4]
+absorptions_2D = [ 0.1, 0.1, 0.1, 0.1, 0.1]
 
-absorptions_2D = [ 0.1, 0.25, 0.25, 0.25, 0.2]
+
+f0 = np.array([  # side1
+            [ 0, 0],
+            [ 0, 3],
+            ])
+f1 = np.array([  # side2
+            [ 0, 4],
+            [ 3, 3],
+            ])
+f2 = np.array([  # side3
+            [ 4, 4],
+            [ 3, 0],
+            ])
+f3 = np.array([  # side4
+            [ 4, 0],
+            [ 0, 0],
+            ])
+
+wall_corners_2D_shoebox = [f0, f1, f2, f3]
+absorptions_shoebox = [ 0.1, 0.1, 0.1, 0.1]
+
+
 
 
 class TestRoomWalls(unittest.TestCase):
@@ -310,6 +332,40 @@ class TestRoomWalls(unittest.TestCase):
         output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
         self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time, time_thres, energy_thres, sound_speed, False, output))
 
+
+    def test_scat_ray_energy(self):
+
+        # Test energy with the energy / (4*pi*dist) rule
+
+        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_shoebox, absorptions_shoebox)]
+        obstructing_walls = []
+        microphones = np.array([
+            [3.1],
+            [1.5 ]
+            ])
+
+        mic_pos = microphones[:, 0]
+        print(mic_pos)
+
+        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
+        radius = 0.1
+
+        prev_wall = room.get_wall(0)
+
+        total_dist = 2. #total to reach last hit
+        prev_last_hit = [2,1.5]
+        last_hit = [0, 1.5]
+
+
+
+        energy = 1.
+        scatter_coef = 0.1
+
+        eps = 0.00001
+
+        result = room.compute_scat_energy(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, mic_pos, radius, total_dist, True)
+        print(result)
+        self.assertTrue(np.allclose(result, 0.0015915494, atol=eps))
 
     def test_contains_2D(self):
 

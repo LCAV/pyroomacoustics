@@ -741,7 +741,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=101, nb_thetas=101, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=201, nb_thetas=201, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
@@ -850,7 +850,7 @@ class Room(object):
 
                     # Now we add the rt component only if it has still not be taken into account by ism
                     self.rir[m][s][:rt_dim] += rir_rt[m][s] * (self.rir[m][s]==0)
-
+                    #self.rir[m][s][:rt_dim] = (self.rir[m][s][:rt_dim] + rir_rt[m][s]) / 2
 
         else:
             raise ValueError("The mode parameter can only take 3 values : 'ism', 'rt' or 'hybrid'")

@@ -14,7 +14,7 @@
 
 namespace py = pybind11;
 
-int unused = 9;
+int unused = 6;
 
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
@@ -73,6 +73,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("get_wall", &Room<3>::get_wall)
       .def("get_max_distance", &Room<3>::get_max_distance)
       .def("next_wall_hit", &Room<3>::next_wall_hit)
+      .def("compute_scat_energy", &Room<3>::compute_scat_energy)
       .def("scat_ray", &Room<3>::scat_ray)
       .def("simul_ray", &Room<3>::simul_ray)
       .def("get_rir_entries", &Room<3>::get_rir_entries)  
@@ -98,6 +99,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("get_wall", &Room<2>::get_wall)
       .def("get_max_distance", &Room<2>::get_max_distance)
       .def("next_wall_hit", &Room<2>::next_wall_hit)
+      .def("compute_scat_energy", &Room<2>::compute_scat_energy)
       .def("scat_ray", &Room<2>::scat_ray)
       .def("simul_ray", &Room<2>::simul_ray)
       .def("get_rir_entries", &Room<2>::get_rir_entries)  

@@ -92,6 +92,15 @@ class Room
     const Eigen::VectorXf & start,
     const Eigen::VectorXf & end,
     bool scattered_ray);
+    
+  float compute_scat_energy(float energy, float scat_coef,
+    const Wall<D> & wall,
+    const VectorXf & start,
+    const VectorXf & hit_point,
+    const VectorXf & mic_pos,
+    float radius,
+    float total_dist,
+    bool for_hybrid_rir);
 
   bool scat_ray(
 	float energy,
