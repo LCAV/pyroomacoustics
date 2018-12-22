@@ -126,6 +126,7 @@ class Room
     float energy_thres,
     float sound_speed,
     bool for_hybrid_rir,
+    int ism_order,
     room_log & output
     );
 
@@ -137,7 +138,8 @@ class Room
     float time_thres,
     float energy_thres,
     float sound_speed,
-    bool for_hybrid_rir);
+    bool for_hybrid_rir,
+    int ism_order);
 
   bool contains(const Eigen::VectorXf point);
 

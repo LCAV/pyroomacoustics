@@ -18,7 +18,7 @@ import pyroomacoustics as pra
 # Create the 2D L-shaped room from the floor polygon
 pol = 10 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
 r_absor = 0.1
-room = pra.Room.from_corners(pol, fs=16000, max_order=6, absorption=r_absor)
+room = pra.Room.from_corners(pol, fs=16000, max_order=12, absorption=r_absor)
 
 # Create the 3D room by extruding the 2D by 3 meters
 room.extrude(3., absorption=r_absor)
@@ -32,8 +32,9 @@ R = np.array([[3., 1.],
 
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-room.compute_rir(mode='hybrid', nb_thetas=100, nb_phis=100)
-
+chrono = time.time()
+room.compute_rir(mode='ism', nb_thetas=1000, nb_phis=1000, scatter_coef=0.)
+print("Done in", time.time()-chrono, "seconds.")
 
 
 room.plot_rir()

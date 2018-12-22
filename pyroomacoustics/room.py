@@ -790,7 +790,7 @@ class Room(object):
 
                 print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
-                                                  energy_thres, sound_speed, for_hybrid)
+                                                  energy_thres, sound_speed, for_hybrid, self.max_order)
 
                 print("Ray Tracing over.\n\nStarting computing RIR")
 
@@ -802,18 +802,16 @@ class Room(object):
                     ENERGY = 1
 
                     for entry in mic_log:
-                        time_ip = int(np.floor(entry[TIME] * self.fs))
+                        time_ip = int(np.round(entry[TIME] * self.fs))
 
                         if time_ip > max_dim - fdl2 or time_ip < fdl2:
                             continue
 
-                        # time_fp = (entry[TIME] * self.fs) - time_ip
-                        # temp_rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (
-                        #             entry[ENERGY] * fractional_delay(time_fp))
+                        time_fp = (entry[TIME] * self.fs) - time_ip
+                        temp_rir[mic_id, src_id, time_ip - fdl2:time_ip + fdl2 + 1] += (
+                                    entry[ENERGY] * fractional_delay(time_fp))
 
-                        temp_rir[mic_id, src_id, time_ip] = entry[ENERGY]
-
-                    print(".. ok for microphone number", mic_id, "( with", len(mic_log), "entries)")
+                    print(".. ok for microphone", mic_id, "( with", len(mic_log), "entries)")
 
             return temp_rir
 
@@ -822,7 +820,7 @@ class Room(object):
 
         elif mode == 'rt':
             self.rir = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
-                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed)
+                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed, for_hybrid=False)
 
         elif mode == 'hybrid':
             rir_ism = ism()
@@ -848,9 +846,8 @@ class Room(object):
 
                     self.rir[m, s,:ism_dim] += rir_ism[m][s]
 
-                    # Now we add the rt component only if it has still not be taken into account by ism
-                    self.rir[m][s][:rt_dim] += rir_rt[m][s] * (self.rir[m][s]==0)
-                    #self.rir[m][s][:rt_dim] = (self.rir[m][s][:rt_dim] + rir_rt[m][s]) / 2
+                    # Recall we are already omitting the specular reflections that are contained in rir_ism
+                    self.rir[m][s][:rt_dim] += rir_rt[m][s]
 
         else:
             raise ValueError("The mode parameter can only take 3 values : 'ism', 'rt' or 'hybrid'")

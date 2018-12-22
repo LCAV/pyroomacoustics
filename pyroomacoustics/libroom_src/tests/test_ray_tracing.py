@@ -254,7 +254,9 @@ if __name__ == '__main__':
 
     chrono = time.time()
 
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False)
+    ism_order = 1
+
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False, ism_order)
 
 
 

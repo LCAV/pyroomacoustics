@@ -506,21 +506,17 @@ float Room<D>::compute_scat_energy(
   VectorXf r = mic_pos - hit_point;
    
   float cos_theta = cos_angle_between(n, r);
-  float B = total_dist + r.norm();
+  float B = r.norm();
   float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
   
-  if (for_hybrid_rir)
-  {
-	  
-	std::cout<<"cos theta : "<<cos_theta<<std::endl;
-	B -= radius; // remove the radius to have the precise distance between the last_hit and the mic surface
-	std::cout<<"B : "<<B<<std::endl;
-	std::cout<<"energy : "<<energy<<std::endl;
-    return energy*scat_coef*cos_theta/(4*M_PI*B);
-    
-  }
+  //~ if (for_hybrid_rir)
+  //~ {
+    //~ return energy*scat_coef*cos_theta/(4*M_PI* (B-radius) );  
+  //~ }
 
-  return energy * scat_coef * 2 * cos_theta * gamma_term ;
+  //~ return energy * scat_coef * 2 * cos_theta * gamma_term;
+  
+  return energy*scat_coef*cos_theta*gamma_term/(4*M_PI* total_dist); 
 }
 
 template<size_t D>
@@ -572,7 +568,7 @@ bool Room<D>::scat_ray(
 	  
 	Eigen::VectorXf mic_pos = microphones.col(k);
 	mic_pos.resize(D);
-		
+	
     float scat_energy = compute_scat_energy(energy,
 		scatter_coef,
         wall,
@@ -642,6 +638,7 @@ void Room<D>::simul_ray(float phi,
   float energy_thres,
   float sound_speed,
   bool for_hybrid_rir,
+  int ism_order,
   room_log & output)
   {
 
@@ -676,33 +673,28 @@ void Room<D>::simul_ray(float phi,
   // The ray's characteristics
   float travel_time = 0;
   float total_dist = 0;
+  
+  // To count the number of times the ray bounces on the walls
+  // We want to add this ray for hybrid generation only if specular_counter
+  // is higher than the ism order.
+  
+  int specular_counter(0);
+
   //---------------------------------------------
 
   //------------------ RAY TRACING --------------------
 
+  //std::cout << "\n\n===New Ray===" << std::endl;
   while (true)
   {
-
-    /*//Debugging
-    std::cout << "---\n" << "start : " << start[0] << " " << start[1] << " " << start[2] << std::endl;
-    std::cout << "end : " << end[0] << " " << end[1] << " " << end[2] << std::endl;
-    std::cout << "there_is_prev_wall : " <<  there_is_prev_wall <<std::endl;
-    std::cout << "next_wall_index : " <<  next_wall_index[0] <<std::endl;
-    */
+	
 
     VectorXf hit_point;
     std::tie(hit_point, next_wall_index) = next_wall_hit(start, end, false);
 
-    // Debugging
-    //std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
-
     // The wall that has just been hit
     if (next_wall_index == -1)
     {
-      //std::cout << "No wall intersected" << std::endl;
-      //~ std::cout << "hit_point : " << hit_point[0]<< " " << hit_point[1]<< " " << hit_point[2] << std::endl;
-      //~ std::cout << "start : " << start[0]<< " " << start[1]<< " " << start[2] << std::endl;
-      //~ std::cout << "end : " << end[0]<< " " << end[1]<< " " << end[2] << std::endl;
       break;
     }
 
@@ -715,7 +707,6 @@ void Room<D>::simul_ray(float phi,
     // Before updatign the ray's characteristic, we must see
     // if any mic is intersected by the [start, hit_point] segment
 
-
     for(int k(0); k<n_mics; k++)
     {
 		
@@ -725,35 +716,41 @@ void Room<D>::simul_ray(float phi,
       // and we continue the ray
       if (intersects_mic(start, hit_point, mic_pos, mic_radius))
       {
-
-        distance = (start - mic_pos).norm();
-      
-        float travel_time_at_mic = travel_time;
-        update_travel_time(travel_time_at_mic, distance, sound_speed);
-      
-        //Now we compute the gamma term with B defining the total distance
-        // (we don't want to confuse with the other total_dist that should
-        // not be modified here)
-        // Also 'energy' should not be modified : we need another variable
-      
-        float B = total_dist + distance;
-        float energy_at_mic = 0.;
-        
-        if (for_hybrid_rir)
-        {
-		  energy_at_mic = energy / (4*M_PI*B);
-		  
-		}
-		else
+		
+		if (not for_hybrid_rir or specular_counter > ism_order)
 		{
-          energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
-          
-		}
 
-        if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
-        {
-          output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
-        }
+          distance = (start - mic_pos).norm();
+      
+          float travel_time_at_mic = travel_time;
+          update_travel_time(travel_time_at_mic, distance, sound_speed);
+      
+          //Now we compute the gamma term with B defining the total distance
+          // (we don't want to confuse with the other total_dist that should
+          // not be modified here)
+          // Also 'energy' should not be modified : we need another variable
+      
+          float B = total_dist + distance;
+          float energy_at_mic = 0.;
+        
+          //~ if (for_hybrid_rir)
+          //~ {
+  		    //~ energy_at_mic = energy / (4*M_PI* (B - mic_radius));
+		  //~ }
+		  //~ else
+		  //~ {
+            //~ energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
+          
+	   	  //~ }
+	   	  
+	   	  energy_at_mic = energy / (4*M_PI* (B - mic_radius));
+
+          if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+          {
+            output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
+          }
+	    }
+        
       
       
       }
@@ -761,15 +758,10 @@ void Room<D>::simul_ray(float phi,
     }
     // Update the characteristics
 
-    //std::cout << "\n\n-------\nprev travel time : " <<  travel_time <<std::endl;
-    //std::cout << "prev energy : " <<  energy <<std::endl;
     distance = (start - hit_point).norm();
     total_dist += distance;
     update_travel_time(travel_time, distance, sound_speed);
     update_energy_wall(energy, wall);
-
-    //std::cout << "post travel time : " <<  travel_time <<std::endl;
-    //std::cout << "post energy : " <<  energy <<std::endl;
 
     // Check if we reach the thresholds for this ray
     if (travel_time > time_thres or energy < energy_thres)
@@ -781,7 +773,7 @@ void Room<D>::simul_ray(float phi,
     // the wall
 
 
-	if (scatter_coef > 0)
+	if (scatter_coef > 0 and (not for_hybrid_rir or specular_counter > ism_order))
 	{
 	// Shoot the scattered ray
 	scat_ray(
@@ -804,8 +796,9 @@ void Room<D>::simul_ray(float phi,
 	  energy = energy * (1 - scatter_coef);
     }
 
-    // Now we just need to update the start and end positions for
-    // next hop
+	// After the first hop from source to wall hit (order 0), we will study the 
+	// reflection of order 1
+    specular_counter += 1;
     end = compute_reflected_end(start, hit_point, wall.normal, max_dist);
     start = hit_point;
   }
@@ -820,7 +813,8 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   float time_thres,
   float energy_thres,
   float sound_speed,
-  bool for_hybrid_rir)
+  bool for_hybrid_rir,
+  int ism_order)
   {
 
   /*This method produced all the time/energy entries needed to compute
@@ -894,7 +888,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
       }
 
       simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-        time_thres, energy_thres, sound_speed, for_hybrid_rir, output);
+        time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       if (D == 2)

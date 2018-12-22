@@ -167,10 +167,11 @@ if __name__ == '__main__':
     sound_speed = 340
 
     fs = 16000
+    ism_order = 1
 
     # compute the log with the C++ code
     chrono = time.time()
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False)
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False, ism_order)
 
 
     print("\nNumber of phi : ", nb_phis)
