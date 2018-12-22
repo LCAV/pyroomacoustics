@@ -469,6 +469,7 @@ bool Room<D>::scat_ray(
   float time_thres,
   float energy_thres,
   float sound_speed,
+  bool for_hybrid_rir,
   room_log & output)
   {
 
@@ -490,6 +491,10 @@ bool Room<D>::scat_ray(
     time_thresh: The time threshold for the ray
     energy_thresh: The energy threshold for the ray
     sound_speed: The speed of sound
+    for_hybrid_rir : a boolean that indicate if we are going to use this
+      room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+      This is important because for hybrid RIR, we must scale the energy of each
+     particle to make it coherent with ISM
     output: the std::vector containing the time/energy entries to build the rir
      
     :return : true if the scattered ray reached the mic, false otw
@@ -508,7 +513,8 @@ bool Room<D>::scat_ray(
         hit_point,
         mic_pos,
         radius,
-        total_dist);
+        total_dist,
+        for_hybrid_rir);
         
     // If we have multiple microphones, we must keep travel_time untouched !
     float travel_time_at_mic = travel_time;
@@ -568,6 +574,7 @@ void Room<D>::simul_ray(float phi,
   float time_thres,
   float energy_thres,
   float sound_speed,
+  bool for_hybrid_rir,
   room_log & output)
   {
 
@@ -582,11 +589,15 @@ void Room<D>::simul_ray(float phi,
    time_thres: is the upperbound on the travel time of the ray
    energy_thresh: The energy threshold for the ray
    sound_speed: is the speed of sound (may be dependent on humidity etc...)
+   for_hybrid_rir : a boolean that indicate if we are going to use this
+     room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+     This is important because for hybrid RIR, we must scale the energy of each
+     particle to make it coherent with ISM
    output: is the std::vector that contains the entries for all the simulated rays */
 
   // ------------------ INIT --------------------
   // What we need to trace the ray
-  float energy = 1000;
+  float energy = 1;
   VectorXf start = source_pos;
   VectorXf end = compute_segment_end(start, max_dist, phi, theta);
 
@@ -659,13 +670,23 @@ void Room<D>::simul_ray(float phi,
         // Also 'energy' should not be modified : we need another variable
       
         float B = total_dist + distance;
-        float energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
-
-        if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+        float energy_at_mic = 0.;
+        
+        if (for_hybrid_rir)
         {
-		  //std::cout<<"Adding a specular ray"<<std::endl;
-          output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
-        }
+		  energy_at_mic = energy / (4*M_PI*B);
+		  
+		}
+		else
+		{
+          energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
+          
+		}
+
+        //~ if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+        //~ {
+          //~ output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
+        //~ }
       
       
       }
@@ -708,6 +729,7 @@ void Room<D>::simul_ray(float phi,
 	  time_thres,
 	  energy_thres,
 	  sound_speed,
+	  for_hybrid_rir,
 	  output);
 
 	  // The overall ray's energy gets decreased by the total
@@ -730,7 +752,8 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   float scatter_coef,
   float time_thres,
   float energy_thres,
-  float sound_speed)
+  float sound_speed,
+  bool for_hybrid_rir)
   {
 
   /*This method produced all the time/energy entries needed to compute
@@ -745,6 +768,10 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
    time_thres: the simulation time threshold for each ray
    energy_thresh: The energy threshold for the ray
    sound_speed: the constant speed of sound
+   for_hybrid_rir : a boolean that indicate if we are going to use this
+     room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+     This is important because for hybrid RIR, we must scale the energy of each
+     particle to make it coherent with ISM
     
    :returns: 
    a std::vector where each entry is a tuple (time, energy)
@@ -800,7 +827,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
       }
 
       simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-        time_thres, energy_thres, sound_speed, output);
+        time_thres, energy_thres, sound_speed, for_hybrid_rir, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       if (D == 2)
@@ -814,6 +841,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   return output;
 
 }
+
 
 template<size_t D>
 bool Room<D>::contains(const Eigen::VectorXf point)

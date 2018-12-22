@@ -105,6 +105,7 @@ class Room
 	float time_thres,
 	float energy_thres,
 	float sound_speed,
+	bool for_hybrid_rir,
 	room_log & output);
 
   void simul_ray(float init_phi,
@@ -115,7 +116,9 @@ class Room
     float time_thres,
     float energy_thres,
     float sound_speed,
-    room_log & output);
+    bool for_hybrid_rir,
+    room_log & output
+    );
 
   room_log get_rir_entries(size_t nb_phis,
     size_t nb_thetas,
@@ -124,7 +127,8 @@ class Room
     float scatter_coef,
     float time_thres,
     float energy_thres,
-    float sound_speed);
+    float sound_speed,
+    bool for_hybrid_rir);
 
   bool contains(const Eigen::VectorXf point);
 

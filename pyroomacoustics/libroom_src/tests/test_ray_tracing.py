@@ -157,35 +157,6 @@ def test_room_construct():
     return room
 
 def compute_rir(mic_log, time_thres, fs, mic_id=1, plot=True):
-    # TIME = 0
-    # ENERGY = 1
-    #
-    # time = np.array([e[TIME] for e in log], dtype=np.float)
-    # alpha = np.array([e[ENERGY] for e in log], dtype=np.float)
-    # visibility = np.ones(time.shape[0], dtype=np.int32)
-    #
-    # # ======= WITH FRACTIONAL PART =======
-    #
-    # # the python utilities to compute the rir
-    # fdl = pra.constants.get('frac_delay_length')
-    # fdl2 = (fdl - 1) // 2  # Integer division
-    #
-    # ir = np.zeros(int(time_thres * fs) + fdl)
-    #
-    # print(np.floor(fs * np.min(time)) - fdl2)
-    #
-    #
-    # build_rir.fast_rir_builder(ir, time, alpha, visibility, fs, fdl)
-    #
-    # if plot:
-    #     x = np.arange(len(ir)) / fs
-    #     plt.figure()
-    #     plt.plot(x, ir)
-    #     plt.title("RIR")
-    #     plt.show()
-    #
-    # return ir
-
 
     TIME = 0
     ENERGY = 1
@@ -276,14 +247,14 @@ if __name__ == '__main__':
 
 
     time_thres = 0.6 #s
-    energy_thres = 0.000001
+    energy_thres = 0.00000001
     sound_speed = 340
 
     fs = 16000
 
     chrono = time.time()
 
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False)
 
 
 

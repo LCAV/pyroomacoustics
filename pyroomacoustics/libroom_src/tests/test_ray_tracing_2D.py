@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
     # compute the log with the C++ code
     chrono = time.time()
-    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed)
+    log = room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres, energy_thres, sound_speed, False)
 
 
     print("\nNumber of phi : ", nb_phis)

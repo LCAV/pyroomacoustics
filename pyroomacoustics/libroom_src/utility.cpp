@@ -385,7 +385,8 @@ float compute_scat_energy(float energy,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
   float radius,
-  float total_dist)
+  float total_dist,
+  bool for_hybrid_rir)
   {
 	  
   /* This function computes the energy of a scattered ray. This energy
@@ -422,11 +423,17 @@ float compute_scat_energy(float energy,
    * 
    * where B is the distance between wall_hit and mic_pos*/
    
-   VectorXf r = mic_pos - hit_point;
+  VectorXf r = mic_pos - hit_point;
    
-   float cos_theta = cos_angle_between(n, r);
-   float B = r.norm();
-   float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
+  float cos_theta = cos_angle_between(n, r);
+  float B = total_dist + r.norm();
+  float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
+  
+  if (for_hybrid_rir)
+  {
+    return energy*scat_coef*cos_theta/(4*M_PI*B);
+    
+  }
 
   return energy * scat_coef * 2 * cos_theta * gamma_term ;
 }

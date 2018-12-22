@@ -651,7 +651,9 @@ class Room(object):
         S = len(self.sources)
         for r in range(M):
             for s in range(S):
-                h = self.rir[r][s]
+
+                h = np.zeros(10000)
+                h[:len(self.rir[r][s])] = self.rir[r][s]
                 plt.subplot(M, S, r*S + s + 1)
                 if not FD:
                     plt.plot(np.arange(len(h)) / float(self.fs), h)
@@ -739,7 +741,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=50, nb_thetas=50, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=101, nb_thetas=101, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
@@ -767,15 +769,18 @@ class Room(object):
 
             return temp_rir
 
-        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001,
+               sound_speed=340., for_hybrid=False):
 
-            # Initialize the rir array for M microphones and S sources
-            temp_rir = [[[]] * len(self.sources)] * self.mic_array.M
+
 
             # the python utilities to compute the rir
             fdl = constants.get('frac_delay_length')
             fdl2 = (fdl - 1) // 2  # Integer division
             max_dim = int(time_thres * self.fs) + fdl
+
+            # Initialize the rir array for M microphones and S sources
+            temp_rir = np.zeros((self.mic_array.M, len(self.sources), max_dim))
 
             c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
 
@@ -785,7 +790,7 @@ class Room(object):
 
                 print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
-                                                  energy_thres, sound_speed)
+                                                  energy_thres, sound_speed, for_hybrid)
 
                 print("Ray Tracing over.\n\nStarting computing RIR")
 
@@ -796,17 +801,17 @@ class Room(object):
                     TIME = 0
                     ENERGY = 1
 
-                    temp_rir[mic_id][src_id] = np.zeros(max_dim)
-
                     for entry in mic_log:
                         time_ip = int(np.floor(entry[TIME] * self.fs))
 
                         if time_ip > max_dim - fdl2 or time_ip < fdl2:
                             continue
 
-                        time_fp = (entry[TIME] * self.fs) - time_ip
-                        temp_rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (
-                                    entry[ENERGY] * fractional_delay(time_fp))
+                        # time_fp = (entry[TIME] * self.fs) - time_ip
+                        # temp_rir[mic_id][src_id][time_ip - fdl2:time_ip + fdl2 + 1] += (
+                        #             entry[ENERGY] * fractional_delay(time_fp))
+
+                        temp_rir[mic_id, src_id, time_ip] = entry[ENERGY]
 
                     print(".. ok for microphone number", mic_id, "( with", len(mic_log), "entries)")
 
@@ -822,46 +827,30 @@ class Room(object):
         elif mode == 'hybrid':
             rir_ism = ism()
             rir_rt = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
-                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed)
+                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed, for_hybrid=(mode=='hybrid'))
 
+            import matplotlib.pyplot as plt
 
+            max_dim = 0
 
-            # print(len(rir_ism[0]), len(rir_ism[0][0]))
-            # print(len(rir_rt[0]), len(rir_rt[0][0]))
-            #
-            # print(len(rir_ism[0]), len(rir_ism[1][0]))
-            # print(len(rir_rt[0]), len(rir_rt[1][0]))
-            print(type(rir_rt[0][0]))
+            # See which RIR has most entries and allocate that much zeros
+            for s in range(len(self.sources)):
+                for m in range(self.mic_array.M):
 
-            self.rir = [[[]] * len(self.sources)] * self.mic_array.M
+                    max_dim = max([max_dim, len(rir_rt[m][s]), len(rir_ism[m][s])])
 
-            # First we need to scale the energy of each ray in rir_rt
-            for src_id, source in enumerate(self.sources):
-                for mic_id, mic in enumerate(self.mic_array.R.T):
-
-                    r = np.linalg.norm(mic - source.position.astype(np.float32))
-                    gamma_term = 1 - np.sqrt(r*r - mic_radius*mic_radius)/r
-
-                    rir_rt[mic_id][src_id] *= (2 / (r*r*gamma_term) )
-
-            # Now we must fit both shapes
+            self.rir = np.zeros((self.mic_array.M, len(self.sources), max_dim))
             for s in range(len(self.sources)):
                 for m in range(self.mic_array.M):
 
                     rt_dim = len(rir_rt[m][s])
                     ism_dim = len(rir_ism[m][s])
 
-                    if (rt_dim > ism_dim):
-                        self.rir[m][s] = np.zeros(rt_dim)
-
-                    else :
-                        self.rir[m][s] = np.zeros(ism_dim)
-
-
-                    self.rir[m][s][:ism_dim] += rir_ism[m][s]
+                    self.rir[m, s,:ism_dim] += rir_ism[m][s]
 
                     # Now we add the rt component only if it has still not be taken into account by ism
-                    self.rir[m][s][:rt_dim] += (self.rir[m][s]==0)*rir_rt[m][s]
+                    self.rir[m][s][:rt_dim] += rir_rt[m][s] * (self.rir[m][s]==0)
+
 
         else:
             raise ValueError("The mode parameter can only take 3 values : 'ism', 'rt' or 'hybrid'")

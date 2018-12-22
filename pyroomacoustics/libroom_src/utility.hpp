@@ -50,7 +50,8 @@ float compute_scat_energy(float energy, float scat_coef,
   const VectorXf & hit_point,
   const VectorXf & mic_pos,
   float radius,
-  float total_dist);
+  float total_dist,
+  bool for_hybrid_rir);
 
 int test();
 
