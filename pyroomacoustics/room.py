@@ -668,7 +668,6 @@ class Room(object):
 
         plt.tight_layout()
 
-
     def add_microphone_array(self, micArray):
         self.mic_array = micArray
 
@@ -755,6 +754,7 @@ class Room(object):
 
         def ism():
 
+
             temp_rir = []
 
             # Run image source model if this hasn't been done
@@ -772,12 +772,12 @@ class Room(object):
         def rt(nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001,
                sound_speed=340., for_hybrid=False):
 
-
-
             # the python utilities to compute the rir
             fdl = constants.get('frac_delay_length')
             fdl2 = (fdl - 1) // 2  # Integer division
             max_dim = int(time_thres * self.fs) + fdl
+            TIME = 0
+            ENERGY = 1
 
             # Initialize the rir array for M microphones and S sources
             temp_rir = np.zeros((self.mic_array.M, len(self.sources), max_dim))
@@ -796,20 +796,25 @@ class Room(object):
 
                 for mic_id in range(len(room_log)):
 
-                    mic_log = room_log[mic_id]
+                    mic_log = np.array(room_log[mic_id])
 
-                    TIME = 0
-                    ENERGY = 1
+                    try:
+                        # Try to use the Cython extension
+                        from .build_rir import fast_rir_builder
+                        fast_rir_builder(temp_rir[mic_id][src_id], mic_log[:,TIME], mic_log[:,ENERGY], np.ones(mic_log.shape[0]).astype(np.int32), self.fs, fdl)
 
-                    for entry in mic_log:
-                        time_ip = int(np.round(entry[TIME] * self.fs))
+                    except ImportError:
+                        print("Cython-extension build_rir unavailable. Falling back to pure python")
 
-                        if time_ip > max_dim - fdl2 or time_ip < fdl2:
-                            continue
+                        for entry in mic_log:
+                            time_ip = int(np.round(entry[TIME] * self.fs))
 
-                        time_fp = (entry[TIME] * self.fs) - time_ip
-                        temp_rir[mic_id, src_id, time_ip - fdl2:time_ip + fdl2 + 1] += (
-                                    entry[ENERGY] * fractional_delay(time_fp))
+                            if time_ip > max_dim - fdl2 or time_ip < fdl2:
+                                continue
+
+                            time_fp = (entry[TIME] * self.fs) - time_ip
+                            temp_rir[mic_id, src_id, time_ip - fdl2:time_ip + fdl2 + 1] += (
+                                        entry[ENERGY] * fractional_delay(time_fp))
 
                     print(".. ok for microphone", mic_id, "( with", len(mic_log), "entries)")
 
@@ -1043,6 +1048,49 @@ class Room(object):
                 This is most likely a bug, please report it.
                 '''
                 )
+
+    def wall_area(self, wall):
+
+        """Computes the area of a 3D planar wall.
+        :param wall: the wall object that is defined in the 3D space"""
+
+        # Algo : http://geomalgorithms.com/a01-_area.
+
+        # Recall that the wall corners have the following shape :
+        # [  [x1, x2, ...], [y1, y2, ...], [z1, z2, ...]  ]
+
+        c = wall.corners
+        n = wall.normal/np.linalg.norm(wall.normal)
+
+        if len(c) != 3:
+            raise ValueError("The function wall_area3D only supports ")
+
+        sum_vect = [0., 0., 0.]
+        num_vertices = len(c[0])
+
+        for i in range(num_vertices):
+            sum_vect = sum_vect + np.cross(c[:, (i - 1) % num_vertices], c[:, i])
+
+        return abs(np.dot(n, sum_vect)) / 2.
+
+
+    def get_volume(self):
+
+        """
+        Computes the volume of a room
+        :param room: the room object
+        :return: the volume in cubic unit
+        """
+
+        wall_sum = 0.
+
+        for w in self.walls:
+            n = (w.normal) / np.linalg.norm(w.normal)
+            one_point = w.corners[:, 0]
+
+            wall_sum += np.dot(n, one_point) * self.wall_area(w)
+
+        return wall_sum / 3.
 
 
 # Room 3D

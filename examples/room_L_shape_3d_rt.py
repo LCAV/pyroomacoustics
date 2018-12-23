@@ -14,17 +14,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import pyroomacoustics as pra
+from scipy.io import wavfile
 
 # Create the 2D L-shaped room from the floor polygon
-pol = 10 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
+pol = 4 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
 r_absor = 0.1
-room = pra.Room.from_corners(pol, fs=16000, max_order=12, absorption=r_absor)
+room = pra.Room.from_corners(pol, fs=16000, max_order=6, absorption=r_absor)
 
 # Create the 3D room by extruding the 2D by 3 meters
 room.extrude(3., absorption=r_absor)
 
 # Add a source somewhere in the room
-room.add_source([1.5, 1.2, 0.5])
+fs, audio_anechoic = wavfile.read('0riginal.wav')
+
+room.add_source([1.5, 1.2, 0.5], signal=audio_anechoic)
 
 R = np.array([[3., 1.],
               [2.25, 1.],
@@ -32,8 +35,10 @@ R = np.array([[3., 1.],
 
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
+print("Volume : ", room.get_volume())
+
 chrono = time.time()
-room.compute_rir(mode='ism', nb_thetas=1000, nb_phis=1000, scatter_coef=0.)
+room.compute_rir(mode='hybrid', nb_thetas=300, nb_phis=300, scatter_coef=0, mic_radius=0.10)
 print("Done in", time.time()-chrono, "seconds.")
 
 
@@ -41,3 +46,8 @@ room.plot_rir()
 
 
 plt.show()
+
+room.simulate()
+
+audio_reverb = room.mic_array.to_wav('aaa.wav', norm=True, bitdepth=np.int16)
+

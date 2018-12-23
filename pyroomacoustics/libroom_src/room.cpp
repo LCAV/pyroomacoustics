@@ -507,7 +507,11 @@ float Room<D>::compute_scat_energy(
    
   float cos_theta = cos_angle_between(n, r);
   float B = r.norm();
+  float Bfull = total_dist+B;
   float gamma_term = 1 - sqrt(B*B-radius*radius)/B;
+  float gamma_term_full = 1 - sqrt(Bfull*Bfull-radius*radius)/Bfull;
+  
+  
   
   //~ if (for_hybrid_rir)
   //~ {
@@ -516,7 +520,13 @@ float Room<D>::compute_scat_energy(
 
   //~ return energy * scat_coef * 2 * cos_theta * gamma_term;
   
-  return energy*scat_coef*cos_theta*gamma_term/(4*M_PI* total_dist); 
+  
+  // From the 3 prints below we can see that the gamma term is super destructive
+  //~ std::cout<<"\nTotal dist division : " << energy*scat_coef*cos_theta /(Bfull) << std::endl;
+  //~ std::cout<<"Total Gamma term : " << energy*scat_coef*cos_theta*gamma_term_full << std::endl;
+  //~ std::cout<<"hybrid terms : " << energy*scat_coef*cos_theta*gamma_term/(4*M_PI* total_dist) <<std::endl;
+ 
+  return energy*scat_coef*cos_theta /(Bfull); 
 }
 
 template<size_t D>
@@ -773,7 +783,7 @@ void Room<D>::simul_ray(float phi,
     // the wall
 
 
-	if (scatter_coef > 0 and (not for_hybrid_rir or specular_counter > ism_order))
+	if (scatter_coef > 0 and (not for_hybrid_rir or specular_counter > ism_order)) //and (not for_hybrid_rir or specular_counter > ism_order)
 	{
 	// Shoot the scattered ray
 	scat_ray(

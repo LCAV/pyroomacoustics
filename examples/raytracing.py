@@ -1147,10 +1147,10 @@ def get_volume(room):
 
     for w in room.walls :
 
-        n = normalize(w.normal)
+        n = (w.normal)/np.linalg.norm(w.normal)
         one_point = w.corners[:,0]
 
-        wall_sum += dot(n, one_point) * wall_area(w)
+        wall_sum += np.dot(n, one_point) * wall_area(w)
 
     return wall_sum / 3.
 
@@ -1244,10 +1244,10 @@ else:
 
 # ==================== MAIN ====================
 
-
-rir_rt = get_rir_rt(room, nb_phis, ray_simul_time, mic_pos, mic_radius, scatter_coef, nb_thetas=nb_thetas, plot_rays=False, plot_RIR=True)
-
-apply_rir(rir_rt, audio_anechoic, cutoff=0., fs = fs0, result_name='aaa.wav')
+#
+# rir_rt = get_rir_rt(room, nb_phis, ray_simul_time, mic_pos, mic_radius, scatter_coef, nb_thetas=nb_thetas, plot_rays=False, plot_RIR=True)
+#
+# apply_rir(rir_rt, audio_anechoic, cutoff=0., fs = fs0, result_name='aaa.wav')
 
 
 for w in room.walls :
