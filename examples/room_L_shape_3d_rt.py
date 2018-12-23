@@ -17,9 +17,9 @@ import pyroomacoustics as pra
 from scipy.io import wavfile
 
 # Create the 2D L-shaped room from the floor polygon
-pol = 4 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
-r_absor = 0.1
-room = pra.Room.from_corners(pol, fs=16000, max_order=6, absorption=r_absor)
+pol = 10 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
+r_absor = 0.01
+room = pra.Room.from_corners(pol, fs=16000, max_order=9, absorption=r_absor)
 
 # Create the 3D room by extruding the 2D by 3 meters
 room.extrude(3., absorption=r_absor)
@@ -35,10 +35,10 @@ R = np.array([[3., 1.],
 
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-print("Volume : ", room.get_volume())
+# print("relative mic size : ", room.get_volume()/(4*np.pi*mic_radius*mic_radius*mic_radius/3))
 
 chrono = time.time()
-room.compute_rir(mode='hybrid', nb_thetas=300, nb_phis=300, scatter_coef=0, mic_radius=0.10)
+room.compute_rir(mode='ism', nb_thetas=300, nb_phis=300, scatter_coef=0.1, mic_radius=0.15)
 print("Done in", time.time()-chrono, "seconds.")
 
 

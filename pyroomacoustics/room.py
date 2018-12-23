@@ -769,7 +769,7 @@ class Room(object):
 
             return temp_rir
 
-        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001,
+        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.15, scatter_coef=0., time_thres=0.6, energy_thres=0.0000001,
                sound_speed=340., for_hybrid=False):
 
             # the python utilities to compute the rir
@@ -790,7 +790,7 @@ class Room(object):
 
                 print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
-                                                  energy_thres, sound_speed, for_hybrid, self.max_order)
+                                                  energy_thres, sound_speed, for_hybrid, self.max_order, self.fs)
 
                 print("Ray Tracing over.\n\nStarting computing RIR")
 

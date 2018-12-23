@@ -526,7 +526,10 @@ float Room<D>::compute_scat_energy(
   //~ std::cout<<"Total Gamma term : " << energy*scat_coef*cos_theta*gamma_term_full << std::endl;
   //~ std::cout<<"hybrid terms : " << energy*scat_coef*cos_theta*gamma_term/(4*M_PI* total_dist) <<std::endl;
  
-  return energy*scat_coef*cos_theta /(Bfull); 
+  //~ std::cout<<"energy : " << energy<< std::endl;
+  //~ std::cout<<"scat_coef : " << scat_coef<< std::endl;
+  
+  return energy*scat_coef*cos_theta /(4*M_PI*Bfull); 
 }
 
 template<size_t D>
@@ -543,6 +546,8 @@ bool Room<D>::scat_ray(
   float energy_thres,
   float sound_speed,
   bool for_hybrid_rir,
+  float fs,
+  std::vector<std::vector<int>> &scat_per_slot,
   room_log & output)
   {
 
@@ -568,6 +573,9 @@ bool Room<D>::scat_ray(
       room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
       This is important because for hybrid RIR, we must scale the energy of each
      particle to make it coherent with ISM
+   fs : the sampling frequency used for the rir
+   scat_per_slot : a 2D vector counting for each microphone and each time
+     slot the number of scattered rays reaching the microphone
     output: the std::vector containing the time/energy entries to build the rir
      
     :return : true if the scattered ray reached the mic, false otw
@@ -615,21 +623,23 @@ bool Room<D>::scat_ray(
 
       if (travel_time_at_mic < time_thres and scat_energy > energy_thres)
       {
-        //std::cout << "appending scat rays : " <<std::endl;
-        output[k].push_back(entry{{travel_time_at_mic,scat_energy}});
+		  
+		int slot_id = (int)floor(travel_time_at_mic*fs);
+		scat_per_slot[k][slot_id] += 1;
+		
+        output[k].push_back(entry{{travel_time_at_mic,scat_energy, 1. /*scattered*/}});
         
         result = result and true;
       }
       else
       {
-		//std::cout<<"Threshold met"<<std::endl;
+		// if a threshold is met
 	    result = false;
 	  }
     }
     else
     {
 	  // if a wall intersects the scattered ray, we return false
-	  //std::cout<<"Blocking wall"<<std::endl;
 	  result = false;
 	}
   }
@@ -649,6 +659,8 @@ void Room<D>::simul_ray(float phi,
   float sound_speed,
   bool for_hybrid_rir,
   int ism_order,
+  float fs,
+  std::vector<std::vector<int>> &scat_per_slot,
   room_log & output)
   {
 
@@ -667,6 +679,12 @@ void Room<D>::simul_ray(float phi,
      room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
      This is important because for hybrid RIR, we must scale the energy of each
      particle to make it coherent with ISM
+   ism_order : the maximum order of the Image Sources when Ray Tracing is called
+     for a hybrid RIR computation. In ray tracing, we don't take into account the specular rays
+     of order less than ism_order.
+   fs : the sampling frequency used for the rir
+   scat_per_slot : a 2D vector counting for each microphone and each time
+     slot the number of scattered rays reaching the microphone
    output: is the std::vector that contains the entries for all the simulated rays */
 
   // ------------------ INIT --------------------
@@ -694,15 +712,12 @@ void Room<D>::simul_ray(float phi,
 
   //------------------ RAY TRACING --------------------
 
-  //std::cout << "\n\n===New Ray===" << std::endl;
   while (true)
   {
-	
-
     VectorXf hit_point;
     std::tie(hit_point, next_wall_index) = next_wall_hit(start, end, false);
 
-    // The wall that has just been hit
+    // If no wall is hit (rounding errors), stop the ray
     if (next_wall_index == -1)
     {
       break;
@@ -714,6 +729,9 @@ void Room<D>::simul_ray(float phi,
     // => length of the actual hop
     float distance(0);
 
+
+	bool already_in_ism = for_hybrid_rir and specular_counter < ism_order;
+	
     // Before updatign the ray's characteristic, we must see
     // if any mic is intersected by the [start, hit_point] segment
 
@@ -724,54 +742,35 @@ void Room<D>::simul_ray(float phi,
 	   	
       // If yes, we compute the ray's energy at the mic
       // and we continue the ray
-      if (intersects_mic(start, hit_point, mic_pos, mic_radius))
+      if (intersects_mic(start, hit_point, mic_pos, mic_radius) and not already_in_ism)
       {
-		
-		if (not for_hybrid_rir or specular_counter > ism_order)
-		{
-
-          distance = (start - mic_pos).norm();
+	    // The length of this last hop
+        distance = (start - mic_pos).norm();
       
-          float travel_time_at_mic = travel_time;
-          update_travel_time(travel_time_at_mic, distance, sound_speed);
-      
-          //Now we compute the gamma term with B defining the total distance
-          // (we don't want to confuse with the other total_dist that should
-          // not be modified here)
-          // Also 'energy' should not be modified : we need another variable
-      
-          float B = total_dist + distance;
-          float energy_at_mic = 0.;
-        
-          //~ if (for_hybrid_rir)
-          //~ {
-  		    //~ energy_at_mic = energy / (4*M_PI* (B - mic_radius));
-		  //~ }
-		  //~ else
-		  //~ {
-            //~ energy_at_mic = energy * (1 - sqrt(B*B - mic_radius*mic_radius) / B);
+        // Updating travel_time and energy for this ray
+        // We DON'T want to modify the variables energy and travel_time
+        //   because the ray will continue its way
           
-	   	  //~ }
+        // We use the same energy computation as for ISM
+          
+        float travel_time_at_mic = travel_time + distance/sound_speed;
+        float energy_at_mic = energy / (4*M_PI* (total_dist + distance - mic_radius));
 	   	  
-	   	  energy_at_mic = energy / (4*M_PI* (B - mic_radius));
-
-          if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
-          {
-            output[k].push_back(entry {{travel_time_at_mic, energy_at_mic}});
-          }
-	    }
-        
-      
-      
+        if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
+        {		  
+          output[k].push_back(entry {{travel_time_at_mic, energy_at_mic, -1 /*specular*/}});
+        }
+	    
       }
-
     }
     // Update the characteristics
 
     distance = (start - hit_point).norm();
     total_dist += distance;
-    update_travel_time(travel_time, distance, sound_speed);
-    update_energy_wall(energy, wall);
+    
+    travel_time = travel_time + distance/sound_speed;
+    energy = energy * sqrt(1 - wall.absorption);
+    
 
     // Check if we reach the thresholds for this ray
     if (travel_time > time_thres or energy < energy_thres)
@@ -783,7 +782,7 @@ void Room<D>::simul_ray(float phi,
     // the wall
 
 
-	if (scatter_coef > 0 and (not for_hybrid_rir or specular_counter > ism_order)) //and (not for_hybrid_rir or specular_counter > ism_order)
+	if (scatter_coef > 0 and not already_in_ism)
 	{
 	// Shoot the scattered ray
 	scat_ray(
@@ -799,6 +798,8 @@ void Room<D>::simul_ray(float phi,
 	  energy_thres,
 	  sound_speed,
 	  for_hybrid_rir,
+	  fs,
+	  scat_per_slot,
 	  output);
 
 	  // The overall ray's energy gets decreased by the total
@@ -806,8 +807,7 @@ void Room<D>::simul_ray(float phi,
 	  energy = energy * (1 - scatter_coef);
     }
 
-	// After the first hop from source to wall hit (order 0), we will study the 
-	// reflection of order 1
+	// set up for next iteration
     specular_counter += 1;
     end = compute_reflected_end(start, hit_point, wall.normal, max_dist);
     start = hit_point;
@@ -824,8 +824,10 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   float energy_thres,
   float sound_speed,
   bool for_hybrid_rir,
-  int ism_order)
+  int ism_order,
+  float fs)
   {
+
 
   /*This method produced all the time/energy entries needed to compute
    the RIR using ray-tracing with the following parameters
@@ -843,15 +845,29 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
      room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
      This is important because for hybrid RIR, we must scale the energy of each
      particle to make it coherent with ISM
-    
+   ism_order : the maximum order of the Image Sources when Ray Tracing is called
+     for a hybrid RIR computation. In ray tracing, we don't take into account the specular rays
+     of order less than ism_order.
+   fs : the sampling frequency used for the rir
+   
    :returns: 
    a std::vector where each entry is a tuple (time, energy)
    reprensenting a ray (scattered or not) reaching the microphone
    */
 
   room_log output;
+  
+  int n_slots = time_thres*fs;
+  
+  std::vector<std::vector<int>> scat_per_slot;
+  
+  
 
-  for (int k(0); k<n_mics; k++){
+  for (int k(0); k<n_mics; k++)
+  {
+	// push a vector for each mic (counting scat rays per slot)
+	std::vector<int> init(n_slots, 0);
+	scat_per_slot.push_back(init);
 	  
 	VectorXf mic_pos = microphones.col(k);
 	
@@ -881,13 +897,11 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
 
   for (size_t i(0); i < nb_phis; ++i)
   {
-	//std::cout<<"i = " << i<<std::endl;
     float phi = 2 * M_PI * (float) i / nb_phis;
 
 
     for (size_t j(0); j < nb_thetas; ++j)
     {
-	  //std::cout<<"j = " <<j<<std::endl;
 	  // Having a 3D linear sampling of the sphere surrounding the room
       float theta = std::acos(2 * ((float) j / nb_thetas) - 1);
 
@@ -898,7 +912,8 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
       }
 
       simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-        time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order, output);
+        time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order,
+        fs, scat_per_slot, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       if (D == 2)
@@ -906,6 +921,32 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
 		// Get out of the theta loop
         break;
       }
+    }
+  }
+  
+
+  // Now we must normalize the scat components by the number of scat
+  // received during this period
+  int slot_id = 0;
+  int TIME = 0;
+  int ENERGY = 1;
+  int TYPE = 2;
+  
+  if (scatter_coef != 0)
+  {
+    for (int k(0); k<n_mics; k++)
+    {
+	  
+      for (std::list<entry>::iterator it=output[k].begin(); it != output[k].end(); ++it)
+      {
+		
+	    // Consider only scattered components
+	    if ((*it)[TYPE] > 0)
+	    {
+	      slot_id = (int)floor((*it)[TIME]*fs);
+	      (*it)[ENERGY] /= scat_per_slot[k][slot_id];
+	    }
+	  }
     }
   }
   

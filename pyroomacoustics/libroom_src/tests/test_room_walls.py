@@ -292,11 +292,17 @@ class TestRoomWalls(unittest.TestCase):
         time_thres = 200.
 
         sound_speed = 340.
-        output = [[[1., 2.]]]  # arbitrary initialisation to have the correct shape
 
+        fs = 16000
 
-        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time,
-                              time_thres, energy_thres, sound_speed, False, output))
+        # The function will try to access elements from this array, so we must initialize it
+        # (even though we don't care of what the latter contains here)
+        scat_per_slot = [[0]*int(np.floor(time_thres*fs))]
+
+        output = [[[1.,2.,-1]]] #arbitrary initialisation to have the correct shape
+        self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit,
+                                      radius, total_dist, travel_time, time_thres, energy_thres,
+                                      sound_speed, False,fs, scat_per_slot, output))
 
 
     def test_scat_ray_ok(self):
@@ -329,8 +335,16 @@ class TestRoomWalls(unittest.TestCase):
 
         sound_speed = 340.
 
-        output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
-        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, radius, total_dist, travel_time, time_thres, energy_thres, sound_speed, False, output))
+        fs = 16000
+
+        # The function will try to access elements from this array, so we must initialize it
+        # (even though we don't care of what the latter contains here)
+        scat_per_slot = [[0]*int(np.floor(time_thres*fs))]
+
+        output = [[[1.,2.,-1]]] #arbitrary initialisation to have the correct shape
+        self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit,
+                                      radius, total_dist, travel_time, time_thres, energy_thres,
+                                      sound_speed, False,fs, scat_per_slot, output))
 
 
     def test_scat_ray_energy(self):
@@ -361,13 +375,11 @@ class TestRoomWalls(unittest.TestCase):
         energy = 1.
         scatter_coef = 0.1
 
-        eps = 0.00001
+        eps = 0.0001
 
         result = room.compute_scat_energy(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, mic_pos, radius, total_dist, True)
-        print(result)
-
-
         self.assertTrue(np.allclose(result, 0.1/(4*np.pi*5), atol=eps))
+
 
     def test_contains_2D(self):
 
