@@ -36,16 +36,6 @@ VectorXf mic_intersection(const VectorXf & start,
   const VectorXf & center,
   float radius);
 
-void update_travel_time(float & travel_time,
-  const float hop_length,
-  const float sound_speed);
-
-template<size_t D>
-void update_energy_wall(float & energy, const Wall<D> & wall);
-
-
-
-int test();
 
 
 #include "utility.cpp"

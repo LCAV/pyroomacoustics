@@ -218,7 +218,7 @@ template<size_t D>
 bool Wall<D>::same_as(const Wall & that)
 {
   /*
-  Checks if two walls are the same, based on the corners of the walls.
+  Checks if two walls are the same, based on their corners of the walls.
   Be careful : it will return true for two identical walls that belongs
   to two different rooms !
   */

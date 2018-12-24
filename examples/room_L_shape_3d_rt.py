@@ -22,7 +22,8 @@ r_absor = 0.01
 room = pra.Room.from_corners(pol, fs=16000, max_order=9, absorption=r_absor)
 
 # Create the 3D room by extruding the 2D by 3 meters
-room.extrude(3., absorption=r_absor)
+height = 8.
+room.extrude(height, absorption=r_absor)
 
 # Add a source somewhere in the room
 fs, audio_anechoic = wavfile.read('0riginal.wav')
@@ -35,19 +36,14 @@ R = np.array([[3., 1.],
 
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-# print("relative mic size : ", room.get_volume()/(4*np.pi*mic_radius*mic_radius*mic_radius/3))
 
 chrono = time.time()
-room.compute_rir(mode='ism', nb_thetas=300, nb_phis=300, scatter_coef=0.1, mic_radius=0.15)
+room.compute_rir(mode='hybrid', nb_thetas=100, nb_phis=100, scatter_coef=0., mic_radius=0.15)
 print("Done in", time.time()-chrono, "seconds.")
 
 
 room.plot_rir()
-
-
 plt.show()
-
 room.simulate()
-
 audio_reverb = room.mic_array.to_wav('aaa.wav', norm=True, bitdepth=np.int16)
 

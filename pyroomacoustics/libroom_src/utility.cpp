@@ -55,7 +55,6 @@ VectorXf compute_segment_end(const VectorXf start, float length, float phi, floa
   if (start.size() == 2)
   {
     return start + length * Vector2f(cos(phi), sin(phi));
-    //return 0;
   }
 
   if (start.size() == 3)
@@ -92,7 +91,6 @@ VectorXf compute_reflected_end(const VectorXf & start,
    */
 
   VectorXf incident = (hit_point - start).normalized();
-
   VectorXf n = wall_normal.normalized();
 
   // Reverse the normal if the angle between the incoming ray and 
@@ -167,7 +165,7 @@ bool intersects_mic(const VectorXf & start,
   // This boolean checks that the projection of the center of the mic
   // on the segment is between start and end points
   bool on_segment = (cos_angle_between(start_end, start_center) >= 0.
-    and cos_angle_between(end_start, end_center) >= 0.);
+				 and cos_angle_between(end_start, end_center) >= 0.);
 
   return intersects and on_segment;
 }
@@ -346,40 +344,6 @@ VectorXf mic_intersection(const VectorXf & start,
 
   std::cerr << "Error : the vectors should be 2D or 3D" << s_center << std::endl;
   throw std::exception();
-}
-
-
-void update_travel_time(float & travel_time, float hop_length, float sound_speed)
-{
-
-  /* This function updates the travel time according to the newly 
-   travelled distance
-    
-   travel_time: the cumulated travel time of the ray until before this newest hop
-   hop_length: the distance travelled by the ray during the newest hop
-   sound_speed: the constant speed of sound*/
-
-  travel_time = travel_time + hop_length / sound_speed;
-}
-
-template<size_t D>
-void update_energy_wall(float & energy,
-  const Wall<D> & wall)
-  {
-
-  /* This function updates the ray's energy with respect to the wall's
-   absorption coefficient.
-    
-   energy: the ray's energy just before the wall hit
-   wall: the wall that is it by the ray*/
-
-  energy = energy * sqrt(1 - wall.absorption);
-}
-
-
-int test()
-{
-  return 1;
 }
 
 

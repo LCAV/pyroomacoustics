@@ -652,8 +652,7 @@ class Room(object):
         for r in range(M):
             for s in range(S):
 
-                h = np.zeros(10000)
-                h[:len(self.rir[r][s])] = self.rir[r][s]
+                h = self.rir[r][s]
                 plt.subplot(M, S, r*S + s + 1)
                 if not FD:
                     plt.plot(np.arange(len(h)) / float(self.fs), h)
@@ -740,7 +739,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=201, nb_thetas=201, mic_radius=0.05, scatter_coef=0.1, time_thres=0.6, energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.05, scatter_coef=0., time_thres=2., energy_thres=0.000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
@@ -769,7 +768,7 @@ class Room(object):
 
             return temp_rir
 
-        def rt(nb_phis=100, nb_thetas=100, mic_radius=0.15, scatter_coef=0., time_thres=0.6, energy_thres=0.0000001,
+        def rt(nb_phis=200, nb_thetas=200, mic_radius=0.15, scatter_coef=0., time_thres=2., energy_thres=0.0000001,
                sound_speed=340., for_hybrid=False):
 
             # the python utilities to compute the rir
@@ -825,7 +824,7 @@ class Room(object):
 
         elif mode == 'rt':
             self.rir = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
-                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed, for_hybrid=False)
+                          time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed, for_hybrid=(mode=='hybrid'))
 
         elif mode == 'hybrid':
             rir_ism = ism()

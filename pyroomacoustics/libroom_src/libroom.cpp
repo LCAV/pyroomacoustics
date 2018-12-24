@@ -34,8 +34,10 @@ Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eige
   for (auto owall : _obstructing_walls)
     room->obstructing_walls.push_back(owall.cast<int>());
 
+  // Useful for ray tracing
   room->max_dist = room->get_max_distance();
   room ->n_mics = room->microphones.cols();
+  
   return room;
 }
 
@@ -54,6 +56,7 @@ Room<2> *create_room_2D(py::list _walls, py::list _obstructing_walls, const Eige
   for (auto owall : _obstructing_walls)
     room->obstructing_walls.push_back(owall.cast<int>());
     
+  // Useful for ray tracing
   room->max_dist = room->get_max_distance();
   room ->n_mics = room->microphones.cols();
 
@@ -224,9 +227,6 @@ PYBIND11_MODULE(libroom, m) {
 		"Solves the quadratic system and outputs real roots");
 		
 	m.def("mic_intersection", &mic_intersection,
-		"Computes the intersection point between the ray and the microphone");
-		
-	m.def("test", &test, "Test different functions");
-	
+		"Computes the intersection point between the ray and the microphone");	
 }
 
