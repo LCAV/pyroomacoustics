@@ -376,9 +376,8 @@ class TestRoomWalls(unittest.TestCase):
         scatter_coef = 0.1
 
         eps = 0.0001
-
         result = room.compute_scat_energy(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, mic_pos, radius, total_dist, True)
-        self.assertTrue(np.allclose(result, 0.1/(4*np.pi*5), atol=eps))
+        self.assertTrue(np.allclose(result, np.sqrt(0.1*2*(1-np.sqrt(3.1*3.1-0.1*0.1)/3.1))/(4*np.pi*5), atol=eps))
 
 
     def test_contains_2D(self):

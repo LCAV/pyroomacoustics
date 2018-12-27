@@ -38,7 +38,7 @@ room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
 
 chrono = time.time()
-room.compute_rir(mode='hybrid', nb_thetas=100, nb_phis=100, scatter_coef=0., mic_radius=0.15)
+room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, scatter_coef=0.)
 print("Done in", time.time()-chrono, "seconds.")
 
 

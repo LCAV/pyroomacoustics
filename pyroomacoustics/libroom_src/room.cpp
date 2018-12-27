@@ -479,8 +479,8 @@ float Room<D>::compute_scat_energy(
   bool for_hybrid_rir)
   {
 	  
-  /* This function computes the energy of a scattered ray. This energy
-   depends on several factors as explained below
+  /* This function computes the energy of a scattered ray, including the 
+   distance attenuation. This energy depends on several factors as explained below
     
    energy: the ray's energy (wall absorption already taken into account)
    scat_coef: the scattering coefficients of the wall
@@ -507,8 +507,14 @@ float Room<D>::compute_scat_energy(
   // The latter is the same as in the Image Source Method
   
   VectorXf r = mic_pos - hit_point;
+  float B = r.norm();
   float cos_theta = cos_angle_between(n, r);
-  return energy*scat_coef*cos_theta /(4*M_PI*(total_dist+r.norm())); 
+  float gamma_term =  1- sqrt(B*B-radius*radius)/B;
+  
+  
+  //return energy*scat_coef*cos_theta /(4*M_PI*(total_dist+r.norm())); 
+  
+  return energy * sqrt( scat_coef * 2 * cos_theta * gamma_term ) / (4*M_PI*(total_dist+B-radius));
 }
 
 template<size_t D>
@@ -752,7 +758,7 @@ void Room<D>::simul_ray(float phi,
     }
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-	if (scatter_coef > 0 and not already_in_ism)
+	if (scatter_coef > 0 /*and not already_in_ism*/)
 	{
 	// Shoot the scattered ray
 	scat_ray(
