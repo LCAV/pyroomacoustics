@@ -19,7 +19,7 @@ extern float libroom_eps;
  * during the ray_tracing execution.
  * The first one of those float will be the travel time of a ray reaching
  * the microphone. The second one will be the energy of this ray.*/
-typedef std::array<float,3> entry;
+typedef std::array<float,2> entry;
 typedef std::list<entry> mic_log;
 typedef std::vector<mic_log> room_log;
 
@@ -116,8 +116,6 @@ class Room
 	float energy_thres,
 	float sound_speed,
 	bool for_hybrid_rir,
-    float fs,
-    std::vector<std::vector<int>> &scat_per_slot,
 	room_log & output);
 
   void simul_ray(float init_phi,
@@ -130,8 +128,6 @@ class Room
     float sound_speed,
     bool for_hybrid_rir,
     int ism_order,
-    float fs,
-    std::vector<std::vector<int>> &scat_per_slot,
     room_log & output
     );
 
@@ -144,8 +140,8 @@ class Room
     float energy_thres,
     float sound_speed,
     bool for_hybrid_rir,
-    int ism_order,
-    float fs);
+    int ism_order
+    );
 
   bool contains(const Eigen::VectorXf point);
 

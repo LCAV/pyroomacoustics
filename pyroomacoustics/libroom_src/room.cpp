@@ -531,8 +531,6 @@ bool Room<D>::scat_ray(
   float energy_thres,
   float sound_speed,
   bool for_hybrid_rir,
-  float fs,
-  std::vector<std::vector<int>> &scat_per_slot,
   room_log & output)
   {
 
@@ -605,12 +603,7 @@ bool Room<D>::scat_ray(
       // of scat_per_slot
       if (travel_time_at_mic < time_thres and scat_energy > energy_thres)
       {
-		  
-		int slot_id = (int)floor(travel_time_at_mic*fs);
-		scat_per_slot[k][slot_id] += 1; // 1 more scattered ray for this slot
-		
-        output[k].push_back(entry{{travel_time_at_mic,scat_energy, 1. /*scattered*/}});
-        
+        output[k].push_back(entry{{travel_time_at_mic,scat_energy}});        
         result = result and true;
       }
       else
@@ -641,8 +634,6 @@ void Room<D>::simul_ray(float phi,
   float sound_speed,
   bool for_hybrid_rir,
   int ism_order,
-  float fs,
-  std::vector<std::vector<int>> &scat_per_slot,
   room_log & output)
   {
 
@@ -736,7 +727,7 @@ void Room<D>::simul_ray(float phi,
 	   	  
           if (travel_time_at_mic < time_thres and energy_at_mic > energy_thres)
           {		  
-            output[k].push_back(entry {{travel_time_at_mic, energy_at_mic, -1 /*specular*/}});
+            output[k].push_back(entry{{travel_time_at_mic, energy_at_mic}});
           }
         }
       }
@@ -758,7 +749,7 @@ void Room<D>::simul_ray(float phi,
     }
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-	if (scatter_coef > 0 /*and not already_in_ism*/)
+	if (scatter_coef > 0 and not already_in_ism)
 	{
 	// Shoot the scattered ray
 	scat_ray(
@@ -774,8 +765,6 @@ void Room<D>::simul_ray(float phi,
 	  energy_thres,
 	  sound_speed,
 	  for_hybrid_rir,
-	  fs,
-	  scat_per_slot,
 	  output);
 
 	  // The overall ray's energy gets decreased by the total
@@ -800,8 +789,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   float energy_thres,
   float sound_speed,
   bool for_hybrid_rir,
-  int ism_order,
-  float fs)
+  int ism_order)
   {
 
 
@@ -835,14 +823,8 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
   // ------------------ INIT --------------------
   room_log output;
   
-  int n_slots = time_thres*fs;
-  std::vector<std::vector<int>> scat_per_slot;
-  
   for (int k(0); k<n_mics; k++)
   {
-	// push a vector for each mic (counting scat rays per slot)
-	std::vector<int> init(n_slots, 0);
-	scat_per_slot.push_back(init);
 	
 	// push a vector for each mic (log every entries)
 	output.push_back(mic_log());
@@ -888,8 +870,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
       
       // Trace this ray
       simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-        time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order,
-        fs, scat_per_slot, output);
+        time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       // => get out of the theta loop
@@ -897,33 +878,6 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
       {
         break;
       }
-    }
-  }
-  
-  // ----------- NORMALIZING SCATTERED COMPONENTS -------------
-
-  int slot_id = 0;
-  int TIME = 0;
-  int ENERGY = 1;
-  int TYPE = 2;
-  
-  if (scatter_coef != 0)
-  {
-	// For all mics
-    for (int k(0); k<n_mics; k++)
-    {
-	  
-	  // For all entries in the list
-      for (std::list<entry>::iterator it=output[k].begin(); it != output[k].end(); ++it)
-      {
-		
-	    // Consider only scattered components ( (*it)[TYPE] > 0)
-	    if ((*it)[TYPE] > 0)
-	    {
-	      slot_id = (int)floor((*it)[TIME]*fs);
-	      (*it)[ENERGY] /= scat_per_slot[k][slot_id];
-	    }
-	  }
     }
   }
   

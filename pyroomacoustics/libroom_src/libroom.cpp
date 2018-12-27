@@ -14,7 +14,7 @@
 
 namespace py = pybind11;
 
-int unused = 48;
+int unused = 8;
 
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 

@@ -789,7 +789,7 @@ class Room(object):
 
                 print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
-                                                  energy_thres, sound_speed, for_hybrid, self.max_order, self.fs)
+                                                  energy_thres, sound_speed, for_hybrid, self.max_order)
 
                 print("Ray Tracing over.\n\nStarting computing RIR")
 
