@@ -739,7 +739,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.05, scatter_coef=0., time_thres=2., energy_thres=0.000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.05, scatter_coef=0., time_thres=2., energy_thres=0.0000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :

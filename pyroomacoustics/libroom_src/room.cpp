@@ -780,7 +780,7 @@ void Room<D>::simul_ray(float phi,
 
 	  // The overall ray's energy gets decreased by the total
 	  // amount of scattered energy
-	  energy = energy * (1 - scatter_coef);
+	  energy = energy * sqrt(1 - scatter_coef);
     }
 
 	// set up for next iteration
