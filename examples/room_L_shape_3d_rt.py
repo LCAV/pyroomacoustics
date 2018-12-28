@@ -17,26 +17,26 @@ import pyroomacoustics as pra
 from scipy.io import wavfile
 
 # Create the 2D L-shaped room from the floor polygon
-pol = 10 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
-r_absor = 0.01
-room = pra.Room.from_corners(pol, fs=16000, max_order=9, absorption=r_absor)
+pol = np.array([[0,0], [0,15], [15,15], [15,9], [6,9], [6,0]]).T
+r_absor = 0.1
+room = pra.Room.from_corners(pol, fs=16000, max_order=10, absorption=r_absor)
 
-# Create the 3D room by extruding the 2D by 3 meters
-height = 8.
+# # Create the 3D room by extruding the 2D by 10 meters
+height = 10.
 room.extrude(height, absorption=r_absor)
 
-# Add a source somewhere in the room
+# # Add a source somewhere in the room
 fs, audio_anechoic = wavfile.read('0riginal.wav')
 
-room.add_source([1.5, 1.2, 0.5], signal=audio_anechoic)
+room.add_source([11, 12, 1.6], signal=audio_anechoic)
 
-R = np.array([[3., 1.],
-              [2.25, 1.],
-              [0.6, 1.]])
+R = np.array([[3.],
+              [2.25],
+              [0.6]])
 
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-
+# Use the following function to compute the rir using either 'ism' method, 'rt' method, or 'hybrid' method
 chrono = time.time()
 room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, scatter_coef=0.)
 print("Done in", time.time()-chrono, "seconds.")

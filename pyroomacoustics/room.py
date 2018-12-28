@@ -652,7 +652,10 @@ class Room(object):
         for r in range(M):
             for s in range(S):
 
-                h = self.rir[r][s]
+                # h = self.rir[r][s]
+
+                h = np.zeros((32100))
+                h[:len(self.rir[r][s])] = self.rir[r][s]
                 plt.subplot(M, S, r*S + s + 1)
                 if not FD:
                     plt.plot(np.arange(len(h)) / float(self.fs), h)
@@ -739,7 +742,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.05, scatter_coef=0., time_thres=2., energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.15, scatter_coef=0., time_thres=2., energy_thres=0.0000001, sound_speed=340.):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
