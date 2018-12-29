@@ -790,11 +790,11 @@ class Room(object):
 
                 source_pos = source.position.astype(np.float32)
 
-                print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
+                # print("Starting Ray Tracing with", nb_phis * nb_thetas, "rays")
                 room_log = c_room.get_rir_entries(nb_phis, nb_thetas, source_pos, mic_radius, scatter_coef, time_thres,
                                                   energy_thres, sound_speed, for_hybrid, self.max_order)
 
-                print("Ray Tracing over.\n\nStarting computing RIR")
+                # print("Ray Tracing over.\n\nStarting computing RIR")
 
                 for mic_id in range(len(room_log)):
 
@@ -818,7 +818,7 @@ class Room(object):
                             temp_rir[mic_id, src_id, time_ip - fdl2:time_ip + fdl2 + 1] += (
                                         entry[ENERGY] * fractional_delay(time_fp))
 
-                    print(".. ok for microphone", mic_id, "( with", len(mic_log), "entries)")
+                    # print(".. ok for microphone", mic_id, "( with", len(mic_log), "entries)")
 
             return temp_rir
 
