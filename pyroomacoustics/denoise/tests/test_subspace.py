@@ -72,13 +72,13 @@ class TestSubspace(TestCase):
         res = test_cov_computation(skip=1)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
-        self.assertEqual(res[3], 0)
+        self.assertEqual(res[2], 0)
 
     def test_cov_estimation_skip_5(self):
         res = test_cov_computation(skip=5)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
-        self.assertEqual(res[3], 0)
+        self.assertEqual(res[2], 0)
 
 
 if __name__ == "__main__":
