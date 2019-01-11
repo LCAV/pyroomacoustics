@@ -10,7 +10,7 @@ tol = 1e-12
 signal_fp = os.path.join(os.path.dirname(__file__), '..', '..', 'examples',
                          'input_samples', 'cmu_arctic_us_aew_a0001.wav')
 
-def test_create_noisy_signal(snr):
+def white_noise(snr):
     np.random.seed(0)
     noisy_signal, signal, noise, fs = create_noisy_signal(signal_fp, snr=snr)
     _snr = 20 * np.log10(np.linalg.norm(signal) / np.linalg.norm(noise))
@@ -22,13 +22,13 @@ class TestCreateNoisySignal(TestCase):
 
     def test_snr_error(self):
         snr_test = 0
-        res = test_create_noisy_signal(snr=snr_test)
+        res = white_noise(snr_test)
         self.assertTrue(res[0] < tol)
 
 
 if __name__ == "__main__":
     snr = 0
-    err, noisy_signal, fs = test_create_noisy_signal(snr=snr)
+    err, noisy_signal, fs = white_noise(snr)
     print("SNR error: {}".format(err))
 
     # write to WAV, need to cast to `np.float32` for float values
