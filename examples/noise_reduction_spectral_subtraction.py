@@ -42,34 +42,15 @@ plot_spec = True
 """
 Prepare input file
 """
-fs_s, signal = wavfile.read(os.path.join(os.path.dirname(__file__),
-                                         'input_samples',
-                                         'cmu_arctic_us_aew_a0001.wav'))
-fs_n, noise = wavfile.read(os.path.join(os.path.dirname(__file__),
-                                        'input_samples',
-                                        'doing_the_dishes.wav'))
-if fs_s != fs_n:
-    raise ValueError("Signal and noise WAV files should have same sampling "
-                     "rate for this example.")
-
-# truncate to same length
-if len(noise) < len(signal):
-    raise ValueError("Length of signal file should be longer than noise "
-                     "file for this example.")
-noise = noise[:len(signal)]
-
-# weight noise according to desired SNR
-signal_level = np.linalg.norm(signal)
-noise_level = np.linalg.norm(noise)
-noise_fact = signal_level / 10**(snr/20)
-noise_weighted = noise*noise_fact/noise_level
-
-# add signal and noise
-noisy_signal = signal + noise_weighted
-noisy_signal /= np.abs(noisy_signal).max()
-noisy_signal -= noisy_signal.mean()
+signal_fp = os.path.join(os.path.dirname(__file__), 'input_samples',
+                         'cmu_arctic_us_aew_a0001.wav')
+noise_fp = os.path.join(os.path.dirname(__file__), 'input_samples',
+                        'doing_the_dishes.wav')
+noisy_signal, signal, noise, fs = pra.create_noisy_signal(signal_fp,
+                                                          snr=snr,
+                                                          noise_fp=noise_fp)
 wavfile.write(os.path.join(os.path.dirname(__file__), 'output_samples',
-                           'denoise_input.wav'), fs_s,
+                           'denoise_input_SpectralSub.wav'), fs,
               noisy_signal.astype(np.float32))
 
 """
@@ -81,7 +62,7 @@ stft = pra.transform.STFT(nfft, hop=hop, analysis_window=window,
                           streaming=True)
 
 scnr = SpectralSub(nfft, db_reduc, lookback, beta, alpha)
-lookback_time = hop/fs_s * lookback
+lookback_time = hop/fs * lookback
 print("Lookback : %f seconds" % lookback_time)
 
 """
@@ -108,7 +89,7 @@ Save and plot spectrogram
 """
 wavfile.write(os.path.join(os.path.dirname(__file__),
                            'output_samples',
-                           'denoise_output_SpectralSub.wav'), fs_s,
+                           'denoise_output_SpectralSub.wav'), fs,
               pra.normalize(processed_audio).astype(np.float32))
 print("Noisy and denoised file written to: '%s'" %
       os.path.join(os.path.dirname(__file__), 'output_samples'))
@@ -120,15 +101,15 @@ if plot_spec:
     max_val = -40
     plt.figure()
     plt.subplot(3, 1, 1)
-    plt.specgram(noisy_signal[:n-hop], NFFT=256, Fs=fs_s,
+    plt.specgram(noisy_signal[:n-hop], NFFT=256, Fs=fs,
                  vmin=min_val, vmax=max_val)
     plt.title('Noisy Signal')
     plt.subplot(3, 1, 2)
-    plt.specgram(processed_audio[hop:n], NFFT=256, Fs=fs_s,
+    plt.specgram(processed_audio[hop:n], NFFT=256, Fs=fs,
                  vmin=min_val, vmax=max_val)
     plt.title('Denoised Signal')
     plt.subplot(3, 1, 3)
-    plt.specgram(signal_norm[:n-hop], NFFT=256, Fs=fs_s,
+    plt.specgram(signal_norm[:n-hop], NFFT=256, Fs=fs,
                  vmin=min_val, vmax=max_val)
     plt.title('Original Signal')
     plt.tight_layout(pad=0.5)
