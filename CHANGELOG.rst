@@ -22,6 +22,7 @@ Added
 - Adds several options to ``pyroomacoustics.room.Room.simulate`` to finely
   control the SNR of the microphone signals and also return the microphone
   signals with individual sources, prior to mix (usefull for BSS evaluation)
+- Add subspace denoising approach in ``pyroomacoustics.denoise.subspace``.
 
 Changed
 ~~~~~~~
