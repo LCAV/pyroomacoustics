@@ -46,31 +46,53 @@ install:
   - pip install -r requirements.txt
   - python setup.py install
 
-# Run test twice, without C lib, and with C lib
 script:
   - python setup.py build_ext --inplace
   - nosetests
 
 # Deploy to pypi (or test)
 deploy:
-  # pypi
+  # pypi (source)
   - provider: pypi
     on:
       branch: pypi-release
       tags: true
-      condition: $PYTHON_VERSION = "2.7"
     distributions: "sdist"
+    skip_existing: true
     user: "fakufaku"
     password:
       secure: "DT89f2IjQQ23UHa9CTKcxSDGYzk6HD4gBh4s41Qd34VyIuUvVrYxXNq0dWc+ciSVG1HjzpVEqUZj1+zD9yoDciczvBGE5qXXGhW8XjMQVzA8wzyO9H4ybkKwFlKgK6GM0K7vs+E+E7/T06u4ktiB+Rvu3nzFOLnl8fEMAlXWJH067dK+ltX4iVtHs06Q8yRpKFrVCOpyJuMP4FIqK4YA/azvH0TEG/P5DM6omATZUuoNGgXdE+oD2pkguhcejOwvSSmk7m2M1BPuesoeF4uYI1jEWrev++7zXtvwT0f2FKOXd21SVe3dzZv478C2ttABFFIDXRlYPWgSuwE311hUqlDrkmWgvJ1rdj2A5ajTew00EJBRjfrdRNiHzYJ7p51HLD2oGM+44EPqXCx8+OmD9TmdPGjwP1OGxFsJ0ADWcFQWeaubOjmBPv8P7DLORg5sHqt3IHmlL/F6JOmLkOLJ9nqi1hcHMrJpoWO83RqyZ/2HhVxmjrBMmVqXjmH5QJx1Kj2G1tZov55XHXO+XOfiFpJXtLQggZsOsipQ9ZuPG/WzWgcfLoMEpQCweZDw/ynSnG1JeEYK6csEEWIGfcnkk0zu1wcxPX7SQTEKVqg3uC1IG6lSQicCsBbDc83iEP3B908VLHv1Cav3VIqUh55QsyDjaGs5XJpp7sOnCx2xiB8="
-  # pypi test
+  # pypi test (source)
   - provider: pypi
-    server: https://testpypi.python.org/pypi
+    server: https://test.pypi.org/legacy/
     on:
       branch: pypi-test
       tags: false
-      condition: $PYTHON_VERSION = "2.7"
     distributions: "sdist"
+    skip_existing: true
     user: "fakufaku"
     password:
-      secure: "dIgbQ5hZ4aH0RzriwFT5A6uZa0K1462C6wtSY7coS+ztQPdrRCKjI/bTKV5j++CEBj6Lz5oUOxsmc86PF7I1IVtbVcT2jeR+nFJt87XCg8iQ1CYRQ24NXw/erLniDYl3HE6F0HQvKS7UDdjv7csiKgwfpEZEpYOZo+kNyANgS0EeUlIGMzYEIhBww/nfAefkDoNGOCEUJ5kTd7JWYhdg+PfFhIjDwNHYQ7YEufoFyrx10bl4Ka/uGAlAnhyMc3Q4tLN+oCx08gmo9/lvc9Vio6fzmVDzX5Ay5KA9LjbOFz0xr1s1zrZXP3ZILvrRElQClWTq8RQFQtoUMXpeszLxKdVHo8pPLZdZnkbMX0xD+3QRaxu6SiooDqFxRTUvlVpKQDJDLCDyq74RsrLa+qBWRJSQzlRqHUzsgpNHMS2w3x7M4zjjvr5oYExwnrBfC9W+A9ymcnyvWJYuNkTY40k4cx+8cDBdog9/ESliVsS5jkrSC1II1iqk6R6GSKHieGoyXDgtV2G1q+2wRZSVl6WMWomP66rIHNAmxvMQCWPfG1Bt4xT+HMPftdt04yfHJY8vFpU9PZy7U23h9fFw/goFQI94J0bessOudjGTOgdej3GZQT/stIKkHVZr5lX3+ZPjRg8kO2evXD9IJIIze64+qy/l89RAhUry7cpBEVhC5wk="
+      secure: "bshTb4GGhuiNtv6lPABosLl2DbBXAbnwC7vDeD2Xrf8Apkzn8ECfMzrR3iGik52bjyJ6Nh3ZZQxh85cLhR6nyMo0v4DDc55dc5x6YqYxiDZkHnCatxGoa+1ntJ/trEnI79Sc8e8/a9ZWp2+Bxv7Hg62KikCimhxHmSzejG+XgL+g78djG/j9Aw+JTEmrZYNHGcI3kyuPfQ1pOet65ilIT3Lf/kNnzAiio4GF1LUET5tsnVJhUNnJ+5IxTcfRq9vZPLY92ehndi5ORUw8mJUrQkYGxmFnlDnuhlvSo3SaWWr+qeJB6dAYgG6DM7zbsqO1EPhZYFsw608XiClSE37KPtooSKd7jOIClhNM/b+R2mtDbBgPyPQLiZ+8w9da4NAnIpN5If1XlzMfTXxcbYh2u8e2gmACBPxn462bJZetWI2dkJvG6AhI0EygaMkJ1648SadrFI6ymUYPer2rHfR5U+izYcRRJzeLwUIjt+Mc5wuRS9c6oaJhN00ICsna0tt7+X6wn9uWD5FEnDMf0uvkT1P/xBaRHeCdt94x690JcyaqRPavxF5W58w/pmtSw9zET2wvL4XsjQRBS3vOpU1Pk/DVlOfDySYPcLJcHZfwXmgyFNiXtbAFZ6aRTbU/t/+4YwufVuh35e6qTl+pRLuSvLL5oMnzRk6fahGaWDQIt/U="
+  # pypi (wheel)
+  - provider: pypi
+    on:
+      branch: pypi-release
+      tags: true
+      condition: $TRAVIS_OS_NAME = "osx"
+    distributions: "bdist_wheel"
+    skip_existing: true
+    user: "fakufaku"
+    password:
+      secure: "DT89f2IjQQ23UHa9CTKcxSDGYzk6HD4gBh4s41Qd34VyIuUvVrYxXNq0dWc+ciSVG1HjzpVEqUZj1+zD9yoDciczvBGE5qXXGhW8XjMQVzA8wzyO9H4ybkKwFlKgK6GM0K7vs+E+E7/T06u4ktiB+Rvu3nzFOLnl8fEMAlXWJH067dK+ltX4iVtHs06Q8yRpKFrVCOpyJuMP4FIqK4YA/azvH0TEG/P5DM6omATZUuoNGgXdE+oD2pkguhcejOwvSSmk7m2M1BPuesoeF4uYI1jEWrev++7zXtvwT0f2FKOXd21SVe3dzZv478C2ttABFFIDXRlYPWgSuwE311hUqlDrkmWgvJ1rdj2A5ajTew00EJBRjfrdRNiHzYJ7p51HLD2oGM+44EPqXCx8+OmD9TmdPGjwP1OGxFsJ0ADWcFQWeaubOjmBPv8P7DLORg5sHqt3IHmlL/F6JOmLkOLJ9nqi1hcHMrJpoWO83RqyZ/2HhVxmjrBMmVqXjmH5QJx1Kj2G1tZov55XHXO+XOfiFpJXtLQggZsOsipQ9ZuPG/WzWgcfLoMEpQCweZDw/ynSnG1JeEYK6csEEWIGfcnkk0zu1wcxPX7SQTEKVqg3uC1IG6lSQicCsBbDc83iEP3B908VLHv1Cav3VIqUh55QsyDjaGs5XJpp7sOnCx2xiB8="
+  # pypi test (wheel)
+  - provider: pypi
+    server: https://test.pypi.org/legacy/
+    on:
+      branch: pypi-test
+      tags: false
+      condition: $TRAVIS_OS_NAME = "osx"
+    distributions: "bdist_wheel"
+    skip_existing: true
+    user: "fakufaku"
+    password:
+      secure: "bshTb4GGhuiNtv6lPABosLl2DbBXAbnwC7vDeD2Xrf8Apkzn8ECfMzrR3iGik52bjyJ6Nh3ZZQxh85cLhR6nyMo0v4DDc55dc5x6YqYxiDZkHnCatxGoa+1ntJ/trEnI79Sc8e8/a9ZWp2+Bxv7Hg62KikCimhxHmSzejG+XgL+g78djG/j9Aw+JTEmrZYNHGcI3kyuPfQ1pOet65ilIT3Lf/kNnzAiio4GF1LUET5tsnVJhUNnJ+5IxTcfRq9vZPLY92ehndi5ORUw8mJUrQkYGxmFnlDnuhlvSo3SaWWr+qeJB6dAYgG6DM7zbsqO1EPhZYFsw608XiClSE37KPtooSKd7jOIClhNM/b+R2mtDbBgPyPQLiZ+8w9da4NAnIpN5If1XlzMfTXxcbYh2u8e2gmACBPxn462bJZetWI2dkJvG6AhI0EygaMkJ1648SadrFI6ymUYPer2rHfR5U+izYcRRJzeLwUIjt+Mc5wuRS9c6oaJhN00ICsna0tt7+X6wn9uWD5FEnDMf0uvkT1P/xBaRHeCdt94x690JcyaqRPavxF5W58w/pmtSw9zET2wvL4XsjQRBS3vOpU1Pk/DVlOfDySYPcLJcHZfwXmgyFNiXtbAFZ6aRTbU/t/+4YwufVuh35e6qTl+pRLuSvLL5oMnzRk6fahGaWDQIt/U="

@@ -15,3 +15,4 @@ Algorithms
 .. toctree::
 
    pyroomacoustics.denoise.spectral_subtraction
+   pyroomacoustics.denoise.subspace

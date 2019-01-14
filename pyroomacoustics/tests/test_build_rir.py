@@ -44,11 +44,6 @@ visibilities = np.array(
         dtype=np.int32,
         )
 
-time_short = np.array([0.])
-time_long = np.array([0.1])
-alpha_dummy = np.array([1.])
-visibility_dummy = np.array([1], dtype=np.int32)
-
 
 def build_rir_wrap(time, alpha, visibility, fs, fdl):
 
