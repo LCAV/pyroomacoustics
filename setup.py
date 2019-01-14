@@ -46,9 +46,7 @@ ext_modules = [
         Extension(
             'pyroomacoustics.libroom',
             [ os.path.join(libroom_src_dir, f)
-                #for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp', 'utility.cpp']],
                 for f in ['libroom.cpp'] ],
-                #for f in ['libroom.cpp','wall.cpp', 'geometry.cpp', 'room.cpp']],
             include_dirs=[
                 '.',
                 libroom_src_dir,

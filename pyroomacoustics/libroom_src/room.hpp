@@ -47,8 +47,6 @@ extern float libroom_eps;
 typedef std::array<float,2> entry;
 typedef std::list<entry> mic_log;
 typedef std::vector<mic_log> room_log;
-
-
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
 
@@ -63,11 +61,14 @@ struct ImageSource
   float attenuation;
   int order;
   int gen_wall;
-  ImageSource * parent;
+  ImageSource *parent;
   VectorXb visible_mics;
 };
 
-
+/*
+ * Structure for a room as a list of walls
+ * with a few sources and microphones around
+ */
 template<size_t D>
 class Room
 {

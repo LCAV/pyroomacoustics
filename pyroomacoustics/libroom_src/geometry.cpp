@@ -39,7 +39,6 @@
 #include "utility.hpp"
 #include "geometry.hpp"
 
-
 int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vector2f &p3)
 {
   /*
@@ -69,7 +68,6 @@ int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vec
 }
 
 int check_intersection_2d_segments(
-
     const Eigen::Vector2f &a1, const Eigen::Vector2f &a2,
     const Eigen::Vector2f &b1, const Eigen::Vector2f &b2
     )
@@ -96,15 +94,14 @@ int check_intersection_2d_segments(
 
   // At this point, there is intersection, but we need to check limit cases
   ret = 0;
-  if (b1b2a1 == 0 || b1b2a2 == 0) ret |= 1; // a1 or a2 between (b1,b2)
-  if (a1a2b1 == 0 || a1a2b2 == 0) ret |= 2; // b1 or b2 between (a1, a2)
+  if (b1b2a1 == 0 || b1b2a2 == 0) ret |= 1;  // a1 or a2 between (b1,b2)
+  if (a1a2b1 == 0 || a1a2b2 == 0) ret |= 2;  // b1 or b2 between (a1, a2)
 
   return ret;
 
 }
 
 int intersection_2d_segments(
-
     const Eigen::Vector2f &a1, const Eigen::Vector2f &a2,
     const Eigen::Vector2f &b1, const Eigen::Vector2f &b2,
     Eigen::Ref<Eigen::Vector2f> intersection
@@ -141,7 +138,7 @@ int intersection_2d_segments(
 
   ret = check_intersection_2d_segments(a1, a2, b1, b2);
 
-  if (ret < 0) // no intersection
+  if (ret < 0)  // no intersection
     return ret;
 
   // normal to a1 <-> a2 segment
@@ -164,7 +161,6 @@ int intersection_2d_segments(
 }
 
 int intersection_3d_segment_plane(
-
     const Eigen::Vector3f &a1, const Eigen::Vector3f &a2,
     const Eigen::Vector3f &p, const Eigen::Vector3f &normal,
     Eigen::Ref<Eigen::Vector3f> intersection)
@@ -190,7 +186,7 @@ int intersection_3d_segment_plane(
                 1: intersection and one of the end points of the segment is in the plane
     */
 
-  float num = 0, denom = 0;
+  float num=0, denom=0;
 
   Eigen::Vector3f u = a2 - a1;
   denom = normal.adjoint() * u;
@@ -210,14 +206,15 @@ int intersection_3d_segment_plane(
 
       // check limit case
       if (fabsf(s) < libroom_eps || fabsf(s - 1) < libroom_eps)
-        return 1; // a1 or a2 belongs to plane
+        return 1;  // a1 or a2 belongs to plane
       else
-        return 0; // plane is between a1 and a2
+        return 0;  // plane is between a1 and a2
     }
   }
 
-  return -1; // no intersection
+  return -1;  // no intersection
 }
+
 
 Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2)
 {
@@ -250,51 +247,51 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     1 : the point is on the boundary
     */
 
-
   bool is_inside = false;  // initialize point not in the polygon
   int c1c2p, c1c2p0, pp0c1, pp0c2;
   int n_corners = corners.cols();
 
   // find a point outside the polygon
   int i_min;
-  corners.row(0).minCoeff( & i_min);
+  corners.row(0).minCoeff(&i_min);
   Eigen::Vector2f p_out;
   p_out.resize(2);
-  p_out.coeffRef(0) = corners.coeff(0, i_min) - 1;
+  p_out.coeffRef(0) = corners.coeff(0,i_min) - 1;
   p_out.coeffRef(1) = p.coeff(1);
 
   // Now count intersections
-  for (int i = 0, j = n_corners - 1; i < n_corners; j = i++)
+  for (int i = 0, j = n_corners-1 ; i < n_corners ; j=i++)
   {
 
     // Check first if the point is on the segment
     // We count the border as inside the polygon
     c1c2p = ccw3p(corners.col(i), corners.col(j), p);
-    if (c1c2p == 0) {
+    if (c1c2p == 0)
+    {
       // Here we know that p is co-linear with the two corners
       float x_down, x_up, y_down, y_up;
-      x_down = fminf(corners.coeff(0, i), corners.coeff(0, j));
-      x_up = fmaxf(corners.coeff(0, i), corners.coeff(0, j));
-      y_down = fminf(corners.coeff(1, i), corners.coeff(1, j));
-      y_up = fmaxf(corners.coeff(1, i), corners.coeff(1, j));
+      x_down = fminf(corners.coeff(0,i), corners.coeff(0,j));
+      x_up = fmaxf(corners.coeff(0,i), corners.coeff(0,j));
+      y_down = fminf(corners.coeff(1,i), corners.coeff(1,j));
+      y_up = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
       if (x_down <= p.coeff(0) && p.coeff(0) <= x_up && y_down <= p.coeff(1) && p.coeff(1) <= y_up)
         return 1;
     }
 
     // Now check intersection with standard method
     c1c2p0 = ccw3p(corners.col(i), corners.col(j), p_out);
-    if (c1c2p == c1c2p0) // no intersection
+    if (c1c2p == c1c2p0)  // no intersection
       continue;
 
     pp0c1 = ccw3p(p, p_out, corners.col(i));
     pp0c2 = ccw3p(p, p_out, corners.col(j));
-    if (pp0c1 == pp0c2) // no intersection
+    if (pp0c1 == pp0c2)  // no intersection
       continue;
 
     // at this point we are sure there is an intersection
 
     // the second condition takes care of horizontal edges and intersection on vertex
-    float c_max = fmaxf(corners.coeff(1, i), corners.coeff(1, j));
+    float c_max = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
     if (p.coeff(1) + libroom_eps < c_max)
     {
       is_inside = !is_inside;
@@ -304,12 +301,13 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 
   // for a odd number of intersections, the point is in the polygon
   if (is_inside)
-    return 0; // point strictly inside
+    return 0;  // point strictly inside
   else
     return -1; // point is outside
 }
 
-float area_2d_polygon(const Eigen::MatrixXf & corners)
+
+float area_2d_polygon(const Eigen::MatrixXf &corners)
 {
   /*
     Computes the signed area of a 2D surface represented by its corners.
@@ -333,7 +331,7 @@ float area_2d_polygon(const Eigen::MatrixXf & corners)
   }
 
   float a = 0;
-  for (int c1 = 0; c1 < corners.cols(); c1++)
+  for (int c1 = 0 ; c1 < corners.cols() ; c1++)
   {
     int c2 = (c1 == corners.cols() - 1) ? 0 : c1 + 1;
     float base = 0.5 * (corners.coeff(1, c2) + corners.coeff(1, c1));
@@ -343,9 +341,10 @@ float area_2d_polygon(const Eigen::MatrixXf & corners)
   return a;
 }
 
+
 float cos_angle_between(const Eigen::VectorXf & v1,
   const Eigen::VectorXf & v2)
-  {
+{
 	  
   /* This function computes the cosinus of the angle between two vectors.
    
@@ -369,10 +368,11 @@ float cos_angle_between(const Eigen::VectorXf & v1,
   return clamp(v1.normalized().dot(v2.normalized()), -1., 1.);
 }
 
+
 float dist_line_point(const Eigen::VectorXf & start,
   const Eigen::VectorXf & end,
   const Eigen::VectorXf & point)
-  {
+{
 	  
   /* This function computes the smallest distance between a point and an 
    endless line.

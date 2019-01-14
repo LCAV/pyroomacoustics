@@ -27,7 +27,6 @@
 #include <iostream>
 #include "room.hpp"
 
-
 template<size_t D>
 int Room<D>::image_source_model(const Eigen::Matrix<float,D,1> &source_location, int max_order)
 {
@@ -62,7 +61,8 @@ int Room<D>::fill_sources()
   int n_sources = visible_sources.size();
 
   // Create linear arrays to store the image sources
-  if (n_sources > 0) {
+  if (n_sources > 0)
+  {
     // resize all the arrays
     sources.resize(D, n_sources);
     orders.resize(n_sources);
@@ -70,9 +70,8 @@ int Room<D>::fill_sources()
     attenuations.resize(n_sources);
     visible_mics.resize(microphones.cols(), n_sources);
 
-    for (int i = n_sources - 1; i >= 0; i--)
+    for (int i = n_sources - 1 ; i >= 0 ; i--)
     {
-
       ImageSource<D> &top = visible_sources.top();  // sample top of stack
 
       // fill the arrays
@@ -82,7 +81,7 @@ int Room<D>::fill_sources()
       attenuations.coeffRef(i) = top.attenuation;
       visible_mics.col(i) = top.visible_mics;
 
-      visible_sources.pop(); // unstack
+      visible_sources.pop();  // unstack
     }
   }
 
@@ -101,7 +100,6 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
-
   for (int mic = 0 ; mic < microphones.cols() ; mic++)
   {
     bool is_visible = is_visible_dfs(microphones.col(mic), is);
@@ -116,16 +114,16 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
   }
 
   if (any_visible)
-    visible_sources.push(is); // this should push a copy onto the stack
-
+    visible_sources.push(is);  // this should push a copy onto the stack
+  
   // If we reached maximal depth, stop
   if (max_order == 0)
     return;
 
   // Then, check all the reflections across the walls
-  for (size_t wi = 0; wi < walls.size(); wi++)
+  for (size_t wi=0 ;  wi < walls.size() ; wi++)
   {
-    int dir = walls[wi].reflect(is.loc, new_is.loc); // the reflected location
+    int dir = walls[wi].reflect(is.loc, new_is.loc);  // the reflected location
 
     // We only check valid reflections (normals should point outward from the room
     if (dir <= 0)
@@ -135,7 +133,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
     new_is.attenuation = is.attenuation * (1. - walls[wi].absorption);
     new_is.order = is.order + 1;
     new_is.gen_wall = wi;
-    new_is.parent = & is;
+    new_is.parent = &is;
 
     // Run the DFS recursion (on the last element in the array, the one we just added)
     image_sources_dfs(new_is, max_order - 1);
@@ -202,11 +200,11 @@ bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D
   int gen_wall_id = is.gen_wall;
 
   // Check candidate walls for obstructions
-  for (size_t ow = 0; ow < obstructing_walls.size(); ow++) {
+  for (size_t ow = 0 ; ow < obstructing_walls.size() ; ow++)
+  {
     int wall_id = obstructing_walls[ow];
 
     // generating wall can't be obstructive
-
     if (wall_id != gen_wall_id)
     {
       Eigen::Matrix<float,D,1> intersection;
@@ -226,7 +224,8 @@ bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D
 
           if (img_side != intersection_side && intersection_side != 0)
             return true;
-        } else
+        }
+        else
           return true;
       }
     }
@@ -255,9 +254,9 @@ int Room<D>::image_source_shoebox(
   // make sure the list is empty
   while (visible_sources.size() > 0)
     visible_sources.pop();
-
+  
   // L1 ball of room images
-  int point[3] = {0,0,0};
+  int point[3] = {0, 0, 0};
 
   // Take 2D case into account
   int z_max = max_order;
@@ -265,17 +264,16 @@ int Room<D>::image_source_shoebox(
     z_max = 0;
 
   // Walk on all the points of the discrete L! ball of radius max_order
-  for (point[2] = -z_max; point[2] <= z_max; point[2]++)
+  for (point[2] = -z_max ; point[2] <= z_max ; point[2]++)
   {
     int y_max = max_order - abs(point[2]);
-    for (point[1] = -y_max; point[1] <= y_max; point[1]++)
+    for (point[1] = -y_max ; point[1] <= y_max ; point[1]++)
     {
       int x_max = y_max - abs(point[1]);
       if (x_max < 0) x_max = 0;
 
-      for (point[0] = -x_max; point[0] <= x_max; point[0]++)
+      for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
-
         visible_sources.push(ImageSource<D>());
         ImageSource<D> &is = visible_sources.top();
         is.visible_mics = VectorXb::Ones(microphones.cols());  // everything is visible
@@ -285,7 +283,6 @@ int Room<D>::image_source_shoebox(
         is.gen_wall = -1;
 
         // Now compute the reflection, the order, and the multiplicative constant
-
         for (size_t d = 0 ; d < D ; d++)
         {
           // Compute the reflected source
@@ -299,14 +296,14 @@ int Room<D>::image_source_shoebox(
           int p1 = 0, p2 = 0;
           if (point[d] > 0)
           {
-            p1 = point[d] / 2;
-            p2 = (point[d] + 1) / 2;
-          } else if (point[d] < 0)
-          {
-            p1 = abs((point[d] - 1) / 2);
-            p2 = abs(point[d] / 2);
+            p1 = point[d]/2; 
+            p2 = (point[d]+1)/2;
           }
-
+          else if (point[d] < 0)
+          {
+            p1 = abs((point[d]-1)/2);
+            p2 = abs(point[d]/2);
+          }
           is.attenuation *= transmission_pwr[2 * D * p1 + 2*d];  // 'west' absorption factor
           is.attenuation *= transmission_pwr[2 * D * p2 + 2*d+1];  // 'east' absorption factor
         }
@@ -1028,18 +1025,4 @@ bool Room<D>::contains(const Eigen::VectorXf point)
   // then the point is in the room  => return true
   return ((n_intersections % 2) == 1);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

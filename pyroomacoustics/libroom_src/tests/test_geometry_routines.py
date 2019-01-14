@@ -180,7 +180,6 @@ class TestGeometryRoutines(unittest.TestCase):
         ret = pra.libroom.is_inside_2d_polygon([4, 2], corners)
         self.assertTrue(all([ret == -1]))
 
-
     def test_cosangleBetween2D(self):
         eps = 0.001
         result = pra.libroom.cos_angle_between([1.,0.],[-1.,-1.])

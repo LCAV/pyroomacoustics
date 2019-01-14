@@ -147,11 +147,13 @@ int Wall<3>::intersection(
     Two booleans are also returned to indicate if the intersection
     happened at extremities of the segment or at a border of the polygon,
     which can be useful for limit cases computations.
+
     a1: (array size 3) coordinates of the first endpoint of the segment
     a2: (array size 3) coordinates of the second endpoint of the segment
     corners: (array size 3xN, N>2) coordinates of the corners of the polygon
     normal: (array size 3) normal vector of the surface
     intersection: (array size 3) store the intersection point
+
     :returns: 
            -1 if there is no intersection
             0 if the intersection striclty between the segment endpoints and in the polygon interior

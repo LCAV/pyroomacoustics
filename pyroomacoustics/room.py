@@ -318,6 +318,29 @@ def wall_factory(corners, absorption, name=""):
     else:
         raise ValueError('Rooms can only be 2D or 3D')
 
+from . import libroom
+from .libroom import Wall, Wall2D
+
+
+def room_factory(walls, obstructing_walls, mic_locs):
+    ''' Call the correct method according to room dimension '''
+    if walls[0].dim == 3:
+        return libroom.Room(walls, obstructing_walls, mic_locs)
+    elif walls[0].dim == 2:
+        return libroom.Room2D(walls, obstructing_walls, mic_locs)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
+
+def wall_factory(corners, absorption, name=""):
+    ''' Call the correct method according to wall dimension '''
+    if corners.shape[0] == 3:
+        return Wall(corners, absorption, name)
+    elif corners.shape[0] == 2:
+        return Wall2D(corners, absorption, name)
+    else:
+        raise ValueError('Rooms can only be 2D or 3D')
+
 
 class Room(object):
     '''

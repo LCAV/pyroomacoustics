@@ -37,8 +37,6 @@
 
 namespace py = pybind11;
 
-int unused = 8;
-
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
 Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf &_microphones)
@@ -47,7 +45,6 @@ Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eige
    * This is a factory method to isolate the Room class from pybind code
    */
   Room<3> *room = new Room<3>();
-
 
   room->microphones = _microphones.topRows(3);
 
@@ -59,7 +56,7 @@ Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eige
 
   // Useful for ray tracing
   room->max_dist = room->get_max_distance();
-  room ->n_mics = room->microphones.cols();
+  room->n_mics = room->microphones.cols();
   
   return room;
 }
