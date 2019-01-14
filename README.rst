@@ -109,7 +109,7 @@ Install the package with pip::
 
     pip install pyroomacoustics
 
-A [cookiecutter](https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim)
+A `cookiecutter <https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim>`_
 is available that generates a working simulation script for a few 2D/3D
 scenarios::
 
@@ -187,7 +187,7 @@ beamformer in a room.
     plt.show()
 
 A comprehensive set of examples covering most of the functionalities
-of the package can be found in the ``examples`` folder of the `github
+of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
 
 Authors

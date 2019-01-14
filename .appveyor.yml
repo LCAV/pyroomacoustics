@@ -1,6 +1,10 @@
 build: false
 
 environment:
+  PYPI_PASSWORD:
+    secure: 9NqOJYSnExOsNW15tqSNOV/tLcIAeQOknx7PpXdZ0Vw=
+  PYPITEST_PASSWORD:
+    secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
     - PYTHON_VERSION: 3.5
       MINICONDA: C:\Miniconda3
@@ -40,6 +44,7 @@ install:
   - conda update -q conda
   - conda info -a
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose"
+  - pip install twine wheel
   - activate test-environment
 
   - pip install -r requirements.txt
@@ -56,6 +61,27 @@ after_test:
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*.whl
+
+deploy_script:
+  - echo "Starting Artifact Deployment"
+  # populate pypirc file for twine
+  - echo [distutils]                                   > %USERPROFILE%\\.pypirc
+  - echo index-servers =                              >> %USERPROFILE%\\.pypirc
+  - echo     pypi                                     >> %USERPROFILE%\\.pypirc
+  - echo     pypitest                                 >> %USERPROFILE%\\.pypirc
+  - echo [pypi]                                       >> %USERPROFILE%\\.pypirc
+  - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
+  - echo password=%PYPI_PASSWORD%                     >> %USERPROFILE%\\.pypirc
+  - echo [pypitest]                                   >> %USERPROFILE%\\.pypirc
+  - echo repository=https://test.pypi.org/legacy/     >> %USERPROFILE%\\.pypirc
+  - echo username=fakufaku                            >> %USERPROFILE%\\.pypirc
+  - echo password=%PYPITEST_PASSWORD%                 >> %USERPROFILE%\\.pypirc
+  # upload to pypi for windows
+  - set PATH=%BK_PATH%
+  - set HOME=%USERPROFILE%
+  - ps: If ($env:APPVEYOR_REPO_BRANCH -eq "pypi-test") { Invoke-Expression "twine upload --repository pypitest --skip-existing dist/*.whl" } Else { write-output "Not on a tag on pypi-test, won't deploy to pypitest"}
+  - ps: If ($env:APPVEYOR_REPO_TAG -eq "true" -And $env:APPVEYOR_REPO_BRANCH -eq "pypi-release") { Invoke-Expression "twine upload --skip-existing dist/*.whl" 2>$null } Else { write-output "Not on a tag on pypi-release, won't deploy to pypi"}
+  - echo "Finished Artifact Deployment"
 
 notifications:
   - provider: Slack

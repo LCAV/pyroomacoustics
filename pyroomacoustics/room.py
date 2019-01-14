@@ -1,7 +1,7 @@
 # @version: 1.0  date: 05/06/2015 by Sidney Barthe
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
-'''
+r'''
 Room
 ====
 
@@ -139,6 +139,100 @@ with each row corresponding to one microphone.
     # plot signal at microphone 1
     plt.plot(room.mic_array.signals[1,:])
 
+Controlling the signal-to-noise ratio
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is in general necessary to scale the signals from different sources to
+obtain a specific signal-to-noise or signal-to-interference ratio (SNR and SIR,
+respectively). This can be done by passing some options to the :py:func:`simulate()`
+function. Because the relative amplitude of signals will change at different microphones
+due to propagation, it is necessary to choose a reference microphone. By default, this
+will be the first microphone in the array (index 0). The simplest choice is to choose
+the variance of the noise \\(\\sigma_n^2\\) to achieve a desired SNR with respect
+to the cumulative signal from all sources. Assuming that the signals from all sources
+are scaled to have the same amplitude (e.g., unit amplitude) at the reference microphone,
+the SNR is defined as
+
+.. math::
+
+    \mathsf{SNR} = 10 \log_{10} \frac{K}{\sigma_n^2}
+
+where \\(K\\) is the number of sources. For example, an SNR of 10 decibels (dB)
+can be obtained using the following code
+
+.. code-block:: python
+
+    room.simulate(reference_mic=0, snr=10)
+
+Sometimes, more challenging normalizations are necessary. In that case,
+a custom callback function can be provided to simulate. For example,
+we can imagine a scenario where we have ``n_src`` out of which ``n_tgt``
+are the targets, the rest being interferers. We will assume all
+targets have unit variance, and all interferers have equal
+variance \\(\\sigma_i^2\\) (at the reference microphone). In
+addition, there is uncorrelated noise \\(\\sigma_n^2\\) at
+every microphones. We will define SNR and SIR with respect
+to a single target source:
+
+.. math::
+
+    \mathsf{SNR} & = 10 \log_{10} \frac{1}{\sigma_n^2}
+
+    \mathsf{SIR} & = 10 \log_{10} \frac{1}{(\mathsf{n_{src}} - \mathsf{n_{tgt}}) \sigma_i^2}
+
+The callback function ``callback_mix`` takes as argument an nd-array
+``premix_signals`` of shape ``(n_src, n_mics, n_samples)`` that contains the
+microphone signals prior to mixing. The signal propagated from the ``k``-th
+source to the ``m``-th microphone is contained in ``premix_signals[k,m,:]``. It
+is possible to provide optional arguments to the callback via
+``callback_mix_kwargs`` optional argument. Here is the code
+implementing the example described.
+
+.. code-block:: python
+
+    # the extra arguments are given in a dictionary
+    callback_mix_kwargs = {
+            'snr' : 30,  # SNR target is 30 decibels
+            'sir' : 10,  # SIR target is 10 decibels
+            'n_src' : 6,
+            'n_tgt' : 2,
+            'ref_mic' : 0,
+            }
+
+    def callback_mix(premix, snr=0, sir=0, ref_mic=0, n_src=None, n_tgt=None):
+
+        # first normalize all separate recording to have unit power at microphone one
+        p_mic_ref = np.std(premix[:,ref_mic,:], axis=1)
+        premix /= p_mic_ref[:,None,None]
+
+        # now compute the power of interference signal needed to achieve desired SIR
+        sigma_i = np.sqrt(10 ** (- sir / 10) / (n_src - n_tgt))
+        premix[n_tgt:n_src,:,:] *= sigma_i
+
+        # compute noise variance
+        sigma_n = np.sqrt(10 ** (- snr / 10))
+
+        # Mix down the recorded signals
+        mix = np.sum(premix[:n_src,:], axis=0) + sigma_n * np.random.randn(*premix.shape[1:])
+
+        return mix
+
+    # Run the simulation
+    room.simulate(
+            callback_mix=callback_mix,
+            callback_mix_kwargs=callback_mix_kwargs,
+            )
+    mics_signals = room.mic_array.signals
+
+In addition, it is desirable in some cases to obtain the microphone signals
+with individual sources, prior to mixing. For example, this is useful to
+evaluate the output from blind source separation algorithms. In this case, the
+``return_premix`` argument should be set to ``True``
+
+.. code-block:: python
+
+    premix = room.simulate(return_premix=True)
+
 
 Example
 -------
@@ -258,7 +352,7 @@ class Room(object):
         else:
             self.t0 = t0
         
-        if (sources is list):
+        if sources is not None and isinstance(sources, list):
             self.sources = sources
         else:
             self.sources = []
@@ -267,12 +361,6 @@ class Room(object):
          
         self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
         self.absorption = np.array([wall.absorption for wall in self.walls])
-
-        # Pre-compute RIR if needed
-        if (len(self.sources) > 0 and self.mic_array is not None):
-            self.compute_rir()
-        else:
-            self.rir = None
 
         # in the beginning, nothing has been 
         self.visibility = None
@@ -288,6 +376,9 @@ class Room(object):
 
         # check which walls are part of the convex hull
         self.convex_hull()
+
+        # initialize the attribute for the impulse responses
+        self.rir = None
 
     @classmethod
     def from_corners(
@@ -752,9 +843,61 @@ class Room(object):
                 h.append(source.get_rir(mic, self.visibility[s][m], self.fs, self.t0))
             self.rir.append(h)
 
+    def simulate(self,
+            snr=None,
+            reference_mic=0,
+            callback_mix=None,
+            callback_mix_kwargs={},
+            return_premix=False,
+            recompute_rir=False,
+            ):
+        r'''
+        Simulates the microphone signal at every microphone in the array
 
-    def simulate(self, recompute_rir=False):
-        ''' Simulates the microphone signal at every microphone in the array '''
+        Parameters
+        ----------
+        reference_mic: int, optional
+            The index of the reference microphone to use for SNR computations.
+            The default reference microphone is the first one (index 0)
+        snr: float, optional
+            The target signal-to-noise ratio (SNR) in decibels at the reference microphone.
+            When this option is used the argument
+            :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is ignored. The variance of
+            every source at the reference microphone is normalized to one and
+            the variance of the noise \\(\\sigma_n^2\\) is chosen
+
+            .. math::
+
+                \mathsf{SNR} = 10 \log_{10} \frac{ K }{ \sigma_n^2 }
+
+            The value of :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is also set
+            to \\(\\sigma_n^2\\) automatically
+
+        callback_mix: func, optional
+            A function that will perform the mix, it takes as first argument
+            an array of shape ``(n_sources, n_mics, n_samples)`` that contains
+            the source signals convolved with the room impulse response prior
+            to mixture at the microphone. It should return an array of shape
+            ``(n_mics, n_samples)`` containing the mixed microphone signals.
+            If such a function is provided, the ``snr`` option is ignored
+            and :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is set to ``None``.
+        callback_mix_kwargs: dict, optional
+            A dictionary that contains optional arguments for ``callback_mix``
+            function
+        return_premix: bool, optional
+            If set to ``True``, the function will return an array of shape
+            ``(n_sources, n_mics, n_samples)`` containing the microphone
+            signals with individual sources, convolved with the room impulse
+            response but prior to mixing
+        recompute_rir: bool, optional
+            If set to ``True``, the room impulse responses will be recomputed
+            prior to simulation
+
+        Returns
+        -------
+        Nothing or an array of shape ``(n_sources, n_mics, n_samples)``
+            Depends on the value of ``return_premix`` option
+        '''
 
         # import convolution routine
         from scipy.signal import fftconvolve
@@ -785,25 +928,44 @@ class Room(object):
             L += 1
 
         # the array that will receive all the signals
-        signals = np.zeros((M, L))
+        premix_signals = np.zeros((S, M, L))
 
         # compute the signal at every microphone in the array
         for m in np.arange(M):
-            rx = signals[m]
             for s in np.arange(S):
                 sig = self.sources[s].signal
                 if sig is None:
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
-                rx[d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
+                premix_signals[s,m,d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
 
-            # add white gaussian noise if necessary
-            if self.sigma2_awgn is not None:
-                rx += np.random.normal(0., np.sqrt(self.sigma2_awgn), rx.shape)
+        if callback_mix is not None:
+            # Execute user provided callback
+            signals = callback_mix(premix_signals, **callback_mix_kwargs)
+            self.sigma2_awgn = None
+
+        elif snr is not None:
+            # Normalize all signals so that 
+            denom = np.std(premix_signals[:,reference_mic,:], axis=1)
+            premix_signals /= denom[:,None,None]
+            signals = np.sum(premix_signals, axis=0)
+
+            # Compute the variance of the microphone noise
+            self.sigma2_awgn = 10**(- snr / 10) * S
+
+        else:
+            signals = np.sum(premix_signals, axis=0)
+
+        # add white gaussian noise if necessary
+        if self.sigma2_awgn is not None:
+            signals += np.random.normal(0., np.sqrt(self.sigma2_awgn), signals.shape)
 
         # record the signals in the microphones
         self.mic_array.record(signals, self.fs)
+
+        if return_premix:
+            return premix_signals
 
 
     def direct_snr(self, x, source=0):
