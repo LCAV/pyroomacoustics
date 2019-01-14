@@ -19,10 +19,6 @@ import numpy as np
 
 def test_issue_22():
 
-    # only run the test when the C module is available
-    if not pyroomacoustics.libroom_available:
-        return
-
     np.random.seed(0)
 
     n_mics = 1

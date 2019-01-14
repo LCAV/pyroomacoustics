@@ -1,3 +1,23 @@
-include pyroomacoustics/c_package/*.h pyroomacoustics/c_package/*.c
+# The header files for the compiled extension
+include pyroomacoustics/libroom_src/*.hpp
+include pyroomacoustics/libroom_src/*.cpp
+
+# The compiled extension code rely on Eigen, which is included
+include pyroomacoustics/libroom_src/ext/eigen/COPYING.*
+graft pyroomacoustics/libroom_src/ext/eigen/Eigen
+
 include requirements.txt
 include LICENSE
+
+# Keep the test files too
+graft pyroomacoustics/tests
+graft pyroomacoustics/adaptive/tests
+graft pyroomacoustics/bss/tests
+graft pyroomacoustics/datasets/tests
+graft pyroomacoustics/doa/tests
+graft pyroomacoustics/experimental/tests
+graft pyroomacoustics/libroom_src/tests
+graft pyroomacoustics/transform/tests
+
+global-exclude *.py[co]
+global-exclude __pycache__

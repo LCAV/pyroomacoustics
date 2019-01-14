@@ -13,7 +13,10 @@ absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
 
-corners = np.array([[0,5,5,3,3,2,2,0], [0,0,5,5,2,2,5,5]])
+corners = np.array([
+    [0,5,5,3,3,2,2,0],
+    [0,0,5,5,2,2,5,5],
+    ])
 room = pra.Room.from_corners(
     corners,
     absorption,

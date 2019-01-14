@@ -32,7 +32,7 @@ R = np.array([[3.,   2.2],
               [0.6,  0.55]])
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
-room.image_source_model(use_libroom=True)
+room.image_source_model()
 
 room.compute_rir()
 

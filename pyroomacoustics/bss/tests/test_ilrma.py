@@ -74,14 +74,13 @@ def test_ilrma():
     ###########
 
     # shape == (n_chan, n_frames, n_freq)
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
-    X = np.moveaxis(X, 0, 2)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L // 2, zp_back=L // 2)
 
     # Run ILRMA
     Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
+    y = pra.transform.synthesis(Y, L, L, zp_back=L // 2, zp_front=L // 2).T
 
     # Compare SIR
     #############

@@ -2,7 +2,7 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-from unittest import TestCase
+import unittest
 import numpy as np
 
 import pyroomacoustics as pra
@@ -81,7 +81,7 @@ visible_outside = np.array(
                  dtype=bool)
 
 
-class TestVisibilityShoeBox3D(TestCase):
+class TestVisibilityShoeBox3D(unittest.TestCase):
 
     def test_sources(self):
         self.assertTrue(np.allclose(images_found, sources))
@@ -97,3 +97,6 @@ class TestVisibilityShoeBox3D(TestCase):
         
     def test_visibility_outside(self):
         self.assertTrue(np.allclose(images_found[:,visibilities[3,:]], sources[:,visible_outside]))
+
+if __name__ == '__main__':
+    unittest.main()
