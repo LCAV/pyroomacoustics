@@ -49,7 +49,7 @@ class TestAutoCorr(TestCase):
         self.assertTrue(res[2] < tol)
 
 
-def test_timing_and_error(p):
+def timing_and_error(p):
     print()
     print("-" * 40)
     print("p = {}".format(p))
@@ -99,9 +99,8 @@ def test_timing_and_error(p):
 
 
 if __name__ == '__main__':
-
-    test_timing_and_error(p=3)
-    test_timing_and_error(p=35)
+    timing_and_error(p=3)
+    timing_and_error(p=35)
 
 
 
