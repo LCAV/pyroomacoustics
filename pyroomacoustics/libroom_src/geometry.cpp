@@ -357,7 +357,7 @@ float cos_angle_between(const Eigen::VectorXf & v1,
   int s1 = v1.size();
   int s2 = v2.size();
 
-  if (s1 < 2 or s1 > 3 or s2 < 2 or s2 > 3 or s1 != s2)
+  if (s1 < 2 || s1 > 3 || s2 < 2 || s2 > 3 || s1 != s2)
   {
     std::cerr << "size of v1 :" << s1 << std::endl;
     std::cerr << "size of v2 :" << s2 << std::endl;
@@ -388,7 +388,7 @@ float dist_line_point(const Eigen::VectorXf & start,
   size_t s_end = end.size();
   size_t s_point = point.size();
 
-  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_point < 2 or s_point > 3)
+  if (s_start < 2 || s_start > 3 || s_end < 2 || s_end > 3 || s_point < 2 || s_point > 3)
   {
     std::cerr << "dist_line_point : Only 2D and 3D vectors are supported" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
@@ -397,7 +397,7 @@ float dist_line_point(const Eigen::VectorXf & start,
     throw std::exception();
   }
 
-  if (s_start != s_point or s_start != s_end or s_end != s_point)
+  if (s_start != s_point || s_start != s_end || s_end != s_point)
   {
     std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
     std::cerr << "Dim start = " << s_start << std::endl;
