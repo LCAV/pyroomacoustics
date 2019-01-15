@@ -27,6 +27,7 @@ from scipy import signal
 from scipy.io import wavfile
 
 from .parameters import constants, eps
+from .sync import correlate
 
 
 def create_noisy_signal(signal_fp, snr, noise_fp=None):
@@ -552,33 +553,54 @@ def levinson(r, b):
     return x
 
 
-def bac(x, p):
+def autocorr(x, p, biased=True, method='numpy'):
     """
-    Compute the biased autocorrelation for `x` up to lag `p`.
+    Compute the autocorrelation for real signal `x` up to lag `p`.
 
     Parameters
     ----------
     x : numpy array
         Real signal in time domain.
-    p : integer
+    p : int
         Amount of lag. When solving for LPC coefficient, this is typically the
         LPC order.
+    biased : bool
+        Whether to return biased autocorrelation (default) or unbiased. As
+        there are fewer samples for larger lags, the biased estimate tends to
+        have better statistical stability under noise.
+    method : 'numpy, 'fft', 'time', `pra`
+        Method for computing the autocorrelation: in the frequency domain with
+        `fft` or `pra` (`np.fft.rfft` is used so only real signals are
+        supported), in the time domain with `time`, or with `numpy`'s built-in
+        function `np.correlate` (default). For `p < log2(len(x))`, the time
+        domain approach may be more efficient.
 
     Returns
     -------
     numpy array
-        Biased autocorrelation for `x` up to lag `p`.
+        Autocorrelation for `x` up to lag `p`.
     """
     L = len(x)
-    r = np.zeros(p+1)
-    for m in range(0, p+1):
-        for n in range(0, L-m):
-            r[m] += x[n] * x[n+m]
-        r[m] /= float(L)
-    return r
+    if method is "fft":
+        X = np.fft.rfft(np.r_[x, np.zeros_like(x)])
+        r = np.fft.irfft(X * np.conj(X))[:p + 1]
+    elif method is "time":
+        r = np.array([np.dot(x[:L - m], x[m:]) for m in range(p + 1)])
+    elif method is "numpy":
+        r = np.correlate(x, x, 'full')[L - 1:L + p]
+    elif method is "pra":
+        r = correlate(x, x)[L - 1:L + p]
+    else:
+        raise ValueError("Invalid `method` for computing autocorrelation"
+                         "choose one of: `fft`, `time`, `numpy`, `pra`.")
+
+    if biased:
+        return r / L
+    else:
+        return r / np.arange(L, L - p - 1, step=-1)
 
 
-def lpc(x, p):
+def lpc(x, p, biased=True):
     """
     Compute `p` LPC coefficients for a speech segment `x`.
 
@@ -586,17 +608,21 @@ def lpc(x, p):
     ----------
     x : numpy array
         Real signal in time domain.
-    p : integer
+    p : int
         Amount of lag. When solving for LPC coefficient, this is typically the
         LPC order.
+    biased : bool
+        Whether to use biased autocorrelation (default) or unbiased. As there
+        are fewer samples for larger lags, the biased estimate tends to have
+        better statistical stability under noise.
 
     Returns
     -------
     numpy array
         `p` LPC coefficients.
     """
-    # compute biased autocorrelation
-    r = bac(x, p)
+    # compute autocorrelation
+    r = autocorr(x, p, biased)
 
     # solve Yule-Walker equations for LPC coefficients
     return levinson(r[:p], r[1:])
