@@ -36,8 +36,18 @@
  
 #include <iostream>
 #include <cmath>
-#include "utility.hpp"
 #include "geometry.hpp"
+
+
+double clamp(double value, double min, double max)
+{
+  if (value < min)
+    return min;
+  if (value > max)
+    return max;
+  return value;
+}
+
 
 int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vector2f &p3)
 {
@@ -307,7 +317,7 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 }
 
 
-float area_2d_polygon(const Eigen::MatrixXf &corners)
+float area_2d_polygon(const Eigen::Matrix<float, 2, Eigen::Dynamic> &corners)
 {
   /*
     Computes the signed area of a 2D surface represented by its corners.
@@ -318,18 +328,6 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
         positive area means anti-clockwise ordered corners.
         negative area means clockwise ordered corners.
    */
-  if (corners.rows() != 2)
-  {
-    std::cerr << "Only 2D polygons are supported" << std::endl;
-    throw std::exception();
-  }
-
-  if (corners.cols() < 3)
-  {
-    std::cerr << "The corners should have more than 2 points" << std::endl;
-    throw std::exception();
-  }
-
   float a = 0;
   for (int c1 = 0 ; c1 < corners.cols() ; c1++)
   {
@@ -342,8 +340,9 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
 }
 
 
-float cos_angle_between(const Eigen::VectorXf & v1,
-  const Eigen::VectorXf & v2)
+float cos_angle_between(
+    const Eigen::VectorXf &v1,
+    const Eigen::VectorXf &v2)
 {
 	  
   /* This function computes the cosinus of the angle between two vectors.
@@ -354,24 +353,14 @@ float cos_angle_between(const Eigen::VectorXf & v1,
    :returns: a value in [-1;1] representing the cosinus of the angle
      between the two vectors*/
 
-  int s1 = v1.size();
-  int s2 = v2.size();
-
-  if (s1 < 2 or s1 > 3 or s2 < 2 or s2 > 3 or s1 != s2)
-  {
-    std::cerr << "size of v1 :" << s1 << std::endl;
-    std::cerr << "size of v2 :" << s2 << std::endl;
-    std::cerr << "cos_angle_between() : Only 2D and 3D vectors are supported" << std::endl;
-    throw std::exception();
-  }
-
   return clamp(v1.normalized().dot(v2.normalized()), -1., 1.);
 }
 
 
-float dist_line_point(const Eigen::VectorXf & start,
-  const Eigen::VectorXf & end,
-  const Eigen::VectorXf & point)
+float dist_line_point(
+    const Eigen::VectorXf &start,
+    const Eigen::VectorXf &end,
+    const Eigen::VectorXf &point)
 {
 	  
   /* This function computes the smallest distance between a point and an 
@@ -383,28 +372,6 @@ float dist_line_point(const Eigen::VectorXf & start,
     
    :returns: the smallest distance between 'point' and the line defined
      by 'start' and 'end'*/
-
-  size_t s_start = start.size();
-  size_t s_end = end.size();
-  size_t s_point = point.size();
-
-  if (s_start < 2 or s_start > 3 or s_end < 2 or s_end > 3 or s_point < 2 or s_point > 3)
-  {
-    std::cerr << "dist_line_point : Only 2D and 3D vectors are supported" << std::endl;
-    std::cerr << "Dim start = " << s_start << std::endl;
-    std::cerr << "Dim end = " << s_end << std::endl;
-    std::cerr << "Dim point = " << s_point << std::endl;
-    throw std::exception();
-  }
-
-  if (s_start != s_point or s_start != s_end or s_end != s_point)
-  {
-    std::cerr << "The 3 vectors objects must have the same dimension !" << std::endl;
-    std::cerr << "Dim start = " << s_start << std::endl;
-    std::cerr << "Dim end = " << s_end << std::endl;
-    std::cerr << "Dim point = " << s_point << std::endl;
-    throw std::exception();
-  }
 
   Eigen::VectorXf unit_vec = (end - start).normalized(); // vector
   Eigen::VectorXf v = point - start; // vector
