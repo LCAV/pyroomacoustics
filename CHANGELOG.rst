@@ -11,7 +11,22 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+- Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
+	can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
+	That's why this function has now several default arguments to run ray tracing (number
+	of rays, scattering coefficient, energy and time thresholds, microphone's radius).
+- Bandpass filterbank construction in ``pyroomacoustics.acoustics.bandpass_filterbank``
+
+Changed
+~~~~~~~
+
+- Complete refactor of libroom, the compiled extension module responsible for the
+  room simulation, into C++. The bindings to python are now done using pybind11.
+- Removes the pure Python room simulator as it was really slow
+- Compiled wheels are now available for Mac
 
 `0.1.21`_ - 2018-12-20
 ----------------------
@@ -50,10 +65,6 @@ Added
 
 - STFT tutorial and demo notebook.
 - New algorithm for blind source separation (BSS): Independent Low-Rank Matrix Analysis (ILRMA)
-- Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
-	can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
-	That's why this function has now several default arguments to run ray tracing (number
-	of rays, scattering coefficient, energy and time thresholds, microphone's radius).
 
 Changed
 ~~~~~~~

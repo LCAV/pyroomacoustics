@@ -2,6 +2,7 @@
 from __future__ import division
 
 import numpy as np
+from scipy.signal import butter
 from scipy.fftpack import dct
 from .stft import stft
 
@@ -17,7 +18,60 @@ def binning(S, bands):
     return B
 
 
-def octave_bands(fc=1000, third=False):
+def bandpass_filterbank(bands, fs=1., order=8, output='sos'):
+    '''
+    Create a bank of Butterworth bandpass filters
+
+    Parameters
+    ----------
+    bands: array_like, shape == (n, 2)
+        The list of bands ``[[flo1, fup1], [flo2, fup2], ...]``
+    fs: float, optional
+        Sampling frequency (default 1.)
+    order: int, optional
+        The order of the IIR filters (default: 8)
+    output: {'ba', 'zpk', 'sos'}
+        Type of output: numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. Only
+        returned if output='ba'.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer function. Only
+        returned if output='zpk'.
+    sos : ndarray
+        Second-order sections representation of the IIR filter. Only returned
+        if output=='sos'.
+    '''
+
+    filters = []
+    nyquist = fs / 2.
+
+    for band in bands:
+
+        # remove bands above nyquist frequency
+        if band[0] >= nyquist:
+            raise ValueError('Bands should be below Nyquist frequency')
+
+        # Truncate the highest band to Nyquist frequency
+        norm_band = np.minimum(0.99, np.array(band) / nyquist)
+
+        # Compute coefficients
+        coeffs = butter(
+                order / 2,
+                norm_band,
+                'bandpass',
+                output=output,
+                )
+        filters.append(coeffs)
+
+    return filters
+
+
+def octave_bands(fc=1000, third=False, start=0, n=8):
     '''
     Create a bank of octave bands
 
@@ -34,7 +88,7 @@ def octave_bands(fc=1000, third=False):
         div = 3
 
     # Octave Bands
-    fcentre = fc * ((2.0) ** (np.arange(-6*div,4*div + 1) / div))
+    fcentre = fc * ((2.0) ** (np.arange(start * div, (start + n) * div) / div))
     fd = 2**(0.5 / div);
     bands = np.array([ [f / fd, f*fd] for f in fcentre ])
     
