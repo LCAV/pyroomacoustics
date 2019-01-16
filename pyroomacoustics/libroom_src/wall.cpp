@@ -266,3 +266,32 @@ bool Wall<D>::same_as(const Wall & that)
   return (corners - that.corners).cwiseAbs().sum() == 0.;
 }
 
+template<size_t D>
+Eigen::Matrix<float,D,1> Wall<D>::normal_reflect(
+    const Eigen::Matrix<float,D,1> &start,
+    const Eigen::Matrix<float,D,1> &hit_point,
+    float length)
+{
+	  
+  /* This method computes the reflection of one point with respect to
+   a precise hit_point on a wall. Also, the distance between the
+   wall hit point and the reflected point is defined by the 'length'
+   parameter.
+   This method computes the reflection of point 'start' across the normal
+   to the wall through 'hit_point'.
+    
+   start: (array size 2 or 3) defines the point to be reflected
+   hit_point: (array size 2 or 3) defines a point on a wall that will
+     serve as the reference point for the reflection
+   wall_normal: (array size 2 or 3) defines the normal of the reflecting
+     wall. It will be used as if it was anchored at hit_point
+   length : the desired distance between hit_point and the reflected point
+   
+   :returns: an array of size 2 or 3 representing the reflected point
+   */
+
+  Eigen::Matrix<float,D,1> incident = (hit_point - start).normalized();
+  return hit_point + length * (incident - normal * 2 * incident.dot(normal));
+}
+
+

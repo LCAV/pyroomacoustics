@@ -32,6 +32,8 @@ shoebox.add_microphone_array(
             shoebox.fs)
         )
 
+import pdb; pdb.set_trace()
+
 # run ism
 shoebox.simulate()
 

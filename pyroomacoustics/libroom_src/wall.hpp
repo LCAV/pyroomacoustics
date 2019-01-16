@@ -90,6 +90,11 @@ class Wall
         );
     int side(const Eigen::Matrix<float,D,1> &p);
     bool same_as(const Wall & that);
+
+    Eigen::Matrix<float,D,1> normal_reflect(
+        const Eigen::Matrix<float,D,1> &start,
+        const Eigen::Matrix<float,D,1> &hit_point,
+        float length);
 }; 
 
 #include "wall.cpp"

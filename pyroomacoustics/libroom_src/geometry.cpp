@@ -36,8 +36,18 @@
  
 #include <iostream>
 #include <cmath>
-#include "utility.hpp"
 #include "geometry.hpp"
+
+
+double clamp(double value, double min, double max)
+{
+  if (value < min)
+    return min;
+  if (value > max)
+    return max;
+  return value;
+}
+
 
 int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vector2f &p3)
 {
@@ -307,7 +317,7 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
 }
 
 
-float area_2d_polygon(const Eigen::MatrixXf &corners)
+float area_2d_polygon(const Eigen::Matrix<float, 2, Eigen::Dynamic> &corners)
 {
   /*
     Computes the signed area of a 2D surface represented by its corners.
@@ -318,18 +328,6 @@ float area_2d_polygon(const Eigen::MatrixXf &corners)
         positive area means anti-clockwise ordered corners.
         negative area means clockwise ordered corners.
    */
-  if (corners.rows() != 2)
-  {
-    std::cerr << "Only 2D polygons are supported" << std::endl;
-    throw std::exception();
-  }
-
-  if (corners.cols() < 3)
-  {
-    std::cerr << "The corners should have more than 2 points" << std::endl;
-    throw std::exception();
-  }
-
   float a = 0;
   for (int c1 = 0 ; c1 < corners.cols() ; c1++)
   {

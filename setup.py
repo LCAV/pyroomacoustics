@@ -42,11 +42,21 @@ class get_pybind_include(object):
 
 # build C extension for image source model
 libroom_src_dir = 'pyroomacoustics/libroom_src'
+libroom_files = [ os.path.join(libroom_src_dir, f)
+                for f in
+                [
+                    'room.hpp', 'room.cpp',
+                    'wall.hpp', 'wall.cpp',
+                    'geometry.hpp', 'geometry.cpp',
+                    'libroom.cpp',
+                    ]
+                ]
 ext_modules = [
         Extension(
             'pyroomacoustics.libroom',
             [ os.path.join(libroom_src_dir, f)
                 for f in ['libroom.cpp'] ],
+            depends=libroom_files,
             include_dirs=[
                 '.',
                 libroom_src_dir,

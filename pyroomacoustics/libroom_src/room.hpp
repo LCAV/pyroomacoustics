@@ -34,7 +34,6 @@
 #include <ctime>
 
 #include "wall.hpp"
-#include "utility.hpp"
 
 
 extern float libroom_eps;
@@ -115,61 +114,61 @@ class Room
 
   float get_max_distance();
 
-  std::tuple < Eigen::VectorXf, int > next_wall_hit(
-    const Eigen::VectorXf & start,
-    const Eigen::VectorXf & end,
-    bool scattered_ray);
+  std::tuple < Eigen::Matrix<float,D,1>, int > next_wall_hit(
+      const Eigen::Matrix<float,D,1> &start,
+      const Eigen::Matrix<float,D,1> &end,
+      bool scattered_ray);
     
-  float compute_scat_energy(float energy, float scat_coef,
-    const Wall<D> & wall,
-    const VectorXf & start,
-    const VectorXf & hit_point,
-    const VectorXf & mic_pos,
-    float radius,
-    float total_dist,
-    bool for_hybrid_rir);
+  float compute_scat_energy(
+      float energy,
+      float scat_coef,
+      const Wall<D> & wall,
+      const Eigen::Matrix<float,D,1> & start,
+      const Eigen::Matrix<float,D,1> & hit_point,
+      const Eigen::Matrix<float,D,1> & mic_pos,
+      float radius,
+      float total_dist,
+      bool for_hybrid_rir);
 
   bool scat_ray(
-	float energy,
-	float scatter_coef,
-	const Wall<D> & last_wall,
-	const Eigen::VectorXf & start,
-	const Eigen::VectorXf & hit_point,
-	float radius,
-	float total_dist,
-	float travel_time,
-	float time_thres,
-	float energy_thres,
-	float sound_speed,
-	bool for_hybrid_rir,
-	room_log & output);
+      float energy,
+      float scatter_coef,
+      const Wall<D> &wall,
+      const Eigen::Matrix<float,D,1> &prev_last_hit,
+      const Eigen::Matrix<float,D,1> &hit_point,
+      float radius,
+      float total_dist,
+      float travel_time,
+      float time_thres,
+      float energy_thres,
+      float sound_speed,
+      bool for_hybrid_rir,
+      room_log & output);
 
-  void simul_ray(float init_phi,
-    float init_theta,
-    const Eigen::VectorXf source_pos,
-    float mic_radius,
-    float scatter_coef,
-    float time_thres,
-    float energy_thres,
-    float sound_speed,
-    bool for_hybrid_rir,
-    int ism_order,
-    room_log & output
-    );
+  void simul_ray(float phi,
+      float theta,
+      const Eigen::Matrix<float,D,1> source_pos,
+      float mic_radius,
+      float scatter_coef,
+      float time_thres,
+      float energy_thres,
+      float sound_speed,
+      bool for_hybrid_rir,
+      int ism_order,
+      room_log & output);
 
   room_log get_rir_entries(size_t nb_phis,
-    size_t nb_thetas,
-    const Eigen::VectorXf source_pos,
-    float mic_radius,
-    float scatter_coef,
-    float time_thres,
-    float energy_thres,
-    float sound_speed,
-    bool for_hybrid_rir,
-    int ism_order
-    );
+      size_t nb_thetas,
+      const Eigen::Matrix<float,D,1> source_pos,
+      float mic_radius,
+      float scatter_coef,
+      float time_thres,
+      float energy_thres,
+      float sound_speed,
+      bool for_hybrid_rir,
+      int ism_order);
 
-  bool contains(const Eigen::VectorXf point);
+  bool contains(const Eigen::Matrix<float,D,1> point);
 
   private:
     // We need a stack to store the image sources during the algorithm

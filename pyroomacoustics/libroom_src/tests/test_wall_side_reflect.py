@@ -22,6 +22,7 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 
+import unittest
 import numpy as np
 import pyroomacoustics as pra
 
@@ -79,6 +80,7 @@ points = {
             },
         }
 
+
 def run_side(label):
     p = points[label]['p']
     r_exp = points[label]['expect']
@@ -87,7 +89,9 @@ def run_side(label):
     wall = pra.wall_factory(corners[d], 0.1)
     r = wall.side(p)
 
-    assert r == r_exp, 'failed side - {} : returned={} expected={}'.format(label, r, r_exp)
+    print('{}: returned={} expected={}'.format(label, r, r_exp))
+    return r == r_exp
+
 
 def run_reflect(label):
 
@@ -103,56 +107,95 @@ def run_reflect(label):
 
     err = np.linalg.norm(x - p_refl) < eps
 
-    assert err, 'failed reflect - {} : error={}'.format(label, err)
+    print('{}: error={}'.format(label, err))
+    return err
 
-def test_side_3d_up():
-    run_side('3d_up')
 
-def test_side_3d_down():
-    run_side('3d_down')
+class TestUtilityRoutines(unittest.TestCase):
 
-def test_side_3d_on():
-    run_side('3d_on')
+    def test_side_3d_up():
+        ret = run_side('3d_up')
+        self.assertTrue(ret)
 
-def test_side_2d_up():
-    run_side('2d_up')
+    def test_side_3d_down():
+        ret = run_side('3d_down')
+        self.assertTrue(ret)
 
-def test_side_2d_down():
-    run_side('2d_down')
+    def test_side_3d_on():
+        ret = run_side('3d_on')
+        self.assertTrue(ret)
 
-def test_side_2d_on():
-    run_side('2d_on')
+    def test_side_2d_up():
+        ret = run_side('2d_up')
+        self.assertTrue(ret)
 
-def test_reflect_3d_up():
-    run_reflect('3d_up')
+    def test_side_2d_down():
+        ret = run_side('2d_down')
+        self.assertTrue(ret)
 
-def test_reflect_3d_down():
-    run_reflect('3d_down')
+    def test_side_2d_on():
+        ret = run_side('2d_on')
+        self.assertTrue(ret)
 
-def test_reflect_3d_on():
-    run_reflect('3d_on')
+    def test_reflect_3d_up():
+        ret = run_reflect('3d_up')
+        self.assertTrue(ret)
 
-def test_reflect_2d_up():
-    run_reflect('2d_up')
+    def test_reflect_3d_down():
+        ret = run_reflect('3d_down')
+        self.assertTrue(ret)
 
-def test_reflect_2d_down():
-    run_reflect('2d_down')
+    def test_reflect_3d_on():
+        ret = run_reflect('3d_on')
+        self.assertTrue(ret)
 
-def test_reflect_2d_on():
-    run_reflect('2d_on')
+    def test_reflect_2d_up():
+        ret = run_reflect('2d_up')
+        self.assertTrue(ret)
+
+    def test_reflect_2d_down():
+        ret = run_reflect('2d_down')
+        self.assertTrue(ret)
+
+    def test_reflect_2d_on(self):
+        ret = run_reflect('2d_on')
+        self.assertTrue(ret)
+
+    def test_reflected_end2D(self):
+
+        eps = 0.001
+        start = [1,3]
+
+        hit = [5,3]
+        #normal = [-1, -1]
+        corners = np.array([
+            [ 6, 4 ],
+            [ 4, 6 ],
+            ])
+        wall = pra.wall_factory(corners, 0.1)
+        length = 4
+
+        res = wall.normal_reflect(start, hit, length)
+        self.assertTrue(np.allclose(res, [5.,-1.], atol=eps))
+
+    def test_reflected_end3D(self):
+
+        eps = 0.001
+        start = [1,1,1]
+        hit = [-1, 1, 3]
+        #normal = [1, 0, 0]
+        corners = np.array([
+            [ -1, -1, -1, -1, ],
+            [  0,  2,  2,  0, ],
+            [  2,  2,  4,  4, ],
+            ])
+        wall = pra.wall_factory(corners, 0.1)
+
+        length = 2*np.sqrt(2)
+
+        res = wall.normal_reflect(start, hit, length)
+        self.assertTrue(np.allclose(res, [1,1,5], atol=eps))
+
 
 if __name__ == '__main__':
-
-    test_side_3d_up()
-    test_side_3d_down()
-    test_side_3d_on()
-    test_reflect_3d_up()
-    test_reflect_3d_down()
-    test_reflect_3d_on()
-
-    test_side_2d_up()
-    test_side_2d_down()
-    test_side_2d_on()
-    test_reflect_2d_up()
-    test_reflect_2d_down()
-    test_reflect_2d_on()
+    unittest.main()
