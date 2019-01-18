@@ -22,13 +22,13 @@ from pyroomacoustics.denoise import Subspace
 Test and algorithm parameters
 """
 snr = 5         # SNR of input signal.
-frame_len = 256
+frame_len = 80
 mu = 10         # higher value can give more suppression but more distortion
 
 # parameters for covariance matrix estimation
 lookback = 10       # how many frames to look back
-skip = 2            # how many samples to skip when estimating
-threshold = 0.01    # threshold between (signal+noise) and noise
+skip = 1            # how many samples to skip when estimating
+threshold = 0.003    # threshold between (signal+noise) and noise
 
 plot_spec = True
 

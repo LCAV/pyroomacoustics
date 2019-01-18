@@ -31,11 +31,11 @@ from pyroomacoustics.denoise import SpectralSub
 Test and algorithm parameters
 """
 snr = 5         # SNR of input signal.
-db_reduc = 25   # Maximum suppression per frequency bin. Large suppresion can result in more musical noise.
+db_reduc = 10   # Maximum suppression per frequency bin. Large suppresion can result in more musical noise.
 nfft = 512      # Frame length will be nfft/2 as we will use an STFT with 50% overlap.
 lookback = 12   # How many frames to look back for the noise floor estimate.
-beta = 30       # An overestimation factor to "push" the suppression towards db_reduc.
-alpha = 7       # An exponential factor to tune the suppresion (see documentation of 'SpectralSub').
+beta = 3        # An overestimation factor to "push" the suppression towards db_reduc.
+alpha = 1.2     # An exponential factor to tune the suppresion (see documentation of 'SpectralSub').
 
 plot_spec = True
 

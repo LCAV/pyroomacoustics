@@ -2,10 +2,10 @@ from __future__ import division, print_function
 from unittest import TestCase
 import numpy as np
 import os
-from pyroomacoustics import create_noisy_signal
+from pyroomacoustics import create_noisy_signal, rms, normalize
 from scipy.io import wavfile
 
-tol = 1e-12
+tol = 1e-5
 
 signal_fp = os.path.join(os.path.dirname(__file__), '..', '..', 'examples',
                          'input_samples', 'cmu_arctic_us_aew_a0001.wav')
@@ -13,7 +13,7 @@ signal_fp = os.path.join(os.path.dirname(__file__), '..', '..', 'examples',
 def white_noise(snr):
     np.random.seed(0)
     noisy_signal, signal, noise, fs = create_noisy_signal(signal_fp, snr=snr)
-    _snr = 20 * np.log10(np.linalg.norm(signal) / np.linalg.norm(noise))
+    _snr = 20 * np.log10(rms(signal) / rms(noise))
     err = abs(snr-_snr)
     return err, noisy_signal, fs
 
