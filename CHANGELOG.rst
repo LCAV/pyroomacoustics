@@ -21,8 +21,11 @@ Added
 
 - Adds several options to ``pyroomacoustics.room.Room.simulate`` to finely
   control the SNR of the microphone signals and also return the microphone
-  signals with individual sources, prior to mix (usefull for BSS evaluation)
+  signals with individual sources, prior to mix (useful for BSS evaluation)
 - Add subspace denoising approach in ``pyroomacoustics.denoise.subspace``.
+- Add iterative Wiener filtering approach for single channel denoising in
+  ``pyroomacoustics.denoise.iterative_wiener``.
+
 
 Changed
 ~~~~~~~
@@ -41,6 +44,7 @@ Bugfix
 - Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
 - Corrects invalid memory access in the ``pyroomacoustics.build_rir`` cython accelerator
   and adds a unit test that checks the cython code output is correct
+- Fix bad handling of 1D `b` vectors in ```pyroomacoustics.levinson``.
 
 `0.1.20`_ - 2018-10-04
 ----------------------
