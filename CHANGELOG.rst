@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Changed
+~~~~~~~
+
+- Add option in `pyroomacoustics.room.Room.plot_rir` to set number of channels
+  to plot; useful when there's too many.
 
 `0.1.21`_ - 2018-12-20
 ----------------------

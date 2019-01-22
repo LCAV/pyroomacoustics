@@ -702,7 +702,28 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, FD=False):
+    def plot_rir(self, M=None, FD=False):
+        """
+        Plot room impulse responses. Compute if not done already.
+
+        Parameters
+        ----------
+        M: int
+            How many room impulses to plot. Default is all channels.
+        FD: bool
+            Whether to plot in the frequency domain, namely the transfer
+            function. Default is False.
+        """
+        if M is None:
+            M = self.mic_array.M
+        else:
+            if M > self.mic_array.M:
+                print("Only {} channels are available; "
+                      "setting M to {}.".format(self.mic_array.M,
+                      self.mic_array.M))
+                M = self.mic_array.M
+            elif M < 0:
+                raise ValueError("M must be positive.")
 
         if self.rir is None:
             self.compute_rir()
@@ -716,7 +737,6 @@ class Room(object):
 
         from . import utilities as u
 
-        M = self.mic_array.M
         S = len(self.sources)
         for r in range(M):
             for s in range(S):
