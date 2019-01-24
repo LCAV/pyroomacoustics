@@ -47,6 +47,8 @@ Room<3> *create_room_3D(py::list _walls, py::list _obstructing_walls, const Eige
 
   room->microphones = _microphones.topRows(3);
 
+  std::cout << "Pushing walls" << std::endl;
+
   for (auto wall : _walls)
     room->walls.push_back(wall.cast<Wall<3>>());
 

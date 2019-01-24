@@ -45,7 +45,7 @@ def get_rir(size='medium', absorption='medium'):
         
         
     pol = size_coef * np.array([[0,0], [0,4], [3,2], [3,0]]).T
-    room = pra.Room.from_corners(pol, fs=16000, max_order=2, absorption=absor)
+    room = pra.Room.from_corners(pol, fs=16000, max_order=1, absorption=absor)
 
     # Create the 3D room by extruding the 2D by a specific height
     room.extrude(size_coef * 2.5, absorption=absor)
@@ -58,7 +58,7 @@ def get_rir(size='medium', absorption='medium'):
     room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
     # Compute the RIR using the hybrid method
-    room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, scatter_coef=0.)
+    room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, mic_radius=0.15, scatter_coef=0.)
 
     # Plot and apply the RIR on the audio file
     room.plot_rir()
@@ -68,20 +68,25 @@ def get_rir(size='medium', absorption='medium'):
 
 if __name__ == '__main__':
 
-    size = sys.argv[1]
-    absorption = sys.argv[2]
+    if len(sys.argv) != 3:
+        print('Usage: {} [small/medium/large] [low/medium/high]'.format(sys.argv[0]))
 
-    new_rir = get_rir(size=size, absorption=absorption)
+    else:
 
-    fs, old_rir = wavfile.read('notebooks/rir_{}_{}.wav'.format(size, absorption))
+        size = sys.argv[1]
+        absorption = sys.argv[2]
 
-    plt.figure()
-    plt.plot(old_rir, label='old')
-    plt.plot(new_rir, label='new')
-    plt.legend()
-    plt.show()
+        new_rir = get_rir(size=size, absorption=absorption)
 
-    print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
-    print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+        fs, old_rir = wavfile.read('notebooks/rir_{}_{}.wav'.format(size, absorption))
+
+        plt.figure()
+        plt.plot(old_rir, label='old')
+        plt.plot(new_rir, label='new')
+        plt.legend()
+        plt.show()
+
+        print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+        print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
 
 

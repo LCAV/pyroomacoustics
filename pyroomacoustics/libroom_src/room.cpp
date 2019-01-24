@@ -461,6 +461,7 @@ std::tuple < Eigen::Matrix<float,D,1>, int > Room<D>::next_wall_hit(
     if (scattered_ray && (std::find(obstructing_walls.begin(), obstructing_walls.end(), i) == obstructing_walls.end())) {
       continue;
     }
+
     
     Wall<D> & w = walls[i];
 
@@ -695,7 +696,6 @@ void Room<D>::simul_ray(float phi,
 
   // The following initializations are arbitrary and does not count since we set
   // the boolean to false
-  Wall<D> & wall = walls[0];
   int next_wall_index(0);
 
   // The ray's characteristics
@@ -723,7 +723,7 @@ void Room<D>::simul_ray(float phi,
     }
 
     // Intersected wall
-    wall = walls[next_wall_index];
+    Wall<D> &wall = walls[next_wall_index];
 
     // Initialization needed for the next if
     // Defines the length of the actual hop
@@ -768,13 +768,15 @@ void Room<D>::simul_ray(float phi,
       }
     }
 
+
     // Update the characteristics
 
     distance = (start - hit_point).norm();
     total_dist += distance;
     
     travel_time = travel_time + distance/sound_speed;
-    energy = energy * sqrt(1 - wall.absorption);
+    //energy = energy * sqrt(1 - wall.absorption);
+    energy = energy * (1 - wall.absorption);
     
 
     // Check if we reach the thresholds for this ray
@@ -811,7 +813,12 @@ void Room<D>::simul_ray(float phi,
     specular_counter += 1;
     end = wall.normal_reflect(start, hit_point, max_dist);
     start = hit_point;
+
   }
+
+  for (auto it = output.begin() ; it != output.end() ; ++it)
+    for (auto el = (*it).begin() ; el != (*it).end() ;  ++el)
+      std::cout << (*el)[0] << " " << (*el)[1] << std::endl;
 }
 
 template<size_t D>
@@ -892,6 +899,14 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
         break;
       }
     }
+  }
+
+  int n_rays = nb_phis * nb_thetas;
+
+  for (int k(0); k<n_mics; k++)
+  {
+    for (auto entry = output[k].begin() ; entry != output[k].end() ; ++entry)
+      (*entry)[1] /= sqrt(n_rays);
   }
 
   return output;

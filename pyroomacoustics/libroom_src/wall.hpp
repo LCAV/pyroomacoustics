@@ -71,6 +71,14 @@ class Wall
         float _absorption
         ) : Wall(_corners, _absorption, "") {}
 
+    // Copy constructor
+    Wall(const Wall<D> &w) :
+      dim(w.dim), absorption(w.absorption), name(w.name),
+      normal(w.normal), corners(w.corners),
+      origin(w.origin), basis(w.basis), flat_corners(w.flat_corners)
+    {}
+
+
     // methods
     float area();  // compute the area of the wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall

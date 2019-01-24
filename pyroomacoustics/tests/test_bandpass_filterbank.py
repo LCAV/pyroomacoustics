@@ -5,7 +5,6 @@ import pyroomacoustics as pra
 
 import numpy as np
 from scipy.signal import sosfreqz
-import matplotlib.pyplot as plt
 
 tol = 1.  # decibel
 
@@ -35,6 +34,8 @@ def test_bandpass_filterbank():
 
 
 if __name__ == '__main__':
+
+    import matplotlib.pyplot as plt
 
     f0 = 125. / 2.
     fs = 16000

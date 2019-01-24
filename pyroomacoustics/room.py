@@ -968,8 +968,6 @@ class Room(object):
             rir_rt = rt(nb_phis=nb_phis, nb_thetas=nb_thetas, mic_radius=mic_radius, scatter_coef=scatter_coef,
                           time_thres=time_thres, energy_thres=energy_thres, sound_speed=sound_speed, for_hybrid=(mode=='hybrid'))
 
-            import matplotlib.pyplot as plt
-
             max_dim = 0
 
             # See which RIR has most entries and allocate that much zeros
