@@ -1,6 +1,27 @@
-# @version: 1.0  date: 05/06/2015 by Sidney Barthe
-# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
-# @copyright: EPFL-IC-LCAV 2015
+# Room Object for Simulating Room Impulse Responses (RIRs)
+# Copyright (C) 2019  Robin Scheibler, Ivan Dokmanic, Sidney Barthe
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
+
 r'''
 Room
 ====
@@ -702,31 +723,39 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, M=None, FD=False):
+    def plot_rir(self, pairs=None, FD=False):
         """
         Plot room impulse responses. Compute if not done already.
 
         Parameters
         ----------
-        M: int
-            How many room impulses to plot. Default is all channels.
+        pairs: list of tuples OR int
+            List of RIR pairs `(mic, src)` to plot, e.g. `[(0,0), (0,1)]`. Or
+            `int` to plot RIR from particular microphone to all sources. Note
+            that microphones and sources are zero-indexed. Default is to plot
+            all channels.
         FD: bool
             Whether to plot in the frequency domain, namely the transfer
             function. Default is False.
         """
-        if M is None:
-            M = self.mic_array.M
-        else:
-            if M > self.mic_array.M:
-                print("Only {} channels are available; "
-                      "setting M to {}.".format(self.mic_array.M,
-                      self.mic_array.M))
-                M = self.mic_array.M
-            elif M < 0:
-                raise ValueError("M must be positive.")
-
+        n_src = len(self.sources)
+        n_mic = self.mic_array.M
+        if pairs is None:
+            pairs = [(r, s) for r in range(n_mic) for s in range(n_src)]
+        elif isinstance(pairs, int):
+            pairs = [(pairs, s) for s in range(n_src)]
         if self.rir is None:
             self.compute_rir()
+
+        # for plotting
+        n_mic = len(list(set(pair[0] for pair in pairs)))
+        n_src = len(list(set(pair[1] for pair in pairs)))
+        r_plot = dict()
+        s_plot = dict()
+        for k, r in enumerate(list(set(pair[0] for pair in pairs))):
+            r_plot[r] = k
+        for k, s in enumerate(list(set(pair[1] for pair in pairs))):
+            s_plot[s] = k
 
         try:
             import matplotlib.pyplot as plt
@@ -737,21 +766,22 @@ class Room(object):
 
         from . import utilities as u
 
-        S = len(self.sources)
-        for r in range(M):
-            for s in range(S):
-                h = self.rir[r][s]
-                plt.subplot(M, S, r*S + s + 1)
+        for _pair in pairs:
+            r = _pair[0]
+            s = _pair[1]
+            h = self.rir[r][s]
+            # TODO, map r/s to appropriate values!
+            plt.subplot(n_mic, n_src, r_plot[r]*n_src + s_plot[s] + 1)
+            if not FD:
+                plt.plot(np.arange(len(h)) / float(self.fs), h)
+            else:
+                u.real_spectrum(h)
+            plt.title('RIR: mic'+str(r)+' source'+str(s))
+            if r == n_mic-1:
                 if not FD:
-                    plt.plot(np.arange(len(h)) / float(self.fs), h)
+                    plt.xlabel('Time [s]')
                 else:
-                    u.real_spectrum(h)
-                plt.title('RIR: mic'+str(r)+' source'+str(s))
-                if r == M-1:
-                    if not FD:
-                        plt.xlabel('Time [s]')
-                    else:
-                        plt.xlabel('Normalized frequency')
+                    plt.xlabel('Normalized frequency')
 
         plt.tight_layout()
 
