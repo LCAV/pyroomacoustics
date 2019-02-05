@@ -1,6 +1,26 @@
-# @version: 1.0  date: 05/06/2015 by Sidney Barthe
-# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
-# @copyright: EPFL-IC-LCAV 2015
+# Various Beamforming Methods
+# Copyright (C) 2019  Robin Scheibler, Sidney Barthe, Ivan Dokmanic
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
 
@@ -11,7 +31,7 @@ from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
 from . import windows
-from . import stft
+from . import transform
 
 
 #=========================================================================
@@ -722,47 +742,42 @@ class Beamformer(MicrophoneArray):
     def process(self, FD=False):
 
         if self.signals is None or len(self.signals) == 0:
-            raise NameError('No signal to beamform')
+            raise NameError('No signal to beamform.')
 
         if FD is True:
 
             # STFT processing
-
             if self.weights is None and self.filters is not None:
                 self.weights_from_filters()
             elif self.weights is None and self.filters is None:
-                raise NameError('Beamforming weights or filters need to be computed first.')
+                raise NameError('Beamforming weights or filters need to be '
+                                'computed first.')
 
-            # create window function
-            win = np.concatenate((np.zeros(self.zpf),
-                                  windows.hann(self.L),
-                                  np.zeros(self.zpb)))
+            # create window functions
+            analysis_win = windows.hann(self.L)
+            # TODO: bad output when using this synthesis window, check
+            # synthesis_win = transform.compute_synthesis_window(analysis_win,
+            #                                                    self.hop)
+            synthesis_win = None
 
-            # do real STFT of first signal
-            tfd_sig = stft.analysis(self.signals[0],
-                                self.L,
-                                self.hop,
-                                zp_back=self.zpb,
-                                zp_front=self.zpf,
-                                transform=np.fft.rfft,
-                                win=win) * np.conj(self.weights[0])
-            for i in range(1, self.M):
-                tfd_sig += stft.analysis(self.signals[i],
-                                     self.L,
-                                     self.hop,
-                                     zp_back=self.zpb,
-                                     zp_front=self.zpf,
-                                     transform=np.fft.rfft,
-                                     win=win) * np.conj(self.weights[i])
+            # perform STFT
+            sig_stft = transform.analysis(self.signals.T,
+                                          L=self.L,
+                                          hop=self.hop,
+                                          win=analysis_win,
+                                          zp_back=self.zpb,
+                                          zp_front=self.zpf)
 
-            #  now reconstruct the signal
-            output = stft.synthesis(
-                tfd_sig,
-                self.L,
-                self.hop,
-                zp_back=self.zpb,
-                zp_front=self.zpf,
-                transform=np.fft.irfft)
+            # beamform
+            sig_stft_bf = np.sum(sig_stft * self.weights.conj().T, axis=2)
+
+            # back to time domain
+            output = transform.synthesis(sig_stft_bf,
+                                         L=self.L,
+                                         hop=self.hop,
+                                         win=synthesis_win,
+                                         zp_back=self.zpb,
+                                         zp_front=self.zpf)
 
             # remove the zero padding from output signal
             if self.zpb is 0:
@@ -777,7 +792,8 @@ class Beamformer(MicrophoneArray):
             if self.weights is not None and self.filters is None:
                 self.filters_from_weights()
             elif self.weights is None and self.filters is None:
-                raise NameError('Beamforming weights or filters need to be computed first.')
+                raise NameError('Beamforming weights or filters need to be '
+                                'computed first.')
 
             from scipy.signal import fftconvolve
 
@@ -795,7 +811,8 @@ class Beamformer(MicrophoneArray):
         elif self.weights is not None and self.filters is None:
             self.filters_from_weights()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be '
+                            'computed first.')
 
         try:
             import matplotlib.pyplot as plt
