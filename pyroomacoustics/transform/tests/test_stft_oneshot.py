@@ -49,7 +49,8 @@ def half_overlap(D):
     # synthesis
     x_r = synthesis(X, L=block_size, hop=hop)
 
-    return pra.dB(np.max(np.abs(x_local[:-hop, ] - x_r[hop:, ])))
+    return pra.dB(np.max(np.abs(x_local[:-block_size + hop, ] -
+                                x_r[block_size - hop:, ])))
 
 
 def append_one_sample(D):
@@ -70,7 +71,8 @@ def append_one_sample(D):
     # synthesis
     x_r = synthesis(X, L=block_size, hop=hop)
 
-    return pra.dB(np.max(np.abs(x_local[:-hop, ] - x_r[hop:-1, ])))
+    return pra.dB(np.max(np.abs(x_local[:-block_size + hop, ] -
+                                x_r[block_size - hop:-1, ])))
 
 
 def hop_one_sample(D):
@@ -90,7 +92,8 @@ def hop_one_sample(D):
     synthesis_win = pra.transform.compute_synthesis_window(analysis_win, hop)
     x_r = synthesis(X, L=block_size, hop=hop, win=synthesis_win)
 
-    return pra.dB(np.max(np.abs(x_local[:-hop, ] - x_r[hop:, ])))
+    return pra.dB(np.max(np.abs(x_local[:-block_size+hop, ] -
+                                x_r[block_size-hop:, ])))
 
 
 class TestSTFTOneShot(TestCase):
@@ -133,12 +136,12 @@ if __name__ == "__main__":
     print("Half overlap, multichannel      : %d dB" % err)
 
     # check squeeze done properly
-    append_one_sample(1)
+    err = append_one_sample(1)
     print("Append one zero, mono           : %d dB" % err)
-    append_one_sample(D)
+    err = append_one_sample(D)
     print("Append one zero, multichannel   : %d dB" % err)
 
-    hop_one_sample(1)
+    err = hop_one_sample(1)
     print("Hop one sample, mono            : %d dB" % err)
-    hop_one_sample(D)
+    err = hop_one_sample(D)
     print("Hop one sample, multichannel    : %d dB" % err)
