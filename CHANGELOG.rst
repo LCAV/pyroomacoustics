@@ -11,7 +11,21 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+
+Changed
+~~~~~~~
+
+
+Bugfix
+~~~~~~
+
+- Remove `np.squeeze` in STFT as it caused errors when an axis that shouldn't
+  be squeezed was equal to 1.
+- `Beamformer.process` was using old (non-existent) STFT function. Changed to
+  using one-shot function from `transform` module.
 
 `0.1.21`_ - 2018-12-20
 ----------------------

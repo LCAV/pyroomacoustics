@@ -1,6 +1,26 @@
-# @version: 1.0  date: 05/06/2015 by Sidney Barthe
-# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
-# @copyright: EPFL-IC-LCAV 2015
+# Various Beamforming Methods
+# Copyright (C) 2019  Robin Scheibler, Sidney Barthe, Ivan Dokmanic
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
 
@@ -11,7 +31,7 @@ from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
 from . import windows
-from . import stft
+from . import transform
 
 
 #=========================================================================
@@ -37,7 +57,9 @@ def sumcols(A):
 
 
 def mdot(*args):
-    '''Left-to-right associative matrix multiplication of multiple 2D ndarrays.'''
+    '''
+    Left-to-right associative matrix multiplication of multiple 2D ndarrays.
+    '''
 
     ret = args[0]
     for a in args[1:]:
@@ -58,9 +80,11 @@ def distance(x, y):
     x = np.array(x)
     y = np.array(y)
 
-    # return np.sqrt((x[0,:,np.newaxis]-y[0,:])**2 + (x[1,:,np.newaxis]-y[1,:])**2)
+    # return np.sqrt((x[0,:,np.newaxis]-y[0,:])**2 +
+    # (x[1,:,np.newaxis]-y[1,:])**2)
 
-    return np.sqrt(np.sum((x[:, :, np.newaxis] - y[:, np.newaxis, :])**2, axis=0))
+    return np.sqrt(np.sum((x[:, :, np.newaxis] - y[:, np.newaxis, :])**2,
+                          axis=0))
 
 
 def unit_vec2D(phi):
@@ -103,7 +127,8 @@ def circular_2D_array(center, M, phi0, radius):
     M: int
         The number of points
     phi0: float
-        The counterclockwise rotation of the first element in the array (from the x-axis)
+        The counterclockwise rotation of the first element in the array (from
+        the x-axis)
     radius: float
         The radius of the array
 
@@ -208,7 +233,8 @@ def spiral_2D_array(center, M, radius=1., divi=3, angle=None):
 
     pos_array_norm = np.linspace(0, radius, num=M, endpoint=False)
 
-    pos_array_angle = np.reshape(np.tile(np.pi * 2 * np.arange(divi) / divi, num_seg),
+    pos_array_angle = np.reshape(np.tile(np.pi * 2 * np.arange(divi) / divi,
+                                         num_seg),
                                  (divi, -1), order='F') + \
                       np.linspace(0, 2 * np.pi / divi,
                                   num=num_seg, endpoint=False)[np.newaxis, :]
@@ -287,7 +313,8 @@ class MicrophoneArray(object):
         '''
 
         if signals.shape[0] != self.M:
-            raise NameError('The signals array should have as many lines as there are microphones.')
+            raise NameError('The signals array should have as many lines as '
+                            'there are microphones.')
 
         if signals.ndim != 2:
             raise NameError('The signals should be a 2D array.')
@@ -299,11 +326,14 @@ class MicrophoneArray(object):
                 fs_ratio = self.fs / float(fs)
                 newL = int(fs_ratio * signals.shape[1]) - 1
                 self.signals = np.zeros((self.M, newL))
-                # samplerate resample function considers columns as channels (hence the transpose)
+                # samplerate resample function considers columns as channels
+                # (hence the transpose)
                 for m in range(self.M):
-                    self.signals[m] = samplerate.resample(signals[m], fs_ratio, 'sinc_best')
+                    self.signals[m] = samplerate.resample(signals[m], fs_ratio,
+                                                          'sinc_best')
             except ImportError:
-                raise ImportError('The samplerate package must be installed for resampling of the signals.')
+                raise ImportError('The samplerate package must be installed for'
+                                  ' resampling of the signals.')
 
         else:
             self.signals = signals
@@ -318,11 +348,14 @@ class MicrophoneArray(object):
         filename: str
             the name of the file
         mono: bool, optional
-            if true, records only the center channel floor(M / 2) (default `False`)
+            if true, records only the center channel floor(M / 2) (default
+            `False`)
         norm: bool, optional
-            if true, normalize the signal to fit in the dynamic range (default `False`)
+            if true, normalize the signal to fit in the dynamic range (default
+            `False`)
         bitdepth: int, optional
-            the format of output samples [np.int8/16/32/64 or np.float (default)]
+            the format of output samples [np.int8/16/32/64 or np.float
+            (default)]
         '''
         from scipy.io import wavfile
 
@@ -368,7 +401,8 @@ class Beamformer(MicrophoneArray):
     fs: int
         Sampling frequency
     N: int, optional
-        Length of FFT, i.e. number of FD beamforming weights, equally spaced. Defaults to 1024.
+        Length of FFT, i.e. number of FD beamforming weights, equally spaced.
+        Defaults to 1024.
     Lg: int, optional
         Length of time-domain filters. Default to N.
     hop: int, optional
@@ -415,7 +449,8 @@ class Beamformer(MicrophoneArray):
         ''' Concatenates two beamformers together.'''
 
         newR = np.concatenate((self.R, y.R), axis=1)
-        return Beamformer(newR, self.fs, self.Lg, self.N, hop=self.hop, zpf=self.zpf, zpb=self.zpb)
+        return Beamformer(newR, self.fs, self.Lg, self.N, hop=self.hop,
+                          zpf=self.zpf, zpb=self.zpb)
 
     def filters_from_weights(self, non_causal=0.):
         '''
@@ -436,7 +471,9 @@ class Beamformer(MicrophoneArray):
 
             # go back to time domain and shift DC to center
             tw = np.fft.irfft(np.conj(self.weights), axis=1, n=self.N)
-            self.filters[:, :self.N] = np.concatenate((tw[:, -self.N//2:], tw[:, :self.N//2]), axis=1)
+            self.filters[:, :self.N] = np.concatenate((tw[:, -self.N//2:],
+                                                       tw[:, :self.N//2]),
+                                                      axis=1)
 
         elif self.N > self.Lg:
 
@@ -444,12 +481,15 @@ class Beamformer(MicrophoneArray):
             for i in np.arange(self.M):
                 Lgp = np.floor((1 - non_causal)*self.Lg)
                 Lgm = self.Lg - Lgp
-                # the beamforming weights in frequency are the complex conjugates of the FT of the filter
-                w = np.concatenate((np.conj(self.weights[i]), self.weights[i, -2:0:-1]))
+                # the beamforming weights in frequency are the complex
+                # conjugates of the FT of the filter
+                w = np.concatenate((np.conj(self.weights[i]),
+                                    self.weights[i, -2:0:-1]))
 
                 # create partial Fourier matrix
                 k = np.arange(self.N)[:, np.newaxis]
-                l = np.concatenate((np.arange(self.N-Lgm, self.N), np.arange(Lgp)))
+                l = np.concatenate((np.arange(self.N-Lgm, self.N),
+                                    np.arange(Lgp)))
                 F = np.exp(-2j*np.pi*k*l / self.N)
 
                 self.filters[i] = np.real(np.linalg.lstsq(F, w)[0])
@@ -481,11 +521,13 @@ class Beamformer(MicrophoneArray):
             # TO DO 1: This will mean slightly different absolute value for
             # every entry, even within the same steering vector. Perhaps a
             # better paradigm is far-field with phase carrier.
-            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D / constants.get('c'))
+            return 1. / (4 * np.pi) / D * np.exp(-1j * omega * D /
+                                                 constants.get('c'))
         else:
             return np.exp(-1j * omega * D / constants.get('c'))
 
-    def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
+    def steering_vector_2D_from_point(self, frequency, source, attn=True,
+                                      ff=False):
         ''' Creates a steering vector for a particular frequency and source
 
         Args:
@@ -511,7 +553,7 @@ class Beamformer(MicrophoneArray):
             p /= np.linalg.norm(p)
 
             # The projected microphone distances on the unit vectors
-            D = np.dot(self.R.T, p)
+            D = -1 * np.dot(self.R.T, p)
 
             # subtract minimum in each column
             D -= np.min(D)
@@ -537,7 +579,8 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         # For the moment assume that we are in 2D
         bfresp = np.dot(H(self.weights[:,i_freq]), self.steering_vector_2D(
@@ -552,11 +595,13 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         # For the moment assume that we are in 2D
-        bfresp = np.dot(H(self.weights[:, i_freq]), self.steering_vector_2D_from_point(
-            self.frequencies[i_freq], x, attn=True, ff=False))
+        bfresp = np.dot(H(self.weights[:, i_freq]),
+                        self.steering_vector_2D_from_point(
+                            self.frequencies[i_freq], x, attn=True, ff=False))
 
         return self.frequencies[i_freq], bfresp
 
@@ -565,7 +610,8 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         if x.ndim == 0:
             x = np.array([x])
@@ -581,7 +627,8 @@ class Beamformer(MicrophoneArray):
         for k, p in enumerate(x.T):
             for i, f in enumerate(self.frequencies):
                 r = np.dot(H(self.weights[:, i]),
-                           self.steering_vector_2D_from_point(f, p, attn=True, ff=False))
+                           self.steering_vector_2D_from_point(f, p, attn=True,
+                                                              ff=False))
                 HF[k, i] = r[0]
 
         plt.subplot(2, 1, 1)
@@ -605,7 +652,8 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         phi = np.linspace(-np.pi, np.pi-np.pi/180, 360)
         freq = self.frequencies
@@ -662,7 +710,8 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         # This works at a single frequency because otherwise we need to pass
         # many many covariance matrices. Easy to change though (you can also
@@ -673,10 +722,16 @@ class Beamformer(MicrophoneArray):
 
         # To compute the SNR, we /must/ use the real steering vectors, so no
         # far field, and attn=True
-        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source.images, attn=True, ff=False)
+        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f],
+                                                    source.images,
+                                                    attn=True,
+                                                    ff=False)
 
         if interferer is not None:
-            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer.images, attn=True, ff=False)
+            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f],
+                                                        interferer.images,
+                                                        attn=True,
+                                                        ff=False)
             R_nq = R_n + sumcols(A_bad) * H(sumcols(A_bad))
         else:
             R_nq = R_n
@@ -698,15 +753,22 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be computed'
+                            ' first.')
 
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
-        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f], source.images, attn=True, ff=False)
+        A_good = self.steering_vector_2D_from_point(self.frequencies[i_f],
+                                                    source.images,
+                                                    attn=True,
+                                                    ff=False)
 
         if interferer is not None:
-            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f], interferer.images, attn=True, ff=False)
+            A_bad  = self.steering_vector_2D_from_point(self.frequencies[i_f],
+                                                        interferer.images,
+                                                        attn=True,
+                                                        ff=False)
             R_nq = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
         else:
             R_nq = R_n
@@ -722,47 +784,37 @@ class Beamformer(MicrophoneArray):
     def process(self, FD=False):
 
         if self.signals is None or len(self.signals) == 0:
-            raise NameError('No signal to beamform')
+            raise NameError('No signal to beamform.')
 
         if FD is True:
 
             # STFT processing
-
             if self.weights is None and self.filters is not None:
                 self.weights_from_filters()
             elif self.weights is None and self.filters is None:
-                raise NameError('Beamforming weights or filters need to be computed first.')
+                raise NameError('Beamforming weights or filters need to be '
+                                'computed first.')
 
-            # create window function
-            win = np.concatenate((np.zeros(self.zpf),
-                                  windows.hann(self.L),
-                                  np.zeros(self.zpb)))
+            # create window functions
+            analysis_win = windows.hann(self.L)
 
-            # do real STFT of first signal
-            tfd_sig = stft.analysis(self.signals[0],
-                                self.L,
-                                self.hop,
-                                zp_back=self.zpb,
-                                zp_front=self.zpf,
-                                transform=np.fft.rfft,
-                                win=win) * np.conj(self.weights[0])
-            for i in range(1, self.M):
-                tfd_sig += stft.analysis(self.signals[i],
-                                     self.L,
-                                     self.hop,
-                                     zp_back=self.zpb,
-                                     zp_front=self.zpf,
-                                     transform=np.fft.rfft,
-                                     win=win) * np.conj(self.weights[i])
+            # perform STFT
+            sig_stft = transform.analysis(self.signals.T,
+                                          L=self.L,
+                                          hop=self.hop,
+                                          win=analysis_win,
+                                          zp_back=self.zpb,
+                                          zp_front=self.zpf)
 
-            #  now reconstruct the signal
-            output = stft.synthesis(
-                tfd_sig,
-                self.L,
-                self.hop,
-                zp_back=self.zpb,
-                zp_front=self.zpf,
-                transform=np.fft.irfft)
+            # beamform
+            sig_stft_bf = np.sum(sig_stft * self.weights.conj().T, axis=2)
+
+            # back to time domain
+            output = transform.synthesis(sig_stft_bf,
+                                         L=self.L,
+                                         hop=self.hop,
+                                         zp_back=self.zpb,
+                                         zp_front=self.zpf)
 
             # remove the zero padding from output signal
             if self.zpb is 0:
@@ -777,7 +829,8 @@ class Beamformer(MicrophoneArray):
             if self.weights is not None and self.filters is None:
                 self.filters_from_weights()
             elif self.weights is None and self.filters is None:
-                raise NameError('Beamforming weights or filters need to be computed first.')
+                raise NameError('Beamforming weights or filters need to be '
+                                'computed first.')
 
             from scipy.signal import fftconvolve
 
@@ -795,7 +848,8 @@ class Beamformer(MicrophoneArray):
         elif self.weights is not None and self.filters is None:
             self.filters_from_weights()
         elif self.weights is None and self.filters is None:
-            raise NameError('Beamforming weights or filters need to be computed first.')
+            raise NameError('Beamforming weights or filters need to be '
+                            'computed first.')
 
         try:
             import matplotlib.pyplot as plt
@@ -812,7 +866,8 @@ class Beamformer(MicrophoneArray):
             plt.ylabel('Weight modulus')
 
             plt.subplot(2, 2, 2)
-            plt.plot(self.frequencies, np.unwrap(np.angle(self.weights.T), axis=0))
+            plt.plot(self.frequencies, np.unwrap(np.angle(self.weights.T),
+                                                 axis=0))
             plt.title('Beamforming weights [phase]')
             plt.xlabel('Frequency [Hz]')
             plt.ylabel('Unwrapped phase')
@@ -844,33 +899,40 @@ class Beamformer(MicrophoneArray):
         self.frequencies[:, np.newaxis] * proj / constants.get('c')).T
 
 
-    def rake_delay_and_sum_weights(self, source, interferer=None, R_n=None, attn=True, ff=False):
+    def rake_delay_and_sum_weights(self, source, interferer=None, R_n=None,
+                                   attn=True, ff=False):
 
-        self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
+        self.weights = np.zeros((self.M, self.frequencies.shape[0]),
+                                dtype=complex)
 
         K = source.images.shape[1] - 1
 
         for i, f in enumerate(self.frequencies):
-            W = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
+            W = self.steering_vector_2D_from_point(f, source.images, attn=attn,
+                                                   ff=ff)
             self.weights[:,i] = 1.0/self.M/(K+1) * np.sum(W, axis=1)
 
 
-    def rake_one_forcing_weights(self, source, interferer=None, R_n=None, ff=False, attn=True):
+    def rake_one_forcing_weights(self, source, interferer=None, R_n=None,
+                                 ff=False, attn=True):
 
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
-        self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
+        self.weights = np.zeros((self.M, self.frequencies.shape[0]),
+                                dtype=complex)
 
         for i, f in enumerate(self.frequencies):
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images,
+                                                           attn=attn, ff=ff)
 
             R_nq = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
 
-            A_s      = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
+            A_s      = self.steering_vector_2D_from_point(f, source.images,
+                                                          attn=attn, ff=ff)
             R_nq_inv = np.linalg.pinv(R_nq)
             D = np.linalg.pinv(mdot(H(A_s), R_nq_inv, A_s))
 
@@ -879,8 +941,8 @@ class Beamformer(MicrophoneArray):
     def rake_max_sinr_weights(self, source, interferer=None, R_n=None,
                            rcond=0., ff=False, attn=True):
         '''
-        This method computes a beamformer focusing on a number of specific sources
-        and ignoring a number of interferers.
+        This method computes a beamformer focusing on a number of specific
+        sources and ignoring a number of interferers.
 
         INPUTS
           * source     : source locations
@@ -890,51 +952,64 @@ class Beamformer(MicrophoneArray):
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
-        self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
+        self.weights = np.zeros((self.M, self.frequencies.shape[0]),
+                                dtype=complex)
 
         for i, f in enumerate(self.frequencies):
 
-            A_good = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
+            A_good = self.steering_vector_2D_from_point(f, source.images,
+                                                        attn=attn, ff=ff)
 
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images,
+                                                           attn=attn, ff=ff)
 
             a_good = sumcols(A_good)
             a_bad = sumcols(A_bad)
 
-            # TO DO: Fix this (check for numerical rank, use the low rank approximation)
-            K_inv = np.linalg.pinv(a_bad.dot(H(a_bad)) + R_n + rcond * np.eye(A_bad.shape[0]))
-            self.weights[:, i] = (K_inv.dot(a_good) / mdot(H(a_good), K_inv, a_good))[:, 0]
+            # TO DO: Fix this (check for numerical rank, use the low rank
+            # approximation)
+            K_inv = np.linalg.pinv(a_bad.dot(H(a_bad)) + R_n +
+                                   rcond * np.eye(A_bad.shape[0]))
+            self.weights[:, i] = (K_inv.dot(a_good) / mdot(H(a_good), K_inv,
+                                                           a_good))[:, 0]
 
-    def rake_max_udr_weights(self, source, interferer=None, R_n=None, ff=False, attn=True):
+    def rake_max_udr_weights(self, source, interferer=None, R_n=None, ff=False,
+                             attn=True):
         
         if source.images.shape[1] == 1:
-            self.rake_max_sinr_weights(source.images, interferer.images, R_n=R_n, ff=ff, attn=attn)
+            self.rake_max_sinr_weights(source.images, interferer.images,
+                                       R_n=R_n, ff=ff, attn=attn)
             return
 
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
-        self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
+        self.weights = np.zeros((self.M, self.frequencies.shape[0]),
+                                dtype=complex)
 
         for i, f in enumerate(self.frequencies):
-            A_good = self.steering_vector_2D_from_point(f, source.images, attn=attn, ff=ff)
+            A_good = self.steering_vector_2D_from_point(f, source.images,
+                                                        attn=attn, ff=ff)
 
             if interferer is None:
                 A_bad = np.array([[]])
             else:
-                A_bad = self.steering_vector_2D_from_point(f, interferer.images, attn=attn, ff=ff)
+                A_bad = self.steering_vector_2D_from_point(f, interferer.images,
+                                                           attn=attn, ff=ff)
 
             R_nq = R_n + sumcols(A_bad).dot(H(sumcols(A_bad)))
 
             C = np.linalg.cholesky(R_nq)
-            l, v = np.linalg.eig(mdot(np.linalg.inv(C), A_good, H(A_good), H(np.linalg.inv(C))))
+            l, v = np.linalg.eig(mdot(np.linalg.inv(C), A_good, H(A_good),
+                                      H(np.linalg.inv(C))))
 
             self.weights[:, i] = np.linalg.inv(H(C)).dot(v[:, 0])
 
-    def rake_max_udr_filters(self, source, interferer=None, R_n=None, delay=0.03, epsilon=5e-3):
+    def rake_max_udr_filters(self, source, interferer=None, R_n=None,
+                             delay=0.03, epsilon=5e-3):
         '''
         Compute directly the time-domain filters maximizing the
         Useful-to-Detrimental Ratio (UDR).
@@ -964,10 +1039,12 @@ class Beamformer(MicrophoneArray):
             R_n = np.zeros((self.M * self.Lg, self.M * self.Lg))
 
         if interferer is not None:
-            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs,
+                                 epsilon=epsilon, unit_damping=True)
             L = H.shape[1] // 2
         else:
-            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs,
+                                 epsilon=epsilon, unit_damping=True)
             L = H.shape[1]
 
         # Delay of the system in samples
@@ -986,7 +1063,8 @@ class Beamformer(MicrophoneArray):
             B += np.dot(Hc, Hc.T) 
 
         # solve the problem
-        SINR, v = la.eigh(A, b=B, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
+        SINR, v = la.eigh(A, b=B, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1),
+                          overwrite_a=True, overwrite_b=True, check_finite=False)
         g_val = np.real(v[:, 0])
 
         # reshape and store
@@ -996,11 +1074,12 @@ class Beamformer(MicrophoneArray):
         return SINR[0]
 
 
-    def rake_perceptual_filters(self, source, interferer=None, R_n=None, delay=0.03, d_relax=0.035, epsilon=5e-3):
+    def rake_perceptual_filters(self, source, interferer=None, R_n=None,
+                                delay=0.03, d_relax=0.035, epsilon=5e-3):
         '''
-        Compute directly the time-domain filters for a perceptually motivated beamformer.
-        The beamformer minimizes noise and interference, but relaxes the response of the
-        filter within the 30 ms following the delay.
+        Compute directly the time-domain filters for a perceptually motivated
+        beamformer. The beamformer minimizes noise and interference, but relaxes
+        the response of the filter within the 30 ms following the delay.
         '''
 
         if delay > self.Lg / self.fs:
@@ -1011,10 +1090,12 @@ class Beamformer(MicrophoneArray):
 
         # build the channel matrix
         if interferer is not None:
-            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs,
+                                 epsilon=epsilon, unit_damping=True)
             L = H.shape[1] // 2
         else:
-            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+            H = build_rir_matrix(self.R, (source,), self.Lg, self.fs,
+                                 epsilon=epsilon, unit_damping=True)
             L = H.shape[1]
 
         # Delay of the system in samples
@@ -1050,12 +1131,14 @@ class Beamformer(MicrophoneArray):
         return num/denom
 
 
-    def rake_max_sinr_filters(self, source, interferer, R_n, epsilon=5e-3, delay=0.):
+    def rake_max_sinr_filters(self, source, interferer, R_n, epsilon=5e-3,
+                              delay=0.):
         '''
         Compute the time-domain filters of SINR maximizing beamformer.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs,
+                             epsilon=epsilon, unit_damping=True)
         L = H.shape[1]/2
 
         # We first assume the sample are uncorrelated
@@ -1063,7 +1146,10 @@ class Beamformer(MicrophoneArray):
         K_nq = np.dot(H[:, L:], H[:, L:].T) + R_n
 
         # Compute TD filters using generalized Rayleigh coefficient maximization
-        SINR, v = la.eigh(K_s, b=K_nq, eigvals=(self.M*self.Lg-1, self.M*self.Lg-1), overwrite_a=True, overwrite_b=True, check_finite=False)
+        SINR, v = la.eigh(K_s, b=K_nq, eigvals=(self.M*self.Lg-1,
+                                                self.M*self.Lg-1),
+                          overwrite_a=True, overwrite_b=True,
+                          check_finite=False)
         g_val = np.real(v[:, 0])
 
         self.filters = g_val.reshape((self.M, self.Lg))
@@ -1071,13 +1157,15 @@ class Beamformer(MicrophoneArray):
         # compute and return SNR
         return SINR[0]
 
-    def rake_distortionless_filters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+    def rake_distortionless_filters(self, source, interferer, R_n, delay=0.03,
+                                    epsilon=5e-3):
         '''
-        Compute time-domain filters of a beamformer minimizing noise and interference
-        while forcing a distortionless response towards the source.
+        Compute time-domain filters of a beamformer minimizing noise and
+        interference while forcing a distortionless response towards the source.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs,
+                             epsilon=epsilon, unit_damping=True)
         L = H.shape[1]/2
 
         # We first assume the sample are uncorrelated
@@ -1107,13 +1195,15 @@ class Beamformer(MicrophoneArray):
 
         return num/denom
 
-    def rake_mvdr_filters(self, source, interferer, R_n, delay=0.03, epsilon=5e-3):
+    def rake_mvdr_filters(self, source, interferer, R_n, delay=0.03,
+                          epsilon=5e-3):
         '''
         Compute the time-domain filters of the minimum variance distortionless
         response beamformer.
         '''
 
-        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs, epsilon=epsilon, unit_damping=True)
+        H = build_rir_matrix(self.R, (source, interferer), self.Lg, self.fs,
+                             epsilon=epsilon, unit_damping=True)
         L = H.shape[1] // 2
 
         # the constraint vector
@@ -1173,15 +1263,20 @@ class Beamformer(MicrophoneArray):
         for r in np.arange(self.M):
 
             # build constraint matrix
-            hs = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.fs, Lh)[:, ::-1]
+            hs = u.low_pass_dirac(s_time[r, :, np.newaxis],
+                                  s_dmp[r, :, np.newaxis], self.fs, Lh)[:, ::-1]
             As[r*Lg+off:r*Lg+Lh+off, :] = hs.T
 
             # build interferer RIR matrix
-            hx = u.low_pass_dirac(s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.fs, Lh).sum(axis=0)
+            hx = u.low_pass_dirac(s_time[r, :, np.newaxis],
+                                  s_dmp[r, :, np.newaxis],
+                                  self.fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, :L] = u.convmtx(hx, Lg).T
 
             # build interferer RIR matrix
-            hq = u.low_pass_dirac(i_time[r, :, np.newaxis], i_dmp[r, :, np.newaxis], self.fs, Lh).sum(axis=0)
+            hq = u.low_pass_dirac(i_time[r, :, np.newaxis],
+                                  i_dmp[r, :, np.newaxis],
+                                  self.fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, L:] = u.convmtx(hq, Lg).T
 
         ones = np.ones((K, 1))
