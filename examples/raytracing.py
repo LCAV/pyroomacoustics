@@ -4,10 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 from scipy.io import wavfile
-import IPython
+import time
 
 fs, audio_anechoic = wavfile.read('notebooks/arctic_a0010.wav')
-IPython.display.display(IPython.display.Audio(audio_anechoic, rate=fs))
 
 pol = np.array([[0,0], [0,4], [3,2], [3,0]]).T
 room = pra.Room.from_corners(pol, fs=16000, max_order=10, absorption=0.1)
@@ -18,9 +17,6 @@ room.add_source(np.array([1.8, 0.4]), signal=audio_anechoic)
 # Adding the microphone
 R = np.array([[0.5],[1.2],[0.5]])
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
-
-room.plot()
-plt.title("2D shape of the room (the height of the room is 2 meters)")
 
 def get_rir(size='medium', absorption='medium'):
 
@@ -45,7 +41,7 @@ def get_rir(size='medium', absorption='medium'):
         
         
     pol = size_coef * np.array([[0,0], [0,4], [3,2], [3,0]]).T
-    room = pra.Room.from_corners(pol, fs=16000, max_order=1, absorption=absor)
+    room = pra.Room.from_corners(pol, fs=16000, max_order=2, absorption=absor)
 
     # Create the 3D room by extruding the 2D by a specific height
     room.extrude(size_coef * 2.5, absorption=absor)
@@ -58,13 +54,15 @@ def get_rir(size='medium', absorption='medium'):
     room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
     # Compute the RIR using the hybrid method
-    room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, mic_radius=0.15, scatter_coef=0.)
+    s = time.perf_counter()
+    room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, mic_radius=0.05, scatter_coef=0.)
+    print("Computation time:", time.perf_counter() - s)
 
     # Plot and apply the RIR on the audio file
     room.plot_rir()
     plt.show()
 
-    return room.rir[0][0]
+    return room.rir[0][0], room
 
 if __name__ == '__main__':
 
@@ -76,7 +74,7 @@ if __name__ == '__main__':
         size = sys.argv[1]
         absorption = sys.argv[2]
 
-        new_rir = get_rir(size=size, absorption=absorption)
+        new_rir, room = get_rir(size=size, absorption=absorption)
 
         fs, old_rir = wavfile.read('notebooks/rir_{}_{}.wav'.format(size, absorption))
 

@@ -33,21 +33,8 @@
 #include <algorithm>
 #include <ctime>
 
+#include "common.hpp"
 #include "wall.hpp"
-
-
-extern float libroom_eps;
-
-/* The 'entry' type is simply defined as an array of 2 floats.
- * It represents an entry that is logged by the microphone
- * during the ray_tracing execution.
- * The first one of those float will be the travel time of a ray reaching
- * the microphone. The second one will be the energy of this ray.*/
-typedef std::array<float,2> entry;
-typedef std::list<entry> mic_log;
-typedef std::vector<mic_log> room_log;
-typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
-typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
 
 template<size_t D>
 struct ImageSource
@@ -143,7 +130,7 @@ class Room
       float energy_thres,
       float sound_speed,
       bool for_hybrid_rir,
-      room_log & output);
+      HitLog & output);
 
   void simul_ray(float phi,
       float theta,
@@ -155,9 +142,21 @@ class Room
       float sound_speed,
       bool for_hybrid_rir,
       int ism_order,
-      room_log & output);
+      HitLog & output);
 
-  room_log get_rir_entries(size_t nb_phis,
+  HitLog get_rir_entries(
+      const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
+      const Eigen::Matrix<float,D,1> source_pos,
+      float mic_radius,
+      float scatter_coef,
+      float time_thres,
+      float energy_thres,
+      float sound_speed,
+      bool for_hybrid_rir,
+      int ism_order);
+
+  HitLog get_rir_entries(
+      size_t nb_phis,
       size_t nb_thetas,
       const Eigen::Matrix<float,D,1> source_pos,
       float mic_radius,

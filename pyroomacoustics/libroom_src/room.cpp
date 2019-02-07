@@ -553,7 +553,7 @@ bool Room<D>::scat_ray(
     float energy_thres,
     float sound_speed,
     bool for_hybrid_rir,
-    room_log & output)
+    HitLog & output)
 {
 
   /*
@@ -575,7 +575,7 @@ bool Room<D>::scat_ray(
     energy_thresh: The energy threshold for the ray
     sound_speed: The speed of sound
     for_hybrid_rir : a boolean that indicate if we are going to use this
-      room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+      HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
       This is important because for hybrid RIR, we must scale the energy of each
       particle to make it coherent with ISM
     fs : the sampling frequency used for the rir
@@ -643,7 +643,6 @@ bool Room<D>::scat_ray(
   return result;
 }
 
-
 template<size_t D>
 void Room<D>::simul_ray(float phi,
   float theta,
@@ -655,7 +654,7 @@ void Room<D>::simul_ray(float phi,
   float sound_speed,
   bool for_hybrid_rir,
   int ism_order,
-  room_log &output)
+  HitLog &output)
 {
 
   /*This function simulates one ray and fills the output vectors of 
@@ -670,7 +669,7 @@ void Room<D>::simul_ray(float phi,
    energy_thresh: The energy threshold for the ray
    sound_speed: is the speed of sound (may be dependent on humidity etc...)
    for_hybrid_rir : a boolean that indicate if we are going to use this
-     room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+     HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
      This is important because for hybrid RIR, we must scale the energy of each
      particle to make it coherent with ISM
    ism_order : the maximum order of the Image Sources when Ray Tracing is called
@@ -758,7 +757,7 @@ void Room<D>::simul_ray(float phi,
           // We DON'T want to modify the variables energy and travel_time
           //   because the ray will continue its way          
           float travel_time_at_mic = travel_time + distance/sound_speed;
-          float energy_at_mic = energy / (4 * pi * (total_dist + distance - mic_radius));
+          float energy_at_mic = energy / (4 * pi * (total_dist + distance));
 
           if (travel_time_at_mic < time_thres && energy_at_mic > energy_thres)
           {		  
@@ -816,13 +815,45 @@ void Room<D>::simul_ray(float phi,
 
   }
 
-  for (auto it = output.begin() ; it != output.end() ; ++it)
-    for (auto el = (*it).begin() ; el != (*it).end() ;  ++el)
-      std::cout << (*el)[0] << " " << (*el)[1] << std::endl;
 }
 
+
 template<size_t D>
-room_log Room<D>::get_rir_entries(size_t nb_phis,
+HitLog Room<D>::get_rir_entries(
+  const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
+  const Eigen::Matrix<float,D,1> source_pos,
+  float mic_radius,
+  float scatter_coef,
+  float time_thres,
+  float energy_thres,
+  float sound_speed,
+  bool for_hybrid_rir,
+  int ism_order)
+{
+  HitLog output;
+  output.resize(n_mics);
+
+  for (int k(0) ; k < angles.cols() ; k++)
+  {
+    float phi = angles.coeff(0,k);
+    float theta = pi_2;
+
+    if (D == 3)
+      theta = angles.coeff(1,k);
+
+    simul_ray(
+        phi, theta, source_pos,
+        mic_radius, scatter_coef,
+        time_thres, energy_thres,
+        sound_speed, for_hybrid_rir, ism_order, output);
+  }
+
+  return output;
+}
+
+
+template<size_t D>
+HitLog Room<D>::get_rir_entries(size_t nb_phis,
   size_t nb_thetas,
   const Eigen::Matrix<float,D,1> source_pos,
   float mic_radius,
@@ -848,7 +879,7 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
    energy_thresh: The energy threshold for the ray
    sound_speed: the constant speed of sound
    for_hybrid_rir : a boolean that indicate if we are going to use this
-     room_log to compute a hybrid RIR (true) or a pure ray tracing rir (false).
+     HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
      This is important because for hybrid RIR, we must scale the energy of each
      particle to make it coherent with ISM
    ism_order : the maximum order of the Image Sources when Ray Tracing is called
@@ -863,13 +894,8 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
 
 
   // ------------------ INIT --------------------
-  room_log output;
-
-  for (int k(0); k<n_mics; k++)
-  {
-    // push a vector for each mic (log every entries)
-    output.push_back(mic_log());
-  }
+  HitLog output;
+  output.resize(n_mics);
 
   // ------------------ RAY TRACING --------------------
 
@@ -899,14 +925,6 @@ room_log Room<D>::get_rir_entries(size_t nb_phis,
         break;
       }
     }
-  }
-
-  int n_rays = nb_phis * nb_thetas;
-
-  for (int k(0); k<n_mics; k++)
-  {
-    for (auto entry = output[k].begin() ; entry != output[k].end() ; ++entry)
-      (*entry)[1] /= sqrt(n_rays);
   }
 
   return output;

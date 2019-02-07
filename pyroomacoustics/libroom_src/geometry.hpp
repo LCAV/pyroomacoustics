@@ -29,7 +29,7 @@
 
 #include <Eigen/Dense>
 
-extern float libroom_eps;
+#include "common.hpp"
 
 int ccw3p(const Eigen::Vector2f &p1, const Eigen::Vector2f &p2, const Eigen::Vector2f &p3);
 
@@ -62,6 +62,47 @@ float cos_angle_between(const Eigen::VectorXf & v1,
 float dist_line_point(const Eigen::VectorXf & start,
   const Eigen::VectorXf & end,
   const Eigen::VectorXf & point);
+
+template<size_t D>
+class Line
+{
+  Vectorf<D> unit_vec;  // direction of the Line
+  Vectorf<D> origin;  // point in the Line
+
+  public:
+  Line(const Vectorf<D> &_unit, const Vectorf<D> &_p) : unit_vec(_unit), origin(_p) {}
+  ~Line() {}
+
+  // Create a line from two points
+  static Line from_points(const Vectorf<D> &_origin, const Vectorf<D> &_other_point)
+  {
+    return Line((_other_point - _origin).normalize(), _origin);
+  }
+
+  // returns the distance between the line and a point p
+  float distance(const Vectorf<D> &p)
+  {
+    return (p - project(p)).norm();
+  }
+
+  // signed distance from line origin to the projection of point p onto the line
+  float projected_distance(const Vectorf<D> &p)
+  {
+    return (p - origin).adjoint() * unit_vec; 
+  }
+
+  // returns orthogonal projection of p onto the line
+  Vectorf<D> project(const Vectorf<D> &p)
+  {
+    return origin + projected_distance(p) * unit_vec;
+  }
+
+  // returns the symmetric point with respect to line
+  Vectorf<D> reflect(const Vectorf<D> &p)
+  {
+    return 2.f * project(p) - p;
+  }
+};
 
 #include "geometry.cpp"
 

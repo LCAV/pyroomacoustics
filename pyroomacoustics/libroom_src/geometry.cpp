@@ -36,6 +36,7 @@
  
 #include <iostream>
 #include <cmath>
+#include "common.hpp"
 #include "geometry.hpp"
 
 
