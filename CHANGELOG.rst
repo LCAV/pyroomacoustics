@@ -19,6 +19,7 @@ Added
 	That's why this function has now several default arguments to run ray tracing (number
 	of rays, scattering coefficient, energy and time thresholds, microphone's radius).
 - Bandpass filterbank construction in ``pyroomacoustics.acoustics.bandpass_filterbank``
+- Acoustic properties of different materials in ``pyroomacoustics.materials``
 
 Changed
 ~~~~~~~
