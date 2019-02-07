@@ -63,11 +63,13 @@ struct Hit
 
 class Histogram2D
 {
+  size_t rows, cols;
   Eigen::ArrayXXf array;
   Eigen::ArrayXXi counts;
+
   public:
     Histogram2D() {}  // empty constructor
-    Histogram2D(int rows, int cols)
+    Histogram2D(int _r, int _c) : rows(_r), cols(_c)
     {
       init(rows, cols);
     }
@@ -92,6 +94,11 @@ class Histogram2D
         return array.coeff(row, col) / counts.coeff(row, col);
       else
         return 0.f;
+    }
+
+    Eigen::ArrayXXf get_hist() const
+    {
+      return array / counts.max(1).cast<float>();
     }
 };
 
