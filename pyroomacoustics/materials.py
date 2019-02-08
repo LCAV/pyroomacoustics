@@ -70,3 +70,11 @@ materials = dict([(name, namedtuple('Material', fields.keys())(**fields)) for na
 
 # Create a type based on the above dictionary
 Material = type(materials[next(iter(materials))])
+
+class FlatAbsorber(Material):
+
+    def __init__(self, absorption, scattering):
+        self.name = 'Flat absorption over frequency'
+        self.center_freqs = ['0']
+        self.absorption = [absorption]
+        self.scattering = [scattering]

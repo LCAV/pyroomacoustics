@@ -115,7 +115,7 @@ from .version import __version__
 from . import libroom as libroom
 
 from .room import *
-from .materials import materials, materials_table, Material
+from .materials import materials, materials_table, Material, FlatAbsorber
 from .beamforming import *
 from .soundsource import *
 from .parameters import *

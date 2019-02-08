@@ -40,6 +40,9 @@ extern float libroom_eps;
 template<size_t D>
 class Wall
 {
+  private:
+    void init();  // common part of initialization for walls of any dimension
+
   public:
     enum Isect {  // The different cases for intersections
       NONE = -1,  // - There is no intersection
@@ -48,10 +51,15 @@ class Wall
       BNDRY = 2   // - The intersection is on the boundary of the wall
     };
 
-    int dim;
-    float absorption;
+    static const int dim = D;
+
+    // Wall properties container
+    Eigen::ArrayXf absorption;  // the wall absorption coefficient for every freq. band
+    Eigen::ArrayXf scatter;  // the wall scattering coefficient for every freq. band
     std::string name;
+    Eigen::ArrayXf transmission;  // computed from absorption as sqrt(1 - a)
     
+    // Wall geometry properties
     Eigen::Matrix<float, D, 1>  normal;
     Eigen::Matrix<float, D, Eigen::Dynamic> corners;
 
@@ -63,46 +71,50 @@ class Wall
     // Constructor
     Wall(
         const Eigen::Matrix<float, D, Eigen::Dynamic> &_corners,
-        float _absorption,
+        const Eigen::ArrayXf &_absorption,
+        const Eigen::ArrayXf &_scatter,
         const std::string &_name
         );
     Wall(
         const Eigen::Matrix<float, D, Eigen::Dynamic> &_corners,
-        float _absorption
+        const Eigen::ArrayXf &_absorption,
+        const Eigen::ArrayXf &_scatter
         ) : Wall(_corners, _absorption, "") {}
 
     // Copy constructor
     Wall(const Wall<D> &w) :
-      dim(w.dim), absorption(w.absorption), name(w.name),
+      absorption(w.absorption), name(w.name),
+      transmission(w.transmission), scatter(w.scatter),
       normal(w.normal), corners(w.corners),
       origin(w.origin), basis(w.basis), flat_corners(w.flat_corners)
     {}
 
-
-    // methods
-    float area();  // compute the area of the wall
+    // public methods
+    const Eigen::ArrayXf &get_transmission() const { return transmission; }
+    size_t get_n_bands() const { return transmission.size(); }
+    float area() const;  // compute the area of the wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall
-        const Eigen::Matrix<float,D,1> &p1,
-        const Eigen::Matrix<float,D,1> &p2,
-        Eigen::Ref<Eigen::Matrix<float,D,1>> intersection
-        );
+        const Vectorf<D> &p1,
+        const Vectorf<D> &p2,
+        Eigen::Ref<Vectorf<D>> intersection
+        ) const;
 
     int intersects(
-        const Eigen::Matrix<float,D,1> &p1,
-        const Eigen::Matrix<float,D,1> &p2
-        );
+        const Vectorf<D> &p1,
+        const Vectorf<D> &p2
+        ) const;
 
     int reflect(
-        const Eigen::Matrix<float,D,1> &p,
-        Eigen::Ref<Eigen::Matrix<float,D,1>> p_reflected
-        );
-    int side(const Eigen::Matrix<float,D,1> &p);
-    bool same_as(const Wall & that);
+        const Vectorf<D> &p,
+        Eigen::Ref<Vectorf<D>> p_reflected
+        ) const;
+    int side(const Vectorf<D> &p) const;
+    bool same_as(const Wall & that) const;
 
-    Eigen::Matrix<float,D,1> normal_reflect(
-        const Eigen::Matrix<float,D,1> &start,
-        const Eigen::Matrix<float,D,1> &hit_point,
-        float length);
+    Vectorf<D> normal_reflect(
+        const Vectorf<D> &start,
+        const Vectorf<D> &hit_point,
+        float length) const;
 }; 
 
 #include "wall.cpp"

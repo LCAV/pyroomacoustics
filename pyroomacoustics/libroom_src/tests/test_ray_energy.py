@@ -13,18 +13,19 @@ class TestRayEnergy(unittest.TestCase):
         hit travels a further 4*sqrt(2) until the threshold energy is reached.
         '''
 
-        absorption = 0.1
+        absorption = 0.07
         round_trip = 4 * np.sqrt(2)
         energy_thresh = 1e-7
         sound_speed = pra.constants.get('c')
+        transmission = np.sqrt(1. - absorption)
 
         # Create the groundtruth list of energy and travel time
         log_gt = []
-        energy = 1. * (1. - absorption) ** 2
+        transmitted = 1. * transmission ** 2
         distance = round_trip / 2.
-        while energy / (4 * np.pi * distance) > energy_thresh:
-            log_gt.append([distance / sound_speed, energy / (4 * np.pi * distance)])
-            energy *= (1. - absorption) ** 4
+        while transmitted / distance > np.sqrt(energy_thresh):
+            log_gt.append([distance, transmitted / distance])
+            transmitted *= transmission ** 4
             distance += round_trip
 
         print('Creating the python room')
@@ -37,21 +38,27 @@ class TestRayEnergy(unittest.TestCase):
 
         print('Creating the cpp room')
         c_room = pra.room_factory(room.walls, room.obstructing_walls, room.mic_array.R)
+        c_room.set_params(
+                pra.constants.get('c'),
+                energy_thresh,  # energy threshold for rays
+                5.,  # time threshold for rays
+                0.15,  # detector radius
+                False,  # is it hybrid model ?
+                2,  # order of ISM
+                )
 
         print('Running ray tracing')
         log = c_room.get_rir_entries(
                 np.c_[[-np.pi / 4., np.pi / 2.]],
                 room.sources[0].position,  # source loc
-                0.15,  # detector radius
                 0.,  # scat. coeff
-                5.,  # time thresh
-                energy_thresh,  # energy thresh
-                sound_speed,  # speed sound
-                False,  # is it hybrid model ?
-                2,  # order of ism
                 )
 
-        self.assertTrue(np.allclose(log[0], log_gt))
+        log_tr = []
+        for hit in log[0]:
+            log_tr.append([hit.distance, hit.transmitted[0]])
+
+        self.assertTrue(np.allclose(log_tr, log_gt))
 
 if __name__ == '__main__':
     unittest.main()

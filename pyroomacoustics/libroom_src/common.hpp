@@ -44,22 +44,22 @@ typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
  * during the ray_tracing execution.
  * The first one of those float will be the travel time of a ray reaching
  * the microphone. The second one will be the energy of this ray.*/
-typedef std::array<float,2> entry;
-typedef std::list<entry> mic_log;
-typedef std::vector<mic_log> HitLog;
 
 struct Hit
 {
   float distance = 0.f;
-  std::vector<float> transmitted;  // vector of transmitted amplitude over frequency bands
+  Eigen::ArrayXf transmitted;  // vector of transmitted amplitude over frequency bands
 
   Hit(int _nfreq)
   {
     transmitted.resize(_nfreq);
+    transmitted.setOnes();
   };
-  Hit(const float _d, const std::vector<float> &_t)
+  Hit(const float _d, const Eigen::ArrayXf &_t)
     : distance(_d), transmitted(_t) {}
 };
+
+typedef std::vector<std::list<Hit>> HitLog;
 
 class Histogram2D
 {
@@ -86,6 +86,18 @@ class Histogram2D
     {
       array.coeffRef(row, col) += val;
       counts.coeffRef(row, col)++;
+    }
+
+    void log_col(int col, const Eigen::ArrayXf &val)
+    {
+      array.col(col) += val;
+      counts.col(col) += 1;
+    }
+
+    void log_row(int row, const Eigen::ArrayXf &val)
+    {
+      array.row(row) += val;
+      counts.row(row) += 1;
     }
 
     float bin(int row, int col) const

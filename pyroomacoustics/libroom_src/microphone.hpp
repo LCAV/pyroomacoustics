@@ -66,6 +66,11 @@ class Microphone
     }
     ~Microphone() {};
 
+    const Vectorf<D> &get_loc() const
+    {
+      return loc;
+    };
+
     float get_dir_gain(const Vectorf<D> &origin, int band_index) const
     {
       return 1.;  // omnidirectional
@@ -95,13 +100,8 @@ class Microphone
 
       if (time_bin_index >= 0)  // this only happen when the minimum distance > 0
       {
-        auto dir_index = get_dir_index(origin);
-
-        for (int f(0) ; f < n_bands ; f++)
-        {
-          float attenuation = the_hit.transmitted[f] / the_hit.distance;
-          histograms[dir_index].log(f, time_bin_index, attenuation);
-        }
+        auto dir_index = get_dir_bin(origin);
+        histograms[dir_index].log_col(time_bin_index, the_hit.transmitted);
       }
     }
 };

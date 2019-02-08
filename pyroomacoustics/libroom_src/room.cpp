@@ -31,7 +31,7 @@ const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
 
 template<size_t D>
-int Room<D>::image_source_model(const Eigen::Matrix<float,D,1> &source_location, int max_order)
+int Room<D>::image_source_model(const Vectorf<D> &source_location, int max_order)
 {
   /*
    * This is the top-level method to run the image source model
@@ -42,13 +42,7 @@ int Room<D>::image_source_model(const Eigen::Matrix<float,D,1> &source_location,
     visible_sources.pop();
 
   // add the original (real) source
-  ImageSource<D> real_source;
-
-  real_source.loc = source_location;
-  real_source.attenuation = 1.;
-  real_source.order = 0;
-  real_source.gen_wall = -1;
-  real_source.parent = NULL;
+  ImageSource<D> real_source(source_location, n_bands);
 
   // Run the image source model algorithm
   image_sources_dfs(real_source, max_order);
@@ -70,8 +64,8 @@ int Room<D>::fill_sources()
     sources.resize(D, n_sources);
     orders.resize(n_sources);
     gen_walls.resize(n_sources);
-    attenuations.resize(n_sources);
-    visible_mics.resize(microphones.cols(), n_sources);
+    attenuations.resize(n_bands, n_sources);
+    visible_mics.resize(microphones.size(), n_sources);
 
     for (int i = n_sources - 1 ; i >= 0 ; i--)
     {
@@ -81,7 +75,7 @@ int Room<D>::fill_sources()
       sources.col(i) = top.loc;
       gen_walls.coeffRef(i) = top.gen_wall;
       orders.coeffRef(i) = top.order;
-      attenuations.coeffRef(i) = top.attenuation;
+      attenuations.col(i) = top.attenuation;
       visible_mics.col(i) = top.visible_mics;
 
       visible_sources.pop();  // unstack
@@ -99,17 +93,17 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
    * This function runs a depth first search (DFS) on the tree of image sources
    */
 
-  ImageSource<D> new_is;
+  ImageSource<D> new_is(n_bands);
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
-  for (int mic = 0 ; mic < microphones.cols() ; mic++)
+  for (int mic = 0 ; mic < microphones.size() ; mic++)
   {
-    bool is_visible = is_visible_dfs(microphones.col(mic), is);
+    bool is_visible = is_visible_dfs(microphones[mic].get_loc(), is);
     if (is_visible && !any_visible)
     {
       any_visible = is_visible;
-      is.visible_mics.resize(microphones.cols());
+      is.visible_mics.resize(microphones.size());
       is.visible_mics.setZero();
     }
     if (any_visible)
@@ -133,7 +127,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
       continue;
 
     // The reflection is valid, fill in the image source attributes
-    new_is.attenuation = is.attenuation * (1. - walls[wi].absorption);
+    new_is.attenuation *= walls[wi].get_transmission();
     new_is.order = is.order + 1;
     new_is.gen_wall = wi;
     new_is.parent = &is;
@@ -145,7 +139,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
 
 template<size_t D>
-bool Room<D>::is_visible_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is)
+bool Room<D>::is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is)
 {
   /*
      Returns true if the given sound source (with image source id) is visible from point p.
@@ -164,7 +158,7 @@ bool Room<D>::is_visible_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &
 
   if (is.parent != NULL)
   {
-    Eigen::Matrix<float,D,1> intersection;
+    Vectorf<D> intersection;
 
     // get generating wall id
     int wall_id = is.gen_wall;
@@ -187,7 +181,7 @@ bool Room<D>::is_visible_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &
 
 
 template<size_t D>
-bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is)
+bool Room<D>::is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is)
 {
   /*
      Checks if there is a wall obstructing the line of sight going from a source to a point.
@@ -210,7 +204,7 @@ bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D
     // generating wall can't be obstructive
     if (wall_id != gen_wall_id)
     {
-      Eigen::Matrix<float,D,1> intersection;
+      Vectorf<D> intersection;
       int ret = walls[wall_id].intersection(is.loc, p, intersection);
 
       // There is an intersection and it is distinct from segment endpoints
@@ -240,19 +234,27 @@ bool Room<D>::is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D
 
 template<size_t D>
 int Room<D>::image_source_shoebox(
-    const Eigen::Matrix<float,D,1> &source,
-    const Eigen::Matrix<float,D,1> &room_size,
-    const Eigen::Matrix<float,2*D,1> &absorption,
+    const Vectorf<D> &source,
+    const Vectorf<D> &room_size,
+    const Eigen::Array<float,Eigen::Dynamic,2*D> &absorption,
     int max_order
     )
 {
-  // precompute powers of the absorption coefficients
-  std::vector<float> transmission_pwr((max_order + 1) * 2 * D);
-  for (size_t d = 0 ; d < 2 * D ; d++)
-    transmission_pwr[d] = 1.;
-  for (int i = 1 ; i <= max_order ; i++)
-    for (size_t d = 0 ; d < 2 * D ; d++)
-      transmission_pwr[i * 2 * D + d] = (1. - absorption[d]) * transmission_pwr[(i-1)*2*D + d];
+  if (absorption.rows() != n_bands)
+  {
+    std::cout << "Error: Absorption coefficients for all frequency bands are reqquired" << std::endl;
+    throw std::exception();
+  }
+
+  // precompute powers of the transmission coefficients
+  std::vector<Eigen::ArrayXXf> transmission_pwr;
+  for (size_t i(0) ; i <= max_order ; ++i)
+    transmission_pwr.push_back(Eigen::ArrayXXf(n_bands, 2*D));
+
+  transmission_pwr[0].setOnes();
+  transmission_pwr[1] = (1.f - absorption).sqrt();
+  for (int i = 2 ; i <= max_order ; i++)
+    transmission_pwr[i] = transmission_pwr[i-1] * transmission_pwr[1];
 
   // make sure the list is empty
   while (visible_sources.size() > 0)
@@ -277,13 +279,9 @@ int Room<D>::image_source_shoebox(
 
       for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
-        visible_sources.push(ImageSource<D>());
+        visible_sources.push(ImageSource<D>(n_bands));
         ImageSource<D> &is = visible_sources.top();
-        is.visible_mics = VectorXb::Ones(microphones.cols());  // everything is visible
-
-        is.order = 0;
-        is.attenuation = 1.;
-        is.gen_wall = -1;
+        is.visible_mics = VectorXb::Ones(microphones.size());  // everything is visible
 
         // Now compute the reflection, the order, and the multiplicative constant
         for (size_t d = 0 ; d < D ; d++)
@@ -307,8 +305,8 @@ int Room<D>::image_source_shoebox(
             p1 = abs((point[d]-1)/2);
             p2 = abs(point[d]/2);
           }
-          is.attenuation *= transmission_pwr[2 * D * p1 + 2*d];  // 'west' absorption factor
-          is.attenuation *= transmission_pwr[2 * D * p2 + 2*d+1];  // 'east' absorption factor
+          is.attenuation *= transmission_pwr[p1].col(2*d);  // 'west' absorption factor
+          is.attenuation *= transmission_pwr[p2].col(2*d+1);  // 'east' absorption factor
         }
       }
     }
@@ -402,9 +400,9 @@ float Room<D>::get_max_distance()
 
 
 template<size_t D>
-std::tuple < Eigen::Matrix<float,D,1>, int > Room<D>::next_wall_hit(
-  const Eigen::Matrix<float,D,1> &start,
-  const Eigen::Matrix<float,D,1> &end,
+std::tuple < Vectorf<D>, int > Room<D>::next_wall_hit(
+  const Vectorf<D> &start,
+  const Vectorf<D> &end,
   bool scattered_ray)
   {
 
@@ -442,7 +440,7 @@ std::tuple < Eigen::Matrix<float,D,1>, int > Room<D>::next_wall_hit(
    * In fact here we are only interested in the second element of the tuple.
    * */
 
-  Eigen::Matrix<float,D,1> result;
+  Vectorf<D> result;
 
   int next_wall_index = -1;
   
@@ -466,7 +464,7 @@ std::tuple < Eigen::Matrix<float,D,1>, int > Room<D>::next_wall_hit(
     Wall<D> & w = walls[i];
 
     // To store the result of this iteration
-    Eigen::Matrix<float,D,1> temp_hit;
+    Vectorf<D> temp_hit;
 
     // As a side effect, temp_hit gets a value (VectorXf) here
     bool intersects = (w.intersection(start, end, temp_hit) > -1);
@@ -492,16 +490,15 @@ std::tuple < Eigen::Matrix<float,D,1>, int > Room<D>::next_wall_hit(
 
 
 template<size_t D>
-float Room<D>::compute_scat_energy(
-  float energy,
+Eigen::ArrayXf Room<D>::compute_scat_energy(
+  const Eigen::ArrayXf &transmitted,
   float scat_coef,
   const Wall<D> & wall,
-  const Eigen::Matrix<float,D,1> & start,
-  const Eigen::Matrix<float,D,1> & hit_point,
-  const Eigen::Matrix<float,D,1> & mic_pos,
-  float radius,
-  float total_dist,
-  bool for_hybrid_rir)
+  const Vectorf<D> & start,
+  const Vectorf<D> & hit_point,
+  const Vectorf<D> & mic_pos,
+  float travel_dist
+  )
 {
 	  
   /* This function computes the energy of a scattered ray, including the 
@@ -514,46 +511,36 @@ float Room<D>::compute_scat_energy(
      the wall normal is correctly oriented)
    hit_point: (array size 2 or 3) the actual wall hit_point position
    mic_pos: (array size 2 or 3) the position of the microphone's center
-   radius: the radius of the microphone
-   float total_dist : the distance travelled by the ray between the source and hit_point.
-   for_hybrid_rir : boolean to know if Ray Tracing is used in a hybrid way with ISM
-     In this case, we might define another formula for the scattered energy.
+   float travel_dist : the distance travelled by the ray between the source and hit_point.
    *  */
    
   // Make sure the normal points inside the room
-  Eigen::Matrix<float,D,1> n = wall.normal;
+  Vectorf<D> n = wall.normal;
   if (cos_angle_between(start - hit_point, n) < 0.)
-  {
-    n = (-1) * n;
-  }
+    n *= -1;
   
   // The formula takes into account the scattered coef but also the
   // distance attenuation. 
   // The latter is the same as in the Image Source Method
   
-  Eigen::Matrix<float,D,1> r = mic_pos - hit_point;
+  Vectorf<D> r = mic_pos - hit_point;
   float B = r.norm();
   float cos_theta = cos_angle_between(n, r);
-  float gamma_term =  1- sqrt(B*B-radius*radius)/B;
+  float gamma_term =  1 - sqrt(B*B-mic_radius*mic_radius)/B;
   
-  return energy * sqrt( scat_coef * 2 * cos_theta * gamma_term ) / (4 * pi * (total_dist+B-radius));
+  return transmitted * sqrt( scat_coef * 2 * cos_theta * gamma_term ) / (travel_dist + B);
 }
 
 template<size_t D>
 bool Room<D>::scat_ray(
-    float energy,
+    const Eigen::ArrayXf &transmitted,
     float scatter_coef,
     const Wall<D> &wall,
-    const Eigen::Matrix<float,D,1> &prev_last_hit,
-    const Eigen::Matrix<float,D,1> &hit_point,
-    float radius,
-    float total_dist,
-    float travel_time,
-    float time_thres,
-    float energy_thres,
-    float sound_speed,
-    bool for_hybrid_rir,
-    HitLog & output)
+    const Vectorf<D> &prev_last_hit,
+    const Vectorf<D> &hit_point,
+    float travel_dist,
+    HitLog & output
+    )
 {
 
   /*
@@ -568,16 +555,11 @@ bool Room<D>::scat_ray(
     prev_last_hit: (array size 2 or 3) the previous last wall hit_point position (needed to check that 
       the wall normal is correctly oriented)
     hit_point: (array size 2 or 3) defines the last wall hit position
-    radius : The radius of the circle/sphere microphone
-    total_dist: The total distance travelled by the ray from source to hit_point
+    travel_dist: The total distance travelled by the ray from source to hit_point
     travel_time: The cumulated travel time of the ray from source to hit_point
     time_thresh: The time threshold for the ray
     energy_thresh: The energy threshold for the ray
     sound_speed: The speed of sound
-    for_hybrid_rir : a boolean that indicate if we are going to use this
-      HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
-      This is important because for hybrid RIR, we must scale the energy of each
-      particle to make it coherent with ISM
     fs : the sampling frequency used for the rir
       scat_per_slot : a 2D vector counting for each microphone and each time
       slot, the number of scattered rays reaching the microphone
@@ -586,30 +568,43 @@ bool Room<D>::scat_ray(
   :return : true if the scattered ray reached ALL the microphones, false otw
 */
 
-  bool result = true;  
-  for(int k(0); k < n_mics; ++k){
+  // Convert the energy threshold to transmission threshold (make this more efficient at some point)
+  float trans_thres = sqrtf(energy_thres);
+  float distance_thres = time_thres * sound_speed;
 
-    Eigen::Matrix<float,D,1> mic_pos = microphones.col(k);
+  bool ret = true;  
+  for(int k(0); k < n_mics; ++k)
+  {
 
-    float scat_energy = compute_scat_energy(
-        energy,
+    Vectorf<D> mic_pos = microphones[k].get_loc();
+
+    /* 
+     * We also need to check that both the microphone and the
+     * previous hit point are on the same side of the wall
+     */
+    if (wall.side(mic_pos) != wall.side(prev_last_hit))
+    {
+      ret = false;
+      continue;
+    }
+
+    Eigen::VectorXf scat_trans = compute_scat_energy(
+        transmitted,
         scatter_coef,
         wall,
         prev_last_hit,
         hit_point,
         mic_pos,
-        radius,
-        total_dist,
-        for_hybrid_rir);
+        travel_dist
+        );
 
     // If we have multiple microphones, we must keep travel_time untouched !
-    float travel_time_at_mic = travel_time;
+    float travel_dist_at_mic = travel_dist;
 
     // Prepare the output tupple of next_wall_hit()
-    Eigen::Matrix<float,D,1> dont_care;
+    Vectorf<D> dont_care;
     int next_wall_index(-1);
     std::tie(dont_care, next_wall_index) = next_wall_hit(hit_point, mic_pos, true);
-
 
     // If no wall obstructs the scattered ray
     if (next_wall_index == -1)
@@ -617,44 +612,36 @@ bool Room<D>::scat_ray(
 
       // As the ray is shot towards the microphone center,
       // the hop dist can be easily computed
-      float hop_dist = (hit_point - mic_pos).norm() - radius;
-      travel_time_at_mic += hop_dist/sound_speed;
+      float hop_dist = (hit_point - mic_pos).norm() - mic_radius;
+      travel_dist_at_mic += hop_dist;
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
-      if (travel_time_at_mic < time_thres && scat_energy > energy_thres)
+      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > trans_thres)
       {
-        output[k].push_back(entry{{travel_time_at_mic,scat_energy}});        
-        result = result && true;
+        output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
+        microphones[k].log_histogram(output[k].back(), hit_point);
       }
       else
-      {
-        // if a threshold is met
-        result = false;
-      }
+        ret = false;
     }
     else
     {
-      // if a wall intersects the scattered ray, we return false
-      result = false;
+      ret = false;  // if a wall intersects the scattered ray, we return false
     }
   }
 
-  return result;
+  return ret;
 }
 
 template<size_t D>
-void Room<D>::simul_ray(float phi,
-  float theta,
-  const Eigen::Matrix<float,D,1> source_pos,
-  float mic_radius,
-  float scatter_coef,
-  float time_thres,
-  float energy_thres,
-  float sound_speed,
-  bool for_hybrid_rir,
-  int ism_order,
-  HitLog &output)
+void Room<D>::simul_ray(
+    float phi,
+    float theta,
+    const Vectorf<D> source_pos,
+    float scatter_coef,
+    HitLog &output
+    )
 {
 
   /*This function simulates one ray and fills the output vectors of 
@@ -663,29 +650,14 @@ void Room<D>::simul_ray(float phi,
     
    phi and theta : give the orientation of the ray (2D or 3D)
    source_pos: (array size 2 or 3) is the location of the sound source (NOT AN IMAGE SOURCE)
-   mic_radius: (array size 2 or 3) is the radius of the microphone that is represented like a circle or a sphere
    scatter coef: determines the amount of the energy that gets scattered every time the ray hits a wall
-   time_thres: is the upperbound on the travel time of the ray
-   energy_thresh: The energy threshold for the ray
-   sound_speed: is the speed of sound (may be dependent on humidity etc...)
-   for_hybrid_rir : a boolean that indicate if we are going to use this
-     HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
-     This is important because for hybrid RIR, we must scale the energy of each
-     particle to make it coherent with ISM
-   ism_order : the maximum order of the Image Sources when Ray Tracing is called
-     for a hybrid RIR computation. In ray tracing, we don't take into account the specular rays
-     of order less than ism_order.
-   fs : the sampling frequency used for the rir
-   scat_per_slot : a 2D vector counting for each microphone and each time
-     slot the number of scattered rays reaching the microphone
    output: is the std::vector that contains the entries for all the simulated rays */
 
   // ------------------ INIT --------------------
   // What we need to trace the ray
-  float energy = 1;
-  Eigen::Matrix<float,D,1> start = source_pos;
+  Vectorf<D> start = source_pos;
 
-  Eigen::Matrix<float,D,1> end;
+  Vectorf<D> end;
   if(D == 2)
     end.head(2) = start.head(2)
       + max_dist * Eigen::Vector2f(cos(phi), sin(phi));
@@ -698,13 +670,19 @@ void Room<D>::simul_ray(float phi,
   int next_wall_index(0);
 
   // The ray's characteristics
+  Eigen::ArrayXf transmitted = Eigen::ArrayXf::Ones(n_bands);
   float travel_time = 0;
-  float total_dist = 0;
+  float travel_dist = 0;
   
   // To count the number of times the ray bounces on the walls
   // For hybrid generation we add a ray to output only if specular_counter
   // is higher than the ism order.
   int specular_counter(0);
+
+  // Convert the energy threshold to transmission threshold
+  float trans_thres = sqrtf(energy_thres);
+  float distance_thres = time_thres * sound_speed;
+
   //---------------------------------------------
 
 
@@ -712,7 +690,7 @@ void Room<D>::simul_ray(float phi,
 
   while (true)
   {
-    Eigen::Matrix<float,D,1> hit_point;
+    Vectorf<D> hit_point;
     std::tie(hit_point, next_wall_index) = next_wall_hit(start, end, false);
 
     // If no wall is hit (rounding errors), stop the ray
@@ -728,7 +706,7 @@ void Room<D>::simul_ray(float phi,
     // Defines the length of the actual hop
     float distance(0);
 
-    bool already_in_ism = for_hybrid_rir && specular_counter < ism_order;
+    bool already_in_ism = is_hybrid_sim && specular_counter < ism_order;
 
     // Check if the specular ray hits any of the microphone
     if (!already_in_ism)
@@ -737,15 +715,15 @@ void Room<D>::simul_ray(float phi,
       {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)
-        Eigen::Matrix<float,D,1> seg = hit_point - start;
+        Vectorf<D> seg = hit_point - start;
         float seg_length = seg.norm();
         seg /= seg_length;
-        Eigen::Matrix<float,D,1> to_mic = microphones.col(k) - start;
+        Vectorf<D> to_mic = microphones[k].get_loc() - start;
         float impact_distance = to_mic.dot(seg);
 
         bool impacts = -libroom_eps < impact_distance && impact_distance < seg_length + libroom_eps;
 
-        // If yes, we compute the ray's energy at the mic
+        // If yes, we compute the ray's transmitted amplitude at the mic
         // and we continue the ray
         if (impacts &&
             (to_mic - seg * impact_distance).norm() < mic_radius + libroom_eps)
@@ -753,59 +731,47 @@ void Room<D>::simul_ray(float phi,
           // The length of this last hop
           distance = fabsf(impact_distance);
 
-          // Updating travel_time and energy for this ray
-          // We DON'T want to modify the variables energy and travel_time
+          // Updating travel_time and transmitted amplitude for this ray
+          // We DON'T want to modify the variables transmitted amplitude and travel_dist
           //   because the ray will continue its way          
-          float travel_time_at_mic = travel_time + distance/sound_speed;
-          float energy_at_mic = energy / (4 * pi * (total_dist + distance));
+          float travel_dist_at_mic = travel_dist + distance;
+          Eigen::ArrayXf trans_at_mic = transmitted / travel_dist_at_mic;
 
-          if (travel_time_at_mic < time_thres && energy_at_mic > energy_thres)
+          if (travel_dist_at_mic < distance_thres && trans_at_mic.maxCoeff() > trans_thres)
           {		  
-            output[k].push_back(entry{{travel_time_at_mic, energy_at_mic}});
+            output[k].push_back(Hit(travel_dist_at_mic, trans_at_mic));
+            microphones[k].log_histogram(output[k].back(), start);
           }
         }
       }
     }
 
-
     // Update the characteristics
-
     distance = (start - hit_point).norm();
-    total_dist += distance;
-    
-    travel_time = travel_time + distance/sound_speed;
-    //energy = energy * sqrt(1 - wall.absorption);
-    energy = energy * (1 - wall.absorption);
+    travel_dist += distance;
+    transmitted *= wall.get_transmission();
     
 
     // Check if we reach the thresholds for this ray
-    if (travel_time > time_thres || energy < energy_thres)
-    {
+    if (travel_dist > distance_thres || transmitted.maxCoeff() < trans_thres)
       break;
-    }
 
     // Let's shoot the scattered ray induced by the rebound on the wall
     if (scatter_coef > 0 && !already_in_ism)
     {
       // Shoot the scattered ray
       scat_ray(
-          energy,
+          transmitted,
           scatter_coef,
           wall,
           start,
           hit_point,
-          mic_radius,
-          total_dist,
-          travel_time,
-          time_thres,
-          energy_thres,
-          sound_speed,
-          for_hybrid_rir,
+          travel_dist,
           output);
 
       // The overall ray's energy gets decreased by the total
       // amount of scattered energy
-      energy = energy * sqrt(1 - scatter_coef);
+      transmitted *= sqrtf(1.f - scatter_coef);
     }
 
     // set up for next iteration
@@ -814,21 +780,15 @@ void Room<D>::simul_ray(float phi,
     start = hit_point;
 
   }
-
 }
 
 
 template<size_t D>
 HitLog Room<D>::get_rir_entries(
   const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-  const Eigen::Matrix<float,D,1> source_pos,
-  float mic_radius,
-  float scatter_coef,
-  float time_thres,
-  float energy_thres,
-  float sound_speed,
-  bool for_hybrid_rir,
-  int ism_order)
+  const Vectorf<D> source_pos,
+  float scatter_coef
+  )
 {
   HitLog output;
   output.resize(n_mics);
@@ -841,11 +801,7 @@ HitLog Room<D>::get_rir_entries(
     if (D == 3)
       theta = angles.coeff(1,k);
 
-    simul_ray(
-        phi, theta, source_pos,
-        mic_radius, scatter_coef,
-        time_thres, energy_thres,
-        sound_speed, for_hybrid_rir, ism_order, output);
+    simul_ray(phi, theta, source_pos, scatter_coef, output);
   }
 
   return output;
@@ -853,16 +809,12 @@ HitLog Room<D>::get_rir_entries(
 
 
 template<size_t D>
-HitLog Room<D>::get_rir_entries(size_t nb_phis,
-  size_t nb_thetas,
-  const Eigen::Matrix<float,D,1> source_pos,
-  float mic_radius,
-  float scatter_coef,
-  float time_thres,
-  float energy_thres,
-  float sound_speed,
-  bool for_hybrid_rir,
-  int ism_order)
+HitLog Room<D>::get_rir_entries(
+    size_t nb_phis,
+    size_t nb_thetas,
+    const Vectorf<D> source_pos,
+    float scatter_coef
+    )
 {
 
 
@@ -878,13 +830,6 @@ HitLog Room<D>::get_rir_entries(size_t nb_phis,
    time_thres: the simulation time threshold for each ray
    energy_thresh: The energy threshold for the ray
    sound_speed: the constant speed of sound
-   for_hybrid_rir : a boolean that indicate if we are going to use this
-     HitLog to compute a hybrid RIR (true) or a pure ray tracing rir (false).
-     This is important because for hybrid RIR, we must scale the energy of each
-     particle to make it coherent with ISM
-   ism_order : the maximum order of the Image Sources when Ray Tracing is called
-     for a hybrid RIR computation. In ray tracing, we don't take into account the specular rays
-     of order less than ism_order.
    fs : the sampling frequency used for the rir
    
    :returns: 
@@ -915,8 +860,7 @@ HitLog Room<D>::get_rir_entries(size_t nb_phis,
       }
 
       // Trace this ray
-      simul_ray(phi, theta, source_pos, mic_radius, scatter_coef,
-          time_thres, energy_thres, sound_speed, for_hybrid_rir, ism_order, output);
+      simul_ray(phi, theta, source_pos, scatter_coef, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       // => get out of the theta loop
@@ -933,7 +877,7 @@ HitLog Room<D>::get_rir_entries(size_t nb_phis,
 
 
 template<size_t D>
-bool Room<D>::contains(const Eigen::Matrix<float,D,1> point)
+bool Room<D>::contains(const Vectorf<D> point)
 {
 
   /*This methods checks if a point is contained in the room
@@ -968,7 +912,7 @@ bool Room<D>::contains(const Eigen::Matrix<float,D,1> point)
     }
   }
 
-  Eigen::Matrix<float,D,1> outside_point = min_coord.col(0);
+  Vectorf<D> outside_point = min_coord.col(0);
 
   // ------------------------------------------
 

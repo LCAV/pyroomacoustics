@@ -25,6 +25,7 @@
  */
 
 #include <string>
+#include <vector>
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
@@ -41,24 +42,36 @@ namespace py = pybind11;
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
 template<size_t D>
-Room<D> *create_room(py::list _walls, py::list _obstructing_walls, const Eigen::MatrixXf &_microphones)
+Room<D> *create_room(const std::vector<Wall<D>> &_walls, const std::vector<int> &_obstructing_walls, const Eigen::MatrixXf &_microphones, const std::vector<float> &_hist_bins)
 {
   /*
    * This is a factory method to isolate the Room class from pybind code
    */
   Room<D> *room = new Room<D>();
 
-  room->microphones = _microphones.topRows(D);
+  room->n_bands = -1;
+  for (auto &wall : _walls)
+  {
+    // Get the number of bands for simulation from wall and check for consistency
+    if (room->n_bands == -1)
+      room->n_bands = wall.get_n_bands();
+    else if (room->n_bands != wall.get_n_bands())
+    {
+      std::cout << "Error: All walls should have the same number of frequency bands" << std::endl;
+      throw std::exception();
+    }
 
-  for (auto wall : _walls)
-    room->walls.push_back(wall.cast<Wall<D>>());
+    room->walls.push_back(wall);
+  }
 
-  for (auto owall : _obstructing_walls)
-    room->obstructing_walls.push_back(owall.cast<int>());
+  room->obstructing_walls = _obstructing_walls;
+
+  for (size_t m(0) ; m < _microphones.cols() ; ++m)
+    room->add_mic(_microphones.col(m), room->n_bands, _hist_bins);
 
   // Useful for ray tracing
   room->max_dist = room->get_max_distance();
-  room->n_mics = room->microphones.cols();
+  room->n_mics = room->microphones.size();
 
   return room;
 }
@@ -71,6 +84,7 @@ PYBIND11_MODULE(libroom, m) {
   py::class_<Room<3>>(m, "Room")
     //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
     .def(py::init(&create_room<3>))
+    .def("set_params", &Room<3>::set_params)
     .def("image_source_model", &Room<3>::image_source_model)
     .def("image_source_shoebox", &Room<3>::image_source_shoebox)
     .def("get_wall", &Room<3>::get_wall)
@@ -81,30 +95,23 @@ PYBIND11_MODULE(libroom, m) {
     .def("simul_ray", &Room<3>::simul_ray)
     .def("get_rir_entries",
         (HitLog (Room<3>::*)(
-                               const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
-                               const Eigen::Matrix<float,3,1> source_pos,
-                               float mic_radius,
-                               float scatter_coef,
-                               float time_thres,
-                               float energy_thres,
-                               float sound_speed,
-                               bool for_hybrid_rir,
-                               int ism_order))
+                             const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
+                             const Vectorf<3> source_pos,
+                             float scatter_coef
+                             )
+        )
         &Room<3>::get_rir_entries)
     .def("get_rir_entries",
         (HitLog (Room<3>::*)(
-                               size_t nb_phis,
-                               size_t nb_thetas,
-                               const Eigen::Matrix<float,3,1> source_pos,
-                               float mic_radius,
-                               float scatter_coef,
-                               float time_thres,
-                               float energy_thres,
-                               float sound_speed,
-                               bool for_hybrid_rir,
-                               int ism_order))
+                             size_t nb_phis,
+                             size_t nb_thetas,
+                             const Vectorf<3> source_pos,
+                             float scatter_coef
+                             )
+        )
         &Room<3>::get_rir_entries)
     .def("contains", &Room<3>::contains)
+    .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
     .def_readonly("sources", &Room<3>::sources)
     .def_readonly("orders", &Room<3>::orders)
     .def_readonly("attenuations", &Room<3>::attenuations)
@@ -121,6 +128,7 @@ PYBIND11_MODULE(libroom, m) {
   py::class_<Room<2>>(m, "Room2D")
     //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
     .def(py::init(&create_room<2>))
+    .def("set_params", &Room<2>::set_params)
     .def("image_source_model", &Room<2>::image_source_model)
     .def("image_source_shoebox", &Room<2>::image_source_shoebox)
     .def("get_wall", &Room<2>::get_wall)
@@ -131,30 +139,23 @@ PYBIND11_MODULE(libroom, m) {
     .def("simul_ray", &Room<2>::simul_ray)
     .def("get_rir_entries",
         (HitLog (Room<2>::*)(
-                               const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
-                               const Eigen::Matrix<float,2,1> source_pos,
-                               float mic_radius,
-                               float scatter_coef,
-                               float time_thres,
-                               float energy_thres,
-                               float sound_speed,
-                               bool for_hybrid_rir,
-                               int ism_order))
+                             const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
+                             const Vectorf<2> source_pos,
+                             float scatter_coef
+                            )
+        )
         &Room<2>::get_rir_entries)
     .def("get_rir_entries",
         (HitLog (Room<2>::*)(
-                               size_t nb_phis,
-                               size_t nb_thetas,
-                               const Eigen::Matrix<float,2,1> source_pos,
-                               float mic_radius,
-                               float scatter_coef,
-                               float time_thres,
-                               float energy_thres,
-                               float sound_speed,
-                               bool for_hybrid_rir,
-                               int ism_order))
+                             size_t nb_phis,
+                             size_t nb_thetas,
+                             const Vectorf<2> source_pos,
+                             float scatter_coef
+                            )
+        )
         &Room<2>::get_rir_entries)
     .def("contains", &Room<2>::contains)
+    .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_readonly("sources", &Room<2>::sources)
     .def_readonly("orders", &Room<2>::orders)
     .def_readonly("attenuations", &Room<2>::attenuations)
@@ -171,8 +172,9 @@ PYBIND11_MODULE(libroom, m) {
   py::class_<Wall<3>> wall_cls(m, "Wall");
 
   wall_cls
-    .def(py::init<const Eigen::Matrix<float,3,Eigen::Dynamic> &, float, const std::string &>(),
-        py::arg("corners"), py::arg("absorption") = 0., py::arg("name") = "")
+    .def(py::init<const Eigen::Matrix<float,3,Eigen::Dynamic> &, const Eigen::ArrayXf &, const Eigen::ArrayXf &, const std::string &>(),
+        py::arg("corners"), py::arg("absorption") = Eigen::ArrayXf::Zero(1),
+        py::arg("scattering") = Eigen::ArrayXf::Zero(1), py::arg("name") = "")
     .def("area", &Wall<3>::area)
     .def("intersection", &Wall<3>::intersection)
     .def("intersects", &Wall<3>::intersects)
@@ -180,7 +182,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("reflect", &Wall<3>::reflect)
     .def("normal_reflect", &Wall<3>::normal_reflect)
     .def("same_as", &Wall<3>::same_as)
-    .def_readonly("dim", &Wall<3>::dim)
+    .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
     .def_readwrite("absorption", &Wall<3>::absorption)
     .def_readwrite("name", &Wall<3>::name)
     .def_readonly("corners", &Wall<3>::corners)
@@ -201,8 +203,9 @@ PYBIND11_MODULE(libroom, m) {
   py::class_<Wall<2>> wall2d_cls(m, "Wall2D");
 
   wall2d_cls
-    .def(py::init<const Eigen::Matrix<float,2,Eigen::Dynamic> &, float, const std::string &>(),
-        py::arg("corners"), py::arg("absorption") = 0., py::arg("name") = "")
+    .def(py::init<const Eigen::Matrix<float,2,Eigen::Dynamic> &, const Eigen::ArrayXf &, const Eigen::ArrayXf &, std::string &>(),
+        py::arg("corners"), py::arg("absorption") = Eigen::ArrayXf::Zero(1),
+        py::arg("scattering") = Eigen::ArrayXf::Zero(1), py::arg("name") = "")
     .def("area", &Wall<2>::area)
     .def("intersection", &Wall<2>::intersection)
     .def("intersects", &Wall<2>::intersects)
@@ -210,7 +213,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("reflect", &Wall<2>::reflect)
     .def("normal_reflect", &Wall<2>::normal_reflect)
     .def("same_as", &Wall<2>::same_as)
-    .def_readonly("dim", &Wall<2>::dim)
+    .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_readwrite("absorption", &Wall<2>::absorption)
     .def_readwrite("name", &Wall<2>::name)
     .def_readonly("corners", &Wall<2>::corners)
@@ -230,6 +233,8 @@ PYBIND11_MODULE(libroom, m) {
   py::class_<Microphone<3>>(m, "Microphone")
     .def(py::init<const Vectorf<3> &, int, const std::vector<float> &>())
     .def_readonly("loc", &Microphone<3>::loc)
+    .def_readonly("hits", &Microphone<3>::hits)
+    .def_readonly("histograms", &Microphone<3>::histograms)
     ;
 
   // The 2D histogram class
@@ -243,7 +248,7 @@ PYBIND11_MODULE(libroom, m) {
   // Structure to hold detector hit information
   py::class_<Hit>(m, "Hit")
     .def(py::init<int>())
-    .def(py::init<const float, const std::vector<float> &>())
+    .def(py::init<const float, const Eigen::ArrayXf &>())
     .def_readonly("transmitted", &Hit::transmitted)
     .def_readonly("distance", &Hit::distance)
     ;

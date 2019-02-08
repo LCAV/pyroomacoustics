@@ -43,12 +43,27 @@ struct ImageSource
    * A class to hold the information relating to an Image source when running the ISM
    */
 
-  Eigen::Matrix<float,D,1> loc;
-  float attenuation;
+  Vectorf<D> loc;
+  Eigen::ArrayXf attenuation;
   int order;
   int gen_wall;
   ImageSource *parent;
   VectorXb visible_mics;
+
+  ImageSource(int n_bands)
+    : order(0), gen_wall(-1), parent(NULL)
+  {
+    loc.setZero();
+    attenuation.resize(n_bands);
+    attenuation.setOnes();
+  }
+
+  ImageSource(const Vectorf<D> &_loc, int n_bands)
+    : loc(_loc), order(0), gen_wall(-1), parent(NULL)
+  {
+    attenuation.resize(n_bands);
+    attenuation.setOnes();
+  }
 };
 
 /*
@@ -59,15 +74,16 @@ template<size_t D>
 class Room
 {
   public:
-    int dim;
+    static const int dim = D;
+    int n_bands;
     std::vector<Wall<D>> walls;
 
     // List of obstructing walls
     std::vector<int> obstructing_walls;
 
     // The microphones are in the room
-    Eigen::Matrix<float,D,Eigen::Dynamic> microphones;
-    
+    std::vector<Microphone<D>> microphones;
+
     // Very useful for raytracing
     int n_mics;
     // 2. A distance after which a ray must have hit at least 1 wall
@@ -77,106 +93,120 @@ class Room
     Eigen::Matrix<float,D,Eigen::Dynamic> sources;
     Eigen::VectorXi gen_walls;
     Eigen::VectorXi orders;
-    Eigen::VectorXf attenuations;
+    Eigen::MatrixXf attenuations;
 
     // This array will get filled by visibility status
     // its size is n_microphones * n_sources
     MatrixXb visible_mics;
 
+    // Simulation parameters
+    float sound_speed = 343.;
+    float energy_thres = 1e-7;
+    float time_thres = 1.;
+    float mic_radius = 0.15;
+    bool is_hybrid_sim = true;
+    int ism_order = 0.;
+
+    Eigen::ArrayXf air_absorption;
+
     // Constructor
     Room() {}  // default
+
+    void set_params(
+        float _sound_speed,
+        float _energy_thres,
+        float _time_thres,
+        float _mic_radius,
+        bool _is_hybrid_sim,
+        int _ism_order
+        )
+    {
+      sound_speed = _sound_speed;
+      energy_thres = _energy_thres;
+      time_thres = _time_thres;
+      mic_radius = _mic_radius;
+      is_hybrid_sim = _is_hybrid_sim;
+      ism_order = _ism_order;
+    }
+
+
+    void add_mic(const Vectorf<D> &loc, int n_bands, const std::vector<float> &dist_bins)
+    {
+      microphones.push_back(Microphone<D>(loc, n_bands, dist_bins));
+    }
 
     Wall<D> &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
-    int image_source_model(const Eigen::Matrix<float,D,1> &source_location, int max_order);
+    int image_source_model(const Vectorf<D> &source_location, int max_order);
 
     // A specialized method for the shoebox room case
     int image_source_shoebox(
-        const Eigen::Matrix<float,D,1> &source,
-        const Eigen::Matrix<float,D,1> &room_size,
-        const Eigen::Matrix<float,2*D,1> &absorption,
+        const Vectorf<D> &source,
+        const Vectorf<D> &room_size,
+        const Eigen::Array<float,Eigen::Dynamic,2*D> &absorption,
         int max_order
         );
 
-  float get_max_distance();
+    float get_max_distance();
 
-  std::tuple < Eigen::Matrix<float,D,1>, int > next_wall_hit(
-      const Eigen::Matrix<float,D,1> &start,
-      const Eigen::Matrix<float,D,1> &end,
-      bool scattered_ray);
-    
-  float compute_scat_energy(
-      float energy,
-      float scat_coef,
-      const Wall<D> & wall,
-      const Eigen::Matrix<float,D,1> & start,
-      const Eigen::Matrix<float,D,1> & hit_point,
-      const Eigen::Matrix<float,D,1> & mic_pos,
-      float radius,
-      float total_dist,
-      bool for_hybrid_rir);
+    std::tuple < Vectorf<D>, int > next_wall_hit(
+        const Vectorf<D> &start,
+        const Vectorf<D> &end,
+        bool scattered_ray
+        );
 
-  bool scat_ray(
-      float energy,
-      float scatter_coef,
-      const Wall<D> &wall,
-      const Eigen::Matrix<float,D,1> &prev_last_hit,
-      const Eigen::Matrix<float,D,1> &hit_point,
-      float radius,
-      float total_dist,
-      float travel_time,
-      float time_thres,
-      float energy_thres,
-      float sound_speed,
-      bool for_hybrid_rir,
-      HitLog & output);
+    Eigen::ArrayXf compute_scat_energy(
+        const Eigen::ArrayXf &transmitted,
+        float scat_coef,
+        const Wall<D> & wall,
+        const Vectorf<D> & start,
+        const Vectorf<D> & hit_point,
+        const Vectorf<D> & mic_pos,
+        float total_dist
+        );
 
-  void simul_ray(float phi,
-      float theta,
-      const Eigen::Matrix<float,D,1> source_pos,
-      float mic_radius,
-      float scatter_coef,
-      float time_thres,
-      float energy_thres,
-      float sound_speed,
-      bool for_hybrid_rir,
-      int ism_order,
-      HitLog & output);
+    bool scat_ray(
+        const Eigen::ArrayXf &transmitted,
+        float scatter_coef,
+        const Wall<D> &wall,
+        const Vectorf<D> &prev_last_hit,
+        const Vectorf<D> &hit_point,
+        float travel_dist,
+        HitLog & output
+        );
 
-  HitLog get_rir_entries(
-      const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-      const Eigen::Matrix<float,D,1> source_pos,
-      float mic_radius,
-      float scatter_coef,
-      float time_thres,
-      float energy_thres,
-      float sound_speed,
-      bool for_hybrid_rir,
-      int ism_order);
+    void simul_ray(
+        float phi,
+        float theta,
+        const Vectorf<D> source_pos,
+        float scatter_coef,
+        HitLog & output
+        );
 
-  HitLog get_rir_entries(
-      size_t nb_phis,
-      size_t nb_thetas,
-      const Eigen::Matrix<float,D,1> source_pos,
-      float mic_radius,
-      float scatter_coef,
-      float time_thres,
-      float energy_thres,
-      float sound_speed,
-      bool for_hybrid_rir,
-      int ism_order);
+    HitLog get_rir_entries(
+        const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
+        const Vectorf<D> source_pos,
+        float scatter_coef
+        );
 
-  bool contains(const Eigen::Matrix<float,D,1> point);
+    HitLog get_rir_entries(
+        size_t nb_phis,
+        size_t nb_thetas,
+        const Vectorf<D> source_pos,
+        float scatter_coef
+        );
+
+    bool contains(const Vectorf<D> point);
 
   private:
     // We need a stack to store the image sources during the algorithm
     std::stack<ImageSource<D>> visible_sources;
-    
+
     // Image source model internal methods
     void image_sources_dfs(ImageSource<D> &is, int max_order);
-    bool is_visible_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is);
-    bool is_obstructed_dfs(const Eigen::Matrix<float,D,1> &p, ImageSource<D> &is);
+    bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is);
+    bool is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is);
     int fill_sources();
 
 };

@@ -24,39 +24,55 @@
  * not, see <https://opensource.org/licenses/MIT>.
  */
 
-#include "wall.hpp"
-#include "geometry.hpp"
 #include <iostream>
 #include <cmath>
 
+#include "wall.hpp"
+#include "geometry.hpp"
+#include "common.hpp"
+
 template<>
-float Wall<2>::area()
+float Wall<2>::area() const
 {
   return (corners.col(1) - corners.col(0)).norm();
 }
 
 template<>
-float Wall<3>::area()
+float Wall<3>::area() const
 {
   return area_2d_polygon(flat_corners);
 }
 
 template<size_t D>
-float Wall<D>::area()
+float Wall<D>::area() const
 {
   return 0.;
+}
+
+template<size_t D>
+void Wall<D>::init()
+{
+  // compute transmission coefficients from absorption
+  transmission.resize(absorption.size());
+  transmission = (1.f - absorption).sqrt();
+
+  if (absorption.size() != scatter.size())
+  {
+    std::cerr << "Error: the number of absorption and scattering coefficients should be the same." << std::endl;
+    throw std::exception();
+  }
 }
 
 template<>
 Wall<2>::Wall(
     const Eigen::Matrix<float,2,Eigen::Dynamic> &_corners,
-    float _absorption,
+    const Eigen::ArrayXf &_absorption,
+    const Eigen::ArrayXf &_scatter,
     const std::string &_name
     )
-  : absorption(_absorption), name(_name), corners(_corners)
+  : absorption(_absorption), scatter(_scatter), name(_name), corners(_corners)
 {
-  // corners should be D x N for N corners in D dimensions
-  dim = 2;  // assign the attribute
+  init();
 
   // Pick one of the corners as the origin of the wall
   origin = corners.col(0);
@@ -70,13 +86,13 @@ Wall<2>::Wall(
 template<>
 Wall<3>::Wall(
     const Eigen::Matrix<float,3,Eigen::Dynamic> &_corners,
-    float _absorption,
+    const Eigen::ArrayXf &_absorption,
+    const Eigen::ArrayXf &_scatter,
     const std::string &_name
     )
-  : absorption(_absorption), name(_name), corners(_corners)
+  : absorption(_absorption), scatter(_scatter), name(_name), corners(_corners)
 {
-  // corners should be D x N for N corners in D dimensions
-  dim = 3;  // assign the attribute
+  init();
 
   // In 3D things are a little more complicated
   // We need to compute a 2D basis for the plane and find the normal
@@ -125,7 +141,7 @@ int Wall<2>::intersection(
     const Eigen::Matrix<float,2,1> &p1,
     const Eigen::Matrix<float,2,1> &p2,
     Eigen::Ref<Eigen::Matrix<float,2,1>> intersection
-    )
+    ) const
 {
   return intersection_2d_segments(p1, p2, corners.col(0), corners.col(1), intersection);
 }
@@ -135,7 +151,7 @@ int Wall<3>::intersection(
     const Eigen::Matrix<float,3,1> &p1,
     const Eigen::Matrix<float,3,1> &p2,
     Eigen::Ref<Eigen::Matrix<float,3,1>> intersection
-    )
+    ) const
 {
   /*
     Computes the intersection between a line segment and a polygon surface in 3D.
@@ -188,15 +204,14 @@ int Wall<3>::intersection(
 }
 
 template<size_t D>
-int Wall<D>::intersects(const Eigen::Matrix<float,D,1> &p1, const Eigen::Matrix<float,D,1> &p2)
+int Wall<D>::intersects(const Vectorf<D> &p1, const Vectorf<D> &p2) const
 {
-  Eigen::VectorXf v;
-  v.resize(dim);
+  Vectorf<D> v;
   return intersection(p1, p2, v);
 }
 
 template<size_t D>
-int Wall<D>::reflect(const Eigen::Matrix<float,D,1> &p, Eigen::Ref<Eigen::Matrix<float,D,1>> p_reflected)
+int Wall<D>::reflect(const Vectorf<D> &p, Eigen::Ref<Vectorf<D>> p_reflected) const
 {
   /*
    * Reflects point p across the wall 
@@ -228,7 +243,7 @@ int Wall<D>::reflect(const Eigen::Matrix<float,D,1> &p, Eigen::Ref<Eigen::Matrix
 
 /* checks on which side of a wall a point is */
 template<size_t D>
-int Wall<D>::side(const Eigen::Matrix<float,D,1> &p)
+int Wall<D>::side(const Vectorf<D> &p) const
 {
   // Essentially, returns the sign of the inner product with the normal vector
   float ip = (p - origin).adjoint() * normal;
@@ -242,7 +257,7 @@ int Wall<D>::side(const Eigen::Matrix<float,D,1> &p)
 }
 
 template<size_t D>
-bool Wall<D>::same_as(const Wall & that)
+bool Wall<D>::same_as(const Wall & that) const
 {
   /*
   Checks if two walls are the same, based on their corners of the walls.
@@ -253,7 +268,6 @@ bool Wall<D>::same_as(const Wall & that)
   if (dim != that.dim)
   {
     std::cerr << "The two walls are not of the same dimensions !" << std::endl;
-    throw std::exception();
     return false;
   }
 
@@ -267,10 +281,10 @@ bool Wall<D>::same_as(const Wall & that)
 }
 
 template<size_t D>
-Eigen::Matrix<float,D,1> Wall<D>::normal_reflect(
-    const Eigen::Matrix<float,D,1> &start,
-    const Eigen::Matrix<float,D,1> &hit_point,
-    float length)
+Vectorf<D> Wall<D>::normal_reflect(
+    const Vectorf<D> &start,
+    const Vectorf<D> &hit_point,
+    float length) const
 {
 	  
   /* This method computes the reflection of one point with respect to
@@ -290,7 +304,7 @@ Eigen::Matrix<float,D,1> Wall<D>::normal_reflect(
    :returns: an array of size 2 or 3 representing the reflected point
    */
 
-  Eigen::Matrix<float,D,1> incident = (hit_point - start).normalized();
+  Vectorf<D> incident = (hit_point - start).normalized();
   return hit_point + length * (incident - normal * 2 * incident.dot(normal));
 }
 
