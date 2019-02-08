@@ -144,7 +144,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_max_dist_3D(self):
 
-        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -152,7 +152,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom.Room(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         eps = 0.001
         result = room.get_max_distance()
@@ -162,32 +162,32 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_max_dist_2D(self):
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
             [1, ],
         ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         eps = 0.001
         result = room.get_max_distance()
         self.assertEqual(result, np.sqrt(25)+1)
 
     def test_same_wall_true3D(self):
-        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
+        w1 = pra.wall_factory(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.wall_factory(wall_corners_3D[0], absorptions_3D[0])
         self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_true2D(self):
-        w1 = pra.libroom.Wall2D(wall_corners_2D[0], absorptions_3D[0])
-        w2 = pra.libroom.Wall2D(wall_corners_2D[0], absorptions_3D[0])
+        w1 = pra.wall_factory(wall_corners_2D[0], absorptions_3D[0])
+        w2 = pra.wall_factory(wall_corners_2D[0], absorptions_3D[0])
         self.assertTrue(w1.same_as(w2))
 
     def test_same_wall_false3D(self):
-        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom.Wall(wall_corners_3D[1], absorptions_3D[0])
+        w1 = pra.wall_factory(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.wall_factory(wall_corners_3D[1], absorptions_3D[0])
         self.assertTrue(not w1.same_as(w2))
 
     def test_same_wall_false3D_more_corners(self):
@@ -198,14 +198,14 @@ class TestRoomWalls(unittest.TestCase):
             [0, 0, 0, 0, 0],
             [0, 0, 2, 1.5, 2]])
 
-        w1 = pra.libroom.Wall(wall_corners_3D[0], absorptions_3D[0])
-        w2 = pra.libroom.Wall(c1, absorptions_3D[0])
+        w1 = pra.wall_factory(wall_corners_3D[0], absorptions_3D[0])
+        w2 = pra.wall_factory(c1, absorptions_3D[0])
         self.assertTrue(not w1.same_as(w2))
 
 
     def test_next_wall_hit(self):
 
-        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -213,7 +213,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom.Room(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -233,7 +233,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_next_wall_nohit(self):
 
-        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -241,7 +241,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom.Room(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -258,7 +258,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_next_wall_hit2D(self):
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1, ],
@@ -266,7 +266,7 @@ class TestRoomWalls(unittest.TestCase):
             [1, ],
         ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         eps = 0.001
 
@@ -285,16 +285,22 @@ class TestRoomWalls(unittest.TestCase):
 
 
     def test_scat_ray_blocked(self):
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = [1, 2]  # index of the 2 possibly obstructing walls
         microphones = np.array([
             [1.5],
             [1.2]
         ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
-
-        radius = 0.1
+        room = pra.room_factory(walls, obstructing_walls, microphones)
+        room.set_params(
+                pra.constants.get('c'),
+                0.001,  # energy threshold for rays
+                200.,  # time threshold for rays
+                0.1,  # detector radius
+                False,  # is it hybrid model ?
+                2,  # order of ISM
+                )
 
         prev_wall = room.get_wall(0)
 
@@ -303,33 +309,32 @@ class TestRoomWalls(unittest.TestCase):
         last_hit = [0, 1.9]
         total_dist = 0.
 
-        energy = 1000000.
-        energy_thres = 0.001
+        energy = [1000000.]
         scatter_coef = 0.1
 
-        # Very high => will not be reached
-        travel_time = 1.
-        time_thres = 200.
-
-        sound_speed = 340.
-
-        output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
+        output = [[pra.libroom.Hit(1)]] #arbitrary initialisation to have the correct shape
         self.assertTrue(not room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit,
-                                      radius, total_dist, travel_time, time_thres, energy_thres,
-                                      sound_speed, False, output))
+                                      total_dist, output))
 
 
     def test_scat_ray_ok(self):
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = [1,2]
         microphones = np.array([
             [0.5 ],
             [0.2 ]
             ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
-        radius = 0.1
+        room = pra.room_factory(walls, obstructing_walls, microphones)
+        room.set_params(
+                pra.constants.get('c'),
+                0.001,  # energy threshold for rays
+                200.,  # time threshold for rays
+                0.1,  # detector radius
+                False,  # is it hybrid model ?
+                2,  # order of ISM
+                )
 
         prev_wall = room.get_wall(0)
 
@@ -339,27 +344,19 @@ class TestRoomWalls(unittest.TestCase):
         total_dist = 0.
 
 
-        energy = 1000000.
-        energy_thres = 0.001
+        energy = [1000000.]
         scatter_coef = 0.1
 
-        # Very high => will not be reached
-        travel_time = 100.
-        time_thres = 200.
-
-        sound_speed = 340.
-
-        output = [[[1.,2.]]] #arbitrary initialisation to have the correct shape
+        output = [[pra.libroom.Hit(1)]] #arbitrary initialisation to have the correct shape
         self.assertTrue(room.scat_ray(energy, scatter_coef, prev_wall, prev_last_hit, last_hit,
-                                      radius, total_dist, travel_time, time_thres, energy_thres,
-                                      sound_speed, False, output))
+                                      total_dist, output))
 
 
     def test_scat_ray_energy(self):
 
         # Test energy with the energy / (4*pi*dist) rule
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_shoebox, absorptions_shoebox)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D_shoebox, absorptions_shoebox)]
         obstructing_walls = []
         microphones = np.array([
             [3.1],
@@ -369,8 +366,15 @@ class TestRoomWalls(unittest.TestCase):
         mic_pos = microphones[:, 0]
         print(mic_pos)
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
-        radius = 0.1
+        room = pra.room_factory(walls, obstructing_walls, microphones)
+        room.set_params(
+                pra.constants.get('c'),
+                1e-7,  # energy threshold for rays
+                5.,  # time threshold for rays
+                0.1,  # detector radius
+                False,  # is it hybrid model ?
+                2,  # order of ISM
+                )
 
         prev_wall = room.get_wall(0)
 
@@ -380,45 +384,45 @@ class TestRoomWalls(unittest.TestCase):
 
 
 
-        energy = 1.
+        energy = [1.]
         scatter_coef = 0.1
 
         eps = 0.0001
-        result = room.compute_scat_energy(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, mic_pos, radius, total_dist, True)
-        self.assertTrue(np.allclose(result, np.sqrt(0.1*2*(1-np.sqrt(3.1*3.1-0.1*0.1)/3.1))/(4*np.pi*5), atol=eps))
+        result = room.compute_scat_energy(energy, scatter_coef, prev_wall, prev_last_hit, last_hit, mic_pos, total_dist)
+        self.assertTrue(np.allclose(result, np.sqrt(0.1*2*(1-np.sqrt(3.1*3.1-0.1*0.1)/3.1))/(5), atol=eps))
 
 
     def test_contains_2D(self):
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [0.5],
             [0.2]
         ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         self.assertTrue(room.contains(microphones[:,0]))
 
 
     def test_notcontains_2D(self):
 
-        walls = [pra.libroom.Wall2D(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_2D_non_convex, absorptions_2D)]
         obstructing_walls = []
         microphones = np.array([
             [1.],
             [1.7]
         ])
 
-        room = pra.libroom.Room2D(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
         self.assertTrue(not room.contains(microphones[:,0]))
 
 
     def test_contains_3D(self):
 
-        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [1.],
@@ -426,7 +430,7 @@ class TestRoomWalls(unittest.TestCase):
             [1.]
         ])
 
-        room = pra.libroom.Room(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
 
 
@@ -435,7 +439,7 @@ class TestRoomWalls(unittest.TestCase):
 
     def test_notcontains_3D(self):
 
-        walls = [pra.libroom.Wall(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
+        walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners_3D, absorptions_3D)]
         obstructing_walls = []
         microphones = np.array([
             [5.],
@@ -443,7 +447,7 @@ class TestRoomWalls(unittest.TestCase):
             [40]
         ])
 
-        room = pra.libroom.Room(walls, obstructing_walls, microphones)
+        room = pra.room_factory(walls, obstructing_walls, microphones)
 
 
 

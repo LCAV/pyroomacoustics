@@ -113,47 +113,47 @@ def run_reflect(label):
 
 class TestUtilityRoutines(unittest.TestCase):
 
-    def test_side_3d_up():
+    def test_side_3d_up(self):
         ret = run_side('3d_up')
         self.assertTrue(ret)
 
-    def test_side_3d_down():
+    def test_side_3d_down(self):
         ret = run_side('3d_down')
         self.assertTrue(ret)
 
-    def test_side_3d_on():
+    def test_side_3d_on(self):
         ret = run_side('3d_on')
         self.assertTrue(ret)
 
-    def test_side_2d_up():
+    def test_side_2d_up(self):
         ret = run_side('2d_up')
         self.assertTrue(ret)
 
-    def test_side_2d_down():
+    def test_side_2d_down(self):
         ret = run_side('2d_down')
         self.assertTrue(ret)
 
-    def test_side_2d_on():
+    def test_side_2d_on(self):
         ret = run_side('2d_on')
         self.assertTrue(ret)
 
-    def test_reflect_3d_up():
+    def test_reflect_3d_up(self):
         ret = run_reflect('3d_up')
         self.assertTrue(ret)
 
-    def test_reflect_3d_down():
+    def test_reflect_3d_down(self):
         ret = run_reflect('3d_down')
         self.assertTrue(ret)
 
-    def test_reflect_3d_on():
+    def test_reflect_3d_on(self):
         ret = run_reflect('3d_on')
         self.assertTrue(ret)
 
-    def test_reflect_2d_up():
+    def test_reflect_2d_up(self):
         ret = run_reflect('2d_up')
         self.assertTrue(ret)
 
-    def test_reflect_2d_down():
+    def test_reflect_2d_down(self):
         ret = run_reflect('2d_down')
         self.assertTrue(ret)
 

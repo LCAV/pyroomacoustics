@@ -251,9 +251,12 @@ int Room<D>::image_source_shoebox(
   for (size_t i(0) ; i <= max_order ; ++i)
     transmission_pwr.push_back(Eigen::ArrayXXf(n_bands, 2*D));
 
+  std::cout << transmission_pwr[0].rows() << "x" << transmission_pwr[0].cols() << std::endl << std::flush;
+
   transmission_pwr[0].setOnes();
-  transmission_pwr[1] = (1.f - absorption).sqrt();
-  for (int i = 2 ; i <= max_order ; i++)
+  if (max_order > 0)
+    transmission_pwr[1] = (1.f - absorption).sqrt();
+  for (int i = 2 ; i <= max_order ; ++i)
     transmission_pwr[i] = transmission_pwr[i-1] * transmission_pwr[1];
 
   // make sure the list is empty
@@ -281,7 +284,8 @@ int Room<D>::image_source_shoebox(
       {
         visible_sources.push(ImageSource<D>(n_bands));
         ImageSource<D> &is = visible_sources.top();
-        is.visible_mics = VectorXb::Ones(microphones.size());  // everything is visible
+        is.visible_mics.resize(microphones.size());
+        is.visible_mics.setOnes();  // everything is visible
 
         // Now compute the reflection, the order, and the multiplicative constant
         for (size_t d = 0 ; d < D ; d++)
@@ -556,13 +560,6 @@ bool Room<D>::scat_ray(
       the wall normal is correctly oriented)
     hit_point: (array size 2 or 3) defines the last wall hit position
     travel_dist: The total distance travelled by the ray from source to hit_point
-    travel_time: The cumulated travel time of the ray from source to hit_point
-    time_thresh: The time threshold for the ray
-    energy_thresh: The energy threshold for the ray
-    sound_speed: The speed of sound
-    fs : the sampling frequency used for the rir
-      scat_per_slot : a 2D vector counting for each microphone and each time
-      slot, the number of scattered rays reaching the microphone
     output: the std::vector containing the time/energy entries for each microphone to build the rir
 
   :return : true if the scattered ray reached ALL the microphones, false otw
@@ -671,7 +668,6 @@ void Room<D>::simul_ray(
 
   // The ray's characteristics
   Eigen::ArrayXf transmitted = Eigen::ArrayXf::Ones(n_bands);
-  float travel_time = 0;
   float travel_dist = 0;
   
   // To count the number of times the ray bounces on the walls

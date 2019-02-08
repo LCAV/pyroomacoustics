@@ -813,9 +813,9 @@ class Room(object):
             if isinstance(self, ShoeBox):
 
                 # create absorption list in correct order for shoebox algorithm
-                absorption_list_shoebox = np.array(
+                absorption_list_shoebox = np.array([
                         [self.absorption_dict[d] for d in self.wall_names],
-                        )
+                        ])
 
                 # Call the dedicated C routine for shoebox room
                 c_room.image_source_shoebox(
@@ -841,7 +841,7 @@ class Room(object):
                 source.images = c_room.sources.copy()
                 source.orders = c_room.orders.copy()
                 source.walls = c_room.gen_walls.copy()
-                source.damping = c_room.attenuations.copy()
+                source.damping = c_room.attenuations.copy()[0]
                 source.generators = -np.ones(source.walls.shape)
 
                 self.visibility.append(c_room.visible_mics.copy())
