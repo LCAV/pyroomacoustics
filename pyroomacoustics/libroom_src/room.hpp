@@ -75,15 +75,29 @@ class Room
 {
   public:
     static const int dim = D;
-    int n_bands;
+
     std::vector<Wall<D>> walls;
+    std::vector<int> obstructing_walls;  // List of obstructing walls
+    std::vector<Microphone<D>> microphones;  // The microphones are in the room
+    Eigen::ArrayXf air_absorption;  // the absorption coefficient of air
+    float sound_speed = 343.;  // the speed of sound in the room
 
-    // List of obstructing walls
-    std::vector<int> obstructing_walls;
+    // Simulation parameters
+    int ism_order = 0.;
 
-    // The microphones are in the room
-    std::vector<Microphone<D>> microphones;
+    // Ray tracing parameters
+    float energy_thres = 1e-7;
+    float time_thres = 1.;
+    float mic_radius = 0.15;
+    bool is_hybrid_sim = true;
+    
+    // Special parameters for shoebox rooms
+    bool is_shoebox = false;
+    Vectorf<D> shoebox_size;
+    Eigen::Array<float,Eigen::Dynamic,2*D> shoebox_absorption;
 
+    // The number of frequency bands used
+    int n_bands;
     // Very useful for raytracing
     int n_mics;
     // 2. A distance after which a ray must have hit at least 1 wall
@@ -99,26 +113,54 @@ class Room
     // its size is n_microphones * n_sources
     MatrixXb visible_mics;
 
-    // Simulation parameters
-    float sound_speed = 343.;
-    float energy_thres = 1e-7;
-    float time_thres = 1.;
-    float mic_radius = 0.15;
-    bool is_hybrid_sim = true;
-    int ism_order = 0.;
-
-    Eigen::ArrayXf air_absorption;
-
-    // Constructor
-    Room() {}  // default
-
-    void set_params(
+    // Constructor for general rooms
+    Room(
+        const std::vector<Wall<D>> &_walls,
+        const std::vector<int> &_obstructing_walls,
+        const std::vector<Microphone<D>> &_microphones,
+        const Eigen::ArrayXf &_air_absorption,
         float _sound_speed,
+        // parameters for the image source model
+        int _ism_order,
+        // parameters for the ray tracing
         float _energy_thres,
         float _time_thres,
         float _mic_radius,
-        bool _is_hybrid_sim,
-        int _ism_order
+        bool _is_hybrid_sim
+        );
+
+    // Constructor for shoebox rooms
+    Room(
+        const Vectorf<D> &_room_size,
+        const Eigen::Array<float,Eigen::Dynamic,2*D> &_absorption,
+        const Eigen::Array<float,Eigen::Dynamic,2*D> &_scattering,
+        const std::vector<Microphone<D>> &_microphones,
+        const Eigen::ArrayXf &_air_absorption,
+        float _sound_speed,
+        // parameters for the image source model
+        int _ism_order,
+        // parameters for the ray tracing
+        float _energy_thres,
+        float _time_thres,
+        float _mic_radius,
+        bool _is_hybrid_sim
+        );
+
+    void make_shoebox_walls(
+        const Vectorf<D> &rs,  // room_size
+        const Eigen::Array<float,Eigen::Dynamic,2*D> &abs,
+        const Eigen::Array<float,Eigen::Dynamic,2*D> &scat
+        );
+
+    void init();
+
+    void set_params(
+        float _sound_speed,
+        int _ism_order,
+        float _energy_thres,
+        float _time_thres,
+        float _mic_radius,
+        bool _is_hybrid_sim
         )
     {
       sound_speed = _sound_speed;

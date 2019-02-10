@@ -41,49 +41,27 @@ namespace py = pybind11;
 
 float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
 
-template<size_t D>
-Room<D> *create_room(const std::vector<Wall<D>> &_walls, const std::vector<int> &_obstructing_walls, const Eigen::MatrixXf &_microphones, const std::vector<float> &_hist_bins)
-{
-  /*
-   * This is a factory method to isolate the Room class from pybind code
-   */
-  Room<D> *room = new Room<D>();
-
-  room->n_bands = -1;
-  for (auto &wall : _walls)
-  {
-    // Get the number of bands for simulation from wall and check for consistency
-    if (room->n_bands == -1)
-      room->n_bands = wall.get_n_bands();
-    else if (room->n_bands != wall.get_n_bands())
-    {
-      std::cout << "Error: All walls should have the same number of frequency bands" << std::endl;
-      throw std::exception();
-    }
-
-    room->walls.push_back(wall);
-  }
-
-  room->obstructing_walls = _obstructing_walls;
-
-  for (size_t m(0) ; m < _microphones.cols() ; ++m)
-    room->add_mic(_microphones.col(m), room->n_bands, _hist_bins);
-
-  // Useful for ray tracing
-  room->max_dist = room->get_max_distance();
-  room->n_mics = room->microphones.size();
-
-  return room;
-}
-
 
 PYBIND11_MODULE(libroom, m) {
   m.doc() = "Libroom room simulation extension plugin"; // optional module docstring
 
   // The 3D Room class
   py::class_<Room<3>>(m, "Room")
-    //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
-    .def(py::init(&create_room<3>))
+    .def(py::init<
+        const std::vector<Wall<3>> &,
+        const std::vector<int> &,
+        const std::vector<Microphone<3>> &,
+        const Eigen::ArrayXf &,
+        float, int, float, float, float, bool
+        >())
+    .def(py::init<
+        const Vectorf<3> &,
+        const Eigen::Array<float,Eigen::Dynamic,6> &,
+        const Eigen::Array<float,Eigen::Dynamic,6> &,
+        const std::vector<Microphone<3>> &,
+        const Eigen::ArrayXf &,
+        float, int, float, float, float, bool
+        >())
     .def("set_params", &Room<3>::set_params)
     .def("image_source_model", &Room<3>::image_source_model)
     .def("image_source_shoebox", &Room<3>::image_source_shoebox)
@@ -127,7 +105,21 @@ PYBIND11_MODULE(libroom, m) {
   // The 2D Room class
   py::class_<Room<2>>(m, "Room2D")
     //.def(py::init<py::list, py::list, const Eigen::MatrixXf &>())
-    .def(py::init(&create_room<2>))
+    .def(py::init<
+        const std::vector<Wall<2>> &,
+        const std::vector<int> &,
+        const std::vector<Microphone<2>> &,
+        const Eigen::ArrayXf &,
+        float, int, float, float, float, bool
+        >())
+    .def(py::init<
+        const Vectorf<2> &,
+        const Eigen::Array<float,Eigen::Dynamic,4> &,
+        const Eigen::Array<float,Eigen::Dynamic,4> &,
+        const std::vector<Microphone<2>> &,
+        const Eigen::ArrayXf &,
+        float, int, float, float, float, bool
+        >())
     .def("set_params", &Room<2>::set_params)
     .def("image_source_model", &Room<2>::image_source_model)
     .def("image_source_shoebox", &Room<2>::image_source_shoebox)

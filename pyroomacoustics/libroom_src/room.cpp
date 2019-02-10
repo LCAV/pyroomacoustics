@@ -31,6 +31,156 @@ const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
 
 template<size_t D>
+Room<D>::Room(
+        const std::vector<Wall<D>> &_walls,
+        const std::vector<int> &_obstructing_walls,
+        const std::vector<Microphone<D>> &_microphones,
+        const Eigen::ArrayXf &_air_absorption,
+        float _sound_speed,
+        // parameters for the image source model
+        int _ism_order,
+        // parameters for the ray tracing
+        float _energy_thres,
+        float _time_thres,
+        float _mic_radius,
+        bool _is_hybrid_sim
+    )
+  : walls(_walls), obstructing_walls(_obstructing_walls), microphones(_microphones),
+  air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
+  energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
+  is_hybrid_sim(_is_hybrid_sim), is_shoebox(false)
+{
+  init();
+}
+
+template<size_t D>
+Room<D>::Room(
+    const Vectorf<D> &_room_size,
+    const Eigen::Array<float,Eigen::Dynamic,2*D> &_absorption,
+    const Eigen::Array<float,Eigen::Dynamic,2*D> &_scattering,
+    const std::vector<Microphone<D>> &_microphones,
+    const Eigen::ArrayXf &_air_absorption,
+    float _sound_speed,
+    // parameters for the image source model
+    int _ism_order,
+    // parameters for the ray tracing
+    float _energy_thres,
+    float _time_thres,
+    float _mic_radius,
+    bool _is_hybrid_sim
+    )
+  : microphones(_microphones),
+  air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
+  energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
+  is_hybrid_sim(_is_hybrid_sim), is_shoebox(true), shoebox_size(_room_size),
+  shoebox_absorption(_absorption)
+{
+  make_shoebox_walls(shoebox_size, _absorption, _scattering);
+  init();
+}
+
+
+template<>
+void Room<2>::make_shoebox_walls(
+    const Vectorf<2> &rs,  // room_size
+    const Eigen::Array<float,Eigen::Dynamic,4> &abs,
+    const Eigen::Array<float,Eigen::Dynamic,4> &scat
+    )
+{
+  Eigen::Matrix<float,2,Eigen::Dynamic> corners;
+  corners.resize(2, 2);
+
+  corners << 0.f, rs[0], 0.f, 0.f;
+  walls.push_back(Wall<2>(corners, abs.col(2), scat.col(2), "south"));
+
+  corners << rs[0], rs[0], 0.f, rs[1];
+  walls.push_back(Wall<2>(corners, abs.col(1), scat.col(1), "east"));
+
+  corners << rs[0], 0.f, rs[1], rs[1];
+  walls.push_back(Wall<2>(corners, abs.col(3), scat.col(3), "north"));
+
+  corners << 0.f, 0.f, rs[1], rs[0];
+  walls.push_back(Wall<2>(corners, abs.col(0), scat.col(0), "west"));
+}
+
+
+template<>
+void Room<3>::make_shoebox_walls(
+    const Vectorf<3> &rs,  // room_size
+    const Eigen::Array<float,Eigen::Dynamic,6> &abs,
+    const Eigen::Array<float,Eigen::Dynamic,6> &scat
+    )
+{
+  Eigen::Matrix<float,3,Eigen::Dynamic> corners;
+  corners.resize(3,4);
+
+  corners << 0.f, 0.f, 0.f, 0.f,
+             rs[1], 0.f, 0.f, rs[1],
+             0.f, 0.f, rs[2], rs[2];
+  walls.push_back(Wall<3>(corners, abs.col(0), scat.col(0), "west"));
+
+  corners << rs[0], rs[0], rs[0], rs[0], 
+             0.f, rs[1], rs[1], 0.f, 
+             0.f, 0.f, rs[2], rs[2];
+  walls.push_back(Wall<3>(corners, abs.col(1), scat.col(1), "east"));
+
+  corners << 0.f, rs[0], rs[0], 0.f,
+             0.f, 0.f, 0.f, 0.f, 
+             0.f, 0.f, rs[2], rs[2];
+  walls.push_back(Wall<3>(corners, abs.col(2), scat.col(2), "south"));
+
+  corners << rs[0], 0.f, 0.f, rs[0],
+             rs[1], rs[1], rs[1], rs[1],
+             0.f, 0.f, rs[2], rs[2];
+  walls.push_back(Wall<3>(corners, abs.col(3), scat.col(3), "north"));
+
+  corners << rs[0], 0.f, 0.f, rs[0],
+             0.f, 0.f, rs[1], rs[1],
+             0.f, 0.f, 0.f, 0.f;
+  walls.push_back(Wall<3>(corners, abs.col(4), scat.col(4), "floor"));
+
+  corners << rs[0], rs[0], 0.f, 0.f,
+             0.f, rs[1], rs[1], 0.f,
+             rs[2], rs[2], rs[2], rs[2];
+  walls.push_back(Wall<3>(corners, abs.col(4), scat.col(4), "ceiling"));
+}
+
+
+template<size_t D>
+void Room<D>::init()
+{
+  /*
+   * Constructor for non-shoebox rooms
+   */
+  if (walls.size() > D)
+  {
+    n_bands = walls[0].get_n_bands();
+    for (auto &wall : walls)
+      if (n_bands != wall.get_n_bands())
+      {
+        std::cerr << "Error: All walls should have the same number of frequency bands" << std::endl;
+        throw std::exception();
+      }
+  }
+  else
+  {
+    std::cerr << "Error: The minimum number of walls is " << D + 1 << std::endl;
+    throw std::exception();
+  }
+
+  if (air_absorption.size() != n_bands)
+  {
+    std::cerr << "Error: As many air absorption coefficient as frequency band is needed." << std::endl;
+    throw std::exception();
+  }
+
+  // Useful for ray tracing
+  max_dist = get_max_distance();
+  n_mics = microphones.size();
+}
+
+
+template<size_t D>
 int Room<D>::image_source_model(const Vectorf<D> &source_location, int max_order)
 {
   /*

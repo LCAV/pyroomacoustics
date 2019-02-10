@@ -1361,6 +1361,13 @@ class ShoeBox(Room):
     def extrude(self, height):
         ''' Overload the extrude method from 3D rooms '''
 
+        if height < 0.:
+            raise ValueError('Room height must be positive')
+
         Room.extrude(self, np.array([0., 0., height]))
+
+        # update the shoebox dim
+        self.shoebox_dim = np.append(self.shoebox_dim, height)
+
 
 
