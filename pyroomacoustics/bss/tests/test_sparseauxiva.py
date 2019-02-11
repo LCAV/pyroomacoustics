@@ -12,6 +12,7 @@ from mir_eval.separation import bss_eval_images
 
 # First, open and concatanate wav files from the CMU dataset.
 # concatanate audio samples to make them look long enough
+
 wav_files_full = [
     ['examples/input_samples/cmu_arctic_us_aew_a0001.wav',
      'examples/input_samples/cmu_arctic_us_aew_a0002.wav',
@@ -87,12 +88,12 @@ def test_sparseauxiva():
     # START BSS
     ###########
 
+    # Preprocessing
     # Observation vector in the STFT domain
     X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Reference signal to calculate performance of BSS
-
     ref = np.moveaxis(separate_recordings, 1, 2)
 
     ratio = 0.35

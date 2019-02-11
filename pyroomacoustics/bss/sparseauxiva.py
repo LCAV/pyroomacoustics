@@ -1,5 +1,10 @@
 """
-Blind Source Separation using Tweaked Independent Vector Analysis with Auxiliary Function
+Blind Source Separation for sparsely mixed signals based on Independent Vector Analysis (IVA) with Auxiliary Function
+
+Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech separation
+ based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
+
+
 
 2018 (c) Yaron Dibner & Virgile Hernicot, MIT License
 """
@@ -24,7 +29,7 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
     :param n_iter: Number of iteratios in auxiva
     :param proj_back: whether it performs the back projection or not
     :param return_filters: return filters
-    :param lasso: if it runs
+    :param lasso: bool indicating if lasso regularization is applied or not
     :return:
     """
     n_frames, n_freq, n_chan = X.shape
@@ -46,7 +51,6 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
-    # print("Init done, proceeding to sparse AuxIVA...")
 
     for epoch in range(n_iter):
 
@@ -75,34 +79,31 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
 
     np.set_printoptions(precision=2)
 
+    # Check if LASSO regularization activated
     if lasso:
-        # Here comes Lassoooooooooo
         Z = np.zeros((n_src, k_freq), dtype=W.dtype)
         G = np.zeros((n_src, n_freq, 1), dtype=Z.dtype)
-        hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)  # h in the time domain
-        Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)  # H in the frequency domain
+        hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
+        Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
 
         for i in range(n_src):
 
             # sparse relative transfer function
             Z[i, :] = np.array([-W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
 
-            # put the elements of Z in G
+            # mask frequencies Z with S and copy the result into G
             G[i, S] = (np.expand_dims(Z[i, :], axis=1))
 
-            # compute the extrapolated relative impulse response solving LASSO
+            # solve LASSO in the time domain
             hrtf[:, i] = sparir(G[i, :], S)
 
-            # convert to transfer function
+            # convert transfer function from time domain to frequency domain
             Hrtf[:, i] = np.fft.fft(hrtf[:, i])
-            # Finally, you could assemble W
-            for f in range(n_freq):
-                W[f, :, i] = np.conj([Hrtf[f, i], -1])
+            W[:, :, i] = np.conj(np.insert(Hrtf[:, i, None], 1, -1, axis=1))
 
     # final demixing
     demixsparse(Y, X, np.array(range(n_freq)), W)
 
-    # applying projection_back in the end to solve the scale ambiguity
     if proj_back:
         z = projection_back(Y, X[:, :, 0])
         Y *= np.conj(z[None, :, :])
@@ -115,7 +116,6 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
     
 def demixsparse(Y, X, S, W):
     """
-
     :param Y:
     :param X:
     :param S:
@@ -129,13 +129,16 @@ def demixsparse(Y, X, S, W):
 
 def sparir(G, S, delay=0, weights=np.array([]), gini=0):
     """
-
-    :param G:
+    Natural-gradient estimation of the complete HRTF from a sparsely recovered HRTF based on
+    Koldovský, Zbyněk & Nesta, Francesco & Tichavsky, Petr & Ono, Nobutaka. (2016). Frequency-domain blind speech
+     separation using incomplete de-mixing transform. EUSIPCO.2016.
+    :param G: sparse HRTF in the frequency domain
     :param S:
     :param delay:
     :param weights:
     :param gini:
     :return:
+        g: an (n_frames, n_src) array. The reconstructed hrtf in the time domain
     """
     L = G.shape[0]  # n_freq
 
