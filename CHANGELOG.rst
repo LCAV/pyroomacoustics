@@ -20,10 +20,14 @@ Added
 	of rays, scattering coefficient, energy and time thresholds, microphone's radius).
 - Bandpass filterbank construction in ``pyroomacoustics.acoustics.bandpass_filterbank``
 - Acoustic properties of different materials in ``pyroomacoustics.materials``
+- Scattering from the wall is handled via ray tracing method, scattering coefficients are provided in ``pyroomacoustics.materials.Material`` objects
 
 Changed
 ~~~~~~~
 
+- Deep refactor of Room class. The constructor arguments have changed
+    - No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
+- The way absorption is handled has changed. The scalar variables ``absorption`` are deprecated in favor of a list of ``pyroomacoustics.materials.Material``
 - Complete refactor of libroom, the compiled extension module responsible for the
   room simulation, into C++. The bindings to python are now done using pybind11.
 - Removes the pure Python room simulator as it was really slow

@@ -331,8 +331,7 @@ class Room(object):
     walls are two dimensional polygons, namely a collection of points lying on a
     common plane. Creating rooms in 3D is more tedious and for convenience a method
     :py:func:`pyroomacoustics.room.Room.extrude` is provided to lift a 2D room
-    into 3D space by adding vertical walls and a parallel “ceiling” (see Figure
-    4b).
+    into 3D space by adding vertical walls and parallel floor and ceiling.
 
     The Room is sub-classed by :py:obj:pyroomacoustics.room.ShoeBox` which
     creates a rectangular (2D) or parallelepipedic (3D) room. Such rooms
@@ -359,14 +358,50 @@ class Room(object):
             fs=8000,
             t0=0.,
             max_order=1,
-            sigma2_awgn=None,
             sources=None,
             mics=None):
 
         self.walls = walls
+
+        # Get the room dimension from that of the walls
+        self.dim = walls[0].dim
+
+        # initialize everything else
+        self._var_init(fs, t0, max_order, sources, mics)
+
+        # mapping between wall names and indices
+        self.wallsId = {}
+        for i in range(len(walls)):
+            if self.walls[i].name is not None:
+                self.wallsId[self.walls[i].name] = i
+
+        # check which walls are part of the convex hull
+        self.convex_hull()
+
+
+    def _ray_trace_args_init(self, rt_args):
+        
+        rt_args_default = {
+                'n_rays' : 10000,
+                'energy_thres' : 1e-7,
+                'time_thres' : 1.,
+                'receiver_radius' : 0.15,
+                }
+
+        self.rt_args = rt_args.copy()
+
+        if self.rt_args is None:
+            self.rt_args = {}
+
+        for key, val in rt_args_default.items():
+            if key not in self.rt_args:
+                rt_args[key] = val
+
+
+    def _var_init(self, fs, t0, max_order, sources, mics):
+
         self.fs = fs
         self.max_order = max_order
-        self.sigma2_awgn = sigma2_awgn
 
         # Compute the filter delay if not provided
         if t0 < (constants.get('frac_delay_length')-1)/float(fs)/2:
@@ -381,23 +416,8 @@ class Room(object):
 
         self.mic_array = mics
          
-        self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-        self.absorption = np.array([wall.absorption for wall in self.walls])
-
         # in the beginning, nothing has been 
         self.visibility = None
-
-        # Get the room dimension from that of the walls
-        self.dim = walls[0].dim
-
-        # mapping between wall names and indices
-        self.wallsId = {}
-        for i in range(len(walls)):
-            if self.walls[i].name is not None:
-                self.wallsId[self.walls[i].name] = i
-
-        # check which walls are part of the convex hull
-        self.convex_hull()
 
         # initialize the attribute for the impulse responses
         self.rir = None
@@ -606,7 +626,8 @@ class Room(object):
                 ax = fig.add_subplot(111, aspect='equal', **kwargs)
 
             # draw room
-            polygons = [Polygon(self.corners.T, True)]
+            corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+            polygons = [Polygon(corners.T, True)]
             p = PatchCollection(polygons, cmap=matplotlib.cm.jet,
                     facecolor=np.array([1, 1, 1]), edgecolor=np.array([0, 0, 0]))
             ax.add_collection(p)
@@ -646,7 +667,7 @@ class Room(object):
                     H = np.abs(H)**2/np.abs(H).max()**2
 
                     # a normalization factor according to room size
-                    norm = np.linalg.norm((self.corners - self.mic_array.center), axis=0).max()
+                    norm = np.linalg.norm((corners - self.mic_array.center), axis=0).max()
 
                     # plot all the beam patterns
                     i = 0
@@ -1288,11 +1309,13 @@ class ShoeBox(Room):
             p,
             fs=8000,
             t0=0.,
-            absorption=0.,
+            absorption=None,  # deprecated
+            materials=None,
             max_order=1,
-            sigma2_awgn=None,
+            ray_trace_args=None,
             sources=None,
-            mics=None):
+            mics=None,
+            ):
 
         p = np.array(p, dtype=np.float32)
 
@@ -1315,48 +1338,71 @@ class ShoeBox(Room):
         if self.dim == 3:
             self.wall_names += ['floor', 'ceiling']
 
-        # copy over the aborption coefficent
-        if isinstance(absorption, float):
-            self.absorption_dict = dict(zip(self.wall_names, [absorption] * len(self.wall_names)))
-            absorption = self.absorption_dict
+        ############################
+        # BEGIN COMPATIBILITY CODE #
+        ############################
 
-        self.absorption = []
-        if isinstance(absorption, dict):
-            self.absorption_dict = absorption
-            for d in self.wall_names:
-                if d in self.absorption_dict:
-                    self.absorption.append(self.absorption_dict[d])
-                else:
-                    raise KeyError(
-                            "Absorbtion needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
-                            )
+        absorption_array = np.zeros((1,len(self.wall_names)))
+        scattering_array = np.zeros((0,len(self.wall_names)))
+        if absorption is not None:
 
-            self.absorption = np.array(self.absorption)
-        else:
-            raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+            import warnings
+            warnings.warn('absorption parameter is deprecated for ShoeBox', DeprecationWarning)
 
+            # copy over the aborption coefficent
+            if isinstance(absorption, float):
+                absorption = dict(
+                        zip(self.wall_names, [absorption] * len(self.wall_names))
+                        )
 
+            # order the wall absorptions
+            if isinstance(absorption, dict):
+                for i,d in enumerate(self.wall_names):
+                    if d in absorption:
+                        absorption_array[:,i] = absorption[d]
+                    else:
+                        raise KeyError(
+                                "Absorbtion needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                                )
+
+                self.absorption = np.array(self.absorption)
+            else:
+                raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+
+        ##########################
+        # END COMPATIBILITY CODE #
+        ##########################
+
+        # get the speed of sound and air_absorption coefficients
+        # - should we store this in constants too ?
+        # - as a function of humidity and temperature ?
+        air_absorption = [0.] * absorption_array.shape[0]
+
+        # process arguments for ray tracing
+        Room._ray_trace_args_init(self, ray_trace_args)
+
+        args = [
+                self.shoebox_dim,
+                absorption_array,
+                scattering_array,
+                [],
+                air_absorption,
+                pra.constants.get('c'),  # speed of sound
+                max_order,
+                self.rt_args['energy_threshold'],
+                self.rt_args['time_threshold'],
+                self.rt_args['receiver_radius'],
+                True,  # a priori we will always use a hybrid model
+                ]
+
+        # Create the real room object
         if self.dim == 2:
-            walls = []
-            # seems the order of walls is important here, don't change!
-            walls.append(wall_factory(np.array([[p1[0], p2[0]], [p1[1], p1[1]]]), absorption['south'], "south"))
-            walls.append(wall_factory(np.array([[p2[0], p2[0]], [p1[1], p2[1]]]), absorption['east'], "east"))
-            walls.append(wall_factory(np.array([[p2[0], p1[0]], [p2[1], p2[1]]]), absorption['north'], "north"))
-            walls.append(wall_factory(np.array([[p1[0], p1[0]], [p2[1], p1[1]]]), absorption['west'], "west"))
-
-        elif self.dim == 3:
-            walls = []
-            walls.append(wall_factory(np.array([[p1[0], p1[0], p1[0], p1[0]], [p2[1], p1[1], p1[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['west'], "west"))
-            walls.append(wall_factory(np.array([[p2[0], p2[0], p2[0], p2[0]], [p1[1], p2[1], p2[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['east'], "east"))
-            walls.append(wall_factory(np.array([[p1[0], p2[0], p2[0], p1[0]], [p1[1], p1[1], p1[1], p1[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['south'], "south"))
-            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p2[1], p2[1], p2[1], p2[1]], [p1[2], p1[2], p2[2], p2[2]]]), absorption['north'], "north"))
-            walls.append(wall_factory(np.array([[p2[0], p1[0], p1[0], p2[0]], [p1[1], p1[1], p2[1], p2[1]], [p1[2], p1[2], p1[2], p1[2]]]), absorption['floor'], "floor"))
-            walls.append(wall_factory(np.array([[p2[0], p2[0], p1[0], p1[0]], [p1[1], p2[1], p2[1], p1[1]], [p2[2], p2[2], p2[2], p2[2]]]), absorption['ceiling'], "ceiling"))
-
+            self.room_engine = libroom.Room2(*args)
         else:
-            raise ValueError("Only 2D and 3D rooms are supported.")
+            self.room_engine = libroom.Room(*args)
 
-        Room.__init__(self, walls, fs, t0, max_order, sigma2_awgn, sources, mics)
+        Room._var_init(self, fs, t0, max_order, sources, mics)
+
 
     def extrude(self, height):
         ''' Overload the extrude method from 3D rooms '''
