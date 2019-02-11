@@ -74,14 +74,16 @@ def test_auxiva():
     ###########
 
     # shape == (n_chan, n_frames, n_freq)
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
+    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2)
+                  for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Run AuxIVA
     Y = pra.bss.auxiva(X, n_iter=20, proj_back=True)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
+    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2)
+                  for ch in range(Y.shape[2])])
 
     # Compare SIR
     #############

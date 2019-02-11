@@ -34,7 +34,7 @@ References
 
 '''
 
-from .sparseauxiva import sparseauxiva, demixsparse, sparir
+from .sparseauxiva import sparseauxiva, sparir
 from .trinicon import trinicon
 from .auxiva import auxiva, f_contrasts
 from .ilrma import ilrma

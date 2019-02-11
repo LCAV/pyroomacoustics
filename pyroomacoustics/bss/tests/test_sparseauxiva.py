@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 import numpy as np
 from scipy.io import wavfile
 import pyroomacoustics as pra
@@ -53,7 +53,6 @@ def test_sparseauxiva():
         room.add_source(loc, signal=np.zeros_like(sig), delay=d)
 
     # add microphone array
-
     room.add_microphone_array(pra.MicrophoneArray(np.c_[[6.5, 4.49], [6.5, 4.51]], room.fs))
 
     # Compute the RIRs as in the Room Impulse Response generation section.
@@ -62,7 +61,6 @@ def test_sparseauxiva():
     room.compute_rir()
 
     # Record each source separately
-
     separate_recordings = []
     for source, signal in zip(room.sources, signals):
         source.signal[:] = signal
@@ -90,12 +88,14 @@ def test_sparseauxiva():
 
     # Preprocessing
     # Observation vector in the STFT domain
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
+    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2)
+                  for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
     # Reference signal to calculate performance of BSS
     ref = np.moveaxis(separate_recordings, 1, 2)
 
+    # Estimate set of active frequency bins
     ratio = 0.35
     average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
     k = np.int_(average.shape[0] * ratio)
@@ -104,11 +104,11 @@ def test_sparseauxiva():
     n_iter = 30
 
     # Run SparseAuxIva
-    Y = pra.bss.sparseauxiva(X, S, n_iter, lasso=True)
+    Y = pra.bss.sparseauxiva(X, S)
 
     # run iSTFT
-    y = np.array([pra.istft(Y[:, :, ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in
-                  range(Y.shape[2])])
+    y = np.array([pra.istft(Y[:, :, ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2)
+                  for ch in range(Y.shape[2])])
 
     # Compare SIR and SDR with our reference signal
     sdr, isr, sir, sar, perm = bss_eval_images(ref[:, :y.shape[1] - L // 2, 0], y[:, L // 2:ref.shape[1] + L // 2])
@@ -119,6 +119,17 @@ def test_sparseauxiva():
     wavfile.write('demix1_norm.wav', fs, np.asarray(y[0].T / np.max(np.abs(y[0].T)) * 32767, dtype=np.int16))
     wavfile.write('demix2_norm.wav', fs, np.asarray(y[1].T / np.max(np.abs(y[1].T)) * 32767, dtype=np.int16))
 
+    # Compare SIR
+    #############
+    ref = np.moveaxis(separate_recordings, 1, 2)
+    y_aligned = y[:,L//2:ref.shape[1]+L//2]
+
+    mse = np.mean((ref[:,:,0] - y_aligned)**2)
+    input_variance = np.var(np.concatenate(signals))
+
+    print('Relative MSE (expect less than 1e-5):', mse / input_variance)
+
+    assert (mse / input_variance) < 1e-5
 
 if __name__ == '__main__':
     test_sparseauxiva()

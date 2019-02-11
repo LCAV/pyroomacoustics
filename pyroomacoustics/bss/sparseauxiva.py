@@ -1,12 +1,7 @@
 """
 Blind Source Separation for sparsely mixed signals based on Independent Vector Analysis (IVA) with Auxiliary Function
 
-Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech separation
- based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
-
-
-
-2018 (c) Yaron Dibner & Virgile Hernicot, MIT License
+2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta, MIT License
 """
 import numpy as np
 
@@ -21,40 +16,89 @@ f_contrasts = {
 }
 
 
-def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True):
-    """
+def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
+                 f_contrast=None, f_contrast_args=[],
+                 return_filters=False, callback=False):
 
-    :param X: STFT transform of the mixed signal from the mics
-    :param S: Index set of frequency bins used in auxiva
-    :param n_iter: Number of iteratios in auxiva
-    :param proj_back: whether it performs the back projection or not
-    :param return_filters: return filters
-    :param lasso: bool indicating if lasso regularization is applied or not
-    :return:
-    """
+    '''
+    Implementation of sparse AuxIVA algorithm for BSS presented in
+
+    Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech
+    separation based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
+
+    Parameters
+    ----------
+    X: ndarray (nframes, nfrequencies, nchannels)
+        STFT representation of the signal
+    n_src: int, optional
+        The number of sources or independent components
+    S: ndarray ()
+        Index set of active frequency bins for sparse AuxIVA
+    n_iter: int, optional
+        The number of iterations (default 30)
+    proj_back: bool, optional
+        Scaling on first mic by back projection (default True)
+    W0: ndarray (nfrequencies, nchannels, nchannels), optional
+        Initial value for demixing matrix
+    f_contrast: dict of functions
+        A dictionary with two elements 'f' and 'df' containing the contrast
+        function taking 3 arguments This should be a ufunc acting element-wise
+        on any array
+    return_filters: bool
+        If true, the function will return the demixing matrix too
+    callback: func
+        A callback function called every 10 iterations, allows to monitor convergence
+
+    Returns
+    -------
+    Returns an (nframes, nfrequencies, nsources) array. Also returns
+    the demixing matrix (nfrequencies, nchannels, nsources)
+    if ``return_values`` keyword is True.
+    '''
+
     n_frames, n_freq, n_chan = X.shape
 
-    k_freq = S.shape[0]
+    if S is None:
+        k_freq = n_freq
+    else:
+        k_freq = S.shape[0]
 
     # default to determined case
-    n_src = n_chan
+    if n_src is None:
+        n_src = X.shape[2]
+
+    # for now it only supports determined case
+    assert n_chan == n_src
 
     # initialize the demixing matrices
-    W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
+    if W0 is None:
+        W = np.array([np.eye(n_chan, n_src) for f in range(n_freq)], dtype=X.dtype)
+    else:
+        W = W0.copy()
 
-    f_contrast = f_contrasts['norm']
-    f_contrast_args = [1, 1]
+    if f_contrast is None:
+        f_contrast = f_contrasts['norm']
+        f_contrast_args = [1, 1]
 
     I = np.eye(n_src, n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
-    V = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
+    def demixsparse(Y, X, S, W):
+        for f in range(k_freq):
+            Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
+    # Conventional AuxIVA in the frequency bins k_freq selected by S
     for epoch in range(n_iter):
-
         demixsparse(Y, X, S, W)
+
+        #if callback is not None and epoch % 10 == 0:
+        #    if proj_back:
+        #        z = projection_back(Y, X[:, :, 0])
+        #        callback(Y * np.conj(z[None, :, :]))
+        #    else:
+        #        callback(Y)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -64,42 +108,48 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
         G_r[:, :] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
         # Compute Auxiliary Variable
-        for f in range(k_freq):
-            for s in range(n_src):
-                V[S[f], s, :, :] = (np.dot(G_r[None, :, s] * X[:, S[f], :].T, np.conj(X[:, S[f], :]))) / X.shape[0]
+        V = np.mean(
+            (X[:, :, None, :, None] * G_r[:, None, :, None, None])
+            * np.conj(X[:, :, None, None, :]),
+            axis=0,
+        )
 
         # Update now the demixing matrix
-        for f in range(k_freq):
-            for s in range(n_src):
-                WV = np.dot(np.conj(W[S[f], :, :].T), V[S[f], s, :, :])
-                W[S[f], :, s] = np.linalg.solve(WV, I[:, s])
-                W[S[f], :, s] /= np.sqrt(np.inner(np.conj(W[S[f], :, s]), np.dot(V[S[f], s, :, :], W[S[f], :, s])))
+        for s in range(n_src):
+            W_H = np.conj(np.swapaxes(W, 1, 2))
+            WV = np.matmul(W_H, V[:, s, :, :])
+            rhs = I[None, :, s][[0] * WV.shape[0], :]
+            W[:, :, s] = np.linalg.solve(WV, rhs)
 
-    # print("Successfully computed the sparse weights, proceeding to lasso...")
+            # normalize
+            P1 = np.conj(W[:, :, s])
+            P2 = np.sum(V[:, s, :, :] * W[:, None, :, s], axis=-1)
+            W[:, :, s] /= np.sqrt(
+               np.sum(P1 * P2, axis=1)
+               )[:, None]
 
     np.set_printoptions(precision=2)
 
-    # Check if LASSO regularization activated
-    if lasso:
-        Z = np.zeros((n_src, k_freq), dtype=W.dtype)
-        G = np.zeros((n_src, n_freq, 1), dtype=Z.dtype)
-        hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
-        Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
+    # LASSO regularization to reconstruct the complete Hrtf
+    Z = np.zeros((n_src, k_freq), dtype=W.dtype)
+    G = np.zeros((n_src, n_freq, 1), dtype=Z.dtype)
+    hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
+    Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
 
-        for i in range(n_src):
+    for i in range(n_src):
 
-            # sparse relative transfer function
-            Z[i, :] = np.array([-W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
+        # sparse relative transfer function
+        Z[i, :] = np.array([-W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
 
-            # mask frequencies Z with S and copy the result into G
-            G[i, S] = (np.expand_dims(Z[i, :], axis=1))
+        # mask frequencies Z with S and copy the result into G
+        G[i, S] = (np.expand_dims(Z[i, :], axis=1))
 
-            # solve LASSO in the time domain
-            hrtf[:, i] = sparir(G[i, :], S)
+        # solve LASSO in the time domain by applying the fast proximal algorithm
+        hrtf[:, i] = sparir(G[i, :], S)
 
-            # convert transfer function from time domain to frequency domain
-            Hrtf[:, i] = np.fft.fft(hrtf[:, i])
-            W[:, :, i] = np.conj(np.insert(Hrtf[:, i, None], 1, -1, axis=1))
+        # convert transfer function from time domain to frequency domain
+        Hrtf[:, i] = np.fft.fft(hrtf[:, i])
+        W[:, :, i] = np.conj(np.insert(Hrtf[:, i, None], 1, -1, axis=1))
 
     # final demixing
     demixsparse(Y, X, np.array(range(n_freq)), W)
@@ -112,20 +162,6 @@ def sparseauxiva(X, S, n_iter, proj_back=True, return_filters=False, lasso=True)
         return Y, W
     else:
         return Y
-
-    
-def demixsparse(Y, X, S, W):
-    """
-    :param Y:
-    :param X:
-    :param S:
-    :param W:
-    :return:
-    """
-    freq = S.shape[0]
-    for f in range(freq):
-        Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
-
 
 def sparir(G, S, delay=0, weights=np.array([]), gini=0):
     """
@@ -170,7 +206,7 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
 
     maxiter = 50
     alphamax = 1e5  # maximum step - length parameter alpha
-    alphamin = 1e-7  # minimum step - length parameteralpha
+    alphamin = 1e-7  # minimum step - length parameter alpha
     tol = 10
 
     aux = np.zeros((L, 1),dtype=complex)
@@ -188,7 +224,6 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
 
     criterion = -tau[support] * np.sign(g[support]) - gradq[support]
     crit[iter_] = np.sum(criterion ** 2)
-    # print("iteration: ", iter_ + 1, ", criterion: ", crit[iter_])
 
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
         prev_r = r
@@ -208,9 +243,6 @@ def sparir(G, S, delay=0, weights=np.array([]), gini=0):
         gradq = np.expand_dims(gradq, axis=1)
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
         crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
-        # if iter_ % 100 == 0:
-        # print("iteration: ", iter_+1, ", criterion: ", crit[iter_])
 
-    # print('SpaRIR: {0} iterations done.'.format(iter_+1))
 
     return g.flatten()
