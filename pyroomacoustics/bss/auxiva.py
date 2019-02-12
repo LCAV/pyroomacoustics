@@ -14,7 +14,7 @@ f_contrasts = {
         'cosh' : { 'f' : (lambda r,c,m : m * np.log(np.cosh(c * r))), 'df' : (lambda r,c,m : c * m * np.tanh(c * r)) }
         }
 
-def auxiva(X, n_src=None, n_iter=30, proj_back=True, W0=None,
+def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         f_contrast=None, f_contrast_args=[],
         return_filters=False, callback=None):
 
@@ -31,7 +31,7 @@ def auxiva(X, n_src=None, n_iter=30, proj_back=True, W0=None,
     n_src: int, optional
         The number of sources or independent components
     n_iter: int, optional
-        The number of iterations (default 30)
+        The number of iterations (default 20)
     proj_back: bool, optional
         Scaling on first mic by back projection (default True)
     W0: ndarray (nfrequencies, nchannels, nchannels), optional

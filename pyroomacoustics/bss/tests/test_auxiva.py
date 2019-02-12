@@ -3,7 +3,7 @@ import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
-# We use several sound samples for each source to have a long enough length
+# We use several sound samples for each source to have a length long enough
 wav_files = [
         [
             'examples/input_samples/cmu_arctic_us_axb_a0004.wav',
@@ -22,11 +22,8 @@ def test_auxiva():
     # STFT frame length
     L = 256
 
-    # Room 4m by 6m
+    # Room dimensions in meters
     room_dim = [8, 9]
-
-    # source location
-    source = np.array([1, 4.5])
 
     # create an anechoic room with sources and mics
     room = pra.ShoeBox(

@@ -7,31 +7,6 @@ Pyroomacoustics
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
 
-Important note about this Repo
-------------------------------
-
-This is a fork of Pyroomacoustics from LCAV containing our contribution on BSS. It's the results of our project for the
-Audio and Acoustics Signal Process course at EPFL. We implemented SparseAuxIva proposed by:
-
-J. Janský, Z. Koldovský, N. Ono. *A computationaly cheaper method for blind speech separation based on auxiva and incomplete demixing transform*. Liberec, Czech Republic, 2016.
-
-The implementation can be found at pyroomacoustics/bss/sparseauxiva.py.
-
-Since the implementation doesn't exist in the official pyroomacoustics to we refer to it as it is, add the source files to your PYTHONPATH or run::
-
-    pip install .
-
-To run the test file::
-
-    python pyroomacoustics/bss/tests/test_sparseauxiva.py
-
-The sparseauxiva directory contains a jupyter notebook presenting the work and a collection of papers used during the development.
-
-Authors:
-
-* Virgile Hernicot
-* Yaron Dibner
-
 Summary
 -------
 
@@ -108,7 +83,7 @@ algorithms for
 * `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
 * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
-* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA, SparseAuxIVA)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to

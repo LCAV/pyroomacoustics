@@ -53,7 +53,7 @@ wav_files = [
 
 if __name__ == '__main__':
 
-    choices = ['ilrma', 'auxiva']
+    choices = ['ilrma', 'auxiva', 'sparseauxiva']
 
     import argparse
     parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA or ILRMA.')
@@ -157,6 +157,15 @@ if __name__ == '__main__':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
             callback=convergence_callback)
+    elif bss_type == 'sparseauxiva':
+        # Estimate set of active frequency bins
+        ratio = 0.35
+        average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
+        k = np.int_(average.shape[0] * ratio)
+        S = np.argpartition(average, -k)[-k:]
+        S = np.sort(S)
+        # Run SparseAuxIva
+        Y = pra.bss.sparseauxiva(X, S, callback=convergence_callback)
 
     # Run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])

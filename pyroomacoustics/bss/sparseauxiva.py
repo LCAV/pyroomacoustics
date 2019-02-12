@@ -3,11 +3,9 @@ Blind Source Separation for sparsely mixed signals based on Independent Vector A
 
 2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta, MIT License
 """
-import numpy as np
 
-from pyroomacoustics import stft, istft
-from .common import projection_back
-from scipy.linalg import dft
+import numpy as np
+from .common import projection_back, sparir
 
 # A few contrast functions
 f_contrasts = {
@@ -15,10 +13,9 @@ f_contrasts = {
     'cosh': {'f': (lambda r, c, m: m * np.log(np.cosh(c * r))), 'df': (lambda r, c, m: c * m * np.tanh(c * r))}
 }
 
-
 def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
                  f_contrast=None, f_contrast_args=[],
-                 return_filters=False, callback=False):
+                 return_filters=False, callback=None):
 
     '''
     Implementation of sparse AuxIVA algorithm for BSS presented in
@@ -32,8 +29,8 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
         STFT representation of the signal
     n_src: int, optional
         The number of sources or independent components
-    S: ndarray ()
-        Index set of active frequency bins for sparse AuxIVA
+    S: ndarray (k_freq)
+        Indexes of active frequency bins for sparse AuxIVA
     n_iter: int, optional
         The number of iterations (default 30)
     proj_back: bool, optional
@@ -93,12 +90,12 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
     for epoch in range(n_iter):
         demixsparse(Y, X, S, W)
 
-        #if callback is not None and epoch % 10 == 0:
-        #    if proj_back:
-        #        z = projection_back(Y, X[:, :, 0])
-        #        callback(Y * np.conj(z[None, :, :]))
-        #    else:
-        #        callback(Y)
+        if callback is not None and epoch % 10 == 0:
+            if proj_back:
+                z = projection_back(Y, X[:, :, 0])
+                callback(Y * np.conj(z[None, :, :]))
+            else:
+                callback(Y)
 
         # simple loop as a start
         # shape: (n_frames, n_src)
@@ -130,30 +127,30 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
 
     np.set_printoptions(precision=2)
 
-    # LASSO regularization to reconstruct the complete Hrtf
+    # LASSO regularization to reconstruct the complete relative transfer function
     Z = np.zeros((n_src, k_freq), dtype=W.dtype)
     G = np.zeros((n_src, n_freq, 1), dtype=Z.dtype)
     hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
-    Hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
 
     for i in range(n_src):
-
         # sparse relative transfer function
         Z[i, :] = np.array([-W[S[f], 0, i] / W[S[f], 1, i] for f in range(k_freq)]).conj().T
 
         # mask frequencies Z with S and copy the result into G
         G[i, S] = (np.expand_dims(Z[i, :], axis=1))
 
-        # solve LASSO in the time domain by applying the fast proximal algorithm
+        # apply fast proximal algorithm to reconstruct the complete real-valued relative transfer function
         hrtf[:, i] = sparir(G[i, :], S)
 
-        # convert transfer function from time domain to frequency domain
-        Hrtf[:, i] = np.fft.fft(hrtf[:, i])
-        W[:, :, i] = np.conj(np.insert(Hrtf[:, i, None], 1, -1, axis=1))
+        # recovered relative transfer function back to the frequency domain
+        hrtf[:, i] = np.fft.fft(hrtf[:, i])
+        # assemble back the complete demixing matrix
+        W[:, :, i] = np.conj(np.insert(hrtf[:, i, None], 1, -1, axis=1))
 
-    # final demixing
+    # apply final demixing in the whole frequency range
     demixsparse(Y, X, np.array(range(n_freq)), W)
 
+    # Projection back to correct scale ambiguity
     if proj_back:
         z = projection_back(Y, X[:, :, 0])
         Y *= np.conj(z[None, :, :])
@@ -162,87 +159,3 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
         return Y, W
     else:
         return Y
-
-def sparir(G, S, delay=0, weights=np.array([]), gini=0):
-    """
-    Natural-gradient estimation of the complete HRTF from a sparsely recovered HRTF based on
-    Koldovský, Zbyněk & Nesta, Francesco & Tichavsky, Petr & Ono, Nobutaka. (2016). Frequency-domain blind speech
-     separation using incomplete de-mixing transform. EUSIPCO.2016.
-    :param G: sparse HRTF in the frequency domain
-    :param S:
-    :param delay:
-    :param weights:
-    :param gini:
-    :return:
-        g: an (n_frames, n_src) array. The reconstructed hrtf in the time domain
-    """
-    L = G.shape[0]  # n_freq
-
-    y = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
-    M = y.shape[0]
-
-    if gini == 0:  # if no initialization is given
-        g = np.zeros((L, 1))
-        g[delay] = 1
-    else:
-        g = gini
-
-    if weights.size == 0:
-        tau = np.sqrt(L) / (y.conj().T.dot(y))
-        tau = tau * np.exp(0.11 * np.abs((np.arange(1., L + 1.).T - delay)) ** 0.3)
-        tau = tau.T
-    elif weights.shape[0] == 1:
-        tau = np.ones((L, 1)) * weights
-    else:
-        tau = np.tile(weights.T, (1, 1)).reshape(L)
-
-    def soft(x, T):
-        if np.sum(np.abs(T).flatten()) == 0:
-            u = x
-        else:
-            u = np.max(np.abs(x) - T, 0)
-            u = u / (u + T) * x
-        return u
-
-    maxiter = 50
-    alphamax = 1e5  # maximum step - length parameter alpha
-    alphamin = 1e-7  # minimum step - length parameter alpha
-    tol = 10
-
-    aux = np.zeros((L, 1),dtype=complex)
-    G = np.fft.fft(g.flatten())
-    Ag = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
-    r = Ag - y.flatten()  # instead of r = A * g - y
-    aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
-    gradq = L * np.fft.irfft(aux.flatten(), L)  # instead of gradq = A'*r
-    gradq = np.expand_dims(gradq, axis=1)
-    alpha = 10
-    support = g != 0
-    iter_ = 0
-
-    crit = np.zeros((maxiter, 1))
-
-    criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-    crit[iter_] = np.sum(criterion ** 2)
-
-    while (crit[iter_] > tol) and (iter_ < maxiter - 1):
-        prev_r = r
-        prev_g = g
-        g = soft(prev_g - gradq * (1.0 / alpha), tau / alpha)
-        dg = g - prev_g
-        DG = np.fft.fft(dg.flatten())
-        Adg = np.concatenate((np.real(DG[S]), np.imag(DG[S])), axis=0)
-        r = prev_r + Adg.flatten()  # faster than A * g - y
-        dd = dg.flatten().conj().T @ dg.flatten()
-        dGd = Adg.flatten().conj().T @ Adg.flatten()
-        alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
-        iter_ = iter_ + 1
-        support = g != 0
-        aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
-        gradq = L * np.fft.irfft(aux.flatten(), L)
-        gradq = np.expand_dims(gradq, axis=1)
-        criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-        crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
-
-
-    return g.flatten()
