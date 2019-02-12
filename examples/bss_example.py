@@ -1,20 +1,10 @@
 '''
-<<<<<<< HEAD:examples/bss_example.py
-Blind Source Separation offline examples
-=======
-Blind Source Separation offline example
->>>>>>> ffcfc8bde22c7918704059ec89c99269f9603dcd:examples/bss_example.py
-=======================================================
+Offline Blind Source Separation example
 
 Demonstrate the performance of different blind source separation (BSS) algorithms:
 
-<<<<<<< HEAD:examples/bss_example.py
 1) Independent Vector Analysis based on auxiliary function (AuxIVA)
 The method implemented is described in the following publication
-=======
-1) Independent Vector Analysis (IVA)
-The method implemented is described in the following publication.
->>>>>>> ffcfc8bde22c7918704059ec89c99269f9603dcd:examples/bss_example.py
 
     N. Ono, *Stable and fast update rules for independent vector analysis based
     on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
@@ -30,7 +20,6 @@ The method implemented is described in the following publications
     Source Separation with Independent Low-Rank Matrix Analysis*, in Audio Source Separation,
     S. Makino, Ed. Springer, 2018, pp.  125-156.
 
-<<<<<<< HEAD:examples/bss_example.py
 3) Sparse Independent Vector Analysis based on auxiliary function (SparseAuxIVA)
 The method implemented is described in the following publication
 
@@ -38,9 +27,6 @@ The method implemented is described in the following publication
     separation based on AuxIVA and incomplete demixing transform. 1-5. 10.1109/IWAENC.2016.7602921.
 
 All the algorithms work in the STFT domain. The test files were extracted from the
-=======
-Both algorithms work in the STFT domain. The test files were extracted from the
->>>>>>> ffcfc8bde22c7918704059ec89c99269f9603dcd:examples/bss_example.py
 `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
 
 Depending on the input arguments running this script will do these actions:.
@@ -72,11 +58,7 @@ wav_files = [
 
 if __name__ == '__main__':
 
-<<<<<<< HEAD:examples/bss_example.py
     choices = ['ilrma', 'auxiva', 'sparseauxiva']
-=======
-    choices = ['ilrma', 'auxiva']
->>>>>>> ffcfc8bde22c7918704059ec89c99269f9603dcd:examples/bss_example.py
 
     import argparse
     parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA or ILRMA.')
@@ -180,7 +162,6 @@ if __name__ == '__main__':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
             callback=convergence_callback)
-<<<<<<< HEAD:examples/bss_example.py
     elif bss_type == 'sparseauxiva':
         # Estimate set of active frequency bins
         ratio = 0.35
@@ -190,8 +171,6 @@ if __name__ == '__main__':
         S = np.sort(S)
         # Run SparseAuxIva
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True, callback=convergence_callback)
-=======
->>>>>>> ffcfc8bde22c7918704059ec89c99269f9603dcd:examples/bss_example.py
 
     # Run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
