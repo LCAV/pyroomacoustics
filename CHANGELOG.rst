@@ -30,6 +30,7 @@ Added
 
 - STFT tutorial and demo notebook.
 - New algorithm for blind source separation (BSS): Independent Low-Rank Matrix Analysis (ILRMA)
+- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA)
 
 Changed
 ~~~~~~~
