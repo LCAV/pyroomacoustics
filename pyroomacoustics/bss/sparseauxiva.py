@@ -13,7 +13,7 @@ f_contrasts = {
     'cosh': {'f': (lambda r, c, m: m * np.log(np.cosh(c * r))), 'df': (lambda r, c, m: c * m * np.tanh(c * r))}
 }
 
-def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
+def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
                  f_contrast=None, f_contrast_args=[],
                  return_filters=False, callback=None):
 
@@ -21,7 +21,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
     Implementation of sparse AuxIVA algorithm for BSS presented in
 
     Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech
-    separation based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
+    separation based on AuxIVA and incomplete demixing transform. 1-5. 10.1109/IWAENC.2016.7602921.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=30, proj_back=True, W0=None,
     S: ndarray (k_freq)
         Indexes of active frequency bins for sparse AuxIVA
     n_iter: int, optional
-        The number of iterations (default 30)
+        The number of iterations (default 20)
     proj_back: bool, optional
         Scaling on first mic by back projection (default True)
     W0: ndarray (nfrequencies, nchannels, nchannels), optional
