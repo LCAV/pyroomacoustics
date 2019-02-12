@@ -13,6 +13,10 @@ Trinicon
 ILRMA
     | Independent Low-Rank Matrix Analysis [3]_
     | :py:mod:`pyroomacoustics.bss.ilrma`
+SparseAuxIVA
+    | Sparse Independent Vector Analysis [4]_
+    | :py:mod `pyroomacoustics.bss.sparseauxiva`
+
 
 A few commonly used functions, such as projection back, can be found in
 :py:mod:`pyroomacoustics.bss.common`.
