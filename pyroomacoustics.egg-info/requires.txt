@@ -1,3 +1,0 @@
-Cython
-numpy
-scipy>=0.18.0
