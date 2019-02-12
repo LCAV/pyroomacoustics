@@ -73,7 +73,6 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
 
     I = np.eye(n_src,n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
-    V = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 

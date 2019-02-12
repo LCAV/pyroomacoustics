@@ -29,11 +29,16 @@ References
     doi:10.1016/j.sigpro.2005.06.022, 2006.
 
 .. [3] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari
-     *Determined Blind Source Separation with Independent Low-Rank Matrix Analysis*,
-     in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
+    *Determined Blind Source Separation with Independent Low-Rank Matrix Analysis*,
+    in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
+
+.. [4] Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally
+    cheaper method for blind speech separation based on AuxIVA and incomplete demixing
+    transform. 1-5. 10.1109/IWAENC.2016.7602921.
 
 '''
 
+from .sparseauxiva import sparseauxiva
 from .trinicon import trinicon
 from .auxiva import auxiva, f_contrasts
 from .ilrma import ilrma

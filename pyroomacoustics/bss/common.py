@@ -64,3 +64,102 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
         c[I] *= clip_down / np.abs(c[I])
 
     return c
+
+def sparir(G, S, weights=np.array([]), gini=0):
+    '''
+    2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta MIT License
+
+   Fast proximal algorithm implementation for sparse approximation of (relative) impulse response from
+   incomplete measurements of the corresponding (relative) transfer function based on
+
+    Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech
+    separation based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
+
+    Parameters
+    ----------
+    G: ndarray (nfrequencies, 1)
+        Frequency representation of the (incomplete) transfer function
+    S: ndarray (kfrequencies)
+        Indexes  of active frequency bins for sparse AuxIVA
+    weights: ndarray (kfrequencies) or int, optional
+        The higher the value of weights(i), the higher the probability that g(i)
+        is zero; if scalar, all weights are the same; if empty, default value is
+        used
+    gini: ndarray (nfrequencies)
+        Initialization for the computation of g
+
+    Returns
+    -------
+    Returns the sparse approximation of the impulse response in the
+    time-domain (real-valued) as an (nfrequencies) array.
+    '''
+
+    n_freq = G.shape[0]
+
+    y = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
+    M = y.shape[0]
+
+    if gini == 0:  # if no initialization is given
+        g = np.zeros((n_freq, 1))
+        g[0] = 1
+    else:
+        g = gini
+
+    if weights.size == 0:
+        tau = np.sqrt(n_freq) / (y.conj().T.dot(y))
+        tau = tau * np.exp(0.11 * np.abs((np.arange(1., n_freq + 1.).T)) ** 0.3)
+        tau = tau.T
+    elif weights.shape[0] == 1:
+        tau = np.ones((n_freq, 1)) * weights
+    else:
+        tau = np.tile(weights.T, (1, 1)).reshape(n_freq)
+
+    def soft(x, T):
+        if np.sum(np.abs(T).flatten()) == 0:
+            u = x
+        else:
+            u = np.max(np.abs(x) - T, 0)
+            u = u / (u + T) * x
+        return u
+
+    maxiter = 50    # maximum number of iterations to achieve convergence
+    alphamax = 1e5  # maximum step - length parameter alpha
+    alphamin = 1e-7  # minimum step - length parameter alpha
+    tol = 10
+
+    aux = np.zeros((n_freq, 1),dtype=complex)
+    G = np.fft.fft(g.flatten())
+    Ag = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
+    r = Ag - y.flatten()  # instead of r = A * g - y
+    aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
+    gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)  # instead of gradq = A'*r
+    gradq = np.expand_dims(gradq, axis=1)
+    alpha = 10
+    support = g != 0
+    iter_ = 0
+
+    # Define stopping criteria
+    crit = np.zeros((maxiter, 1))
+    criterion = -tau[support] * np.sign(g[support]) - gradq[support]
+    crit[iter_] = np.sum(criterion ** 2)
+
+    while (crit[iter_] > tol) and (iter_ < maxiter - 1):
+        prev_r = r
+        prev_g = g
+        g = soft(prev_g - gradq * (1.0 / alpha), tau / alpha)
+        dg = g - prev_g
+        DG = np.fft.fft(dg.flatten())
+        Adg = np.concatenate((np.real(DG[S]), np.imag(DG[S])), axis=0)
+        r = prev_r + Adg.flatten()  # faster than A * g - y
+        dd = np.dot(dg.flatten().conj().T, dg.flatten())
+        dGd = np.dot(Adg.flatten().conj().T, Adg.flatten())
+        alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
+        iter_ += 1
+        support = g != 0
+        aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
+        gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)
+        gradq = np.expand_dims(gradq, axis=1)
+        criterion = -tau[support] * np.sign(g[support]) - gradq[support]
+        crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
+
+    return g.flatten()
