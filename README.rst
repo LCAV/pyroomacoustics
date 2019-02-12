@@ -16,7 +16,7 @@ can be divided into three main components:
 
 1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
 2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
-3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, and source separation.
+3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single channel denoising.
 
 Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
@@ -84,6 +84,7 @@ algorithms for
 * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
 * `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA, SparseAuxIVA)
+* `single channel denoising <https://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.denoise.html>`_ (Spectral Subtraction, Subspace, Iterative Wiener)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
@@ -109,7 +110,7 @@ Install the package with pip::
 
     pip install pyroomacoustics
 
-A [cookiecutter](https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim)
+A `cookiecutter <https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim>`_
 is available that generates a working simulation script for a few 2D/3D
 scenarios::
 
@@ -187,7 +188,7 @@ beamformer in a room.
     plt.show()
 
 A comprehensive set of examples covering most of the functionalities
-of the package can be found in the ``examples`` folder of the `github
+of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
 
 Authors

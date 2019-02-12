@@ -99,24 +99,25 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # Compute Auxiliary Variable
         V = np.mean(
-            (X[:, :, None, :, None] * G_r[:, None, :, None, None])
-            * np.conj(X[:, :, None, None, :]),
-            axis=0,
-        )
+                (X[:,:,None,:,None] * G_r[:,None,:,None,None])
+                * np.conj(X[:,:,None,None,:]),
+                axis=0,
+                )
 
         # Update now the demixing matrix
         for s in range(n_src):
             W_H = np.conj(np.swapaxes(W, 1, 2))
-            WV = np.matmul(W_H, V[:, s, :, :])
-            rhs = I[None, :, s][[0] * WV.shape[0], :]
-            W[:, :, s] = np.linalg.solve(WV, rhs)
+
+            WV = np.matmul(W_H, V[:,s,:,:])
+            rhs = I[None,:,s][[0] * WV.shape[0],:]
+            W[:,:,s] = np.linalg.solve(WV, rhs)
 
             # normalize
-            P1 = np.conj(W[:, :, s])
-            P2 = np.sum(V[:, s, :, :] * W[:, None, :, s], axis=-1)
-            W[:, :, s] /= np.sqrt(
-               np.sum(P1 * P2, axis=1)
-               )[:, None]
+            P1 = np.conj(W[:,:,s])
+            P2 = np.sum(V[:,s,:,:] * W[:,None,:,s], axis=-1)
+            W[:,:,s] /= np.sqrt(
+                    np.sum(P1 * P2, axis=1)
+                    )[:,None]
 
     demix(Y, X, W)
 
