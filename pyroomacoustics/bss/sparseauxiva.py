@@ -1,8 +1,27 @@
-"""
-Blind Source Separation for sparsely mixed signals based on Independent Vector Analysis (IVA) with Auxiliary Function
-
-2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta, MIT License
-"""
+# Blind Source Separation for sparsely mixed signals based on Independent Vector Analysis (IVA)
+# with Auxiliary Function
+# Copyright (C) 2018 Yaron Dibner, Virgile Hernicot, Juan Azcarreta, MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
 import numpy as np
 from .common import projection_back, sparir
@@ -20,7 +39,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     '''
     Implementation of sparse AuxIVA algorithm for BSS presented in
 
-    Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech
+    J. Jansky, Z. Koldovsky, N. Ono, *A computationally cheaper method for blind speech
     separation based on AuxIVA and incomplete demixing transform. 1-5. 10.1109/IWAENC.2016.7602921.
 
     Parameters
@@ -106,8 +125,8 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # Compute Auxiliary Variable
         V = np.mean(
-            (X[:, :, None, :, None] * G_r[:, None, :, None, None])
-            * np.conj(X[:, :, None, None, :]),
+            (X[:,:,None,:,None] * G_r[:,None,:,None,None])
+            * np.conj(X[:,:,None,None,:]),
             axis=0,
         )
 
@@ -124,8 +143,6 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
             W[:,:,s] /= np.sqrt(
                np.sum(P1 * P2, axis=1)
                )[:, None]
-
-    np.set_printoptions(precision=2)
 
     # LASSO regularization to reconstruct the complete relative transfer function
     Z = np.zeros((n_src, k_freq), dtype=W.dtype)

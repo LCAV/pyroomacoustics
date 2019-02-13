@@ -14,20 +14,20 @@ wav_files = [
      'examples/input_samples/cmu_arctic_us_axb_a0006.wav',]
     ]
 
-
 def test_sparseauxiva():
 
     signals = [np.concatenate([wavfile.read(f)[1].astype(np.float32, order='C')
                for f in source_files])
                for source_files in wav_files]
 
-    # Define an anechoic room envrionment, as well as the microphone array and source locations.
+    # Define a room environment, as well as the microphone array and source locations.
+    ###########
     # Room dimensions in meters
     room_dim = [8, 9]
     # source locations and delays
     locations = [[2.5, 3], [2.5, 6]]
     delays = [1., 0.]
-    # create an anechoic room with sources and mics
+    # create a room with sources and mics
     room = pra.ShoeBox(room_dim, fs=16000, max_order=15, absorption=0.35, sigma2_awgn=1e-8)
 
     # add mic and good source to room
@@ -53,6 +53,7 @@ def test_sparseauxiva():
     separate_recordings = np.array(separate_recordings)
 
     # Mix down the recorded signals
+    ###########
     mics_signals = np.sum(separate_recordings, axis=0)
 
     # STFT frame length
@@ -69,12 +70,10 @@ def test_sparseauxiva():
     ratio = 0.35
     average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
     k = np.int_(average.shape[0] * ratio)
-    S = np.argpartition(average, -k)[-k:]
-    S = np.sort(S)
+    S = np.sort(np.argpartition(average, -k)[-k:])
 
     # Run SparseAuxIva
     Y = pra.bss.sparseauxiva(X, S)
-    ###########
 
     # run iSTFT
     y = np.array([pra.istft(Y[:, :, ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2)

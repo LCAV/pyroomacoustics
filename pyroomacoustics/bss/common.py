@@ -1,8 +1,27 @@
-'''
-Common Functions used in BSS algorithms
+# Common Functions used in BSS algorithms
+# Copyright (C) 2018  Robin Scheibler, MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
-2018 (c) Robin Scheibler, MIT License
-'''
 import numpy as np
 
 def projection_back(Y, ref, clip_up=None, clip_down=None):
@@ -62,18 +81,29 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
     if clip_down is not None:
         I = np.logical_and(np.abs(c) < clip_down, np.abs(c) > 0)
         c[I] *= clip_down / np.abs(c[I])
-
     return c
 
-def sparir(G, S, weights=np.array([]), gini=0):
+
+
+def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alphamax=1e5, alphamin=1e-7):
     '''
     2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta MIT License
 
-   Fast proximal algorithm implementation for sparse approximation of (relative) impulse response from
-   incomplete measurements of the corresponding (relative) transfer function based on
+   Fast proximal algorithm implementation for sparse approximation of relative impulse
+   responses from incomplete measurements of the corresponding relative transfer function
+   based on
 
-    Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally cheaper method for blind speech
-    separation based on AuxIVA and incomplete demixing transform. 1-5. IWAENC2016
+    Z. Koldovsky, J. Malek and S. Gannot, "Spatial Source Subtraction based
+    on Incomplete Measurements of Relative Transfer Function," IEEE/ACM
+    Transactions on Audio, Speech, and Language Processing, TASLP 2015.
+
+   The original Matlab implementation can be found at
+    http://itakura.ite.tul.cz/zbynek/dwnld/SpaRIR.m
+
+   and it is referred in
+
+    Z. Koldovsky, F. Nesta, P. Tichavsky, N. Ono, *Frequency-domain blind
+    speech separation using incomplete de-mixing transform,* EUSIPCO 2016.
 
     Parameters
     ----------
@@ -87,6 +117,17 @@ def sparir(G, S, weights=np.array([]), gini=0):
         used
     gini: ndarray (nfrequencies)
         Initialization for the computation of g
+    maxiter: int
+        Maximum number of iterations before achieving convergence (default 50)
+    tol: float
+        Minimum convergence criteria based on the gradient difference between adjacent updates (default 10)
+    alpha: float
+        Inverse of the decreasing speed of the gradient at each iteration. This parameter
+        is updated at every iteration (default 10)
+    alphamax: float
+        Upper bound for alpha (default 1e5)
+    alphamin: float
+        Lower bound for alpha (default 1e-7)
 
     Returns
     -------
@@ -122,21 +163,15 @@ def sparir(G, S, weights=np.array([]), gini=0):
             u = u / (u + T) * x
         return u
 
-    maxiter = 50    # maximum number of iterations to achieve convergence
-    alphamax = 1e5  # maximum step - length parameter alpha
-    alphamin = 1e-7  # minimum step - length parameter alpha
-    tol = 10
-
-    aux = np.zeros((n_freq, 1),dtype=complex)
+    aux = np.zeros((n_freq, 1), dtype=complex)
     G = np.fft.fft(g.flatten())
     Ag = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
     r = Ag - y.flatten()  # instead of r = A * g - y
     aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
     gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)  # instead of gradq = A'*r
     gradq = np.expand_dims(gradq, axis=1)
-    alpha = 10
     support = g != 0
-    iter_ = 0
+    iter_ = 0 # initial iteration value
 
     # Define stopping criteria
     crit = np.zeros((maxiter, 1))

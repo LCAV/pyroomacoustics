@@ -44,14 +44,13 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 import pyroomacoustics as pra
-from scipy.io import wavfile
 
 from tkinter import Tk, Label, Button
 import sounddevice as sd
 
 if __name__ == '__main__':
 
-    choices = ['ilrma', 'auxiva']
+    choices = ['ilrma', 'auxiva', 'sparseauxiva']
 
     import argparse
     parser = argparse.ArgumentParser(description='Records a segment of speech and then performs separation')
@@ -108,6 +107,15 @@ if __name__ == '__main__':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=args.n_iter, n_components=30, proj_back=True,
             callback=cb_print)
+    elif bss_type = 'sparseauxiva'
+        # Estimate set of active frequency bins
+        ratio = 0.35
+        average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
+        k = np.int_(average.shape[0] * ratio)
+        S = np.sort(np.argpartition(average, -k)[-k:])
+        # Run SparseAuxIva
+        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
+                             callback=cb_print)
 
     # run iSTFT
     y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
