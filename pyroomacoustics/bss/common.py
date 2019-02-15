@@ -1,5 +1,6 @@
 # Common Functions used in BSS algorithms
-# Copyright (C) 2018  Robin Scheibler, MIT License
+# Copyright (C) 2019  Robin Scheibler, Yaron Dibner, Virgile Hernicot, Juan Azcarreta
+#                     MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -87,14 +88,13 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
 
 def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alphamax=1e5, alphamin=1e-7):
     '''
-    2018 (c) Yaron Dibner, Virgile Hernicot, Juan Azcarreta MIT License
 
    Fast proximal algorithm implementation for sparse approximation of relative impulse
    responses from incomplete measurements of the corresponding relative transfer function
    based on
 
-    Z. Koldovsky, J. Malek and S. Gannot, "Spatial Source Subtraction based
-    on Incomplete Measurements of Relative Transfer Function," IEEE/ACM
+    Z. Koldovsky, J. Malek, and S. Gannot, "Spatial Source Subtraction based
+    on Incomplete Measurements of Relative Transfer Function", IEEE/ACM
     Transactions on Audio, Speech, and Language Processing, TASLP 2015.
 
    The original Matlab implementation can be found at
@@ -102,8 +102,8 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
 
    and it is referred in
 
-    Z. Koldovsky, F. Nesta, P. Tichavsky, N. Ono, *Frequency-domain blind
-    speech separation using incomplete de-mixing transform,* EUSIPCO 2016.
+    Z. Koldovsky, F. Nesta, P. Tichavsky, and N. Ono, *Frequency-domain blind
+    speech separation using incomplete de-mixing transform*, EUSIPCO 2016.
 
     Parameters
     ----------
@@ -179,6 +179,7 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
     crit[iter_] = np.sum(criterion ** 2)
 
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
+        # Update gradient
         prev_r = r
         prev_g = g
         g = soft(prev_g - gradq * (1.0 / alpha), tau / alpha)
@@ -194,6 +195,7 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
         aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
         gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)
         gradq = np.expand_dims(gradq, axis=1)
+        # Update stopping criteria
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
         crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
 

@@ -104,7 +104,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             V[:,:,s] *= np.sqrt( np.dot(T[:,:,s].T, P[:,:,s].T * iR ** 2) / np.dot(T[:,:,s].T, iR) )
             V[V < machine_epsilon] = machine_epsilon
 
-            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
+            R[:,:,s] = np.dot(T[:,:,s], V[:,:,s])
 
             # Compute Auxiliary Variable and update the demixing matrix
             for f in range(n_freq):
@@ -126,8 +126,8 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
             T[:,:,s] *= lambda_aux[s] ** 2
 
     if proj_back:
-        z = projection_back(Y, X[:, :, 0])
-        Y *= np.conj(z[None, :, :])
+        z = projection_back(Y, X[:,:,0])
+        Y *= np.conj(z[None,:,:])
 
     if return_filters:
         return Y, W

@@ -1,4 +1,3 @@
-# encoding: utf-8
 '''
 Blind Source Separation
 =======================
@@ -37,9 +36,8 @@ References
     *Determined Blind Source Separation with Independent Low-Rank Matrix Analysis*,
     in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
 
-.. [4] Janský, Jakub & Koldovský, Zbyněk & Ono, Nobutaka. (2016). A computationally
-    cheaper method for blind speech separation based on AuxIVA and incomplete demixing
-    transform. 1-5. 10.1109/IWAENC.2016.7602921.
+.. [4] J. Jansky, Z. Koldovsky, and N. Ono *A computationally cheaper method for blind speech
+    separation based on AuxIVA and incomplete demixing transform*, Proc. IEEE, IWAENC, 2016.
 
 '''
 
