@@ -1,11 +1,10 @@
 '''
-Blind Source Separation offline example
-=======================================================
+Offline Blind Source Separation example
 
 Demonstrate the performance of different blind source separation (BSS) algorithms:
 
-1) Independent Vector Analysis (IVA)
-The method implemented is described in the following publication.
+1) Independent Vector Analysis based on auxiliary function (AuxIVA)
+The method implemented is described in the following publication
 
     N. Ono, *Stable and fast update rules for independent vector analysis based
     on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
@@ -15,13 +14,19 @@ The method implemented is described in the following publications
 
     D. Kitamura, N. Ono, H. Sawada, H. Kameoka, H. Saruwatari, *Determined blind
     source separation unifying independent vector analysis and nonnegative matrix
-    factorization,* IEEE/ACM Trans. ASLP, vol. 24, no. 9, pp. 1626-1641, September 2016
+    factorization*, IEEE/ACM Trans. ASLP, vol. 24, no. 9, pp. 1626-1641, September 2016
 
     D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined Blind
     Source Separation with Independent Low-Rank Matrix Analysis*, in Audio Source Separation,
     S. Makino, Ed. Springer, 2018, pp.  125-156.
 
-Both algorithms work in the STFT domain. The test files were extracted from the
+3) Sparse Independent Vector Analysis based on auxiliary function (SparseAuxIVA)
+The method implemented is described in the following publication
+
+    J. Jansky, Z. Koldovsky, N. Ono *A computationally cheaper method for blind speech
+    separation based on AuxIVA and incomplete demixing transform*, Proc. IEEE, IWAENC, 2016.
+
+All the algorithms work in the STFT domain. The test files were extracted from the
 `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
 
 Depending on the input arguments running this script will do these actions:.
@@ -38,6 +43,7 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 
 import numpy as np
 from scipy.io import wavfile
+from pyroomacoustics.transform import STFT
 
 from mir_eval.separation import bss_eval_sources
 
@@ -53,10 +59,11 @@ wav_files = [
 
 if __name__ == '__main__':
 
-    choices = ['ilrma', 'auxiva']
+    choices = ['ilrma', 'auxiva', 'sparseauxiva']
 
     import argparse
-    parser = argparse.ArgumentParser(description='Demonstration of blind source separation using IVA or ILRMA.')
+    parser = argparse.ArgumentParser(description='Demonstration of blind source separation using '
+                                                 'IVA, ILRMA, or sparse IVA .')
     parser.add_argument('-b', '--block', type=int, default=2048,
             help='STFT block size')
     parser.add_argument('-a', '--algo', type=str, default=choices[0], choices=choices,
@@ -74,16 +81,16 @@ if __name__ == '__main__':
 
     import pyroomacoustics as pra
 
-    # STFT frame length
+    # Prepare one-shot STFT
     L = args.block
 
-    # Room 4m by 6m
+    # Room dimensions in meters
     room_dim = [8, 9]
 
     # source location
     source = np.array([1, 4.5])
 
-    # create an anechoic room with sources and mics
+    # create a room with sources and mics
     room = pra.ShoeBox(
         room_dim,
         fs=16000,
@@ -126,29 +133,29 @@ if __name__ == '__main__':
     # Mix down the recorded signals
     mics_signals = np.sum(separate_recordings, axis=0)
 
-    # Monitor Convergence
-    #####################
-
+    '''
+    Monitor Convergence
+    '''
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
     def convergence_callback(Y):
         global SDR, SIR
         from mir_eval.separation import bss_eval_sources
         ref = np.moveaxis(separate_recordings, 1, 2)
-        y = np.array([pra.istft(Y[:,:,ch], L, L,
-            transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
+        y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
         sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
         SDR.append(sdr)
         SIR.append(sir)
 
-    # START BSS
-    ###########
-    # The STFT needs front *and* back padding
-
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L//2, zp_back=L//2) for ch in mics_signals])
+    '''
+    STFT analysis
+    '''
+    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X = np.moveaxis(X, 0, 2)
 
-    # Run BSS
+    """
+    START BSS
+    """
     bss_type = args.algo
     if bss_type == 'auxiva':
         # Run AuxIVA
@@ -157,12 +164,23 @@ if __name__ == '__main__':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
             callback=convergence_callback)
+    elif bss_type == 'sparseauxiva':
+        # Estimate set of active frequency bins
+        ratio = 0.35
+        average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
+        k = np.int_(average.shape[0] * ratio)
+        S = np.sort(np.argpartition(average, -k)[-k:])
+        # Run SparseAuxIva
+        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
+            callback=convergence_callback)
 
-    # Run iSTFT
-    y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
-
-    # Compare SIR
-    #############
+    '''
+    STFT Synthesis
+    '''
+    y = np.array([pra.istft(Y[:, :, ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
+    ''' 
+    Compare SDR and SIR
+    '''
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
 
     print('SDR:', sdr)

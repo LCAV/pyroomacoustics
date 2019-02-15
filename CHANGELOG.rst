@@ -13,7 +13,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Added
 ~~~~~
-
+- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA)
 
 Changed
 ~~~~~~~
