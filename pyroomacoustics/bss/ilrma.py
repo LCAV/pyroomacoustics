@@ -7,10 +7,9 @@ import numpy as np
 from .common import projection_back
 
 def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
-        n_components=2,
-        return_filters=0,
-        callback=None):
-
+          n_components=2,
+          return_filters=0,
+          callback=None):
     '''
     Implementation of ILRMA algorithm without partitioning function for BSS presented in
 
@@ -73,18 +72,18 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     machine_epsilon = np.finfo(float).eps
 
     for n in range(0, n_src):
-        R[:, :, n] = np.dot(T[:,:, n], V[:,:,n])
+        R[:,:,n] = np.dot(T[:,:,n], V[:,:,n])
 
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[:,f,:] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
+            Y[:, f, :] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
 
     demix(Y, X, W)
+
     P = np.power(abs(Y), 2.)
 
     for epoch in range(n_iter):
-
         if callback is not None and epoch % 10 == 0:
             if proj_back:
                 z = projection_back(Y, X[:,:,0])
@@ -95,13 +94,13 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
         # simple loop as a start
         for s in range(n_src):
             iR = 1 / R[:,:,s]
-            T[:,:,s] *= np.sqrt( np.dot(P[:,:,s].T * iR ** 2, V[:,:,s].T) / np.dot(iR, V[:,:,s].T) )
+            T[:,:,s] *= np.sqrt(np.dot(P[:,:,s].T * iR ** 2, V[:,:,s].T) / np.dot(iR, V[:,:,s].T))
             T[T < machine_epsilon] = machine_epsilon
 
-            R[:, :, s] = np.dot(T[:, :, s], V[:, :, s])
+            R[:,:,s] = np.dot(T[:,:,s], V[:,:,s])
 
             iR = 1 / R[:,:,s]
-            V[:,:,s] *= np.sqrt( np.dot(T[:,:,s].T, P[:,:,s].T * iR ** 2) / np.dot(T[:,:,s].T, iR) )
+            V[:,:,s] *= np.sqrt(np.dot(T[:,:,s].T, P[:,:,s].T * iR ** 2) / np.dot(T[:,:,s].T, iR))
             V[V < machine_epsilon] = machine_epsilon
 
             R[:,:,s] = np.dot(T[:,:,s], V[:,:,s])

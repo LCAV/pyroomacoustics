@@ -27,17 +27,15 @@ The method implemented is described in the following publication
     J. Jansky, Z. Koldovsky, and N. Ono *A computationally cheaper method for blind speech
     separation based on AuxIVA and incomplete demixing transform*, Proc. IEEE, IWAENC, 2016.
 
-All the algorithms work in the STFT domain. The test files were extracted from the
-`CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_ corpus.
-
+All the algorithms work in the STFT domain. The test files are recorded by an external
+microphone array.
 Depending on the input arguments running this script will do these actions:.
 
 1. Record source signals from a connected microphone array
 2. Separate the sources.
-3. Show a plot of the clean and separated spectrograms
-4. Show a pa `play(ch)` function that can be used to play the `ch` source (if you are in ipython say).
-6. Save the separated sources as .wav files
-7. Show a GUI where a mixed signals and the separated sources can be played
+3. Create a `play(ch)` function that can be used to play the `ch` source (if you are in ipython say).
+4. Save the separated sources as .wav files
+5. Show a GUI where a mixed signals and the separated sources can be played
 
 This script requires the `sounddevice` packages to run.
 '''
@@ -87,16 +85,16 @@ if __name__ == '__main__':
 
     ## STFT ANALYSIS
     # shape == (n_chan, n_frames, n_freq)
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_back=L//2, zp_front=L//2)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_back=L//2, zp_front=L//2, bits=64)
 
-    ##  Monitor convergence
+    ## Monitor convergence
     it = 10
     def cb_print(*args):
         global it
         print('  AuxIVA Iter', it)
         it += 10
 
-    ## Run online BSS
+    ## Run live BSS
     print('* Starting BSS')
     bss_type = args.algo
     if bss_type == 'auxiva':
@@ -117,9 +115,9 @@ if __name__ == '__main__':
                              callback=cb_print)
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2).T
+    y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2, bits=64).T
 
-    ## GUI
+    ## GUI starts
     print('* Start GUI')
     class PlaySoundGUI(object):
         def __init__(self, master, fs, mix, sources):

@@ -23,7 +23,7 @@ test_sparseauxiva = True
 choices = ['auxIVA', 'ILRMA', 'sparseauxIVA']
 
 # List of frame lengths to test
-L = [256, 512, 1024, 2048]
+L = [256, 512, 1024, 2048, 4096]
 
 
 def test_bss(algo,L):
@@ -71,12 +71,11 @@ def test_bss(algo,L):
     separate_recordings = np.array(separate_recordings)
 
     # Mix down the recorded signals
-    limit = separate_recordings.shape[2] - (separate_recordings.shape[2] % L)
-    mics_signals = np.sum(separate_recordings[:,:,:limit], axis=0)
+    mics_signals = np.sum(separate_recordings, axis=0)
 
     ## STFT analysis
     # shape == (n_chan, n_frames, n_freq)
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, bits=64)
 
     X_test = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X_test = np.moveaxis(X_test, 0, 2)
@@ -100,7 +99,7 @@ def test_bss(algo,L):
         max_mse = 1e-4
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, bits=64).T
 
     # Calculate MES
     #############
@@ -110,7 +109,7 @@ def test_bss(algo,L):
     mse = np.mean((ref[:,:y_aligned.shape[1],0] - y_aligned)**2)
     input_variance = np.var(np.concatenate(signals))
 
-    print('%s with frame length of %d: Relative MSE (expect less than %f)'
+    print('%s with frame length of %d: Relative MSE (expected less than %.e)'
           % (choices[algo], L, max_mse), mse / input_variance)
     assert (mse / input_variance) < max_mse
 
