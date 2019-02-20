@@ -278,7 +278,11 @@ class STFT(object):
             self.zero_pad_front(zf)
         if not freq:
             # compute filter magnitude and phase spectrum
-            self.H = self.freq_dtype(np.fft.rfft(coeff, self.nfft, axis=0))
+            if self.freq_dtype == "complex64":
+                self.H = np.complex64(np.fft.rfft(coeff, self.nfft, axis=0))
+            elif self.freq_dtype == "complex128":
+                self.H = np.complex128(np.fft.rfft(coeff, self.nfft, axis=0))
+
             # check for sufficient zero-padding
             if self.nfft < (self.num_samples+len(coeff)-1):
                 raise ValueError('Insufficient zero-padding for chosen number '
