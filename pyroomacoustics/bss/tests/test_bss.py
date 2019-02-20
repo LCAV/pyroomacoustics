@@ -25,8 +25,7 @@ choices = ['auxIVA', 'ILRMA', 'sparseauxIVA']
 # List of frame lengths to test
 L = [256, 512, 1024, 2048, 4096]
 
-
-def test_bss(algo,L):
+def test_bss(algo=0, L=256):
 
     # Room dimensions in meters
     room_dim = [8, 9]
