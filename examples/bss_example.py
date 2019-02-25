@@ -145,7 +145,7 @@ if __name__ == '__main__':
         SIR.append(sir)
 
     ## STFT ANALYSIS
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, bits=64)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, precision=mics_signals.dtype)
 
     ## START BSS
     bss_type = args.algo
@@ -168,7 +168,7 @@ if __name__ == '__main__':
                                  callback=convergence_callback)
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, bits=64).T
+    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, precision=Y.dtype).T
 
     ## Compare SDR and SIR
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])

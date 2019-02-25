@@ -1,5 +1,5 @@
 # Author: Eric Bezzam
-# Last modification: July 2, 2018
+# Last modification: February 22, 2019
 
 """
 Class for performing the Dicrete Fourier Transform (DFT) and inverse DFT for 
@@ -55,10 +55,9 @@ class DFT(object):
         Window to be applied after inverse DFT.
     axis : int
         Axis over which to compute the FFT.
-    bits : int
-        How many bits to use for real input. Twice the amount will be used for 
-        the complex spectrum.
-
+    precision, bits : string, np.float32, np.float64, np.complex64, np.complex128
+        How many precision bits to use for the input. Twice the amount will be used
+        for complex spectrum.
 
     Parameters
     ----------
@@ -75,38 +74,48 @@ class DFT(object):
         ``numpy``.
     axis : int, optional
         Axis over which to compute the FFT. Default is first axis.
-    bits : int, optional
-        How many bits to use for real input. Twice the amount will be used for 
-        the complex spectrum. 32 will use ``float32``/``complex64`` and 64 will
-        use ``float64``/``complex128``. Default is 32.
+    precision, bits : string, np.float32, np.float64, np.complex64, np.complex128, optional
+        How many precision bits to use for the input.
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
+        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
 
     """
 
     def __init__(self, nfft, D=1, analysis_window=None, synthesis_window=None, 
-        transform='numpy', axis=0, bits=32):
+        transform='numpy', axis=0, precision='double', bits=None):
 
         self.nfft = nfft
         self.D = D
         self.axis=axis
-        
-        if bits == 32:
-            time_dtype = 'float32'
-            freq_dtype = 'complex64'
-        elif bits == 64:
-            time_dtype = 'float64'
-            freq_dtype = 'complex128'
+
+        if bits is not None and precision is not None:
+            warnings.warn('Deprecated keyword bits ignored in favor of new keyword precision', DeprecationWarning)
+        elif bits is not None and precision is None:
+            warnings.warn('Bits keyword is deprecated and has been replaced by precision')
+            if bits == 32:
+                precision = 'single'
+            elif bits == 64:
+                precision = 'double'
+
+        if precision == np.float32 or precision == np.complex64 or precision == 'single':
+            time_dtype = np.float32
+            freq_dtype = np.complex64
+        elif precision == np.float64 or precision == np.complex128 or precision == 'double':
+            time_dtype = np.float64
+            freq_dtype = np.complex128
         else:
-            raise ValueError("Invalid number of bits. Must be 32 or 64.")
+            raise ValueError("Invalid precision value. Must be either 'single'/np.float32/np.complex64/"
+                             "'double'/np.float64/np.complex128.")
 
         if axis==0:
             self.x = np.squeeze(np.zeros((self.nfft, self.D), 
                 dtype=time_dtype))
-            self.X = np.squeeze(np.zeros((self.nfft//2+1, self.D), 
+            self.X = np.squeeze(np.zeros((self.nfft//2+1, self.D),
                 dtype=freq_dtype))
         elif axis==1:
-            self.x = np.squeeze(np.zeros((self.D, self.nfft), 
+            self.x = np.squeeze(np.zeros((self.D, self.nfft),
                 dtype=time_dtype))
-            self.X = np.squeeze(np.zeros((self.D, self.nfft//2+1), 
+            self.X = np.squeeze(np.zeros((self.D, self.nfft//2+1),
                 dtype=freq_dtype))
         else:
             raise ValueError("Invalid 'axis' option. Must be 0 or 1.")
@@ -245,4 +254,3 @@ class DFT(object):
             np.multiply(self.synthesis_window, self.x, self.x)
 
         return self.x
-

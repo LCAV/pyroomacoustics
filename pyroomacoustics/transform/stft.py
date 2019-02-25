@@ -25,7 +25,6 @@
 """Class for real-time STFT analysis and processing."""
 from __future__ import division
 
-import sys
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
 import warnings
@@ -67,16 +66,16 @@ class STFT(object):
             2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the
             last frame must contain [N] samples.
 
-    bits : int, optional
-        How many bits to use for real input. Twice the amount will be used for
-        the complex spectrum. 32 will use ``float32``/``complex64`` and 64 will
-        use ``float64``/``complex128``. Default is 32.
+    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
+        How many precision bits to use for the input.
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
+        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
 
     """
 
     def __init__(self, N, hop=None, analysis_window=None,
                  synthesis_window=None, channels=1, transform='numpy',
-                 streaming=True, bits=32, **kwargs):
+                 streaming=True, precision='double', **kwargs):
 
         # initialize parameters
         self.num_samples = N            # number of samples per frame
@@ -87,14 +86,15 @@ class STFT(object):
         else:
             self.hop = self.num_samples
 
-        if bits == 32:
-            self.time_dtype = 'float32'
-            self.freq_dtype = 'complex64'
-        elif bits == 64:
-            self.time_dtype = 'float64'
-            self.freq_dtype = 'complex128'
+        if precision == np.float32 or precision == np.complex64 or precision == 'single':
+            self.time_dtype = np.float32
+            self.freq_dtype = np.complex64
+        elif precision == np.float64 or precision == np.complex128 or precision == 'double':
+            self.time_dtype = np.float64
+            self.freq_dtype = np.complex128
         else:
-            raise ValueError("Invalid number of bits. Must be 32 or 64.")
+            raise ValueError("Invalid precision value. Must be either 'single'/np.float32/np.complex64/"
+                             "'double'/np.float64/np.complex128.")
 
         # analysis and synthesis window
         self.analysis_window = analysis_window
@@ -278,10 +278,7 @@ class STFT(object):
             self.zero_pad_front(zf)
         if not freq:
             # compute filter magnitude and phase spectrum
-            if self.freq_dtype == "complex64":
-                self.H = np.complex64(np.fft.rfft(coeff, self.nfft, axis=0))
-            elif self.freq_dtype == "complex128":
-                self.H = np.complex128(np.fft.rfft(coeff, self.nfft, axis=0))
+            self.H = self.freq_dtype(np.fft.rfft(coeff, self.nfft, axis=0))
 
             # check for sufficient zero-padding
             if self.nfft < (self.num_samples+len(coeff)-1):
@@ -700,7 +697,7 @@ class STFT(object):
 " ---------------------------------------------------------------------------- "
 # Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
 
-def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
+def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
     """
     Convenience function for one-shot STFT
 
@@ -719,6 +716,11 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
     zp_front: int
         zero padding to apply at the beginning of the frame
 
+    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
+        How many precision bits to use for the input.
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
+        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
+
     Returns
     -------
     X: ndarray, (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
@@ -730,7 +732,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels, bits=bits)
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels, precision=precision)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)
@@ -743,7 +745,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
 
 
 # inverse STFT
-def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
+def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
     """
     Convenience function for one-shot inverse STFT
 
@@ -762,6 +764,11 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
     zp_front: int
         zero padding to apply at the beginning of the frame
 
+    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
+        How many precision bits to use for the input.
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
+        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
+
     Returns
     -------
     x: ndarray, (n_samples) or (n_samples, n_channels)
@@ -773,7 +780,7 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, bits=32):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels, bits=bits)
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels, precision=precision)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)

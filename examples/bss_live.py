@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     ## STFT ANALYSIS
     # shape == (n_chan, n_frames, n_freq)
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_back=L//2, zp_front=L//2, bits=64)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_back=L//2, zp_front=L//2, precision=mics_signals.dtype)
 
     ## Monitor convergence
     it = 10
@@ -115,7 +115,7 @@ if __name__ == '__main__':
                              callback=cb_print)
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2, bits=64).T
+    y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2, precision=Y.dtype).T
 
     ## GUI starts
     print('* Start GUI')

@@ -17,7 +17,7 @@ wav_files = [
             ],
         ]
 # If True test the bss algorithm
-test_auxiva = False
+test_auxiva = True
 test_ilrma = True
 test_sparseauxiva = True
 choices = ['auxIVA', 'ILRMA', 'sparseauxIVA']
@@ -74,7 +74,7 @@ def test_bss(algo=0, L=256):
 
     ## STFT analysis
     # shape == (n_chan, n_frames, n_freq)
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, bits=64)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, precision=mics_signals.dtype)
 
     X_test = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X_test = np.moveaxis(X_test, 0, 2)
@@ -98,7 +98,7 @@ def test_bss(algo=0, L=256):
         max_mse = 1e-4
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, bits=64).T
+    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, precision=Y.dtype).T
 
     # Calculate MES
     #############
@@ -108,7 +108,7 @@ def test_bss(algo=0, L=256):
     mse = np.mean((ref[:,:y_aligned.shape[1],0] - y_aligned)**2)
     input_variance = np.var(np.concatenate(signals))
 
-    print('%s with frame length of %d: Relative MSE (expected less than %.e)'
+    print('%s with a %d frame length: Relative MSE (expected less than %.e)'
           % (choices[algo], L, max_mse), mse / input_variance)
     assert (mse / input_variance) < max_mse
 
