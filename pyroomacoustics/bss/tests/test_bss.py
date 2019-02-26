@@ -17,15 +17,12 @@ wav_files = [
             ],
         ]
 # If True test the bss algorithm
-test_auxiva = True
-test_ilrma = True
-test_sparseauxiva = True
-choices = ['auxIVA', 'ILRMA', 'sparseauxIVA']
+choices = {'auxIVA' : True, 'ILRMA' : True, 'sparseauxIVA' : True}
 
 # List of frame lengths to test
 L = [256, 512, 1024, 2048, 4096]
 
-def test_bss(algo=0, L=256):
+def test_bss(algo='auxiva', L=256):
 
     # Room dimensions in meters
     room_dim = [8, 9]
@@ -79,15 +76,15 @@ def test_bss(algo=0, L=256):
     X_test = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
     X_test = np.moveaxis(X_test, 0, 2)
     ## START BSS
-    if choices[algo] == 'auxIVA':
+    if algo == 'auxiva':
         # Run AuxIVA
         Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
         max_mse = 1e-5
-    elif choices[algo] == 'ILRMA':
+    elif algo == 'ilrma':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True)
         max_mse = 1e-5
-    elif choices[algo] == 'sparseauxIVA':
+    elif algo == 'sparseauxiva':
         # Estimate set of active frequency bins
         ratio = 0.35
         average = np.abs(np.mean(np.mean(X, axis=2), axis=0))
@@ -109,19 +106,19 @@ def test_bss(algo=0, L=256):
     input_variance = np.var(np.concatenate(signals))
 
     print('%s with a %d frame length: Relative MSE (expected less than %.e)'
-          % (choices[algo], L, max_mse), mse / input_variance)
+          % (algo, L, max_mse), mse / input_variance)
     assert (mse / input_variance) < max_mse
 
 if __name__ == '__main__':
-    if test_auxiva:
+    if choices['auxIVA']:
         # Test auxIVA
         for block in L:
-            test_bss(algo=0,L=block)
-    if test_ilrma:
+            test_bss(algo='auxiva',L=block)
+    if choices['ILRMA']:
         # Test ILRMA
         for block in L:
-            test_bss(algo=1,L=block)
-    if test_sparseauxiva:
+            test_bss(algo='ilrma',L=block)
+    if choices['sparseauxIVA']:
         # Test Sparse auxIVA
         for block in L:
-            test_bss(algo=2,L=block)
+            test_bss(algo='sparseauxiva',L=block)
