@@ -1,25 +1,50 @@
-
+# This file contains code related to acoustics (critical / octave bands, etc)
+# Copyright (C) 2019  Robin Scheibler
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import math
 import numpy as np
 from scipy.signal import butter
 from scipy.fftpack import dct
+from scipy.interpolate import interp1d
 from .stft import stft
 
+
 def binning(S, bands):
-    '''
+    """
     This function computes the sum of all columns of S in the subbands
     enumerated in bands
-    '''
+    """
     B = np.zeros((S.shape[0], len(bands)), dtype=S.dtype)
-    for i,b in enumerate(bands):
-        B[:,i] = np.mean(S[:,b[0]:b[1]], axis=1)
+    for i, b in enumerate(bands):
+        B[:, i] = np.mean(S[:, b[0] : b[1]], axis=1)
 
     return B
 
 
-def bandpass_filterbank(bands, fs=1., order=8, output='sos'):
-    '''
+def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
+    """
     Create a bank of Butterworth bandpass filters
 
     Parameters
@@ -45,34 +70,29 @@ def bandpass_filterbank(bands, fs=1., order=8, output='sos'):
     sos : ndarray
         Second-order sections representation of the IIR filter. Only returned
         if output=='sos'.
-    '''
+    """
 
     filters = []
-    nyquist = fs / 2.
+    nyquist = fs / 2.0
 
     for band in bands:
 
         # remove bands above nyquist frequency
         if band[0] >= nyquist:
-            raise ValueError('Bands should be below Nyquist frequency')
+            raise ValueError("Bands should be below Nyquist frequency")
 
         # Truncate the highest band to Nyquist frequency
         norm_band = np.minimum(0.99, np.array(band) / nyquist)
 
         # Compute coefficients
-        coeffs = butter(
-                order / 2,
-                norm_band,
-                'bandpass',
-                output=output,
-                )
+        coeffs = butter(order / 2, norm_band, "bandpass", output=output)
         filters.append(coeffs)
 
     return filters
 
 
 def octave_bands(fc=1000, third=False, start=0, n=8):
-    '''
+    """
     Create a bank of octave bands
 
     Parameters
@@ -81,82 +101,249 @@ def octave_bands(fc=1000, third=False, start=0, n=8):
         The center frequency
     third : bool, optional
         Use third octave bands (default False)
-    '''
+    """
 
     div = 1
     if third == True:
         div = 3
 
     # Octave Bands
-    fcentre = fc * ((2.0) ** (np.arange(start * div, (start + n) * div) / div))
-    fd = 2**(0.5 / div);
-    bands = np.array([ [f / fd, f*fd] for f in fcentre ])
-    
+    fcentre = fc * (
+        (2.0) ** (np.arange(start * div, (start + n) * div - (div - 1)) / div)
+    )
+    fd = 2 ** (0.5 / div)
+    bands = np.array([[f / fd, f * fd] for f in fcentre])
+
     return bands, fcentre
 
 
+class OctaveBandsFactory(object):
+    """
+    A class to process uniformly all properties that are defined on octave bands
+
+    Each property is stored for an octave band.
+
+    Attributes
+    ----------
+    base_freq: float
+        The center frequency of the first octave band
+    fs: float
+        The target sampling frequency
+    n_bands: int
+        The number of octave bands needed to cover from base_freq to fs / 2
+        (i.e. floor(log2(fs / base_freq)))
+    bands: list of tuple
+        The list of bin boundaries for the octave bands
+    centers
+        The list of band centers
+    all_materials: list of Material
+        The list of all Material objects created by the factory
+
+    Parameters
+    ----------
+    base_frequency: float, optional
+        The center frequency of the first octave band (default: 125 Hz)
+    fs: float, optional
+        The sampling frequency used (default: 16000 Hz)
+    third_octave: bool, optional
+        Use third octave bands if True (default: False)
+    """
+
+    def __init__(self, base_frequency=125.0, fs=16000, third=False):
+
+        self.base_freq = base_frequency
+        self.fs = fs
+
+        # compute the number of bands
+        self.n_bands = math.floor(np.log2(fs / base_frequency))
+
+        self.bands, self.centers = octave_bands(
+            fc=self.base_freq, n=self.n_bands, third=third
+        )
+
+
+    def __call__(self, coeffs=0., center_freqs=None, interp_kind="linear", **kwargs):
+        """
+        Takes as input a list of values with optional corresponding center frequency.
+        Returns a list with the correct number of octave bands. Interpolation and
+        extrapolation are used to fill in the missing values.
+
+        Parameters
+        ----------
+        coeffs: list
+            A list of values to use for the octave bands
+        center_freqs: list, optional
+            The optional list of center frequencies
+        interp_kind: str
+            Specifies the kind of interpolation as a string (‘linear’,
+            ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’, ‘previous’,
+            ‘next’, where ‘zero’, ‘slinear’, ‘quadratic’ and ‘cubic’ refer to a
+            spline interpolation of zeroth, first, second or third order;
+            ‘previous’ and ‘next’ simply return the previous or next value of
+            the point) or as an integer specifying the order of the spline
+            interpolator to use. Default is ‘linear’.
+        """
+
+        if not isinstance(coeffs, list):
+            # when the parameter is a scalar just do flat extrapolation
+            ret = [coeffs] * self.n_bands
+
+        elif len(coeffs) == 1:
+            ret *= self.n_bands
+
+        else:
+            # by default infer the center freq to be the low ones
+            if center_freqs is None:
+                center_freqs = self.centers[: len(coeffs)]
+
+            # create the interpolator in log domain
+            interpolator = interp1d(
+                np.log2(center_freqs),
+                coeffs,
+                fill_value="extrapolate",
+                kind=interp_kind,
+            )
+            ret = interpolator(np.log2(self.centers))
+
+            # now clip between 0. and 1.
+            ret[ret < 0.0] = 0.0
+            ret[ret > 1.0] = 1.0
+
+        return ret
+
+
+    def get_filters(self, order=8, output="sos"):
+        """
+        Create the IIR band-pass filters for the octave bands
+
+        Parameters
+        ----------
+        order: int, optional
+            The order of the IIR filters (default: 8)
+        output: {'ba', 'zpk', 'sos'}
+            Type of output: numerator/denominator ('ba'), pole-zero ('zpk'), or
+            second-order sections ('sos'). Default is 'ba'.
+        """
+
+        return bandpass_filterbank(
+            self.bands, fs=self.fs, order=order, output=output
+        )
+
+
 def critical_bands():
-    '''
+    """
     Compute the Critical bands as defined in the book:
     Psychoacoustics by Zwicker and Fastl. Table 6.1 p. 159
-    '''
+    """
 
     # center frequencies
-    fc = [50, 150, 250, 350, 450, 570, 700, 840, 1000, 1170, 1370, 1600, 1850,
-          2150, 2500, 2900, 3400, 4000, 4800, 5800, 7000, 8500, 10500, 13500];
-    # boundaries of the bands (e.g. the first band is from 0Hz to 100Hz 
+    fc = [
+        50,
+        150,
+        250,
+        350,
+        450,
+        570,
+        700,
+        840,
+        1000,
+        1170,
+        1370,
+        1600,
+        1850,
+        2150,
+        2500,
+        2900,
+        3400,
+        4000,
+        4800,
+        5800,
+        7000,
+        8500,
+        10500,
+        13500,
+    ]
+    # boundaries of the bands (e.g. the first band is from 0Hz to 100Hz
     # with center 50Hz, fb[0] to fb[1], center fc[0]
-    fb = [0,  100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720,
-          2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500];
+    fb = [
+        0,
+        100,
+        200,
+        300,
+        400,
+        510,
+        630,
+        770,
+        920,
+        1080,
+        1270,
+        1480,
+        1720,
+        2000,
+        2320,
+        2700,
+        3150,
+        3700,
+        4400,
+        5300,
+        6400,
+        7700,
+        9500,
+        12000,
+        15500,
+    ]
 
     # now just make pairs
-    bands = [ [fb[j], fb[j+1]] for j in range(len(fb)-1) ]
+    bands = [[fb[j], fb[j + 1]] for j in range(len(fb) - 1)]
 
     return np.array(bands), fc
 
 
-def bands_hz2s(bands_hz, Fs, N, transform='dft'):
-    '''
+def bands_hz2s(bands_hz, Fs, N, transform="dft"):
+    """
     Converts bands given in Hertz to samples with respect to a given sampling
     frequency Fs and a transform size N an optional transform type is used to
     handle DCT case.
-    '''
+    """
 
     # set the bin width
-    if (transform == 'dct'):
-        B = Fs/2/N
+    if transform == "dct":
+        B = Fs / 2 / N
     else:
-        B = Fs/N
+        B = Fs / N
 
     # upper limit of the frequency range
-    limit = min(Fs/2, bands_hz[-1,1])
+    limit = min(Fs / 2, bands_hz[-1, 1])
 
     # Convert from Hertz to samples for all bands
-    bands_s = [ np.around(band/B)  for band in bands_hz if band[0] <= limit]
+    bands_s = [np.around(band / B) for band in bands_hz if band[0] <= limit]
 
     # Last band ends at N/2
-    bands_s[-1][1] = N/2
+    bands_s[-1][1] = N / 2
 
     # remove duplicate, if any, (typically, if N is small and Fs is large)
     j = 0
-    while (j < len(bands_s)-1):
-        if (bands_s[j][0] == bands_s[j+1][0]):
+    while j < len(bands_s) - 1:
+        if bands_s[j][0] == bands_s[j + 1][0]:
             bands_s.pop(j)
         else:
             j += 1
 
     return np.array(bands_s, dtype=np.int)
 
+
 def melscale(f):
-    ''' Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6) '''
-    return 1125.*np.log(1+f/700.)
+    """ Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6) """
+    return 1125.0 * np.log(1 + f / 700.0)
+
 
 def invmelscale(b):
-    ''' Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143) '''
-    return 700.*(np.exp(b/1125.)-1)
+    """ Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143) """
+    return 700.0 * (np.exp(b / 1125.0) - 1)
 
-def melfilterbank(M, N, fs=1, fl=0., fh=0.5):
-    '''
+
+def melfilterbank(M, N, fs=1, fl=0.0, fh=0.5):
+    """
     Returns a filter bank of triangular filters spaced according to mel scale
 
     We follow Huang-Acera-Hon 6.5.2
@@ -177,27 +364,32 @@ def melfilterbank(M, N, fs=1, fl=0., fh=0.5):
     Returns
     -------
     An M times int(N/2)+1 ndarray that contains one filter per row
-    '''
+    """
 
     # all center frequencies of the filters
-    f = (N/fs)*invmelscale( melscale(fl*fs) + (
-            np.arange(M+2)*(melscale(fh*fs)-melscale(fl*fs))/(M+1) )
-        )
+    f = (N / fs) * invmelscale(
+        melscale(fl * fs)
+        + (np.arange(M + 2) * (melscale(fh * fs) - melscale(fl * fs)) / (M + 1))
+    )
 
     # Construct the triangular filter bank
-    H = np.zeros((M, N//2+1))
-    k = np.arange(N//2+1)
-    for m in range(1,M+1):
-        I = np.where(np.logical_and(f[m-1] < k, k < f[m]))
-        H[m-1,I] = 2 * (k[I]-f[m-1]) / ((f[m+1]-f[m-1]) * (f[m]-f[m-1]))
-        I = np.where(np.logical_and(f[m] <= k, k < f[m+1]))
-        H[m-1,I] = 2 * (f[m+1]-k[I]) / ((f[m+1]-f[m-1]) * (f[m+1]-f[m]))
+    H = np.zeros((M, N // 2 + 1))
+    k = np.arange(N // 2 + 1)
+    for m in range(1, M + 1):
+        I = np.where(np.logical_and(f[m - 1] < k, k < f[m]))
+        H[m - 1, I] = (
+            2 * (k[I] - f[m - 1]) / ((f[m + 1] - f[m - 1]) * (f[m] - f[m - 1]))
+        )
+        I = np.where(np.logical_and(f[m] <= k, k < f[m + 1]))
+        H[m - 1, I] = (
+            2 * (f[m + 1] - k[I]) / ((f[m + 1] - f[m - 1]) * (f[m + 1] - f[m]))
+        )
 
     return H
 
 
-def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0., fh=0.5):
-    '''
+def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0.0, fh=0.5):
+    """
     Computes the Mel-Frequency Cepstrum Coefficients (MFCC) according
     to the description by Huang-Acera-Hon 6.5.2 (2001)
     The MFCC are features mimicing the human perception usually
@@ -226,7 +418,7 @@ def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0., fh=0.5):
     Return
     ------
     The MFCC of the input signal
-    '''
+    """
 
     # perform STFT, X contains frames in rows
     X = stft(x, L, hop, transform=np.fft.rfft)
@@ -234,10 +426,9 @@ def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0., fh=0.5):
     # get and apply the mel filter bank
     # and compute log energy
     H = melfilterbank(M, L, fs=fs, fl=fl, fh=fh)
-    S = np.log(np.dot(H, np.abs(X.T)**2))
+    S = np.log(np.dot(H, np.abs(X.T) ** 2))
 
     # Now take DCT of the result
     C = dct(S, type=2, n=M, axis=0)
 
     return C
-
