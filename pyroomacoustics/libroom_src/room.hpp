@@ -90,7 +90,7 @@ class Room
     float time_thres = 1.;
     float mic_radius = 0.15;
     bool is_hybrid_sim = true;
-    
+
     // Special parameters for shoebox rooms
     bool is_shoebox = false;
     Vectorf<D> shoebox_size;
@@ -171,7 +171,6 @@ class Room
       ism_order = _ism_order;
     }
 
-
     void add_mic(const Vectorf<D> &loc, int n_bands, const std::vector<float> &dist_bins)
     {
       microphones.push_back(Microphone<D>(loc, n_bands, dist_bins));
@@ -180,15 +179,7 @@ class Room
     Wall<D> &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
-    int image_source_model(const Vectorf<D> &source_location, int max_order);
-
-    // A specialized method for the shoebox room case
-    int image_source_shoebox(
-        const Vectorf<D> &source,
-        const Vectorf<D> &room_size,
-        const Eigen::Array<float,Eigen::Dynamic,2*D> &absorption,
-        int max_order
-        );
+    int image_source_model(const Vectorf<D> &source_location);
 
     float get_max_distance();
 
@@ -244,6 +235,9 @@ class Room
   private:
     // We need a stack to store the image sources during the algorithm
     std::stack<ImageSource<D>> visible_sources;
+
+    // A specialized method for the shoebox room case
+    int image_source_shoebox(const Vectorf<D> &source);
 
     // Image source model internal methods
     void image_sources_dfs(ImageSource<D> &is, int max_order);

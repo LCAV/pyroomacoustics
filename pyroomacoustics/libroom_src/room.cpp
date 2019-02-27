@@ -75,6 +75,12 @@ Room<D>::Room(
   is_hybrid_sim(_is_hybrid_sim), is_shoebox(true), shoebox_size(_room_size),
   shoebox_absorption(_absorption)
 {
+  if (shoebox_absorption.rows() != _scattering.rows())
+  {
+    std::cout << "Error: The same number of absorption and scattering coefficients are reqquired" << std::endl;
+    throw std::exception();
+  }
+
   make_shoebox_walls(shoebox_size, _absorption, _scattering);
   init();
 }
@@ -99,7 +105,7 @@ void Room<2>::make_shoebox_walls(
   corners << rs[0], 0.f, rs[1], rs[1];
   walls.push_back(Wall<2>(corners, abs.col(3), scat.col(3), "north"));
 
-  corners << 0.f, 0.f, rs[1], rs[0];
+  corners << rs[1], rs[0], 0.f, 0.f;
   walls.push_back(Wall<2>(corners, abs.col(0), scat.col(0), "west"));
 }
 
@@ -168,12 +174,6 @@ void Room<D>::init()
     throw std::exception();
   }
 
-  if (air_absorption.size() != n_bands)
-  {
-    std::cerr << "Error: As many air absorption coefficient as frequency band is needed." << std::endl;
-    throw std::exception();
-  }
-
   // Useful for ray tracing
   max_dist = get_max_distance();
   n_mics = microphones.size();
@@ -181,7 +181,7 @@ void Room<D>::init()
 
 
 template<size_t D>
-int Room<D>::image_source_model(const Vectorf<D> &source_location, int max_order)
+int Room<D>::image_source_model(const Vectorf<D> &source_location)
 {
   /*
    * This is the top-level method to run the image source model
@@ -191,14 +191,21 @@ int Room<D>::image_source_model(const Vectorf<D> &source_location, int max_order
   while (visible_sources.size() > 0)
     visible_sources.pop();
 
-  // add the original (real) source
-  ImageSource<D> real_source(source_location, n_bands);
+  if (is_shoebox)
+  {
+    return image_source_shoebox(source_location);
+  }
+  else
+  {
+    // add the original (real) source
+    ImageSource<D> real_source(source_location, n_bands);
 
-  // Run the image source model algorithm
-  image_sources_dfs(real_source, max_order);
+    // Run the image source model algorithm
+    image_sources_dfs(real_source, ism_order);
 
-  // fill the sources array in room and return
-  return fill_sources();
+    // fill the sources array in room and return
+    return fill_sources();
+  }
 }
 
 
@@ -383,30 +390,19 @@ bool Room<D>::is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is)
 
 
 template<size_t D>
-int Room<D>::image_source_shoebox(
-    const Vectorf<D> &source,
-    const Vectorf<D> &room_size,
-    const Eigen::Array<float,Eigen::Dynamic,2*D> &absorption,
-    int max_order
-    )
+int Room<D>::image_source_shoebox(const Vectorf<D> &source)
 {
-  if (absorption.rows() != n_bands)
-  {
-    std::cout << "Error: Absorption coefficients for all frequency bands are reqquired" << std::endl;
-    throw std::exception();
-  }
-
   // precompute powers of the transmission coefficients
   std::vector<Eigen::ArrayXXf> transmission_pwr;
-  for (size_t i(0) ; i <= max_order ; ++i)
+  for (size_t i(0) ; i <= ism_order ; ++i)
     transmission_pwr.push_back(Eigen::ArrayXXf(n_bands, 2*D));
 
   std::cout << transmission_pwr[0].rows() << "x" << transmission_pwr[0].cols() << std::endl << std::flush;
 
   transmission_pwr[0].setOnes();
-  if (max_order > 0)
-    transmission_pwr[1] = (1.f - absorption).sqrt();
-  for (int i = 2 ; i <= max_order ; ++i)
+  if (ism_order > 0)
+    transmission_pwr[1] = (1.f - shoebox_absorption).sqrt();
+  for (int i = 2 ; i <= ism_order ; ++i)
     transmission_pwr[i] = transmission_pwr[i-1] * transmission_pwr[1];
 
   // make sure the list is empty
@@ -417,14 +413,14 @@ int Room<D>::image_source_shoebox(
   int point[3] = {0, 0, 0};
 
   // Take 2D case into account
-  int z_max = max_order;
+  int z_max = ism_order;
   if (D == 2)
     z_max = 0;
 
-  // Walk on all the points of the discrete L! ball of radius max_order
+  // Walk on all the points of the discrete L! ball of radius ism_order
   for (point[2] = -z_max ; point[2] <= z_max ; point[2]++)
   {
-    int y_max = max_order - abs(point[2]);
+    int y_max = ism_order - abs(point[2]);
     for (point[1] = -y_max ; point[1] <= y_max ; point[1]++)
     {
       int x_max = y_max - abs(point[1]);
@@ -441,8 +437,8 @@ int Room<D>::image_source_shoebox(
         for (size_t d = 0 ; d < D ; d++)
         {
           // Compute the reflected source
-          float step = abs(point[d]) % 2 == 1 ? room_size.coeff(d) - source.coeff(d) : source.coeff(d);
-          is.loc[d] = point[d] * room_size.coeff(d) + step;
+          float step = abs(point[d]) % 2 == 1 ? shoebox_size.coeff(d) - source.coeff(d) : source.coeff(d);
+          is.loc[d] = point[d] * shoebox_size.coeff(d) + step;
 
           // source order is just the sum of absolute values of reflection indices
           is.order += abs(point[d]);

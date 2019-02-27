@@ -272,7 +272,7 @@ Example
 
     # Create a linear array beamformer with 4 microphones
     # with angle 0 degrees and inter mic distance 10 cm
-    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
+    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04)
     room.add_microphone_array(pra.Beamformer(R, room.fs))
 
     # Now compute the delay and sum weights for the beamformer
@@ -294,7 +294,8 @@ import ctypes
 #import .beamforming as bf
 from . import beamforming as bf
 from .soundsource import SoundSource
-from .parameters import constants, eps
+from .acoustics import OctaveBandsFactory
+from .parameters import constants, eps, Physics, Material
 from .utilities import fractional_delay
 
 from . import libroom
@@ -325,7 +326,7 @@ class Room(object):
     :py:obj:`pyroomacoustics.wall.Wall` objects, a
     :py:obj:`pyroomacoustics.beamforming.MicrophoneArray` array, and a list of
     :py:obj:`pyroomacoustics.soundsource.SoundSource`. The room can be two
-    dimensional (2D), in which case the walls are simply line segments. A factory method 
+    dimensional (2D), in which case the walls are simply line segments. A factory method
     :py:func:`pyroomacoustics.room.Room.from_corners`
     can be used to create the room from a polygon. In three dimensions (3D), the
     walls are two dimensional polygons, namely a collection of points lying on a
@@ -337,15 +338,13 @@ class Room(object):
     creates a rectangular (2D) or parallelepipedic (3D) room. Such rooms
     benefit from an efficient algorithm for the image source method.
 
-    
+
     :attribute walls: (Wall array) list of walls forming the room
     :attribute fs: (int) sampling frequency
     :attribute t0: (float) time offset
     :attribute max_order: (int) the maximum computed order for images
-    :attribute sigma2_awgn: (float) ambient additive white gaussian noise level
     :attribute sources: (SoundSource array) list of sound sources
     :attribute mics: (MicrophoneArray) array of microphones
-    :attribute normals: (numpy.ndarray 2xN or 3xN, N=number of walls) array containing normal vector for each wall, used for calculations
     :attribute corners: (numpy.ndarray 2xN or 3xN, N=number of walls) array containing a point belonging to each wall, used for calculations
     :attribute absorption: (numpy.ndarray size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
@@ -357,9 +356,15 @@ class Room(object):
             walls,
             fs=8000,
             t0=0.,
+            temperature=25.,
+            humidity=70.,
+            c=None,
+            air_absorption=None,
             max_order=1,
+            ray_trace_args=None,
             sources=None,
-            mics=None):
+            mics=None,
+            ):
 
         self.walls = walls
 
@@ -367,20 +372,44 @@ class Room(object):
         self.dim = walls[0].dim
 
         # initialize everything else
-        self._var_init(fs, t0, max_order, sources, mics)
+        self._var_init(fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics)
 
-        # mapping between wall names and indices
-        self.wallsId = {}
-        for i in range(len(walls)):
-            if self.walls[i].name is not None:
-                self.wallsId[self.walls[i].name] = i
+        self._wall_mapping()
 
         # check which walls are part of the convex hull
         self.convex_hull()
 
+        # get the speed of sound and air_absorption coefficients
+        # - should we store this in constants too ?
+        # - as a function of humidity and temperature ?
+        air_absorption = [0.] * absorption_array.shape[0]
+
+        # process arguments for ray tracing
+        self._ray_trace_args_init(ray_trace_args)
+
+        args = [
+                self.walls,
+                self.obstructing_walls,
+                [],
+                air_absorption,
+                pra.constants.get('c'),  # speed of sound
+                max_order,
+                self.rt_args['energy_threshold'],
+                self.rt_args['time_threshold'],
+                self.rt_args['receiver_radius'],
+                True,  # a priori we will always use a hybrid model
+                ]
+
+        # Create the real room object
+        if self.dim == 2:
+            self.room_engine = libroom.Room2(*args)
+        else:
+            self.room_engine = libroom.Room(*args)
+
+
 
     def _ray_trace_args_init(self, rt_args):
-        
+
         rt_args_default = {
                 'n_rays' : 10000,
                 'energy_thres' : 1e-7,
@@ -388,86 +417,165 @@ class Room(object):
                 'receiver_radius' : 0.15,
                 }
 
-        self.rt_args = rt_args.copy()
-
-        if self.rt_args is None:
+        if rt_args is None:
             self.rt_args = {}
+        else:
+            self.rt_args = rt_args.copy()
 
         for key, val in rt_args_default.items():
             if key not in self.rt_args:
-                rt_args[key] = val
+                self.rt_args[key] = val
 
 
-    def _var_init(self, fs, t0, max_order, sources, mics):
+    def _var_init(self, fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics):
 
         self.fs = fs
+        self.octave_bands = OctaveBandsFactory(fs=self.fs)
+
         self.max_order = max_order
+
+        self.physics = Physics(temperature=temperature, humidity=humidity)
+        if c is None:
+            self.c = self.physics.get_sound_speed()
+        else:
+            # ignore temperature and humidity if c is provided
+            self.c = c
+
+        if air_absorption is None:
+            self.air_absorption = self.octave_bands(**self.physics.get_air_absorption())
+        else:
+            # ignore temperature and humidity if coefficients are provided directly
+            self.air_absorption = self.octave_bands(**air_absorption)
 
         # Compute the filter delay if not provided
         if t0 < (constants.get('frac_delay_length')-1)/float(fs)/2:
             self.t0 = (constants.get('frac_delay_length')-1)/float(fs)/2
         else:
             self.t0 = t0
-        
+
         if sources is not None and isinstance(sources, list):
             self.sources = sources
         else:
             self.sources = []
 
         self.mic_array = mics
-         
-        # in the beginning, nothing has been 
+
+        # in the beginning, nothing has been
         self.visibility = None
 
         # initialize the attribute for the impulse responses
         self.rir = None
 
+
+    def _wall_mapping(self):
+
+        # mapping between wall names and indices
+        self.wallsId = {}
+        for i in range(len(self.walls)):
+            if self.walls[i].name is not None:
+                self.wallsId[self.walls[i].name] = i
+
+
     @classmethod
     def from_corners(
             cls,
             corners,
-            absorption=0.,
+            absorption=None,
+            materials=None,
             fs=8000,
-            t0=0.,
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None):
+            **kwargs,
+            ):
         '''
         Creates a 2D room by giving an array of corners.
-        
+
         :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
         :arg absorption: (float array or float) list of absorption factor for each wall or single value for all walls
-        
+
         :returns: (Room) instance of a 2D room
         '''
-        
+        n_walls = corners.shape[1]
+
         corners = np.array(corners)
-        if (corners.shape[0] != 2 or corners.shape[1] < 3):
+        if (corners.shape[0] != 2 or n_walls < 3):
             raise ValueError('Arg corners must be more than two 2D points.')
 
+        # We want to make sure the corners are ordered counter-clockwise
         if (libroom.area_2d_polygon(corners) <= 0):
             corners = corners[:,::-1]
 
-        cls.corners = corners
-        cls.dim = corners.shape[0] 
-            
+        ############################
+        # BEGIN COMPATIBILITY CODE #
+        ############################
+
+        if absorption is None:
+            absorption = 0.
+            absorption_compatibility_request = False
+        else:
+            absorption_compatibility_request = True
+
         absorption = np.array(absorption, dtype='float64')
         if (absorption.ndim == 0):
-            absorption = absorption * np.ones(corners.shape[1])
-        elif (absorption.ndim >= 1 and corners.shape[1] != len(absorption)):
-            raise ValueError('Arg absorption must be the same size as corners or must be a single value.')
-        
+            absorption = absorption * np.ones(n_walls)
+        elif (absorption.ndim >= 1 and n_walls != len(absorption)):
+            raise ValueError(
+                    'Arg absorption must be the same size as corners or must be a single value.'
+                    )
+
+        ############################
+        # BEGIN COMPATIBILITY CODE #
+        ############################
+
+        if materials is not None:
+
+            if absorption_compatibility_request:
+                import warnings
+                warnings.warn(
+                        'Because materials were specified, deprecated absorption parameter is ignored.',
+                        DeprecationWarning,
+                        )
+
+            if not isinstance(materials, list):
+                materials = [materials] * n_walls
+
+            if len(materials) != n_walls:
+                raise ValueError(
+                        'One material per wall is necessary.'
+                        )
+
+            for i in range(n_walls):
+                assert isinstance(materials[i], Material), 'Material not specified using correct class'
+
+        elif absorption_compatibility_request:
+            import warnings
+            warnings.warn('Using absorption parameter is deprecated. In the future, use materials instead.')
+
+            # Fix the absorption
+            # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
+            # <=> a2 == 1 - (1 - a1) ** 2
+            correct_absorption = 1. - (1. - absorption) ** 2
+            materials = [Material.make_freq_flat(a) for a in correct_absorption]
+
+        else:
+            # In this case, no material is provided, use totally reflective walls, no scattering
+            materials = [Material.make_freq_flat(0., 0.)] * n_walls
+
+        # Resample material properties at octave bands
+        octave_bands = OctaveBandsFactory(fs=fs)
+        if not Material.all_flat(materials):
+            for mat in materials:
+                mat.resample(octave_bands)
+
+        # Create the walls
         walls = []
-        for i in range(corners.shape[1]):
+        for i in range(n_walls):
             walls.append(wall_factory(
-                np.array([corners[:, i], corners[:, (i+1)%corners.shape[1]]]).T,
-                absorption[i],
+                np.array([corners[:, i], corners[:, (i+1) % n_walls]]).T,
+                materials[i].get_abs(),
+                materials[i].get_scat(),
                 "wall_"+str(i),
                 ))
 
-            
-        return cls(walls, fs, t0, max_order, sigma2_awgn, sources, mics)
+        return cls(walls, fs=fs, **kwargs)
 
     def extrude(
             self,
@@ -475,7 +583,7 @@ class Room(object):
             v_vec=None,
             absorption=0.):
         '''
-        Creates a 3D room by extruding a 2D polygon. 
+        Creates a 3D room by extruding a 2D polygon.
         The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
 
         Parameters
@@ -549,17 +657,13 @@ class Room(object):
         self.walls = walls
         self.dim = 3
 
-        # re-collect all normals, corners, absoption
-        self.corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-        self.absorption = np.array([wall.absorption for wall in self.walls])
-
         # recheck which walls are in the convex hull
         self.convex_hull()
 
 
     def convex_hull(self):
 
-        ''' 
+        '''
         Finds the walls that are not in the convex hull
         '''
 
@@ -602,7 +706,7 @@ class Room(object):
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
         ''' Plots the room with its walls, microphones, sources and images '''
-    
+
         try:
             import matplotlib
             from matplotlib.patches import Circle, Wedge, Polygon
@@ -706,7 +810,7 @@ class Room(object):
                     edgecolor=cmap(val))
 
             return fig, ax
-            
+
         if(self.dim==3):
 
             import mpl_toolkits.mplot3d as a3
@@ -823,38 +927,13 @@ class Room(object):
 
         self.visibility = []
 
-        c_room = room_factory(self.walls, self.obstructing_walls, self.mic_array.R)
-
         for source in self.sources:
 
             # if libroom is available, use it!
 
             source_position = source.position.astype(np.float32)
 
-            if isinstance(self, ShoeBox):
-
-                # create absorption list in correct order for shoebox algorithm
-                absorption_list_shoebox = np.array([
-                        [self.absorption_dict[d] for d in self.wall_names],
-                        ])
-
-                # Call the dedicated C routine for shoebox room
-                c_room.image_source_shoebox(
-                        source.position,
-                        self.shoebox_dim,
-                        absorption_list_shoebox,
-                        self.max_order,
-                        )
-
-            else:
-                # Call the general image source generator
-                c_room.image_source_model(
-                        source.position,
-                        self.max_order,
-                        )
-
-            # Recover all the arrays as ndarray from the c struct
-            n_sources = c_room.sources.shape[1]
+            n_sources = self.room_engine.image_source_model(source.position)
 
             if (n_sources > 0):
 
@@ -862,7 +941,7 @@ class Room(object):
                 source.images = c_room.sources.copy()
                 source.orders = c_room.orders.copy()
                 source.walls = c_room.gen_walls.copy()
-                source.damping = c_room.attenuations.copy()[0]
+                source.damping = c_room.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
 
                 self.visibility.append(c_room.visible_mics.copy())
@@ -874,7 +953,7 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
-    def compute_rir(self, mode='ism', nb_phis=200, nb_thetas=200, mic_radius=0.15, scatter_coef=0., time_thres=2., energy_thres=0.0000001, sound_speed=340.):
+    def compute_rir(self):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
                     It can take values :
@@ -883,7 +962,7 @@ class Room(object):
                     'hybrid' for a mix of both methods
 
         All other default params are needed for the ray tracing method'''
-        
+
         self.rir = []
 
         def ism():
@@ -1094,7 +1173,7 @@ class Room(object):
             self.sigma2_awgn = None
 
         elif snr is not None:
-            # Normalize all signals so that 
+            # Normalize all signals so that
             denom = np.std(premix_signals[:,reference_mic,:], axis=1)
             premix_signals /= denom[:,None,None]
             signals = np.sum(premix_signals, axis=0)
@@ -1116,36 +1195,15 @@ class Room(object):
             return premix_signals
 
 
-    def direct_snr(self, x, source=0):
-        ''' Computes the direct Signal-to-Noise Ratio '''
-
-        if source >= len(self.sources):
-            raise ValueError('No such source')
-
-        if self.sources[source].signal is None:
-            raise ValueError('No signal defined for source ' + str(source))
-
-        if self.sigma2_awgn is None:
-            return float('inf')
-
-        x = np.array(x)
-
-        sigma2_s = np.mean(self.sources[0].signal**2)
-
-        d2 = np.sum((x - self.sources[source].position)**2)
-
-        return sigma2_s/self.sigma2_awgn/(16*np.pi**2*d2)
-
-
     def get_wall_by_name(self, name):
         '''
         Returns the instance of the wall by giving its name.
-        
+
         :arg name: (string) name of the wall
-        
+
         :returns: (Wall) instance of the wall with this name
         '''
-        
+
         if (name in self.wallsId):
             return self.walls[self.wallsId[name]]
         else:
@@ -1164,19 +1222,19 @@ class Room(object):
     def is_inside(self, p, include_borders = True):
         '''
         Checks if the given point is inside the room.
-        
+
         Parameters
         ----------
         p: array_like, length 2 or 3
             point to be tested
         include_borders: bool, optional
             set true if a point on the wall must be considered inside the room
-        
+
         Returns
         -------
             True if the given point is inside the room, False otherwise.
         '''
-        
+
         p = np.array(p)
         if (self.dim != p.shape[0]):
             raise ValueError('Dimension of room and p must match.')
@@ -1217,7 +1275,7 @@ class Room(object):
                 #ret = self.walls[i].intersects(p0, p)
                 loc = np.zeros(self.dim, dtype=np.float32)
                 ret = self.walls[i].intersection(p0, p, loc)
-                
+
                 if ret == int(Wall.Isect.ENDPT) or ret == 3:  # this flag is True when p is on the wall
                     is_on_border = True
 
@@ -1248,7 +1306,7 @@ class Room(object):
 
         # We should never reach this
         raise ValueError(
-                ''' 
+                '''
                 Error could not determine if point is in or out in maximum number of iterations.
                 This is most likely a bug, please report it.
                 '''
@@ -1305,17 +1363,23 @@ class ShoeBox(Room):
     This class extends room for shoebox room in 3D space.
     '''
 
-    def __init__(self, 
+    def __init__(self,
             p,
-            fs=8000,
-            t0=0.,
             absorption=None,  # deprecated
             materials=None,
+            fs=8000,
+            t0=0.,
+            temperature=25.,
+            humidity=70.,
+            c=None,
+            air_absorption=None,
             max_order=1,
             ray_trace_args=None,
             sources=None,
             mics=None,
             ):
+
+        Room._var_init(self, fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics)
 
         p = np.array(p, dtype=np.float32)
 
@@ -1338,45 +1402,89 @@ class ShoeBox(Room):
         if self.dim == 3:
             self.wall_names += ['floor', 'ceiling']
 
+        n_walls = len(self.wall_names)
+
         ############################
         # BEGIN COMPATIBILITY CODE #
         ############################
 
-        absorption_array = np.zeros((1,len(self.wall_names)))
-        scattering_array = np.zeros((0,len(self.wall_names)))
-        if absorption is not None:
+        if absorption is None:
+            absorption_compatibility_request = False
+            absorption = 0.
+        else:
+            absorption_compatibility_request = True
 
-            import warnings
-            warnings.warn('absorption parameter is deprecated for ShoeBox', DeprecationWarning)
+        import warnings
+        warnings.warn('absorption parameter is deprecated for ShoeBox', DeprecationWarning)
 
-            # copy over the aborption coefficent
-            if isinstance(absorption, float):
-                absorption = dict(
-                        zip(self.wall_names, [absorption] * len(self.wall_names))
-                        )
-
-            # order the wall absorptions
-            if isinstance(absorption, dict):
-                for i,d in enumerate(self.wall_names):
-                    if d in absorption:
-                        absorption_array[:,i] = absorption[d]
-                    else:
-                        raise KeyError(
-                                "Absorbtion needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
-                                )
-
-                self.absorption = np.array(self.absorption)
-            else:
-                raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+        # copy over the aborption coefficent
+        if isinstance(absorption, float):
+            absorption = dict(
+                    zip(self.wall_names, [absorption] * n_walls)
+                    )
 
         ##########################
         # END COMPATIBILITY CODE #
         ##########################
 
-        # get the speed of sound and air_absorption coefficients
-        # - should we store this in constants too ?
-        # - as a function of humidity and temperature ?
-        air_absorption = [0.] * absorption_array.shape[0]
+        if materials is not None:
+
+            if absorption_compatibility_request:
+                import warnings
+                warnings.warn(
+                        'Because materials were specified, deprecated absorption parameter is ignored.',
+                        DeprecationWarning,
+                        )
+
+            if isinstance(materials, Material):
+                materials = dict(zip(self.wall_names, [materials] * n_walls))
+            elif not isinstance(materials, dict):
+                raise ValueError('Materials must be a string, Material object, or dictionary')
+
+            for w_name in self.wall_names:
+                assert isinstance(materials[w_name], Material), 'Material not specified using correct class'
+
+        elif absorption_compatibility_request:
+
+            import warnings
+            warnings.warn('Using absorption parameter is deprecated. Use materials instead.')
+
+            # order the wall absorptions
+            if not isinstance(absorption, dict):
+                raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+
+            materials = {}
+            for w_name in self.wall_names:
+                if w_name in absorption:
+                    # Fix the absorption
+                    # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
+                    # <=> a2 == 1 - (1 - a1) ** 2
+                    correct_abs = 1. - (1. - absorption[w_name]) ** 2
+                    materials[w_name] = Material.make_freq_flat(absorption=correct_abs)
+                else:
+                    raise KeyError(
+                            "Absorption needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            )
+        else:
+
+            # In this case, no material is provided, use totally reflective walls, no scattering
+            materials = dict(zip(self.wall_names, [Material.make_freq_flat(absorption=0.)] * n_walls))
+
+        # At this point, we should determine if the simulation is single or multi-band
+        self.multi_band = not Material.all_flat(materials)
+
+        if self.multi_band:
+            for mat in materials.values():
+                mat.resample(self.octave_bands)
+
+        # Get the absorption and scattering as arrays
+        # shape: (n_bands, n_walls)
+        absorption_array = np.array(
+                [ materials[w].get_abs() for w in self.wall_names ]
+                ).T
+        scattering_array = np.array(
+                [ materials[w].get_scat() for w in self.wall_names ]
+                ).T
 
         # process arguments for ray tracing
         Room._ray_trace_args_init(self, ray_trace_args)
@@ -1386,22 +1494,24 @@ class ShoeBox(Room):
                 absorption_array,
                 scattering_array,
                 [],
-                air_absorption,
-                pra.constants.get('c'),  # speed of sound
+                self.air_absorption,
+                self.c,  # speed of sound
                 max_order,
-                self.rt_args['energy_threshold'],
-                self.rt_args['time_threshold'],
+                self.rt_args['energy_thres'],
+                self.rt_args['time_thres'],
                 self.rt_args['receiver_radius'],
                 True,  # a priori we will always use a hybrid model
                 ]
 
         # Create the real room object
         if self.dim == 2:
-            self.room_engine = libroom.Room2(*args)
+            self.room_engine = libroom.Room2D(*args)
         else:
             self.room_engine = libroom.Room(*args)
 
-        Room._var_init(self, fs, t0, max_order, sources, mics)
+        self.walls = self.room_engine.walls
+
+        Room._wall_mapping(self)
 
 
     def extrude(self, height):
