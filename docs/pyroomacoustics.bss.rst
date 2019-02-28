@@ -17,5 +17,6 @@ Algorithms
    pyroomacoustics.bss.auxiva
    pyroomacoustics.bss.trinicon
    pyroomacoustics.bss.ilrma
+   pyroomacoustics.bss.sparseauxiva
    pyroomacoustics.bss.common
-
+   
