@@ -10,6 +10,8 @@ Provides
     * beamforming
     * direction of arrival
     * adaptive filtering
+    * source separation
+    * single channel denoising
     * etc
 
 How to use the documentation

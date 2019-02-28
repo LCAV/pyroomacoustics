@@ -71,9 +71,9 @@ class Subspace(object):
     suppression and distortion.
 
     Below is an example of how to use this class to emulate a streaming/online
-    input. A full example can be found in the "examples" folder of the
-    repository. Depending on your choice for `frame_len`, `lookback`, and
-    `skip`, the approach may not be suitable for real-time processing.
+    input. A full example can be found `here <https://github.com/LCAV/pyroomacoustics/blob/master/examples/noise_reduction_subspace.py>`_.
+    Depending on your choice for `frame_len`, `lookback`, and `skip`, the
+    approach may not be suitable for real-time processing.
 
     ::
 
@@ -96,21 +96,21 @@ class Subspace(object):
 
     Parameters
     ----------
-    frame_len : integer
+    frame_len : int
         Frame length in samples. Note that large values (above 256) will make
         the eigendecompositions very expensive.
     mu : float
         Enhancement factor, larger values suppress more noise but could lead
         to more distortion.
-    lookback : integer
+    lookback : int
         How many frames to look back for covariance matrix estimation.
-    skip : integer
+    skip : int
         How many samples to skip when estimating the covariance matrices with
         past samples. `skip=1` will use all possible frames in the estimation.
     thresh : float
         Threshold to distinguish between (signal+noise) and (noise) frames. A
-        high value will classify more frames as noise and might even remove
-        desired signal!
+        high value will classify more frames as noise but might remove desired
+        signal!
     data_type : 'float32' or 'float64'
         Data type to use in the enhancement procedure. Default is 'float32'.
     """
@@ -265,15 +265,16 @@ def apply_subspace(noisy_signal, frame_len=256, mu=10, lookback=10, skip=2,
     ----------
     noisy_signal : numpy array
         Real signal in time domain.
-    frame_len : integer
+    frame_len : int
         Frame length in samples. Note that large values (above 256) will make
-        the eigendecompositions very expensive.
+        the eigendecompositions very expensive. 50% overlap is used with
+        hanning window.
     mu : float
         Enhancement factor, larger values suppress more noise but could lead
         to more distortion.
-    lookback : integer
+    lookback : int
         How many frames to look back for covariance matrix estimation.
-    skip : integer
+    skip : int
         How many samples to skip when estimating the covariance matrices with
         past samples. `skip=1` will use all possible frames in the estimation.
     thresh : float
