@@ -2,7 +2,7 @@
 # Last modification: February 22, 2019
 
 """
-Class for performing the Dicrete Fourier Transform (DFT) and inverse DFT for 
+Class for performing the Discrete Fourier Transform (DFT) and inverse DFT for
 real signals, including multichannel. It is also possible to specific an 
 analysis or synthesis window.
 
@@ -89,9 +89,9 @@ class DFT(object):
         self.axis=axis
 
         if bits is not None and precision is not None:
-            warnings.warn('Deprecated keyword bits ignored in favor of new keyword precision', DeprecationWarning)
+            warnings.warn('Deprecated keyword "bits" ignored in favor of new keyword "precision"', DeprecationWarning)
         elif bits is not None and precision is None:
-            warnings.warn('Bits keyword is deprecated and has been replaced by precision')
+            warnings.warn('Keyword "bits" is deprecated and has been replaced by "precision"')
             if bits == 32:
                 precision = 'single'
             elif bits == 64:

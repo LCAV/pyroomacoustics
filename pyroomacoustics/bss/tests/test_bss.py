@@ -16,11 +16,6 @@ wav_files = [
             'examples/input_samples/cmu_arctic_us_aew_a0003.wav',
             ],
         ]
-# If True test the bss algorithm
-choices = {'auxIVA' : True, 'ILRMA' : True, 'sparseauxIVA' : True}
-
-# List of frame lengths to test
-L = [256, 512, 1024, 2048, 4096]
 
 def test_bss(algo='auxiva', L=256):
 
@@ -71,10 +66,8 @@ def test_bss(algo='auxiva', L=256):
 
     ## STFT analysis
     # shape == (n_chan, n_frames, n_freq)
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2, precision=mics_signals.dtype)
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
 
-    X_test = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
-    X_test = np.moveaxis(X_test, 0, 2)
     ## START BSS
     if algo == 'auxiva':
         # Run AuxIVA
@@ -95,7 +88,7 @@ def test_bss(algo='auxiva', L=256):
         max_mse = 1e-4
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2, precision=Y.dtype).T
+    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
 
     # Calculate MES
     #############
@@ -109,16 +102,67 @@ def test_bss(algo='auxiva', L=256):
           % (algo, L, max_mse), mse / input_variance)
     assert (mse / input_variance) < max_mse
 
+def test_bss_auxiva_256():
+    test_bss(algo='auxiva', L=256)
+
+def test_bss_auxiva_512():
+    test_bss(algo='auxiva', L=512)
+
+def test_bss_auxiva_1024():
+    test_bss(algo='auxiva', L=1024)
+
+def test_bss_auxiva_2048():
+    test_bss(algo='auxiva', L=2048)
+
+def test_bss_auxiva_4096():
+    test_bss(algo='auxiva', L=4096)
+
+def test_bss_ilrma_256():
+    test_bss(algo='ilrma', L=256)
+
+def test_bss_ilrma_512():
+    test_bss(algo='ilrma', L=512)
+
+def test_bss_ilrma_1024():
+    test_bss(algo='ilrma', L=1024)
+
+def test_bss_ilrma_2048():
+    test_bss(algo='ilrma', L=2048)
+
+def test_bss_ilrma_4096():
+    test_bss(algo='ilrma', L=4096)
+
+def test_bss_sparseauxiva_256():
+    test_bss(algo='sparseauxiva', L=256)
+
+def test_bss_sparseauxiva_512():
+    test_bss(algo='sparseauxiva', L=512)
+
+def test_bss_sparseauxiva_1024():
+    test_bss(algo='sparseauxiva', L=1024)
+
+def test_bss_sparseauxiva_2048():
+    test_bss(algo='sparseauxiva', L=2048)
+
+def test_bss_sparseauxiva_4096():
+    test_bss(algo='sparseauxiva', L=4096)
+
 if __name__ == '__main__':
-    if choices['auxIVA']:
-        # Test auxIVA
-        for block in L:
-            test_bss(algo='auxiva',L=block)
-    if choices['ILRMA']:
-        # Test ILRMA
-        for block in L:
-            test_bss(algo='ilrma',L=block)
-    if choices['sparseauxIVA']:
-        # Test Sparse auxIVA
-        for block in L:
-            test_bss(algo='sparseauxiva',L=block)
+    # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    test_bss_auxiva_256()
+    test_bss_auxiva_512()
+    test_bss_auxiva_1024()
+    test_bss_auxiva_2048()
+    test_bss_auxiva_4096()
+    # Test ilrma with frame lengths [256, 512, 1024, 2048, 4096]
+    test_bss_ilrma_256()
+    test_bss_ilrma_512()
+    test_bss_ilrma_1024()
+    test_bss_ilrma_2048()
+    test_bss_ilrma_4096()
+    # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    test_bss_sparseauxiva_256()
+    test_bss_sparseauxiva_512()
+    test_bss_sparseauxiva_1024()
+    test_bss_sparseauxiva_2048()
+    test_bss_sparseauxiva_4096()

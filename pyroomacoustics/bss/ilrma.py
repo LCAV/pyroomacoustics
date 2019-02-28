@@ -77,7 +77,7 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
     # Compute the demixed output
     def demix(Y, X, W):
         for f in range(n_freq):
-            Y[:, f, :] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
+            Y[:,f,:] = np.dot(X[:,f,:], np.conj(W[f,:,:]))
 
     demix(Y, X, W)
 

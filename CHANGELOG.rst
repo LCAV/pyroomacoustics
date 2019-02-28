@@ -13,9 +13,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Added
 ~~~~~
-- Precision parameter for stft
-- Updated unit test for bss methods
-- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA)
+- Added "precision" parameter to "stft" class to choose between 'single' (float32/complex64) or 'double'
+  (float64/complex128) for processing precision.
+- Unified unit test file for frequency-domain souce separation methods.
+- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA).
 
 Changed
 ~~~~~~~

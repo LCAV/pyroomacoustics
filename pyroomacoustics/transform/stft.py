@@ -697,7 +697,7 @@ class STFT(object):
 " ---------------------------------------------------------------------------- "
 # Authors: Robin Scheibler, Ivan Dokmanic, Sidney Barthe
 
-def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
+def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     """
     Convenience function for one-shot STFT
 
@@ -732,7 +732,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels, precision=precision)
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels, precision=x.dtype)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)
@@ -745,7 +745,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
 
 
 # inverse STFT
-def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
+def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
     """
     Convenience function for one-shot inverse STFT
 
@@ -780,7 +780,7 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0, precision='double'):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels, precision=precision)
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels, precision=X.dtype)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)
