@@ -88,7 +88,7 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
 
 def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alphamax=1e5, alphamin=1e-7):
     '''
-
+    
    Fast proximal algorithm implementation for sparse approximation of relative impulse
    responses from incomplete measurements of the corresponding relative transfer function
    based on

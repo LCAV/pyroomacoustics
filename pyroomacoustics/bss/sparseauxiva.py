@@ -132,9 +132,9 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # Update now the demixing matrix
         for s in range(n_src):
-            W_H = np.conj(np.swapaxes(W, 1, 2))
-            WV = np.matmul(W_H, V[:, s, :, :])
-            rhs = I[None, :, s][[0] * WV.shape[0], :]
+            W_H = np.conj(np.swapaxes(W,1,2))
+            WV = np.matmul(W_H, V[:,s,:,:])
+            rhs = I[None,:,s][[0] * WV.shape[0],:]
             W[:,:,s] = np.linalg.solve(WV, rhs)
 
             # normalize

@@ -43,6 +43,7 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 
 import numpy as np
 from scipy.io import wavfile
+from pyroomacoustics.transform import STFT
 
 from mir_eval.separation import bss_eval_sources
 
@@ -79,9 +80,6 @@ if __name__ == '__main__':
         matplotlib.use('TkAgg')
 
     import pyroomacoustics as pra
-
-    ## Prepare one-shot STFT
-    L = args.block
 
     ## Create a room with sources and mics
     # Room dimensions in meters
@@ -131,7 +129,7 @@ if __name__ == '__main__':
     # Mix down the recorded signals
     mics_signals = np.sum(separate_recordings, axis=0)
 
-
+    
     ## Monitor Convergence
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
@@ -144,7 +142,7 @@ if __name__ == '__main__':
         SDR.append(sdr)
         SIR.append(sir)
 
-    ## STFT ANALYSIS
+    ## STFT analysis
     X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
 
     ## START BSS
@@ -152,7 +150,7 @@ if __name__ == '__main__':
     if bss_type == 'auxiva':
         # Run AuxIVA
         Y = pra.bss.auxiva(X, n_iter=30, proj_back=True,
-                            callback=convergence_callback)
+                           callback=convergence_callback)
     elif bss_type == 'ilrma':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
@@ -167,10 +165,11 @@ if __name__ == '__main__':
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
                                  callback=convergence_callback)
 
+    
     ## STFT Synthesis
     y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
-
-    ## Compare SDR and SIR
+ 
+    ## Compare SDR and SIR    
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
     print('SDR:', sdr)
     print('SIR:', sir)
