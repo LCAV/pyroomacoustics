@@ -153,7 +153,7 @@ if __name__ == '__main__':
     if bss_type == 'auxiva':
         # Run AuxIVA
         Y = pra.bss.auxiva(X, n_iter=30, proj_back=True,
-                            callback=convergence_callback)
+                           callback=convergence_callback)
     elif bss_type == 'ilrma':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
@@ -168,6 +168,7 @@ if __name__ == '__main__':
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
                                  callback=convergence_callback)
 
+    
     ## STFT Synthesis
     y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
 
