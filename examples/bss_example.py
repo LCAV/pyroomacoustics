@@ -43,6 +43,7 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 
 import numpy as np
 from scipy.io import wavfile
+from pyroomacoustics.transform import STFT
 
 from mir_eval.separation import bss_eval_sources
 
