@@ -62,6 +62,14 @@ struct Hit
 
 typedef std::vector<std::list<Hit>> HitLog;
 
+size_t get_new_size(size_t val, size_t cur_size)
+{
+  size_t new_size = cur_size;
+  while (val >= new_size)
+    new_size *= 2;
+  return new_size;
+}
+
 class Histogram2D
 {
   size_t rows, cols;
@@ -83,20 +91,60 @@ class Histogram2D
       counts.setZero();
     }
 
+    void resize_rows(int new_rows)
+    {
+      auto old_rows = array.rows();
+      // this will resize the array while preserving the content
+      array.conservativeResize(new_rows, Eigen::NoChange);
+      counts.conservativeResize(new_rows, Eigen::NoChange);
+      // We need to initialize the new elements
+      if (new_rows > old_rows)
+      {
+        array.bottomRows(new_rows - old_rows).setZero();
+        counts.bottomRows(new_rows - old_rows).setZero();
+      }
+    }
+
+    void resize_cols(int new_cols)
+    {
+      auto old_cols = array.cols();
+      // this will resize the array while preserving the content
+      array.conservativeResize(Eigen::NoChange, new_cols);
+      counts.conservativeResize(Eigen::NoChange, new_cols);
+      // We need to initialize the new elements
+      if (new_cols > old_cols)
+      {
+        array.rightCols(new_cols - old_cols).setZero();
+        counts.rightCols(new_cols - old_cols).setZero();
+      }
+    }
+
     void log(int row, int col, float val)
     {
+      if (row >= array.rows())
+        resize_rows(get_new_size(row, array.rows()));
+
+      if (col >= array.cols())
+        resize_cols(get_new_size(col, array.cols()));
+
       array.coeffRef(row, col) += val;
       counts.coeffRef(row, col)++;
     }
 
-    void log_col(int col, const Eigen::ArrayXf &val)
+    void log_col(size_t col, const Eigen::ArrayXf &val)
     {
+      if (col >= array.cols())
+        resize_cols(get_new_size(col, array.cols()));
+
       array.col(col) += val;
       counts.col(col) += 1;
     }
 
     void log_row(int row, const Eigen::ArrayXf &val)
     {
+      if (row >= array.rows())
+        resize_rows(get_new_size(row, array.rows()));
+
       array.row(row) += val;
       counts.row(row) += 1;
     }

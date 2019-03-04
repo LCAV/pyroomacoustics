@@ -52,7 +52,7 @@ PYBIND11_MODULE(libroom, m) {
         const std::vector<int> &,
         const std::vector<Microphone<3>> &,
         const Eigen::ArrayXf &,
-        float, int, float, float, float, bool
+        float, int, float, float, float, float, bool
         >())
     .def(py::init<
         const Vectorf<3> &,
@@ -60,7 +60,7 @@ PYBIND11_MODULE(libroom, m) {
         const Eigen::Array<float,Eigen::Dynamic,6> &,
         const std::vector<Microphone<3>> &,
         const Eigen::ArrayXf &,
-        float, int, float, float, float, bool
+        float, int, float, float, float, float, bool
         >())
     .def("set_params", &Room<3>::set_params)
     .def("add_mic", &Room<3>::add_mic)
@@ -111,7 +111,7 @@ PYBIND11_MODULE(libroom, m) {
         const std::vector<int> &,
         const std::vector<Microphone<2>> &,
         const Eigen::ArrayXf &,
-        float, int, float, float, float, bool
+        float, int, float, float, float, float, bool
         >())
     .def(py::init<
         const Vectorf<2> &,
@@ -119,7 +119,7 @@ PYBIND11_MODULE(libroom, m) {
         const Eigen::Array<float,Eigen::Dynamic,4> &,
         const std::vector<Microphone<2>> &,
         const Eigen::ArrayXf &,
-        float, int, float, float, float, bool
+        float, int, float, float, float, float, bool
         >())
     .def("set_params", &Room<2>::set_params)
     .def("add_mic", &Room<2>::add_mic)
@@ -178,6 +178,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("same_as", &Wall<3>::same_as)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
     .def_readwrite("absorption", &Wall<3>::absorption)
+    .def_readwrite("scatter", &Wall<3>::scatter)
     .def_readwrite("name", &Wall<3>::name)
     .def_readonly("corners", &Wall<3>::corners)
     .def_readonly("origin", &Wall<3>::origin)
@@ -209,6 +210,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("same_as", &Wall<2>::same_as)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_readwrite("absorption", &Wall<2>::absorption)
+    .def_readwrite("scatter", &Wall<2>::scatter)
     .def_readwrite("name", &Wall<2>::name)
     .def_readonly("corners", &Wall<2>::corners)
     .def_readonly("origin", &Wall<2>::origin)
@@ -225,10 +227,17 @@ PYBIND11_MODULE(libroom, m) {
 
   // The microphone class
   py::class_<Microphone<3>>(m, "Microphone")
-    .def(py::init<const Vectorf<3> &, int, const std::vector<float> &>())
+    .def(py::init<const Vectorf<3> &, int, float, float>())
     .def_readonly("loc", &Microphone<3>::loc)
     .def_readonly("hits", &Microphone<3>::hits)
     .def_readonly("histograms", &Microphone<3>::histograms)
+    ;
+
+  py::class_<Microphone<2>>(m, "Microphone2D")
+    .def(py::init<const Vectorf<2> &, int, float, float>())
+    .def_readonly("loc", &Microphone<2>::loc)
+    .def_readonly("hits", &Microphone<2>::hits)
+    .def_readonly("histograms", &Microphone<2>::histograms)
     ;
 
   // The 2D histogram class

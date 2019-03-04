@@ -188,8 +188,8 @@ class OctaveBandsFactory(object):
             # when the parameter is a scalar just do flat extrapolation
             ret = [coeffs] * self.n_bands
 
-        elif len(coeffs) == 1:
-            ret *= self.n_bands
+        if len(coeffs) == 1:
+            ret = coeffs * self.n_bands
 
         else:
             # by default infer the center freq to be the low ones

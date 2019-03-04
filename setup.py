@@ -49,6 +49,7 @@ libroom_files = [ os.path.join(libroom_src_dir, f)
                     'wall.hpp', 'wall.cpp',
                     'microphone.hpp',
                     'geometry.hpp', 'geometry.cpp',
+                    'common.hpp',
                     'libroom.cpp',
                     ]
                 ]

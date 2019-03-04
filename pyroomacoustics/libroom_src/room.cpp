@@ -32,23 +32,24 @@ const double pi_2 = 1.57079632679489661923;
 
 template<size_t D>
 Room<D>::Room(
-        const std::vector<Wall<D>> &_walls,
-        const std::vector<int> &_obstructing_walls,
-        const std::vector<Microphone<D>> &_microphones,
-        const Eigen::ArrayXf &_air_absorption,
-        float _sound_speed,
-        // parameters for the image source model
-        int _ism_order,
-        // parameters for the ray tracing
-        float _energy_thres,
-        float _time_thres,
-        float _mic_radius,
-        bool _is_hybrid_sim
+    const std::vector<Wall<D>> &_walls,
+    const std::vector<int> &_obstructing_walls,
+    const std::vector<Microphone<D>> &_microphones,
+    const Eigen::ArrayXf &_air_absorption,
+    float _sound_speed,
+    // parameters for the image source model
+    int _ism_order,
+    // parameters for the ray tracing
+    float _energy_thres,
+    float _time_thres,
+    float _mic_radius,
+    float _mic_hist_res,
+    bool _is_hybrid_sim
     )
   : walls(_walls), obstructing_walls(_obstructing_walls), microphones(_microphones),
   air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
   energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
-  is_hybrid_sim(_is_hybrid_sim), is_shoebox(false)
+  mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim), is_shoebox(false)
 {
   init();
 }
@@ -67,13 +68,13 @@ Room<D>::Room(
     float _energy_thres,
     float _time_thres,
     float _mic_radius,
+    float _mic_hist_res,
     bool _is_hybrid_sim
     )
-  : microphones(_microphones),
+  : shoebox_size(_room_size), shoebox_absorption(_absorption), microphones(_microphones),
   air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
   energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
-  is_hybrid_sim(_is_hybrid_sim), is_shoebox(true), shoebox_size(_room_size),
-  shoebox_absorption(_absorption)
+  mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim), is_shoebox(true)
 {
   if (shoebox_absorption.rows() != _scattering.rows())
   {
@@ -105,7 +106,7 @@ void Room<2>::make_shoebox_walls(
   corners << rs[0], 0.f, rs[1], rs[1];
   walls.push_back(Wall<2>(corners, abs.col(3), scat.col(3), "north"));
 
-  corners << rs[1], rs[0], 0.f, 0.f;
+  corners << 0.f, 0.f, rs[1], 0.f;
   walls.push_back(Wall<2>(corners, abs.col(0), scat.col(0), "west"));
 }
 
@@ -239,7 +240,7 @@ int Room<D>::fill_sources()
     }
   }
 
-  return 0;
+  return n_sources;
 }
 
 

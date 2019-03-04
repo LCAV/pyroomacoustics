@@ -88,7 +88,8 @@ class Room
     // Ray tracing parameters
     float energy_thres = 1e-7;
     float time_thres = 1.;
-    float mic_radius = 0.15;
+    float mic_radius = 0.15;  // receiver radius in meters
+    float mic_hist_res = 0.004;  // in seconds
     bool is_hybrid_sim = true;
 
     // Special parameters for shoebox rooms
@@ -126,6 +127,7 @@ class Room
         float _energy_thres,
         float _time_thres,
         float _mic_radius,
+        float _mic_hist_res,
         bool _is_hybrid_sim
         );
 
@@ -143,6 +145,7 @@ class Room
         float _energy_thres,
         float _time_thres,
         float _mic_radius,
+        float _mic_hist_res,
         bool _is_hybrid_sim
         );
 
@@ -160,20 +163,24 @@ class Room
         float _energy_thres,
         float _time_thres,
         float _mic_radius,
+        float _mic_hist_res,
         bool _is_hybrid_sim
         )
     {
       sound_speed = _sound_speed;
+      ism_order = _ism_order;
       energy_thres = _energy_thres;
       time_thres = _time_thres;
       mic_radius = _mic_radius;
+      mic_hist_res = _mic_hist_res;
       is_hybrid_sim = _is_hybrid_sim;
-      ism_order = _ism_order;
     }
 
-    void add_mic(const Vectorf<D> &loc, int n_bands, const std::vector<float> &dist_bins)
+    void add_mic(const Vectorf<D> &loc)
     {
-      microphones.push_back(Microphone<D>(loc, n_bands, dist_bins));
+      microphones.push_back(
+          Microphone<D>(loc, n_bands, mic_hist_res * sound_speed, time_thres * sound_speed)
+          );
     }
 
     Wall<D> &get_wall(int w) { return walls[w]; }

@@ -45,6 +45,7 @@ class Microphone
 
     int n_dirs = 1;
     int n_bands = 1;  // the number of frequency bands in the histogram
+    float hist_resolution;  // the size of one bin in meters
     std::vector<float> distance_bins = { 0.f };  // a list of distances forming the boundaries of the bins in the time histogram
 
     // We keep a log of discrete hits
@@ -53,16 +54,14 @@ class Microphone
     // and an Energy histogram for the tail
     std::vector<Histogram2D> histograms;
 
-    Microphone(const Vectorf<D> &_loc, int _n_bands, const std::vector<float> &_distance_bins)
-      : loc(_loc), n_dirs(1), n_bands(_n_bands), distance_bins(_distance_bins)
+    Microphone(const Vectorf<D> &_loc, int _n_bands, float _hist_res, float max_dist_init)
+      : loc(_loc), n_dirs(1), n_bands(_n_bands), hist_resolution(_hist_res)
     {
+      size_t n_dist_bins_init = size_t(max_dist_init / hist_resolution) + 1;
       // Initialize the histograms
       histograms.resize(n_dirs);
       for (auto &hist : histograms)
-        hist.init(n_bands, distance_bins.size());
-
-      // make sure the bin boundaries are sorted
-      std::sort(distance_bins.begin(), distance_bins.end());
+        hist.init(n_bands, n_dist_bins_init);
     }
     ~Microphone() {};
 
@@ -94,15 +93,10 @@ class Microphone
 
     void log_histogram(const Hit &the_hit, const Vectorf<D> &origin)
     {
-      // first find the bin index using binary search
-      auto it = std::upper_bound(distance_bins.begin(), distance_bins.end(), the_hit.distance);
-      auto time_bin_index = std::distance(distance_bins.begin(), it) - 1;
-
-      if (time_bin_index >= 0)  // this only happen when the minimum distance > 0
-      {
-        auto dir_index = get_dir_bin(origin);
-        histograms[dir_index].log_col(time_bin_index, the_hit.transmitted);
-      }
+      // first find the bin index
+      auto dist_bin_index = size_t(the_hit.distance / hist_resolution);
+      auto dir_index = get_dir_bin(origin);
+      histograms[dir_index].log_col(dist_bin_index, the_hit.transmitted);
     }
 };
 
