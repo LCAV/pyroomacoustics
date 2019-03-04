@@ -68,8 +68,8 @@ class STFT(object):
 
     precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
         How many precision bits to use for the input.
-        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
-        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs or 64 for complex spectrum.
+        Otherwise, cast to 64 bits for real inputs or 128 for complex spectrum (default).
 
     """
 
@@ -89,12 +89,9 @@ class STFT(object):
         if precision == np.float32 or precision == np.complex64 or precision == 'single':
             self.time_dtype = np.float32
             self.freq_dtype = np.complex64
-        elif precision == np.float64 or precision == np.complex128 or precision == 'double':
+        else:
             self.time_dtype = np.float64
             self.freq_dtype = np.complex128
-        else:
-            raise ValueError("Invalid precision value. Must be either 'single'/np.float32/np.complex64/"
-                             "'double'/np.float64/np.complex128.")
 
         # analysis and synthesis window
         self.analysis_window = analysis_window
@@ -716,11 +713,6 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     zp_front: int
         zero padding to apply at the beginning of the frame
 
-    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
-        How many precision bits to use for the input.
-        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
-        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
-
     Returns
     -------
     X: ndarray, (n_frames, n_frequencies) or (n_frames, n_frequencies, n_channels)
@@ -763,11 +755,6 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
         zero padding to apply at the end of the frame
     zp_front: int
         zero padding to apply at the beginning of the frame
-
-    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
-        How many precision bits to use for the input.
-        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
-        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
 
     Returns
     -------

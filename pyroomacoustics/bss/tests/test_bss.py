@@ -2,6 +2,7 @@
 import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
+from unittest import TestCase
 
 # We use several sound samples for each source to have a long enough length
 wav_files = [
@@ -17,7 +18,11 @@ wav_files = [
             ],
         ]
 
-def test_bss(algo='auxiva', L=256):
+# List of frame lengths to test
+L = [256, 512, 1024, 2048, 4096]
+
+# Frequency Blind Source Separation
+def freq_bss(algo='auxiva', L=256):
 
     # Room dimensions in meters
     room_dim = [8, 9]
@@ -102,67 +107,31 @@ def test_bss(algo='auxiva', L=256):
           % (algo, L, max_mse), mse / input_variance)
     assert (mse / input_variance) < max_mse
 
-def test_bss_auxiva_256():
-    test_bss(algo='auxiva', L=256)
+class TestBSS(TestCase):
+    # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_auxiva(self):
+        for block in L:
+            freq_bss(algo='auxiva', L=block)
 
-def test_bss_auxiva_512():
-    test_bss(algo='auxiva', L=512)
+    # Test ilrma with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_ilrma(self):
+        for block in L:
+            freq_bss(algo='ilrma', L=block)
 
-def test_bss_auxiva_1024():
-    test_bss(algo='auxiva', L=1024)
-
-def test_bss_auxiva_2048():
-    test_bss(algo='auxiva', L=2048)
-
-def test_bss_auxiva_4096():
-    test_bss(algo='auxiva', L=4096)
-
-def test_bss_ilrma_256():
-    test_bss(algo='ilrma', L=256)
-
-def test_bss_ilrma_512():
-    test_bss(algo='ilrma', L=512)
-
-def test_bss_ilrma_1024():
-    test_bss(algo='ilrma', L=1024)
-
-def test_bss_ilrma_2048():
-    test_bss(algo='ilrma', L=2048)
-
-def test_bss_ilrma_4096():
-    test_bss(algo='ilrma', L=4096)
-
-def test_bss_sparseauxiva_256():
-    test_bss(algo='sparseauxiva', L=256)
-
-def test_bss_sparseauxiva_512():
-    test_bss(algo='sparseauxiva', L=512)
-
-def test_bss_sparseauxiva_1024():
-    test_bss(algo='sparseauxiva', L=1024)
-
-def test_bss_sparseauxiva_2048():
-    test_bss(algo='sparseauxiva', L=2048)
-
-def test_bss_sparseauxiva_4096():
-    test_bss(algo='sparseauxiva', L=4096)
+    # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_sparse_auxiva(self):
+        for block in L:
+            freq_bss(algo='sparseauxiva', L=block)
 
 if __name__ == '__main__':
-    # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    test_bss_auxiva_256()
-    test_bss_auxiva_512()
-    test_bss_auxiva_1024()
-    test_bss_auxiva_2048()
-    test_bss_auxiva_4096()
-    # Test ilrma with frame lengths [256, 512, 1024, 2048, 4096]
-    test_bss_ilrma_256()
-    test_bss_ilrma_512()
-    test_bss_ilrma_1024()
-    test_bss_ilrma_2048()
-    test_bss_ilrma_4096()
-    # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    test_bss_sparseauxiva_256()
-    test_bss_sparseauxiva_512()
-    test_bss_sparseauxiva_1024()
-    test_bss_sparseauxiva_2048()
-    test_bss_sparseauxiva_4096()
+    print('Running auxIVA...')
+    for block in L:
+        freq_bss(algo='auxiva', L=block)
+
+    print('Running ILRMA...')
+    for block in L:
+        freq_bss(algo='ilrma', L=block)
+
+    print('Running sparse auxIVA...')
+    for block in L:
+        freq_bss(algo='sparseauxiva', L=block)

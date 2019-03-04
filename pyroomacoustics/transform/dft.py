@@ -74,10 +74,10 @@ class DFT(object):
         ``numpy``.
     axis : int, optional
         Axis over which to compute the FFT. Default is first axis.
-    precision, bits : string, np.float32, np.float64, np.complex64, np.complex128, optional
+    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
         How many precision bits to use for the input.
-        If 'single'/np.float32/np.complex64, 32 bits for real inputs (64 for complex spectrum).
-        If 'double'/np.float64/np.complex128 (default), 64 bits for real inputs (128 for complex spectrum).
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs or 64 for complex spectrum.
+        Otherwise, cast to 64 bits for real inputs or 128 for complex spectrum (default).
 
     """
 
@@ -100,12 +100,9 @@ class DFT(object):
         if precision == np.float32 or precision == np.complex64 or precision == 'single':
             time_dtype = np.float32
             freq_dtype = np.complex64
-        elif precision == np.float64 or precision == np.complex128 or precision == 'double':
+        else:
             time_dtype = np.float64
             freq_dtype = np.complex128
-        else:
-            raise ValueError("Invalid precision value. Must be either 'single'/np.float32/np.complex64/"
-                             "'double'/np.float64/np.complex128.")
 
         if axis==0:
             self.x = np.squeeze(np.zeros((self.nfft, self.D), 
