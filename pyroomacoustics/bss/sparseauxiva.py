@@ -39,7 +39,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     '''
     Implementation of sparse AuxIVA algorithm for BSS presented in
 
-    J. Jansky, Z. Koldovsky, N. Ono, *A computationally cheaper method for blind speech
+    J. Jansky, Z. Koldovsky, and N. Ono, *A computationally cheaper method for blind speech
     separation based on AuxIVA and incomplete demixing transform. 1-5. 10.1109/IWAENC.2016.7602921.
 
     Parameters
@@ -118,10 +118,10 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # simple loop as a start
         # shape: (n_frames, n_src)
-        r[:, :] = np.sqrt(np.sum(np.abs(Y * np.conj(Y)), axis=1))
+        r[:,:] = np.sqrt(np.sum(np.abs(Y * np.conj(Y)), axis=1))
 
         # Apply derivative of contrast function
-        G_r[:, :] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
+        G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
         # Compute Auxiliary Variable
         V = np.mean(
@@ -132,9 +132,9 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         # Update now the demixing matrix
         for s in range(n_src):
-            W_H = np.conj(np.swapaxes(W, 1, 2))
-            WV = np.matmul(W_H, V[:, s, :, :])
-            rhs = I[None, :, s][[0] * WV.shape[0], :]
+            W_H = np.conj(np.swapaxes(W,1,2))
+            WV = np.matmul(W_H, V[:,s,:,:])
+            rhs = I[None,:,s][[0] * WV.shape[0],:]
             W[:,:,s] = np.linalg.solve(WV, rhs)
 
             # normalize
@@ -150,16 +150,16 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     hrtf = np.zeros((n_freq, n_src), dtype=W.dtype)
 
     for i in range(n_src):
-        # sparse relative transfer function
-        Z[i,:] = np.array([-W[S[f],0,i] / W[S[f],1,i] for f in range(k_freq)]).conj().T
+        # calculate sparse relative transfer function from demixing matrix
+        Z[i,:] = np.conj(-W[S,0,i] / W[S,1,i]).T
 
-        # mask frequencies Z with S and copy the result into G
+        # copy selected active frequencies in Z to sparse G
         G[i,S] = (np.expand_dims(Z[i,:], axis=1))
 
         # apply fast proximal algorithm to reconstruct the complete real-valued relative transfer function
         hrtf[:,i] = sparir(G[i,:],S)
 
-        # recovered relative transfer function back to the frequency domain
+        # recover relative transfer function back to the frequency domain
         hrtf[:,i] = np.fft.fft(hrtf[:,i])
         # assemble back the complete demixing matrix
         W[:,:,i] = np.conj(np.insert(hrtf[:,i,None],1,-1,axis=1))

@@ -5,7 +5,6 @@ Blind Source Separation using Independent Vector Analysis with Auxiliary Functio
 '''
 import numpy as np
 
-from pyroomacoustics import stft, istft
 from .common import projection_back
 
 # A few contrast functions

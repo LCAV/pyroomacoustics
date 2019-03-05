@@ -25,7 +25,6 @@
 """Class for real-time STFT analysis and processing."""
 from __future__ import division
 
-import sys
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
 import warnings
@@ -44,7 +43,7 @@ class STFT(object):
         hop size
     analysis_window : numpy array
         window applied to block before analysis
-    synthesis : numpy array
+    synthesis_window : numpy array
         window applied to the block before synthesis
     channels : int
         number of signals
@@ -61,16 +60,22 @@ class STFT(object):
         will be no check on the number of frames sent to 
         analysis/process/synthesis
 
-        NOTE: 
+        NOTE:
             1) num_frames = 0, corresponds to a "real-time" case in which each
             input block corresponds to [hop] samples.
             2) num_frames > 0, requires [(num_frames-1)*hop + N] samples as the
             last frame must contain [N] samples.
+
+    precision : string, np.float32, np.float64, np.complex64, np.complex128, optional
+        How many precision bits to use for the input.
+        If 'single'/np.float32/np.complex64, 32 bits for real inputs or 64 for complex spectrum.
+        Otherwise, cast to 64 bits for real inputs or 128 for complex spectrum (default).
+
     """
 
     def __init__(self, N, hop=None, analysis_window=None,
                  synthesis_window=None, channels=1, transform='numpy',
-                 streaming=True, **kwargs):
+                 streaming=True, precision='double', **kwargs):
 
         # initialize parameters
         self.num_samples = N            # number of samples per frame
@@ -80,6 +85,13 @@ class STFT(object):
             self.hop = hop  
         else:
             self.hop = self.num_samples
+
+        if precision == np.float32 or precision == np.complex64 or precision == 'single':
+            self.time_dtype = np.float32
+            self.freq_dtype = np.complex64
+        else:
+            self.time_dtype = np.float64
+            self.freq_dtype = np.complex128
 
         # analysis and synthesis window
         self.analysis_window = analysis_window
@@ -133,26 +145,26 @@ class STFT(object):
         """
         if self.mono:
             # input buffer
-            self.fft_in_buffer = np.zeros(self.nfft, dtype=np.float32)
+            self.fft_in_buffer = np.zeros(self.nfft, dtype=self.time_dtype)
             # state buffer
-            self.x_p = np.zeros(self.n_state, dtype=np.float32)
+            self.x_p = np.zeros(self.n_state, dtype=self.time_dtype)
             # prev reconstructed samples
-            self.y_p = np.zeros(self.n_state_out, dtype=np.float32)
+            self.y_p = np.zeros(self.n_state_out, dtype=self.time_dtype)
             # output samples
-            self.out = np.zeros(self.hop, dtype=np.float32)
+            self.out = np.zeros(self.hop, dtype=self.time_dtype)
         else:
             # input buffer
             self.fft_in_buffer = np.zeros((self.nfft, self.num_channels),
-                                          dtype=np.float32)
+                                          dtype=self.time_dtype)
             # state buffer
             self.x_p = np.zeros((self.n_state, self.num_channels),
-                                dtype=np.float32)
+                                dtype=self.time_dtype)
             # prev reconstructed samples
             self.y_p = np.zeros((self.n_state_out, self.num_channels),
-                                dtype=np.float32)
+                                dtype=self.time_dtype)
             # output samples
             self.out = np.zeros((self.hop, self.num_channels),
-                                dtype=np.float32)
+                                dtype=self.time_dtype)
 
         # useful views on the input buffer
         self.fft_in_state = self.fft_in_buffer[self.zf:self.zf + self.n_state, ]
@@ -167,15 +179,15 @@ class STFT(object):
         if self.fixed_input:
             if self.num_frames == 0:
                 if self.mono:
-                    self.X = np.zeros(self.nbin, dtype=np.complex64)
+                    self.X = np.zeros(self.nbin, dtype=self.freq_dtype)
                 else:
                     self.X = np.zeros((self.nbin, self.num_channels),
-                                      dtype=np.complex64)
+                                      dtype=self.freq_dtype)
             else:
                 self.X = np.squeeze(np.zeros((self.num_frames,
                                               self.nbin,
                                               self.num_channels),
-                                             dtype=np.complex64))
+                                             dtype=self.freq_dtype))
                 # DFT object for multiple frames
                 self.dft_frames = DFT(nfft=self.nfft, D=self.num_frames,
                                       analysis_window=self.analysis_window,
@@ -241,12 +253,12 @@ class STFT(object):
     def set_filter(self, coeff, zb=None, zf=None, freq=False):
         """
         Set time-domain FIR filter with appropriate zero-padding.
-        Frequency spectrum of the filter is computed and set for the object. 
+        Frequency spectrum of the filter is computed and set for the object.
         There is also a check for sufficient zero-padding.
 
         Parameters
         -----------
-        coeff : numpy array 
+        coeff : numpy array
             Filter in time domain.
         zb : int
             Amount of zero-padding added to back/end of frame.
@@ -263,7 +275,8 @@ class STFT(object):
             self.zero_pad_front(zf)
         if not freq:
             # compute filter magnitude and phase spectrum
-            self.H = np.complex64(np.fft.rfft(coeff, self.nfft, axis=0))
+            self.H = self.freq_dtype(np.fft.rfft(coeff, self.nfft, axis=0))
+
             # check for sufficient zero-padding
             if self.nfft < (self.num_samples+len(coeff)-1):
                 raise ValueError('Insufficient zero-padding for chosen number '
@@ -376,7 +389,7 @@ class STFT(object):
             self.X = np.squeeze(np.zeros((self.num_frames,
                                           self.nbin,
                                           self.num_channels),
-                                         dtype=np.complex64))
+                                         dtype=self.freq_dtype))
             self.dft_frames = DFT(nfft=self.nfft,
                                   D=self.num_frames,
                                   analysis_window=self.analysis_window,
@@ -624,7 +637,7 @@ class STFT(object):
         if not self.mono:
 
             x_r = np.zeros((self.num_frames*self.hop, self.num_channels),
-                           dtype=np.float32)
+                           dtype=self.time_dtype)
 
             n = 0
             for f in range(self.num_frames):
@@ -636,7 +649,7 @@ class STFT(object):
 
         else:
 
-            x_r = np.zeros(self.num_frames*self.hop, dtype=np.float32)
+            x_r = np.zeros(self.num_frames*self.hop, dtype=self.time_dtype)
 
             # treat number of frames as the multiple channels for DFT
             if not self.fixed_input:
@@ -711,7 +724,7 @@ def analysis(x, L, hop, win=None, zp_back=0, zp_front=0):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels)
+    the_stft = STFT(L, hop=hop, analysis_window=win, channels=channels, precision=x.dtype)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)
@@ -754,7 +767,7 @@ def synthesis(X, L, hop, win=None, zp_back=0, zp_front=0):
     else:
         channels = 1
 
-    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels)
+    the_stft = STFT(L, hop=hop, synthesis_window=win, channels=channels, precision=X.dtype)
 
     if zp_back > 0:
         the_stft.zero_pad_back(zp_back)
