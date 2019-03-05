@@ -64,6 +64,7 @@ PYBIND11_MODULE(libroom, m) {
         >())
     .def("set_params", &Room<3>::set_params)
     .def("add_mic", &Room<3>::add_mic)
+    .def("reset_mics", &Room<3>::reset_mics)
     .def("image_source_model", &Room<3>::image_source_model)
     .def("get_wall", &Room<3>::get_wall)
     .def("get_max_distance", &Room<3>::get_max_distance)
@@ -74,8 +75,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_rir_entries",
         (HitLog (Room<3>::*)(
                              const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
-                             const Vectorf<3> source_pos,
-                             float scatter_coef
+                             const Vectorf<3> source_pos
                              )
         )
         &Room<3>::get_rir_entries)
@@ -83,8 +83,7 @@ PYBIND11_MODULE(libroom, m) {
         (HitLog (Room<3>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
-                             const Vectorf<3> source_pos,
-                             float scatter_coef
+                             const Vectorf<3> source_pos
                              )
         )
         &Room<3>::get_rir_entries)
@@ -99,7 +98,6 @@ PYBIND11_MODULE(libroom, m) {
     .def_readonly("walls", &Room<3>::walls)
     .def_readonly("obstructing_walls", &Room<3>::obstructing_walls)
     .def_readonly("microphones", &Room<3>::microphones)
-    .def_readonly("n_mics", &Room<3>::n_mics)
     .def_readonly("max_dist", &Room<3>::max_dist)
     ;
 
@@ -123,6 +121,7 @@ PYBIND11_MODULE(libroom, m) {
         >())
     .def("set_params", &Room<2>::set_params)
     .def("add_mic", &Room<2>::add_mic)
+    .def("reset_mics", &Room<2>::reset_mics)
     .def("image_source_model", &Room<2>::image_source_model)
     .def("get_wall", &Room<2>::get_wall)
     .def("get_max_distance", &Room<2>::get_max_distance)
@@ -133,8 +132,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_rir_entries",
         (HitLog (Room<2>::*)(
                              const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
-                             const Vectorf<2> source_pos,
-                             float scatter_coef
+                             const Vectorf<2> source_pos
                             )
         )
         &Room<2>::get_rir_entries)
@@ -142,8 +140,7 @@ PYBIND11_MODULE(libroom, m) {
         (HitLog (Room<2>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
-                             const Vectorf<2> source_pos,
-                             float scatter_coef
+                             const Vectorf<2> source_pos
                             )
         )
         &Room<2>::get_rir_entries)
@@ -158,7 +155,6 @@ PYBIND11_MODULE(libroom, m) {
     .def_readonly("walls", &Room<2>::walls)
     .def_readonly("obstructing_walls", &Room<2>::obstructing_walls)
     .def_readonly("microphones", &Room<2>::microphones)
-    .def_readonly("n_mics", &Room<2>::n_mics)
     .def_readonly("max_dist", &Room<2>::max_dist)
     ;
 
@@ -246,6 +242,7 @@ PYBIND11_MODULE(libroom, m) {
     .def("log", &Histogram2D::log)
     .def("bin", &Histogram2D::bin)
     .def("get_hist", &Histogram2D::get_hist)
+    .def("reset", &Histogram2D::reset)
     ;
 
   // Structure to hold detector hit information

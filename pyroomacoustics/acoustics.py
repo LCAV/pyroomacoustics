@@ -161,6 +161,9 @@ class OctaveBandsFactory(object):
             fc=self.base_freq, n=self.n_bands, third=third
         )
 
+    def get_bw(self):
+        """ Returns the bandwidth of the bands """
+        return np.array([b2 - b1 for b1, b2 in self.bands])
 
     def __call__(self, coeffs=0., center_freqs=None, interp_kind="linear", **kwargs):
         """

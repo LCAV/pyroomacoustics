@@ -65,6 +65,12 @@ class Microphone
     }
     ~Microphone() {};
 
+    void reset()
+    {
+      for (auto h = histograms.begin() ; h != histograms.end() ; ++h)
+        h->reset();
+    }
+
     const Vectorf<D> &get_loc() const
     {
       return loc;

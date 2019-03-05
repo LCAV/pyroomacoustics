@@ -99,8 +99,6 @@ class Room
 
     // The number of frequency bands used
     int n_bands;
-    // Very useful for raytracing
-    int n_mics;
     // 2. A distance after which a ray must have hit at least 1 wall
     float max_dist;
 
@@ -183,6 +181,12 @@ class Room
           );
     }
 
+    void reset_mics()
+    {
+      for (auto mic = microphones.begin() ; mic != microphones.end() ; ++mic)
+        mic->reset();
+    }
+
     Wall<D> &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
@@ -198,7 +202,6 @@ class Room
 
     Eigen::ArrayXf compute_scat_energy(
         const Eigen::ArrayXf &transmitted,
-        float scat_coef,
         const Wall<D> & wall,
         const Vectorf<D> & start,
         const Vectorf<D> & hit_point,
@@ -208,7 +211,6 @@ class Room
 
     bool scat_ray(
         const Eigen::ArrayXf &transmitted,
-        float scatter_coef,
         const Wall<D> &wall,
         const Vectorf<D> &prev_last_hit,
         const Vectorf<D> &hit_point,
@@ -220,21 +222,18 @@ class Room
         float phi,
         float theta,
         const Vectorf<D> source_pos,
-        float scatter_coef,
         HitLog & output
         );
 
     HitLog get_rir_entries(
         const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-        const Vectorf<D> source_pos,
-        float scatter_coef
+        const Vectorf<D> source_pos
         );
 
     HitLog get_rir_entries(
         size_t nb_phis,
         size_t nb_thetas,
-        const Vectorf<D> source_pos,
-        float scatter_coef
+        const Vectorf<D> source_pos
         );
 
     bool contains(const Vectorf<D> point);

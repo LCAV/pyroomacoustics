@@ -18,10 +18,9 @@ room_dim = [5, 4, 6]
 # Create the shoebox
 shoebox = pra.ShoeBox(
     room_dim,
-    materials=pra.Material.from_db("hard_surface"),
-    absorption=0.01,
+    absorption=0.2,
     fs=16000,
-    max_order=200,
+    max_order=15,
 )
 
 # source and mic locations

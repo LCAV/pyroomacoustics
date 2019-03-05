@@ -16,7 +16,6 @@ class TestRayEnergy(unittest.TestCase):
         absorption = 0.07
         round_trip = 4 * np.sqrt(2)
         energy_thresh = 1e-7
-        sound_speed = pra.constants.get('c')
         transmission = np.sqrt(1. - absorption)
 
         # Create the groundtruth list of energy and travel time
@@ -30,33 +29,34 @@ class TestRayEnergy(unittest.TestCase):
 
         print('Creating the python room')
         room = pra.ShoeBox([2, 2, 2], fs=16000, absorption=absorption)
-        #room = pra.Room(walls, fs=16000)
+        # room = pra.Room(walls, fs=16000)
         room.add_source([0.5, 0.5, 1])
         room.add_microphone_array(pra.MicrophoneArray(np.c_[[1.5, 1.5, 1.]], room.fs))
 
         ray_0 = np.array([1 / np.sqrt(2), -1 / np.sqrt(2), 0.])
 
         print('Creating the cpp room')
-        c_room = pra.room_factory(room.walls, room.obstructing_walls, room.mic_array.R)
-        c_room.set_params(
-                pra.constants.get('c'),
+        room.room_engine.set_params(
+                room.c,
+                0,
                 energy_thresh,  # energy threshold for rays
                 5.,  # time threshold for rays
                 0.15,  # detector radius
+                0.004, # resolution of histogram [s]
                 False,  # is it hybrid model ?
-                2,  # order of ISM
                 )
 
         print('Running ray tracing')
-        log = c_room.get_rir_entries(
+        log = room.room_engine.get_rir_entries(
                 np.c_[[-np.pi / 4., np.pi / 2.]],
                 room.sources[0].position,  # source loc
-                0.,  # scat. coeff
                 )
 
         log_tr = []
         for hit in log[0]:
             log_tr.append([hit.distance, hit.transmitted[0]])
+
+        import pdb; pdb.set_trace()
 
         self.assertTrue(np.allclose(log_tr, log_gt))
 

@@ -91,6 +91,12 @@ class Histogram2D
       counts.setZero();
     }
 
+    void reset()
+    {
+      array.setZero();
+      counts.setZero();
+    }
+
     void resize_rows(int new_rows)
     {
       auto old_rows = array.rows();

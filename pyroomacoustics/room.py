@@ -285,12 +285,13 @@ Example
 '''
 
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import math
 import numpy as np
 import scipy.spatial as spatial
 from scipy.signal import sosfiltfilt
+from scipy.interpolate import interp1d
 
 #import .beamforming as bf
 from . import beamforming as bf
@@ -298,6 +299,7 @@ from .soundsource import SoundSource
 from .acoustics import OctaveBandsFactory
 from .parameters import constants, eps, Physics, Material
 from .utilities import fractional_delay
+from .doa import GridCircle, GridSphere
 
 from . import libroom
 from .libroom import Wall, Wall2D
@@ -311,6 +313,34 @@ def wall_factory(corners, absorption, scattering, name=""):
         return Wall2D(corners, absorption, 0., name)
     else:
         raise ValueError('Rooms can only be 2D or 3D')
+
+
+def sequence_generation(volume, duration, c, fs, max_rate=10000):
+
+    # repeated constant
+    fpcv = 4 * np.pi * c ** 3 / volume
+
+    # initial time
+    t0 = ((2 * np.log(2)) / fpcv) ** (1./3.)
+    times = [t0]
+
+    while times[-1] < duration:
+
+        # uniform random variable
+        z = np.random.rand()
+        # rate of the point process at this time
+        mu = np.minimum(fpcv * times[-1] ** 2, max_rate)
+        # time interval to next point
+        dt = np.log(1 / z) / mu
+
+        times.append(times[-1] + dt)
+
+    # convert from continuous to discrete time
+    indices = (np.array(times) * fs).astype(np.int)
+    seq = np.zeros(indices[-1] + 1)
+    seq[indices] = np.random.choice([1, -1], size=len(indices))
+
+    return seq
 
 
 class Room(object):
@@ -334,7 +364,6 @@ class Room(object):
 
     :attribute walls: (Wall array) list of walls forming the room
     :attribute fs: (int) sampling frequency
-    :attribute t0: (float) time offset
     :attribute max_order: (int) the maximum computed order for images
     :attribute sources: (SoundSource array) list of sound sources
     :attribute mics: (MicrophoneArray) array of microphones
@@ -348,7 +377,6 @@ class Room(object):
             self,
             walls,
             fs=8000,
-            t0=0.,
             temperature=25.,
             humidity=70.,
             c=None,
@@ -365,7 +393,7 @@ class Room(object):
         self.dim = walls[0].dim
 
         # initialize everything else
-        self._var_init(fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics)
+        self._var_init(fs, temperature, humidity, c, air_absorption, max_order, sources, mics)
 
         self._wall_mapping()
 
@@ -417,7 +445,7 @@ class Room(object):
                 self.rt_args[key] = val
 
 
-    def _var_init(self, fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics):
+    def _var_init(self, fs, temperature, humidity, c, air_absorption, max_order, sources, mics):
 
         self.fs = fs
         self.octave_bands = OctaveBandsFactory(fs=self.fs)
@@ -436,12 +464,6 @@ class Room(object):
         else:
             # ignore temperature and humidity if coefficients are provided directly
             self.air_absorption = self.octave_bands(**air_absorption)
-
-        # Compute the filter delay if not provided
-        if t0 < (constants.get('frac_delay_length')-1)/float(fs)/2:
-            self.t0 = (constants.get('frac_delay_length')-1)/float(fs)/2
-        else:
-            self.t0 = t0
 
         if sources is not None and isinstance(sources, list):
             self.sources = sources
@@ -1019,6 +1041,29 @@ class Room(object):
                         self.visibility[-1][m,:] = 0
 
 
+    def ray_tracing(self):
+
+        if self.dim == 2:
+            grid = GridCircle(n_points=self.rt_args['n_rays'])
+        else:
+            grid = GridSphere(n_points=self.rt_args['n_rays'])
+
+        # this will be a list of lists with
+        # shape (n_mics, n_src, n_directions, n_bands, n_time_bins)
+        self.rt_histograms = [[] for r in range(self.mic_array.M)]
+
+        for s, src in enumerate(self.sources):
+            self.room_engine.get_rir_entries(grid.spherical, src.position)
+
+            for r in range(self.mic_array.M):
+                self.rt_histograms[r].append([])
+                for h in self.room_engine.microphones[r].histograms:
+                    # get a copy of the histogram
+                    self.rt_histograms[r][s].append(h.get_hist())
+                # reset the receiver's histograms
+                self.room_engine.reset_mics()
+
+
     def compute_rir(self, mode='ism'):
         ''' Compute the room impulse response between every source and microphone.
         :param mode: a string that defines which method to use to compute the RIR.
@@ -1031,6 +1076,8 @@ class Room(object):
 
         self.rir = []
 
+        volume_room = self.get_volume()
+
         for m, mic in enumerate(self.mic_array.R.T):
             self.rir.append([])
             for s, src in enumerate(self.sources):
@@ -1040,36 +1087,67 @@ class Room(object):
                 and the microphone whose position is given as an
                 argument.
                 '''
-
                 # fractional delay length
                 fdl = constants.get('frac_delay_length')
 
-                # compute the distance
-                dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
-                time = dist / self.c + self.t0
+                # get the maximum length from the histograms
+                n_bins = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0][-1] + 1
+                t_max = n_bins * self.rt_args['hist_bin_size']
 
                 # the number of samples needed
-                N = math.ceil((time.max() - self.t0) * self.fs) + fdl
+                N = math.ceil(t_max * self.fs) + fdl
 
-                t = np.arange(N) / float(self.fs)
-                ir = np.zeros(t.shape)
+                # compute the distance from image sources
+                dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
+                time = dist / self.c
+
+                # this is where we will compose the RIR
+                time_ir = np.arange(N) / self.fs
+                ir = np.zeros(N)
+
+                # this is the random sequence for the tail generation
+                seq = sequence_generation(volume_room, N / self.fs, self.c, self.fs)
+                seq = seq[:N]
 
                 bp_filt = self.octave_bands.get_filters() if self.multi_band else [None]
-                for b, bpf in enumerate(bp_filt):
+                bws = self.octave_bands.get_bw()
+                for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
 
                     ir_loc = np.zeros_like(ir)
 
                     alpha = src.damping[b, :] / dist
 
-                    # Try to use the Cython extension
+                    # Use the Cython extension for the fractional delays
                     from .build_rir import fast_rir_builder
                     vis = self.visibility[s][m,:].astype(np.int32)
                     fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
 
                     if bpf is not None:
                         ir += sosfiltfilt(bpf, ir_loc)
+                        seq_bp = sosfiltfilt(bpf, seq)
                     else:
                         ir += ir_loc
+                        seq_bp = seq.copy()
+
+                    # interpolate the histogram and multiply the sequence
+                    hist_low_res = self.rt_histograms[m][s][0][b, :] * np.sqrt(bw / self.fs * 2)
+                    time_low_res = np.arange(n_bins) * self.rt_args['hist_bin_size']
+                    interpolator = interp1d(
+                            time_low_res,
+                            hist_low_res[:n_bins],
+                            fill_value=0.,
+                            bounds_error=False,
+                            )
+                    interp_hist = interpolator(time_ir)
+                    seq_bp *= interp_hist
+                    import matplotlib.pyplot as plt
+                    plt.figure()
+                    plt.plot(time_ir, ir_loc)
+                    plt.plot(time_ir, seq_bp)
+                    plt.plot(time_low_res, hist_low_res[:n_bins])
+                    plt.show()
+
+                    ir += seq_bp
 
                 self.rir[-1].append(ir)
 
@@ -1354,12 +1432,10 @@ class Room(object):
             n = (w.normal) / np.linalg.norm(w.normal)
             one_point = w.corners[:, 0]
 
-            wall_sum += np.dot(n, one_point) * self.wall_area(w)
+            wall_sum += np.dot(n, one_point) * w.area()
 
         return wall_sum / 3.
 
-
-# Room 3D
 
 class ShoeBox(Room):
     '''
@@ -1367,22 +1443,21 @@ class ShoeBox(Room):
     '''
 
     def __init__(self,
-            p,
-            absorption=None,  # deprecated
-            materials=None,
-            fs=8000,
-            t0=0.,
-            temperature=25.,
-            humidity=70.,
-            c=None,
-            air_absorption=None,
-            max_order=1,
-            ray_trace_args=None,
-            sources=None,
-            mics=None,
-            ):
+                 p,
+                 absorption=None,  # deprecated
+                 materials=None,
+                 fs=8000,
+                 temperature=25.,
+                 humidity=70.,
+                 c=None,
+                 air_absorption=None,
+                 max_order=1,
+                 ray_trace_args=None,
+                 sources=None,
+                 mics=None,
+                 ):
 
-        Room._var_init(self, fs, t0, temperature, humidity, c, air_absorption, max_order, sources, mics)
+        Room._var_init(self, fs, temperature, humidity, c, air_absorption, max_order, sources, mics)
 
         p = np.array(p, dtype=np.float32)
 
@@ -1391,12 +1466,8 @@ class ShoeBox(Room):
 
         self.dim = p.shape[0]
 
-        # if only one point is provided, place the other at origin
-        p2 = np.array(p)
-        p1 = np.zeros(self.dim)
-
         # record shoebox dimension in object
-        self.shoebox_dim = p2
+        self.shoebox_dim = np.array(p)
 
         # Keep the correctly ordered naming of walls
         # This is the correct order for the shoebox computation later
@@ -1483,10 +1554,10 @@ class ShoeBox(Room):
         # Get the absorption and scattering as arrays
         # shape: (n_bands, n_walls)
         absorption_array = np.array(
-                [ materials[w].get_abs() for w in self.wall_names ]
+                [materials[w].get_abs() for w in self.wall_names]
                 ).T
         scattering_array = np.array(
-                [ materials[w].get_scat() for w in self.wall_names ]
+                [materials[w].get_scat() for w in self.wall_names]
                 ).T
 
         # process arguments for ray tracing
@@ -1499,7 +1570,7 @@ class ShoeBox(Room):
                 [],
                 self.air_absorption,
                 self.c,  # speed of sound
-                max_order,
+                self.max_order,
                 self.rt_args['energy_thres'],
                 self.rt_args['time_thres'],
                 self.rt_args['receiver_radius'],

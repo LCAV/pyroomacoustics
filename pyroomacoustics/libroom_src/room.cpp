@@ -177,7 +177,6 @@ void Room<D>::init()
 
   // Useful for ray tracing
   max_dist = get_max_distance();
-  n_mics = microphones.size();
 }
 
 
@@ -397,8 +396,6 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
   std::vector<Eigen::ArrayXXf> transmission_pwr;
   for (size_t i(0) ; i <= ism_order ; ++i)
     transmission_pwr.push_back(Eigen::ArrayXXf(n_bands, 2*D));
-
-  std::cout << transmission_pwr[0].rows() << "x" << transmission_pwr[0].cols() << std::endl << std::flush;
 
   transmission_pwr[0].setOnes();
   if (ism_order > 0)
@@ -643,7 +640,6 @@ std::tuple < Vectorf<D>, int > Room<D>::next_wall_hit(
 template<size_t D>
 Eigen::ArrayXf Room<D>::compute_scat_energy(
   const Eigen::ArrayXf &transmitted,
-  float scat_coef,
   const Wall<D> & wall,
   const Vectorf<D> & start,
   const Vectorf<D> & hit_point,
@@ -679,13 +675,12 @@ Eigen::ArrayXf Room<D>::compute_scat_energy(
   float cos_theta = cos_angle_between(n, r);
   float gamma_term =  1 - sqrt(B*B-mic_radius*mic_radius)/B;
   
-  return transmitted * sqrt( scat_coef * 2 * cos_theta * gamma_term ) / (travel_dist + B);
+  return transmitted * (wall.scatter * 2 * cos_theta * gamma_term).sqrt() / (travel_dist + B);
 }
 
 template<size_t D>
 bool Room<D>::scat_ray(
     const Eigen::ArrayXf &transmitted,
-    float scatter_coef,
     const Wall<D> &wall,
     const Vectorf<D> &prev_last_hit,
     const Vectorf<D> &hit_point,
@@ -701,7 +696,6 @@ bool Room<D>::scat_ray(
 
     float energy: The energy of the ray right after last_wall has absorbed
       a part of it
-    scatter_coef: The scattering coefficient
     wall: The wall object where last_hit is located
     prev_last_hit: (array size 2 or 3) the previous last wall hit_point position (needed to check that 
       the wall normal is correctly oriented)
@@ -717,7 +711,7 @@ bool Room<D>::scat_ray(
   float distance_thres = time_thres * sound_speed;
 
   bool ret = true;  
-  for(int k(0); k < n_mics; ++k)
+  for(int k(0); k < microphones.size(); ++k)
   {
 
     Vectorf<D> mic_pos = microphones[k].get_loc();
@@ -734,7 +728,6 @@ bool Room<D>::scat_ray(
 
     Eigen::VectorXf scat_trans = compute_scat_energy(
         transmitted,
-        scatter_coef,
         wall,
         prev_last_hit,
         hit_point,
@@ -783,7 +776,6 @@ void Room<D>::simul_ray(
     float phi,
     float theta,
     const Vectorf<D> source_pos,
-    float scatter_coef,
     HitLog &output
     )
 {
@@ -854,7 +846,7 @@ void Room<D>::simul_ray(
     // Check if the specular ray hits any of the microphone
     if (!already_in_ism)
     {
-      for(int k(0); k<n_mics; k++)
+      for(int k(0) ; k < microphones.size() ; k++)
       {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)
@@ -900,12 +892,11 @@ void Room<D>::simul_ray(
       break;
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-    if (scatter_coef > 0 && !already_in_ism)
+    if (wall.scatter.maxCoeff() > 0.f && !already_in_ism)
     {
       // Shoot the scattered ray
       scat_ray(
           transmitted,
-          scatter_coef,
           wall,
           start,
           hit_point,
@@ -914,7 +905,7 @@ void Room<D>::simul_ray(
 
       // The overall ray's energy gets decreased by the total
       // amount of scattered energy
-      transmitted *= sqrtf(1.f - scatter_coef);
+      transmitted *= (1.f - wall.scatter).sqrt();
     }
 
     // set up for next iteration
@@ -929,12 +920,11 @@ void Room<D>::simul_ray(
 template<size_t D>
 HitLog Room<D>::get_rir_entries(
   const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-  const Vectorf<D> source_pos,
-  float scatter_coef
+  const Vectorf<D> source_pos
   )
 {
   HitLog output;
-  output.resize(n_mics);
+  output.resize(microphones.size());
 
   for (int k(0) ; k < angles.cols() ; k++)
   {
@@ -944,7 +934,7 @@ HitLog Room<D>::get_rir_entries(
     if (D == 3)
       theta = angles.coeff(1,k);
 
-    simul_ray(phi, theta, source_pos, scatter_coef, output);
+    simul_ray(phi, theta, source_pos, output);
   }
 
   return output;
@@ -955,8 +945,7 @@ template<size_t D>
 HitLog Room<D>::get_rir_entries(
     size_t nb_phis,
     size_t nb_thetas,
-    const Vectorf<D> source_pos,
-    float scatter_coef
+    const Vectorf<D> source_pos
     )
 {
 
@@ -969,7 +958,6 @@ HitLog Room<D>::get_rir_entries(
      (NOTE: nb_phis*nb_thetas is the number of simulated rays
    source_pos: (array size 2 or 3) represents the position of the sound source
    mic_radius: the radius of the circular(2D) or spherical(3D) microphone
-   scatter_coef: the scattering coefficients used for the walls of the room
    time_thres: the simulation time threshold for each ray
    energy_thresh: The energy threshold for the ray
    sound_speed: the constant speed of sound
@@ -983,7 +971,7 @@ HitLog Room<D>::get_rir_entries(
 
   // ------------------ INIT --------------------
   HitLog output;
-  output.resize(n_mics);
+  output.resize(microphones.size());
 
   // ------------------ RAY TRACING --------------------
 
@@ -1003,7 +991,7 @@ HitLog Room<D>::get_rir_entries(
       }
 
       // Trace this ray
-      simul_ray(phi, theta, source_pos, scatter_coef, output);
+      simul_ray(phi, theta, source_pos, output);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       // => get out of the theta loop
