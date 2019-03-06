@@ -254,9 +254,10 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
-  for (int mic = 0 ; mic < microphones.size() ; mic++)
+  int m = 0;
+  for (auto mic = microphones.begin() ; mic != microphones.end() ; ++mic, ++m)
   {
-    bool is_visible = is_visible_dfs(microphones[mic].get_loc(), is);
+    bool is_visible = is_visible_dfs(mic->get_loc(), is);
     if (is_visible && !any_visible)
     {
       any_visible = is_visible;
@@ -264,7 +265,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
       is.visible_mics.setZero();
     }
     if (any_visible)
-      is.visible_mics.coeffRef(mic) = is_visible;
+      is.visible_mics.coeffRef(m) = is_visible;
   }
 
   if (any_visible)
@@ -707,7 +708,6 @@ bool Room<D>::scat_ray(
 */
 
   // Convert the energy threshold to transmission threshold (make this more efficient at some point)
-  float trans_thres = sqrtf(energy_thres);
   float distance_thres = time_thres * sound_speed;
 
   bool ret = true;  
@@ -726,18 +726,6 @@ bool Room<D>::scat_ray(
       continue;
     }
 
-    Eigen::VectorXf scat_trans = compute_scat_energy(
-        transmitted,
-        wall,
-        prev_last_hit,
-        hit_point,
-        mic_pos,
-        travel_dist
-        );
-
-    // If we have multiple microphones, we must keep travel_time untouched !
-    float travel_dist_at_mic = travel_dist;
-
     // Prepare the output tupple of next_wall_hit()
     Vectorf<D> dont_care;
     int next_wall_index(-1);
@@ -746,15 +734,18 @@ bool Room<D>::scat_ray(
     // If no wall obstructs the scattered ray
     if (next_wall_index == -1)
     {
-
       // As the ray is shot towards the microphone center,
       // the hop dist can be easily computed
-      float hop_dist = (hit_point - mic_pos).norm() - mic_radius;
-      travel_dist_at_mic += hop_dist;
+      float hop_dist = (hit_point - mic_pos).norm();
+      float travel_dist_at_mic = travel_dist + hop_dist;
+      float d_sq = travel_dist_at_mic * travel_dist_at_mic;
+
+      // compute the scattered energy reaching the microphone
+      Eigen::VectorXf scat_trans = wall.scatter * transmitted / d_sq;
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
-      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > trans_thres)
+      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > d_sq * energy_thres)
       {
         output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
         microphones[k].log_histogram(output[k].back(), hit_point);
@@ -815,7 +806,6 @@ void Room<D>::simul_ray(
   int specular_counter(0);
 
   // Convert the energy threshold to transmission threshold
-  float trans_thres = sqrtf(energy_thres);
   float distance_thres = time_thres * sound_speed;
 
   //---------------------------------------------
@@ -870,9 +860,10 @@ void Room<D>::simul_ray(
           // We DON'T want to modify the variables transmitted amplitude and travel_dist
           //   because the ray will continue its way          
           float travel_dist_at_mic = travel_dist + distance;
-          Eigen::ArrayXf trans_at_mic = transmitted / travel_dist_at_mic;
+          float d_sq = travel_dist_at_mic * travel_dist_at_mic;
+          Eigen::ArrayXf trans_at_mic = transmitted / d_sq;
 
-          if (travel_dist_at_mic < distance_thres && trans_at_mic.maxCoeff() > trans_thres)
+          if (travel_dist_at_mic < distance_thres && trans_at_mic.maxCoeff() > energy_thres)
           {		  
             output[k].push_back(Hit(travel_dist_at_mic, trans_at_mic));
             microphones[k].log_histogram(output[k].back(), start);
@@ -884,12 +875,7 @@ void Room<D>::simul_ray(
     // Update the characteristics
     distance = (start - hit_point).norm();
     travel_dist += distance;
-    transmitted *= wall.get_transmission();
-    
-
-    // Check if we reach the thresholds for this ray
-    if (travel_dist > distance_thres || transmitted.maxCoeff() < trans_thres)
-      break;
+    transmitted *= wall.get_energy_reflection();
 
     // Let's shoot the scattered ray induced by the rebound on the wall
     if (wall.scatter.maxCoeff() > 0.f && !already_in_ism)
@@ -905,14 +891,18 @@ void Room<D>::simul_ray(
 
       // The overall ray's energy gets decreased by the total
       // amount of scattered energy
-      transmitted *= (1.f - wall.scatter).sqrt();
+      transmitted *= (1.f - wall.scatter);
     }
+
+    // Check if we reach the thresholds for this ray
+    float d_sq = travel_dist * travel_dist;
+    if (travel_dist > distance_thres || transmitted.maxCoeff() < d_sq * energy_thres)
+      break;
 
     // set up for next iteration
     specular_counter += 1;
     end = wall.normal_reflect(start, hit_point, max_dist);
     start = hit_point;
-
   }
 }
 

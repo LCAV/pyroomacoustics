@@ -53,8 +53,10 @@ template<size_t D>
 void Wall<D>::init()
 {
   // compute transmission coefficients from absorption
+  energy_reflection.resize(absorption.size());
+  energy_reflection = 1.f - absorption;
   transmission.resize(absorption.size());
-  transmission = (1.f - absorption).sqrt();
+  transmission = energy_reflection.sqrt();
 
   if (absorption.size() != scatter.size())
   {
@@ -115,7 +117,7 @@ Wall<3>::Wall(
   basis.col(0) = svd.matrixU().col(0);
   basis.col(1) = svd.matrixU().col(1);
 
-  // The normal correspons to the smallest singular value
+  // The normal corresponds to the smallest singular value
   normal = svd.matrixU().col(2);
 
   // Project the 3d corners into 2d plane

@@ -58,6 +58,7 @@ class Wall
     Eigen::ArrayXf scatter;  // the wall scattering coefficient for every freq. band
     std::string name;
     Eigen::ArrayXf transmission;  // computed from absorption as sqrt(1 - a)
+    Eigen::ArrayXf energy_reflection;  // computed from absorption as (1 - a)
     
     // Wall geometry properties
     Eigen::Matrix<float, D, 1>  normal;
@@ -79,18 +80,19 @@ class Wall
         const Eigen::Matrix<float, D, Eigen::Dynamic> &_corners,
         const Eigen::ArrayXf &_absorption,
         const Eigen::ArrayXf &_scatter
-        ) : Wall(_corners, _absorption, "") {}
+        ) : Wall(_corners, _absorption, _scatter, "") {}
 
     // Copy constructor
     Wall(const Wall<D> &w) :
-      absorption(w.absorption), name(w.name),
-      transmission(w.transmission), scatter(w.scatter),
+      absorption(w.absorption), scatter(w.scatter), name(w.name),
+      transmission(w.transmission), energy_reflection(w.energy_reflection),
       normal(w.normal), corners(w.corners),
       origin(w.origin), basis(w.basis), flat_corners(w.flat_corners)
     {}
 
     // public methods
     const Eigen::ArrayXf &get_transmission() const { return transmission; }
+    const Eigen::ArrayXf &get_energy_reflection() const { return energy_reflection; }
     size_t get_n_bands() const { return transmission.size(); }
     float area() const;  // compute the area of the wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall

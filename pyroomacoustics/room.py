@@ -322,14 +322,14 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1./3.)
-    times = [t0]
+    times = [0.]
 
-    while times[-1] < duration:
+    while times[-1] < t0 + duration:
 
         # uniform random variable
         z = np.random.rand()
         # rate of the point process at this time
-        mu = np.minimum(fpcv * times[-1] ** 2, max_rate)
+        mu = np.minimum(fpcv * (t0 + times[-1]) ** 2, max_rate)
         # time interval to next point
         dt = np.log(1 / z) / mu
 
@@ -393,15 +393,15 @@ class Room(object):
         self.dim = walls[0].dim
 
         # initialize everything else
-        self._var_init(fs, temperature, humidity, c, air_absorption, max_order, sources, mics)
+        self._var_init(
+                fs, temperature, humidity, c, air_absorption, max_order,
+                sources, mics, ray_trace_args,
+        )
 
         self._wall_mapping()
 
         # check which walls are part of the convex hull
         self.convex_hull()
-
-        # process arguments for ray tracing
-        self._ray_trace_args_init(ray_trace_args)
 
         args = [
                 self.walls,
@@ -428,11 +428,11 @@ class Room(object):
     def _ray_trace_args_init(self, rt_args):
 
         rt_args_default = {
-                'n_rays' : 10000,
-                'energy_thres' : 1e-7,
-                'time_thres' : 1.,
-                'receiver_radius' : 0.15,
-                'hist_bin_size' : 0.004,
+                'n_rays': 10000,
+                'energy_thres': 1e-7,
+                'time_thres': 1.,
+                'receiver_radius': 0.15,
+                'hist_bin_size': 0.004,
                 }
 
         if rt_args is None:
@@ -444,8 +444,26 @@ class Room(object):
             if key not in self.rt_args:
                 self.rt_args[key] = val
 
+        # set the histogram bin size so that it is an integer number of samples
+        self.rt_args['hist_bin_size_samples'] = math.floor(
+                self.fs * self.rt_args['hist_bin_size']
+        )
+        self.rt_args['hist_bin_size'] = (
+                self.rt_args['hist_bin_size_samples'] / self.fs
+        )
 
-    def _var_init(self, fs, temperature, humidity, c, air_absorption, max_order, sources, mics):
+    def _var_init(
+            self,
+            fs,
+            temperature,
+            humidity,
+            c,
+            air_absorption,
+            max_order,
+            sources,
+            mics,
+            rt_args,
+            ):
 
         self.fs = fs
         self.octave_bands = OctaveBandsFactory(fs=self.fs)
@@ -460,9 +478,11 @@ class Room(object):
             self.c = c
 
         if air_absorption is None:
-            self.air_absorption = self.octave_bands(**self.physics.get_air_absorption())
+            self.air_absorption = self.octave_bands(
+                    **self.physics.get_air_absorption()
+            )
         else:
-            # ignore temperature and humidity if coefficients are provided directly
+            # ignore temperature and humidity if coefficients are provided
             self.air_absorption = self.octave_bands(**air_absorption)
 
         if sources is not None and isinstance(sources, list):
@@ -478,6 +498,8 @@ class Room(object):
         # initialize the attribute for the impulse responses
         self.rir = None
 
+        # Preparte the ray tracing parameters
+        self._ray_trace_args_init(rt_args)
 
     def _wall_mapping(self):
 
@@ -486,7 +508,6 @@ class Room(object):
         for i in range(len(self.walls)):
             if self.walls[i].name is not None:
                 self.wallsId[self.walls[i].name] = i
-
 
     @classmethod
     def from_corners(
@@ -500,10 +521,17 @@ class Room(object):
         '''
         Creates a 2D room by giving an array of corners.
 
-        :arg corners: (np.array dim 2xN, N>2) list of corners, must be antiClockwise oriented
-        :arg absorption: (float array or float) list of absorption factor for each wall or single value for all walls
+        Parameters
+        ----------
+        corners: (np.array dim 2xN, N>2)
+            list of corners, must be antiClockwise oriented
+        absorption: float array or float
+            list of absorption factor for each wall or single value
+            for all walls
 
-        :returns: (Room) instance of a 2D room
+        Returns
+        -------
+        Instance of a 2D room
         '''
         n_walls = corners.shape[1]
 
@@ -1037,9 +1065,8 @@ class Room(object):
                 # We need to check that microphones are indeed in the room
                 for m in range(self.mic_array.R.shape[1]):
                     # if not, it's not visible from anywhere!
-                    if not self.is_inside(self.mic_array.R[:,m]):
-                        self.visibility[-1][m,:] = 0
-
+                    if not self.is_inside(self.mic_array.R[:, m]):
+                        self.visibility[-1][m, :] = 0
 
     def ray_tracing(self):
 
@@ -1063,16 +1090,10 @@ class Room(object):
                 # reset the receiver's histograms
                 self.room_engine.reset_mics()
 
-
-    def compute_rir(self, mode='ism'):
-        ''' Compute the room impulse response between every source and microphone.
-        :param mode: a string that defines which method to use to compute the RIR.
-                    It can take values :
-                    'ism' for pure image source method,
-                    'rt' for pure ray tracing,
-                    'hybrid' for a mix of both methods
-
-        All other default params are needed for the ray tracing method'''
+    def compute_rir(self):
+        """
+        Compute the room impulse response between every source and microphone.
+        """
 
         self.rir = []
 
@@ -1089,28 +1110,32 @@ class Room(object):
                 '''
                 # fractional delay length
                 fdl = constants.get('frac_delay_length')
+                fdl2 = fdl // 2
 
                 # get the maximum length from the histograms
                 n_bins = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0][-1] + 1
                 t_max = n_bins * self.rt_args['hist_bin_size']
 
                 # the number of samples needed
-                N = math.ceil(t_max * self.fs) + fdl
+                # round up to multiple of the histogram bin size
+                # add the lengths of the fractional delay filter
+                hbss = self.rt_args['hist_bin_size_samples']
+                N = math.ceil(t_max * self.fs / hbss) * hbss
 
                 # compute the distance from image sources
                 dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
                 time = dist / self.c
 
                 # this is where we will compose the RIR
-                time_ir = np.arange(N) / self.fs
-                ir = np.zeros(N)
+                time_ir = np.arange(N + fdl) / self.fs
+                ir = np.zeros(N + fdl)
 
                 # this is the random sequence for the tail generation
                 seq = sequence_generation(volume_room, N / self.fs, self.c, self.fs)
                 seq = seq[:N]
 
                 bp_filt = self.octave_bands.get_filters() if self.multi_band else [None]
-                bws = self.octave_bands.get_bw()
+                bws = self.octave_bands.get_bw() if self.multi_band else [self.fs / 2]
                 for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
 
                     ir_loc = np.zeros_like(ir)
@@ -1119,35 +1144,39 @@ class Room(object):
 
                     # Use the Cython extension for the fractional delays
                     from .build_rir import fast_rir_builder
-                    vis = self.visibility[s][m,:].astype(np.int32)
+                    vis = self.visibility[s][m, :].astype(np.int32)
                     fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
 
-                    if bpf is not None:
-                        ir += sosfiltfilt(bpf, ir_loc)
-                        seq_bp = sosfiltfilt(bpf, seq)
-                    else:
-                        ir += ir_loc
-                        seq_bp = seq.copy()
+                    seq_bp = seq.copy()
 
                     # interpolate the histogram and multiply the sequence
-                    hist_low_res = self.rt_histograms[m][s][0][b, :] * np.sqrt(bw / self.fs * 2)
-                    time_low_res = np.arange(n_bins) * self.rt_args['hist_bin_size']
-                    interpolator = interp1d(
-                            time_low_res,
-                            hist_low_res[:n_bins],
-                            fill_value=0.,
-                            bounds_error=False,
-                            )
-                    interp_hist = interpolator(time_ir)
-                    seq_bp *= interp_hist
+                    seq_bp_rot = seq_bp.reshape((-1, hbss))
+                    new_n_bins = seq_bp_rot.shape[0]
+                    hist = self.rt_histograms[m][s][0][b, :new_n_bins]
+                    normalization = np.linalg.norm(seq_bp_rot, axis=1)
+                    indices = normalization > 0.
+                    seq_bp_rot[indices, :] /= normalization[indices, None]
+                    seq_bp_rot *= np.sqrt(hist[:, None])
+
+                    if bpf is not None:
+                        ir_loc = sosfiltfilt(bpf, ir_loc)
+                        seq_bp = sosfiltfilt(bpf, seq_bp)
+
+                    # heuristic!
+                    seq_bp *= np.sqrt(0.5)
+
+                    """
                     import matplotlib.pyplot as plt
                     plt.figure()
                     plt.plot(time_ir, ir_loc)
-                    plt.plot(time_ir, seq_bp)
-                    plt.plot(time_low_res, hist_low_res[:n_bins])
+                    plt.plot(time_ir[fdl2:fdl2+N], seq_bp)
+                    time_low_res = (0.5 + np.arange(0, new_n_bins)) * hbss / self.fs
+                    plt.plot(time_low_res, 0.5 * np.sqrt(hist))
                     plt.show()
+                    """
 
-                    ir += seq_bp
+                    ir += ir_loc
+                    ir[fdl2:fdl2+N] += seq_bp
 
                 self.rir[-1].append(ir)
 
@@ -1457,7 +1486,10 @@ class ShoeBox(Room):
                  mics=None,
                  ):
 
-        Room._var_init(self, fs, temperature, humidity, c, air_absorption, max_order, sources, mics)
+        Room._var_init(
+                self, fs, temperature, humidity, c, air_absorption,
+                max_order, sources, mics, ray_trace_args,
+        )
 
         p = np.array(p, dtype=np.float32)
 
@@ -1559,9 +1591,6 @@ class ShoeBox(Room):
         scattering_array = np.array(
                 [materials[w].get_scat() for w in self.wall_names]
                 ).T
-
-        # process arguments for ray tracing
-        Room._ray_trace_args_init(self, ray_trace_args)
 
         args = [
                 self.shoebox_dim,
