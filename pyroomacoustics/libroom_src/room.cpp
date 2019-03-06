@@ -741,7 +741,9 @@ bool Room<D>::scat_ray(
       float d_sq = travel_dist_at_mic * travel_dist_at_mic;
 
       // compute the scattered energy reaching the microphone
-      Eigen::VectorXf scat_trans = wall.scatter * transmitted / d_sq;
+      float m_sq = mic_radius * mic_radius;
+      float h_sq = hop_dist * hop_dist;
+      Eigen::VectorXf scat_trans = wall.scatter * transmitted * 2.f * m_sq / h_sq;
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
@@ -865,7 +867,8 @@ void Room<D>::simul_ray(
 
           if (travel_dist_at_mic < distance_thres && trans_at_mic.maxCoeff() > energy_thres)
           {		  
-            output[k].push_back(Hit(travel_dist_at_mic, trans_at_mic));
+            //output[k].push_back(Hit(travel_dist_at_mic, trans_at_mic));
+            output[k].push_back(Hit(travel_dist_at_mic, transmitted));
             microphones[k].log_histogram(output[k].back(), start);
           }
         }

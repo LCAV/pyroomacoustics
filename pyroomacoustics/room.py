@@ -1147,23 +1147,25 @@ class Room(object):
                     vis = self.visibility[s][m, :].astype(np.int32)
                     fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
 
-                    seq_bp = seq.copy()
+                    if bpf is not None:
+                        ir_loc = sosfiltfilt(bpf, ir_loc)
+                        seq_bp = sosfiltfilt(bpf, seq)
+                    else:
+                        seq_bp = seq.copy()
 
                     # interpolate the histogram and multiply the sequence
                     seq_bp_rot = seq_bp.reshape((-1, hbss))
                     new_n_bins = seq_bp_rot.shape[0]
+
                     hist = self.rt_histograms[m][s][0][b, :new_n_bins]
+                    hist *= 2 / (self.rt_args['receiver_radius'] ** 2 * self.rt_args['n_rays'])
+
                     normalization = np.linalg.norm(seq_bp_rot, axis=1)
                     indices = normalization > 0.
                     seq_bp_rot[indices, :] /= normalization[indices, None]
                     seq_bp_rot *= np.sqrt(hist[:, None])
 
-                    if bpf is not None:
-                        ir_loc = sosfiltfilt(bpf, ir_loc)
-                        seq_bp = sosfiltfilt(bpf, seq_bp)
-
-                    # heuristic!
-                    seq_bp *= np.sqrt(0.5)
+                    seq_bp *= np.sqrt(2 * bw / self.fs)
 
                     """
                     import matplotlib.pyplot as plt

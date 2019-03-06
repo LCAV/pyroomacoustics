@@ -165,7 +165,6 @@ class Histogram2D
 
     Eigen::ArrayXXf get_hist() const
     {
-      //return array / counts.max(1).cast<float>();
       return array;
     }
 };
