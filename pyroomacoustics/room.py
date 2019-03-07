@@ -1127,17 +1127,19 @@ class Room(object):
                 time = dist / self.c
 
                 # this is where we will compose the RIR
-                time_ir = np.arange(N + fdl) / self.fs
                 ir = np.zeros(N + fdl)
 
                 # this is the random sequence for the tail generation
                 seq = sequence_generation(volume_room, N / self.fs, self.c, self.fs)
                 seq = seq[:N]
 
+                # Do band-wise RIR construction
                 bp_filt = self.octave_bands.get_filters() if self.multi_band else [None]
                 bws = self.octave_bands.get_bw() if self.multi_band else [self.fs / 2]
+                rir_bands = []
                 for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
 
+                    # IS method
                     ir_loc = np.zeros_like(ir)
 
                     alpha = src.damping[b, :] / dist
@@ -1149,6 +1151,11 @@ class Room(object):
 
                     if bpf is not None:
                         ir_loc = sosfiltfilt(bpf, ir_loc)
+
+                    ir += ir_loc
+
+                    # Ray Tracing
+                    if bpf is not None:
                         seq_bp = sosfiltfilt(bpf, seq)
                     else:
                         seq_bp = seq.copy()
@@ -1158,7 +1165,6 @@ class Room(object):
                     new_n_bins = seq_bp_rot.shape[0]
 
                     hist = self.rt_histograms[m][s][0][b, :new_n_bins]
-                    hist *= 2 / (self.rt_args['receiver_radius'] ** 2 * self.rt_args['n_rays'])
 
                     normalization = np.linalg.norm(seq_bp_rot, axis=1)
                     indices = normalization > 0.
@@ -1167,18 +1173,29 @@ class Room(object):
 
                     seq_bp *= np.sqrt(2 * bw / self.fs)
 
-                    """
-                    import matplotlib.pyplot as plt
-                    plt.figure()
-                    plt.plot(time_ir, ir_loc)
-                    plt.plot(time_ir[fdl2:fdl2+N], seq_bp)
-                    time_low_res = (0.5 + np.arange(0, new_n_bins)) * hbss / self.fs
-                    plt.plot(time_low_res, 0.5 * np.sqrt(hist))
-                    plt.show()
-                    """
+                    ir_loc[fdl2:fdl2+N] += seq_bp
 
-                    ir += ir_loc
-                    ir[fdl2:fdl2+N] += seq_bp
+                    # keep for further processing
+                    rir_bands.append(ir_loc)
+
+                # Do Air absorption
+                distance_rir = np.arange(N) / self.fs * self.c
+                if self.air_absorption is not None:
+
+                    # In case this was not multi-band, do the band pass filtering
+                    if len(rir_bands) == 1:
+                        new_bands = []
+                        for bpf in self.octave_bands.get_filters():
+                            new_bands.append(sosfiltfilt(bpf, rir_bands[0]))
+                        rir_bands = new_bands
+
+                    # Now apply air absorption
+                    for band, air_abs in zip(rir_bands, self.air_absorption):
+                        air_decay = np.exp(-0.5 * air_abs * distance_rir)
+                        band[fdl2:N+fdl2] *= air_decay
+
+                # Sum up all the bands
+                np.sum(rir_bands, axis=0, out=ir)
 
                 self.rir[-1].append(ir)
 
