@@ -69,18 +69,17 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_wall", &Room<3>::get_wall)
     .def("get_max_distance", &Room<3>::get_max_distance)
     .def("next_wall_hit", &Room<3>::next_wall_hit)
-    .def("compute_scat_energy", &Room<3>::compute_scat_energy)
     .def("scat_ray", &Room<3>::scat_ray)
     .def("simul_ray", &Room<3>::simul_ray)
     .def("get_rir_entries",
-        (HitLog (Room<3>::*)(
+        (void (Room<3>::*)(
                              const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
                              const Vectorf<3> source_pos
                              )
         )
         &Room<3>::get_rir_entries)
     .def("get_rir_entries",
-        (HitLog (Room<3>::*)(
+        (void (Room<3>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
                              const Vectorf<3> source_pos
@@ -126,18 +125,17 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_wall", &Room<2>::get_wall)
     .def("get_max_distance", &Room<2>::get_max_distance)
     .def("next_wall_hit", &Room<2>::next_wall_hit)
-    .def("compute_scat_energy", &Room<2>::compute_scat_energy)
     .def("scat_ray", &Room<2>::scat_ray)
     .def("simul_ray", &Room<2>::simul_ray)
     .def("get_rir_entries",
-        (HitLog (Room<2>::*)(
+        (void (Room<2>::*)(
                              const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
                              const Vectorf<2> source_pos
                             )
         )
         &Room<2>::get_rir_entries)
     .def("get_rir_entries",
-        (HitLog (Room<2>::*)(
+        (void (Room<2>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
                              const Vectorf<2> source_pos

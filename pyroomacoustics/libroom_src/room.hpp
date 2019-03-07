@@ -200,37 +200,27 @@ class Room
         bool scattered_ray
         );
 
-    Eigen::ArrayXf compute_scat_energy(
-        const Eigen::ArrayXf &transmitted,
-        const Wall<D> & wall,
-        const Vectorf<D> & start,
-        const Vectorf<D> & hit_point,
-        const Vectorf<D> & mic_pos,
-        float total_dist
-        );
-
     bool scat_ray(
         const Eigen::ArrayXf &transmitted,
         const Wall<D> &wall,
         const Vectorf<D> &prev_last_hit,
         const Vectorf<D> &hit_point,
-        float travel_dist,
-        HitLog & output
+        float travel_dist
         );
 
     void simul_ray(
         float phi,
         float theta,
         const Vectorf<D> source_pos,
-        HitLog & output
+        float energy_0
         );
 
-    HitLog get_rir_entries(
+    void get_rir_entries(
         const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
         const Vectorf<D> source_pos
         );
 
-    HitLog get_rir_entries(
+    void get_rir_entries(
         size_t nb_phis,
         size_t nb_thetas,
         const Vectorf<D> source_pos

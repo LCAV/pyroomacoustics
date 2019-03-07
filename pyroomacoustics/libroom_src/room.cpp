@@ -639,61 +639,19 @@ std::tuple < Vectorf<D>, int > Room<D>::next_wall_hit(
 
 
 template<size_t D>
-Eigen::ArrayXf Room<D>::compute_scat_energy(
-  const Eigen::ArrayXf &transmitted,
-  const Wall<D> & wall,
-  const Vectorf<D> & start,
-  const Vectorf<D> & hit_point,
-  const Vectorf<D> & mic_pos,
-  float travel_dist
-  )
-{
-	  
-  /* This function computes the energy of a scattered ray, including the 
-   distance attenuation. This energy depends on several factors as explained below
-    
-   energy: the ray's energy (wall absorption already taken into account)
-   scat_coef: the scattering coefficients of the wall
-   wall: the wall being intersected (we need its normal vector)
-   start: (array size 2 or 3) the previous wall hit_point position (needed to check that 
-     the wall normal is correctly oriented)
-   hit_point: (array size 2 or 3) the actual wall hit_point position
-   mic_pos: (array size 2 or 3) the position of the microphone's center
-   float travel_dist : the distance travelled by the ray between the source and hit_point.
-   *  */
-   
-  // Make sure the normal points inside the room
-  Vectorf<D> n = wall.normal;
-  if (cos_angle_between(start - hit_point, n) < 0.)
-    n *= -1;
-  
-  // The formula takes into account the scattered coef but also the
-  // distance attenuation. 
-  // The latter is the same as in the Image Source Method
-  
-  Vectorf<D> r = mic_pos - hit_point;
-  float B = r.norm();
-  float cos_theta = cos_angle_between(n, r);
-  float gamma_term =  1 - sqrt(B*B-mic_radius*mic_radius)/B;
-  
-  return transmitted * (wall.scatter * 2 * cos_theta * gamma_term).sqrt() / (travel_dist + B);
-}
-
-template<size_t D>
 bool Room<D>::scat_ray(
     const Eigen::ArrayXf &transmitted,
     const Wall<D> &wall,
     const Vectorf<D> &prev_last_hit,
     const Vectorf<D> &hit_point,
-    float travel_dist,
-    HitLog & output
+    float travel_dist
     )
 {
 
   /*
     Traces a one-hop scattered ray from the last wall hit to each microphone.
     In case the scattering ray can indeed reach the microphone (no wall in
-    between), then we add an entry to the output passed by reference.
+    between), we log the hit in a histogram
 
     float energy: The energy of the ray right after last_wall has absorbed
       a part of it
@@ -702,10 +660,9 @@ bool Room<D>::scat_ray(
       the wall normal is correctly oriented)
     hit_point: (array size 2 or 3) defines the last wall hit position
     travel_dist: The total distance travelled by the ray from source to hit_point
-    output: the std::vector containing the time/energy entries for each microphone to build the rir
 
   :return : true if the scattered ray reached ALL the microphones, false otw
-*/
+  */
 
   // Convert the energy threshold to transmission threshold (make this more efficient at some point)
   float distance_thres = time_thres * sound_speed;
@@ -738,7 +695,6 @@ bool Room<D>::scat_ray(
       // the hop dist can be easily computed
       float hop_dist = (hit_point - mic_pos).norm();
       float travel_dist_at_mic = travel_dist + hop_dist;
-      float d_sq = travel_dist_at_mic * travel_dist_at_mic;
 
       // compute the scattered energy reaching the microphone
       float m_sq = mic_radius * mic_radius;
@@ -747,10 +703,11 @@ bool Room<D>::scat_ray(
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
-      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > d_sq * energy_thres)
+      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > energy_thres)
       {
-        output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
-        microphones[k].log_histogram(output[k].back(), hit_point);
+        //output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
+        //microphones[k].log_histogram(output[k].back(), hit_point);
+        microphones[k].log_histogram(Hit(travel_dist_at_mic, scat_trans), hit_point);
       }
       else
         ret = false;
@@ -769,7 +726,7 @@ void Room<D>::simul_ray(
     float phi,
     float theta,
     const Vectorf<D> source_pos,
-    HitLog &output
+    float energy_0
     )
 {
 
@@ -779,7 +736,7 @@ void Room<D>::simul_ray(
     
    phi and theta : give the orientation of the ray (2D or 3D)
    source_pos: (array size 2 or 3) is the location of the sound source (NOT AN IMAGE SOURCE)
-   scatter coef: determines the amount of the energy that gets scattered every time the ray hits a wall
+  energy_0: (float) the initial energy of one ray
    output: is the std::vector that contains the entries for all the simulated rays */
 
   // ------------------ INIT --------------------
@@ -799,7 +756,7 @@ void Room<D>::simul_ray(
   int next_wall_index(0);
 
   // The ray's characteristics
-  Eigen::ArrayXf transmitted = Eigen::ArrayXf::Ones(n_bands);
+  Eigen::ArrayXf transmitted = Eigen::ArrayXf::Ones(n_bands) * energy_0;
   float travel_dist = 0;
   
   // To count the number of times the ray bounces on the walls
@@ -808,6 +765,7 @@ void Room<D>::simul_ray(
   int specular_counter(0);
 
   // Convert the energy threshold to transmission threshold
+  float e_thres = energy_0 * energy_thres;
   float distance_thres = time_thres * sound_speed;
 
   //---------------------------------------------
@@ -862,15 +820,10 @@ void Room<D>::simul_ray(
           // We DON'T want to modify the variables transmitted amplitude and travel_dist
           //   because the ray will continue its way          
           float travel_dist_at_mic = travel_dist + distance;
-          float d_sq = travel_dist_at_mic * travel_dist_at_mic;
-          Eigen::ArrayXf trans_at_mic = transmitted / d_sq;
 
-          if (travel_dist_at_mic < distance_thres && trans_at_mic.maxCoeff() > energy_thres)
-          {		  
-            //output[k].push_back(Hit(travel_dist_at_mic, trans_at_mic));
-            output[k].push_back(Hit(travel_dist_at_mic, transmitted));
-            microphones[k].log_histogram(output[k].back(), start);
-          }
+          //output[k].push_back(Hit(travel_dist_at_mic, transmitted));
+          //microphones[k].log_histogram(output[k].back(), start);
+          microphones[k].log_histogram(Hit(travel_dist_at_mic, transmitted), start);
         }
       }
     }
@@ -889,8 +842,8 @@ void Room<D>::simul_ray(
           wall,
           start,
           hit_point,
-          travel_dist,
-          output);
+          travel_dist
+          );
 
       // The overall ray's energy gets decreased by the total
       // amount of scattered energy
@@ -898,8 +851,7 @@ void Room<D>::simul_ray(
     }
 
     // Check if we reach the thresholds for this ray
-    float d_sq = travel_dist * travel_dist;
-    if (travel_dist > distance_thres || transmitted.maxCoeff() < d_sq * energy_thres)
+    if (travel_dist > distance_thres || transmitted.maxCoeff() < e_thres)
       break;
 
     // set up for next iteration
@@ -911,13 +863,12 @@ void Room<D>::simul_ray(
 
 
 template<size_t D>
-HitLog Room<D>::get_rir_entries(
+void Room<D>::get_rir_entries(
   const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
   const Vectorf<D> source_pos
   )
 {
-  HitLog output;
-  output.resize(microphones.size());
+  float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
 
   for (int k(0) ; k < angles.cols() ; k++)
   {
@@ -927,15 +878,13 @@ HitLog Room<D>::get_rir_entries(
     if (D == 3)
       theta = angles.coeff(1,k);
 
-    simul_ray(phi, theta, source_pos, output);
+    simul_ray(phi, theta, source_pos, energy_0);
   }
-
-  return output;
 }
 
 
 template<size_t D>
-HitLog Room<D>::get_rir_entries(
+void Room<D>::get_rir_entries(
     size_t nb_phis,
     size_t nb_thetas,
     const Vectorf<D> source_pos
@@ -950,11 +899,6 @@ HitLog Room<D>::get_rir_entries(
    nb_thetas: the number of different elevation angles that will be used
      (NOTE: nb_phis*nb_thetas is the number of simulated rays
    source_pos: (array size 2 or 3) represents the position of the sound source
-   mic_radius: the radius of the circular(2D) or spherical(3D) microphone
-   time_thres: the simulation time threshold for each ray
-   energy_thresh: The energy threshold for the ray
-   sound_speed: the constant speed of sound
-   fs : the sampling frequency used for the rir
    
    :returns: 
    a std::vector where each entry is a tuple (time, energy)
@@ -963,8 +907,8 @@ HitLog Room<D>::get_rir_entries(
 
 
   // ------------------ INIT --------------------
-  HitLog output;
-  output.resize(microphones.size());
+  // initial energy of one ray
+  float energy_0 = 2.f / (mic_radius * mic_radius * nb_phis * nb_thetas);
 
   // ------------------ RAY TRACING --------------------
 
@@ -984,7 +928,7 @@ HitLog Room<D>::get_rir_entries(
       }
 
       // Trace this ray
-      simul_ray(phi, theta, source_pos, output);
+      simul_ray(phi, theta, source_pos, energy_0);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       // => get out of the theta loop
@@ -994,9 +938,6 @@ HitLog Room<D>::get_rir_entries(
       }
     }
   }
-
-  return output;
-
 }
 
 
