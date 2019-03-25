@@ -190,7 +190,7 @@ beamformer in a room.
 More examples
 -------------
 
-A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomacoustics/tree/master/notebooks>`_ are avialable.  
+A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomacoustics/tree/master/notebooks>`_ are available.  
 
 A comprehensive set of examples covering most of the functionalities
 of the package can be found in the ``examples`` folder of the `GitHub
