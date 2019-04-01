@@ -187,6 +187,11 @@ beamformer in a room.
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
 
+More examples
+-------------
+
+A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomacoustics/tree/master/notebooks>`_ are available.  
+
 A comprehensive set of examples covering most of the functionalities
 of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
