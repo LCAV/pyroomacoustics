@@ -602,8 +602,11 @@ class Room(object):
         # Resample material properties at octave bands
         octave_bands = OctaveBandsFactory(fs=fs)
         if not Material.all_flat(materials):
+            self.multi_band = True
             for mat in materials:
                 mat.resample(octave_bands)
+        else:
+            self.multi_band = False
 
         # Create the walls
         walls = []

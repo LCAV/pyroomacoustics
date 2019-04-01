@@ -33,7 +33,7 @@ def test_auxiva():
         room_dim,
         fs=16000,
         max_order=0,
-        sigma2_awgn=1e-8)
+    )
 
     # get signals
     signals = [ np.concatenate([wavfile.read(f)[1].astype(np.float32)
