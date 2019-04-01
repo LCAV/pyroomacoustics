@@ -22,7 +22,7 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     Implementation of AuxIVA algorithm for BSS presented in
 
     N. Ono, *Stable and fast update rules for independent vector analysis based
-    on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
+    on auxiliary function technique,* Proc. IEEE, WASPAA, pp. 189-192, Oct. 2011.
 
     Parameters
     ----------

@@ -16,10 +16,11 @@ def ilrma(X, n_src=None, n_iter=20, proj_back=False, W0=None,
 
     D. Kitamura, N. Ono, H. Sawada, H. Kameoka, H. Saruwatari, *Determined blind
     source separation unifying independent vector analysis and nonnegative matrix
-    factorization,* IEEE/ACM Trans. ASLP, vol. 24, no. 9, pp. 1626-1641, September 2016
+    factorization,* IEEE/ACM Trans. ASLP, vol. 24, no. 9, pp. 1626-1641, Sept. 2016
 
-    D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined Blind Source Separation
-    with Independent Low-Rank Matrix Analysis*, in Audio Source Separation, S. Makino, Ed. Springer, 2018, pp.  125-156.
+    D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari *Determined
+    Blind Source Separation with Independent Low-Rank Matrix Analysis,* in
+    Audio Source Separation, S. Makino, Ed. Springer, 2018, pp. 125-156.
 
     Parameters
     ----------
