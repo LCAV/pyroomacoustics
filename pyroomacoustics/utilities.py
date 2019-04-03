@@ -534,13 +534,13 @@ def fractional_delay_filter_bank(delays):
 
     delays = np.array(delays)
 
+    # subtract the minimum delay, so that all delays are positive
+    delays -= delays.min()
+
     # constants and lengths
     N = delays.shape[0]
     L = constants.get('frac_delay_length')
     filter_length = L + int(np.ceil(delays).max())
-
-    # subtract the minimum delay, so that all delays are positive
-    delays -= delays.min()
 
     # allocate a flat array for the filter bank that we'll reshape at the end
     bank_flat = np.zeros(N * filter_length)
@@ -551,8 +551,8 @@ def fractional_delay_filter_bank(delays):
 
     # broadcasting tricks to compute at once all the locations
     # and sinc times that must be computed
-    T = np.tile(np.arange(L), (N, 1))
-    indices = (T + (di[:,None] + filter_length * np.arange(N)[:,None]))
+    T = np.arange(L)
+    indices = (T[None,:] + (di[:,None] + filter_length * np.arange(N)[:,None]))
     sinc_times = (T - df[:,None] - (L - 1) / 2)
 
     # we'll need to window also all the sincs at once
