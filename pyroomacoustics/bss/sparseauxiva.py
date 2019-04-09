@@ -40,7 +40,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     Implementation of sparse AuxIVA algorithm for BSS presented in
 
     J. Janský, Z. Koldovský, and N. Ono, *A computationally cheaper method
-    for blind speech separation based on AuxIVA and incomplete demixing transform,*
+    for bline speech separation based on AuxIVA and incomplete demixing transform,*
     Proc. IEEE, IWAENC, pp. 1-5, Sept. 2016.
 
     Parameters
