@@ -177,7 +177,7 @@ beamformer in a room.
 
     # Create a linear array beamformer with 4 microphones
     # with angle 0 degrees and inter mic distance 10 cm
-    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
+    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.1)
     room.add_microphone_array(pra.Beamformer(R, room.fs))
 
     # Now compute the delay and sum weights for the beamformer
