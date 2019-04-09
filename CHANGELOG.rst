@@ -25,10 +25,12 @@ Changed
 Bugfix
 ~~~~~~
 
-- Remove `np.squeeze` in STFT as it caused errors when an axis that shouldn't
+- Remove ``np.squeeze`` in STFT as it caused errors when an axis that shouldn't
   be squeezed was equal to 1.
-- `Beamformer.process` was using old (non-existent) STFT function. Changed to
-  using one-shot function from `transform` module.
+- ``Beamformer.process`` was using old (non-existent) STFT function. Changed to
+  using one-shot function from ``transform`` module.
+- Fixed a bug in ``utilities.fractional_delay_filter_bank`` that would cause the
+  function to crash on some inputs (`issue #87 <https://github.com/LCAV/pyroomacoustics/issues/87>`__).
 
 `0.1.21`_ - 2018-12-20
 ----------------------
