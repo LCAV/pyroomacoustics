@@ -11,6 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet.
+
+`0.1.22`_ - 2019-04-11
+----------------------
+
 Added
 ~~~~~
 - Added "precision" parameter to "stft" class to choose between 'single' (float32/complex64) or 'double'
@@ -21,6 +26,7 @@ Added
 Changed
 ~~~~~~~
 
+- Few README improvements
 
 Bugfix
 ~~~~~~
@@ -212,8 +218,9 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...HEAD
-.. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...HEAD
+.. _0.1.22: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...v0.1.22
+.. _0.1.21: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
 .. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
 .. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18
