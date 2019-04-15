@@ -1,11 +1,147 @@
-# @version: 1.0  date: 05/06/2015 by Sidney Barthe
-# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
-# @copyright: EPFL-IC-LCAV 2015
+# Utility functions for the package
+# Copyright (C) 2019  Sidney Barthe, Robin Scheibler, Ivan Dokmanic, Eric Bezzam
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
 import numpy as np
 from scipy import signal
+from scipy.io import wavfile
 
 from .parameters import constants, eps
+from .sync import correlate
+
+
+def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):
+    """
+    Create a noisy signal of a specified SNR.
+    Parameters
+    ----------
+    signal_fp : string
+        File path to clean input.
+    snr : float
+        SNR in dB.
+    noise_fp : string
+        File path to noise. Default is to use randomly generated white noise.
+    offset : float
+        Offset in seconds before starting the signal.
+
+    Returns
+    -------
+    numpy array
+        Noisy signal with specified SNR, between [-1,1] and zero mean.
+    numpy array
+        Clean signal, untouched from WAV file.
+    numpy array
+        Added noise such that specified SNR is met.
+    int
+        Sampling rate in Hz.
+
+    """
+    fs, clean_signal = wavfile.read(signal_fp)
+    clean_signal = to_float32(clean_signal)
+
+    if offset is not None:
+        offset_samp = int(offset * fs)
+    else:
+        offset_samp = 0
+    output_len = len(clean_signal) + offset_samp
+
+    if noise_fp is not None:
+        fs_n, noise = wavfile.read(noise_fp)
+        noise = to_float32(noise)
+        if fs_n != fs:
+            raise ValueError("Signal and noise WAV files should have same "
+                             "sampling rate.")
+        # truncate to same length
+        if len(noise) < output_len:
+            raise ValueError("Length of signal file should be longer than "
+                             "noise file.")
+        noise = noise[:output_len]
+    else:
+        if len(clean_signal.shape) > 1:  # multichannel
+            noise = np.random.randn(output_len,
+                                    clean_signal.shape[1]).astype(np.float32)
+        else:
+            noise = np.random.randn(output_len).astype(np.float32)
+        noise = normalize(noise)
+
+    # weight noise according to desired SNR
+    signal_level = rms(clean_signal)
+    noise_level = rms(noise[offset_samp:])
+    noise_fact = signal_level / noise_level * 10 ** (-snr / 20)
+    noise_weighted = noise * noise_fact
+
+    # add signal and noise
+    noisy_signal = clean_signal + noise_weighted
+
+    # ensure between [-1, 1]
+    norm_fact = np.abs(noisy_signal).max()
+    clean_signal /= norm_fact
+    noise_weighted /= norm_fact
+    noisy_signal /= norm_fact
+
+    # remove any offset
+    noisy_signal -= noisy_signal.mean()
+
+    return noisy_signal, clean_signal, noise_weighted, fs
+
+
+def rms(data):
+    """
+    Compute root mean square of input.
+
+    Parameters
+    ----------
+    data : numpy array
+        Real signal in time domain.
+
+    Returns
+    -------
+    float
+        Root mean square.
+    """
+    return np.sqrt(np.mean(data * data))
+
+
+def to_float32(data):
+    """
+    Cast data (typically from WAV) to float32.
+
+    Parameters
+    ----------
+    data : numpy array
+        Real signal in time domain, typically obtained from WAV file.
+
+    Returns
+    -------
+    numpy array
+        `data` as float32.
+    """
+
+    if np.issubdtype(data.dtype, np.integer):
+        max_val = abs(np.iinfo(data.dtype).min)
+        return data.astype(np.float32) / max_val
+    else:
+        return data.astype(np.float32)
 
 
 def to_16b(signal):
@@ -15,6 +151,7 @@ def to_16b(signal):
     the correct interval.
     '''
     return ((2**15-1)*signal).astype(np.int16)
+
 
 def clip(signal, high, low):
     '''Clip a signal from above at high and from below at low.'''
@@ -244,7 +381,6 @@ def real_spectrum(signal, axis=-1, **kwargs):
     plt.plot(f, phi, **kwargs)
 
 
-
 def convmtx(x, n):
     '''
     Create a convolution matrix H for the vector x of size len(x) times n.
@@ -370,7 +506,8 @@ def fractional_delay(t0):
 
     Returns
     -------
-    A fractional delay filter with specified delay.
+    numpy array
+        A fractional delay filter with specified delay.
     '''
 
     N = constants.get('frac_delay_length')
@@ -389,20 +526,21 @@ def fractional_delay_filter_bank(delays):
         
     Returns
     -------
-    An ndarray where the ith row contains the fractional delay filter
-    corresponding to the ith delay. The number of columns of the matrix
-    is proportional to the maximum delay.
+    numpy array
+        An ndarray where the ith row contains the fractional delay filter
+        corresponding to the ith delay. The number of columns of the matrix
+        is proportional to the maximum delay.
     '''
 
     delays = np.array(delays)
+
+    # subtract the minimum delay, so that all delays are positive
+    delays -= delays.min()
 
     # constants and lengths
     N = delays.shape[0]
     L = constants.get('frac_delay_length')
     filter_length = L + int(np.ceil(delays).max())
-
-    # subtract the minimum delay, so that all delays are positive
-    delays -= delays.min()
 
     # allocate a flat array for the filter bank that we'll reshape at the end
     bank_flat = np.zeros(N * filter_length)
@@ -413,8 +551,8 @@ def fractional_delay_filter_bank(delays):
 
     # broadcasting tricks to compute at once all the locations
     # and sinc times that must be computed
-    T = np.tile(np.arange(L), (N, 1))
-    indices = (T + (di[:,None] + filter_length * np.arange(N)[:,None]))
+    T = np.arange(L)
+    indices = (T[None,:] + (di[:,None] + filter_length * np.arange(N)[:,None]))
     sinc_times = (T - df[:,None] - (L - 1) / 2)
 
     # we'll need to window also all the sincs at once
@@ -426,10 +564,8 @@ def fractional_delay_filter_bank(delays):
     return np.reshape(bank_flat, (N, -1))
 
 
-
 def levinson(r, b):
     '''
-    levinson(r,b)
 
     Solve a system of the form Rx=b where R is hermitian toeplitz matrix and b
     is any vector using the generalized Levinson recursion as described in M.H.
@@ -445,7 +581,8 @@ def levinson(r, b):
 
     Returns
     -------
-    The solution of the linear system Rx = b.
+    numpy array
+        The solution of the linear system Rx = b.
     '''
 
     p = b.shape[0]
@@ -462,9 +599,88 @@ def levinson(r, b):
         epsilon = epsilon*(1 - np.abs(gamma)**2)
         delta = np.dot(np.conj(r[1:j+1]), np.flipud(x))
         q = (b[j, ] - delta)/epsilon
-        x = np.concatenate((x, np.zeros(1 if len(b.shape) == 1 else (1, b.shape[1]))), axis=0) + q*np.conj(a[::-1, np.newaxis])
+        if len(b.shape) == 1:
+            x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
+        else:
+            x = np.concatenate((x, np.zeros((1, b.shape[1]))), axis=0) + q * np.conj(a[::-1, np.newaxis])
 
     return x
+
+
+def autocorr(x, p, biased=True, method='numpy'):
+    """
+    Compute the autocorrelation for real signal `x` up to lag `p`.
+
+    Parameters
+    ----------
+    x : numpy array
+        Real signal in time domain.
+    p : int
+        Amount of lag. When solving for LPC coefficient, this is typically the
+        LPC order.
+    biased : bool
+        Whether to return biased autocorrelation (default) or unbiased. As
+        there are fewer samples for larger lags, the biased estimate tends to
+        have better statistical stability under noise.
+    method : 'numpy, 'fft', 'time', `pra`
+        Method for computing the autocorrelation: in the frequency domain with
+        `fft` or `pra` (`np.fft.rfft` is used so only real signals are
+        supported), in the time domain with `time`, or with `numpy`'s built-in
+        function `np.correlate` (default). For `p < log2(len(x))`, the time
+        domain approach may be more efficient.
+
+    Returns
+    -------
+    numpy array
+        Autocorrelation for `x` up to lag `p`.
+    """
+    L = len(x)
+    if method is "fft":
+        X = np.fft.rfft(np.r_[x, np.zeros_like(x)])
+        r = np.fft.irfft(X * np.conj(X))[:p + 1]
+    elif method is "time":
+        r = np.array([np.dot(x[:L - m], x[m:]) for m in range(p + 1)])
+    elif method is "numpy":
+        r = np.correlate(x, x, 'full')[L - 1:L + p]
+    elif method is "pra":
+        r = correlate(x, x)[L - 1:L + p]
+    else:
+        raise ValueError("Invalid `method` for computing autocorrelation"
+                         "choose one of: `fft`, `time`, `numpy`, `pra`.")
+
+    if biased:
+        return r / L
+    else:
+        return r / np.arange(L, L - p - 1, step=-1)
+
+
+def lpc(x, p, biased=True):
+    """
+    Compute `p` LPC coefficients for a speech segment `x`.
+
+    Parameters
+    ----------
+    x : numpy array
+        Real signal in time domain.
+    p : int
+        Amount of lag. When solving for LPC coefficient, this is typically the
+        LPC order.
+    biased : bool
+        Whether to use biased autocorrelation (default) or unbiased. As there
+        are fewer samples for larger lags, the biased estimate tends to have
+        better statistical stability under noise.
+
+    Returns
+    -------
+    numpy array
+        `p` LPC coefficients.
+    """
+    # compute autocorrelation
+    r = autocorr(x, p, biased)
+
+    # solve Yule-Walker equations for LPC coefficients
+    return levinson(r[:p], r[1:])
+
 
 def goertzel(x, k):
     ''' Goertzel algorithm to compute DFT coefficients '''

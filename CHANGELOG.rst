@@ -17,6 +17,31 @@ Changed
 - Add option in `pyroomacoustics.room.Room.plot_rir` to set number of channels
   to plot; useful when there's too many.
 
+`0.1.22`_ - 2019-04-11
+----------------------
+
+Added
+~~~~~
+- Added "precision" parameter to "stft" class to choose between 'single' (float32/complex64) or 'double'
+  (float64/complex128) for processing precision.
+- Unified unit test file for frequency-domain souce separation methods.
+- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA).
+
+Changed
+~~~~~~~
+
+- Few README improvements
+
+Bugfix
+~~~~~~
+
+- Remove ``np.squeeze`` in STFT as it caused errors when an axis that shouldn't
+  be squeezed was equal to 1.
+- ``Beamformer.process`` was using old (non-existent) STFT function. Changed to
+  using one-shot function from ``transform`` module.
+- Fixed a bug in ``utilities.fractional_delay_filter_bank`` that would cause the
+  function to crash on some inputs (`issue #87 <https://github.com/LCAV/pyroomacoustics/issues/87>`__).
+
 `0.1.21`_ - 2018-12-20
 ----------------------
 
@@ -25,8 +50,11 @@ Added
 
 - Adds several options to ``pyroomacoustics.room.Room.simulate`` to finely
   control the SNR of the microphone signals and also return the microphone
-  signals with individual sources, prior to mix (usefull for BSS evaluation)
+  signals with individual sources, prior to mix (useful for BSS evaluation)
 - Add subspace denoising approach in ``pyroomacoustics.denoise.subspace``.
+- Add iterative Wiener filtering approach for single channel denoising in
+  ``pyroomacoustics.denoise.iterative_wiener``.
+
 
 Changed
 ~~~~~~~
@@ -45,6 +73,7 @@ Bugfix
 - Corrects a bug in the update of the demixing matrix in ``pyroomacoustics.bss.auxiva``
 - Corrects invalid memory access in the ``pyroomacoustics.build_rir`` cython accelerator
   and adds a unit test that checks the cython code output is correct
+- Fix bad handling of 1D `b` vectors in ```pyroomacoustics.levinson``.
 
 `0.1.20`_ - 2018-10-04
 ----------------------
@@ -192,8 +221,9 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...HEAD
-.. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...HEAD
+.. _0.1.22: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...v0.1.22
+.. _0.1.21: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
 .. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
 .. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18

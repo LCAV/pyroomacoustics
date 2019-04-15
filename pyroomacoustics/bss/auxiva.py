@@ -5,7 +5,6 @@ Blind Source Separation using Independent Vector Analysis with Auxiliary Functio
 '''
 import numpy as np
 
-from pyroomacoustics import stft, istft
 from .common import projection_back
 
 # A few contrast functions
@@ -22,7 +21,7 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
     Implementation of AuxIVA algorithm for BSS presented in
 
     N. Ono, *Stable and fast update rules for independent vector analysis based
-    on auxiliary function technique*, Proc. IEEE, WASPAA, 2011.
+    on auxiliary function technique,* Proc. IEEE, WASPAA, pp. 189-192, Oct. 2011.
 
     Parameters
     ----------
@@ -73,7 +72,6 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
 
     I = np.eye(n_src,n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
-    V = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))
     G_r = np.zeros((n_frames, n_src))
 
