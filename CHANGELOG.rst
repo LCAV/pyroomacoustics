@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+
 
 `0.1.22`_ - 2019-04-11
 ----------------------
@@ -37,7 +40,7 @@ Bugfix
   using one-shot function from ``transform`` module.
 - Fixed a bug in ``utilities.fractional_delay_filter_bank`` that would cause the
   function to crash on some inputs (`issue #87 <https://github.com/LCAV/pyroomacoustics/issues/87>`__).
-- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+
 
 `0.1.21`_ - 2018-12-20
 ----------------------
