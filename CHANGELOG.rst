@@ -13,7 +13,9 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Bugfix
 ~~~~~~
+
 - Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+- Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
 
 
 `0.1.22`_ - 2019-04-11
