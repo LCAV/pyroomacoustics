@@ -723,27 +723,31 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, pairs=None, FD=False):
+    def plot_rir(self, select=None, FD=False):
         """
         Plot room impulse responses. Compute if not done already.
 
         Parameters
         ----------
-        pairs: list of tuples OR int
+        select: list of tuples OR int
             List of RIR pairs `(mic, src)` to plot, e.g. `[(0,0), (0,1)]`. Or
             `int` to plot RIR from particular microphone to all sources. Note
             that microphones and sources are zero-indexed. Default is to plot
-            all channels.
+            all microphone-source pairs.
         FD: bool
             Whether to plot in the frequency domain, namely the transfer
             function. Default is False.
         """
         n_src = len(self.sources)
         n_mic = self.mic_array.M
-        if pairs is None:
+        if select is None:
             pairs = [(r, s) for r in range(n_mic) for s in range(n_src)]
-        elif isinstance(pairs, int):
-            pairs = [(pairs, s) for s in range(n_src)]
+        elif isinstance(select, int):
+            pairs = [(select, s) for s in range(n_src)]
+        elif isinstance(select, list):
+            pairs = select
+        else:
+            raise ValueError('Invalid type for "select".')
         if self.rir is None:
             self.compute_rir()
 
@@ -766,12 +770,14 @@ class Room(object):
 
         from . import utilities as u
 
-        for _pair in pairs:
+        for k, _pair in enumerate(pairs):
             r = _pair[0]
             s = _pair[1]
             h = self.rir[r][s]
-            # TODO, map r/s to appropriate values!
-            plt.subplot(n_mic, n_src, r_plot[r]*n_src + s_plot[s] + 1)
+            if select is None:    # matrix plot
+                plt.subplot(n_mic, n_src, r_plot[r]*n_src + s_plot[s] + 1)
+            else:                 # one column
+                plt.subplot(len(pairs), 1, k + 1)
             if not FD:
                 plt.plot(np.arange(len(h)) / float(self.fs), h)
             else:
@@ -784,7 +790,6 @@ class Room(object):
                     plt.xlabel('Normalized frequency')
 
         plt.tight_layout()
-
 
     def add_microphone_array(self, micArray):
         self.mic_array = micArray

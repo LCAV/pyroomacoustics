@@ -14,8 +14,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Changed
 ~~~~~~~
 
-- Add option in `pyroomacoustics.room.Room.plot_rir` to set number of channels
-  to plot; useful when there's too many.
+- Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
+  to plot; useful when there's too many impulse responses.
+
+Bugfix
+~~~~~~
+
+- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+- Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
+
 
 `0.1.22`_ - 2019-04-11
 ----------------------
@@ -41,6 +48,7 @@ Bugfix
   using one-shot function from ``transform`` module.
 - Fixed a bug in ``utilities.fractional_delay_filter_bank`` that would cause the
   function to crash on some inputs (`issue #87 <https://github.com/LCAV/pyroomacoustics/issues/87>`__).
+
 
 `0.1.21`_ - 2018-12-20
 ----------------------
