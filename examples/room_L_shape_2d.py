@@ -23,12 +23,12 @@ pol = 3 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
 # Create the room from its corners
 room = pra.Room.from_corners(pol, fs=16000, max_order=max_order, absorption=0.1)
 
-# Add a source somewhere in the room
+# Add two sources in the room
 room.add_source([1.5, 1.2])
+room.add_source([5.1, 2.5])
 
-# Create a linear array beamformer with 4 microphones
-# Place an array of two microphones
-R = np.array([[3., 4.2], [2.25, 2.1]])
+# Place an array of four microphones
+R = np.array([[1.1, 1.9, 3., 4.2], [2., 1.9, 2.25, 2.1]])
 room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
 room.compute_rir()
@@ -36,8 +36,8 @@ room.compute_rir()
 # plot the room and resulting beamformer
 room.plot(img_order=6)
 
-# Display the room impulse responses
+# Display a subset of the room impulse responses
 plt.figure()
-room.plot_rir()
+room.plot_rir([(1, 0), (3, 1)])
 
 plt.show()

@@ -11,6 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Changed
+~~~~~~~
+
+- Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
+  to plot; useful when there's too many impulse responses.
+
 Bugfix
 ~~~~~~
 
