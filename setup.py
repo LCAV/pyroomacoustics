@@ -139,6 +139,7 @@ class BuildExt(build_ext):
         for ext in self.extensions:
             if ext.language == 'c++':
                 ext.extra_compile_args += opts
+                ext.extra_link_args += opts
         build_ext.build_extensions(self)
 
 ### Build Tools End ###
