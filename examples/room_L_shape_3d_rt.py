@@ -26,7 +26,7 @@ height = 10.
 room.extrude(height, absorption=r_absor)
 
 # # Add a source somewhere in the room
-fs, audio_anechoic = wavfile.read('0riginal.wav')
+fs, audio_anechoic = wavfile.read('examples/input_samples/cmu_arctic_us_aew_a0001.wav')
 
 room.add_source([11, 12, 1.6], signal=audio_anechoic)
 
@@ -38,7 +38,9 @@ room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
 # Use the following function to compute the rir using either 'ism' method, 'rt' method, or 'hybrid' method
 chrono = time.time()
-room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, scatter_coef=0.)
+room.image_source_model()
+room.ray_tracing()
+room.compute_rir()
 print("Done in", time.time()-chrono, "seconds.")
 
 

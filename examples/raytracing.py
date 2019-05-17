@@ -8,16 +8,6 @@ import time
 
 fs, audio_anechoic = wavfile.read('notebooks/arctic_a0010.wav')
 
-pol = np.array([[0,0], [0,4], [3,2], [3,0]]).T
-room = pra.Room.from_corners(pol, fs=16000, max_order=10, absorption=0.1)
-
-# Adding the source
-room.add_source(np.array([1.8, 0.4]), signal=audio_anechoic)
-
-# Adding the microphone
-R = np.array([[0.5],[1.2],[0.5]])
-room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
-
 def get_rir(size='medium', absorption='medium'):
 
     
@@ -55,7 +45,9 @@ def get_rir(size='medium', absorption='medium'):
 
     # Compute the RIR using the hybrid method
     s = time.perf_counter()
-    room.compute_rir(mode='hybrid', nb_thetas=500, nb_phis=500, mic_radius=0.05, scatter_coef=0.)
+    room.image_source_model()
+    room.ray_tracing()
+    room.compute_rir()
     print("Computation time:", time.perf_counter() - s)
 
     # Plot and apply the RIR on the audio file
@@ -84,7 +76,7 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
-        print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
-        print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+        #print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+        #print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
 
 

@@ -308,9 +308,19 @@ from .libroom import Wall, Wall2D
 def wall_factory(corners, absorption, scattering, name=""):
     ''' Call the correct method according to wall dimension '''
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, 0., name)
+        return Wall(
+                corners,
+                absorption,
+                [0.],
+                name,
+                )
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, 0., name)
+        return Wall2D(
+                corners,
+                absorption,
+                [0.],
+                name,
+                )
     else:
         raise ValueError('Rooms can only be 2D or 3D')
 
@@ -410,16 +420,22 @@ class Room(object):
                 self.air_absorption,
                 self.c,  # speed of sound
                 self.max_order,
-                self.rt_args['energy_threshold'],
-                self.rt_args['time_threshold'],
+                self.rt_args['energy_thres'],
+                self.rt_args['time_thres'],
                 self.rt_args['receiver_radius'],
                 self.rt_args['hist_bin_size'],
                 True,  # a priori we will always use a hybrid model
                 ]
 
+        # Check if simulation should be mono or multi-band
+        self.multi_band = False
+        for w in walls:
+            if len(w.absorption) > 1:
+                self.multi_band = True
+
         # Create the real room object
         if self.dim == 2:
-            self.room_engine = libroom.Room2(*args)
+            self.room_engine = libroom.Room2D(*args)
         else:
             self.room_engine = libroom.Room(*args)
 
@@ -602,11 +618,8 @@ class Room(object):
         # Resample material properties at octave bands
         octave_bands = OctaveBandsFactory(fs=fs)
         if not Material.all_flat(materials):
-            self.multi_band = True
             for mat in materials:
                 mat.resample(octave_bands)
-        else:
-            self.multi_band = False
 
         # Create the walls
         walls = []
@@ -769,8 +782,8 @@ class Room(object):
                 self.air_absorption,
                 self.c,  # speed of sound
                 self.max_order,
-                self.rt_args['energy_threshold'],
-                self.rt_args['time_threshold'],
+                self.rt_args['energy_thres'],
+                self.rt_args['time_thres'],
                 self.rt_args['receiver_radius'],
                 self.rt_args['hist_bin_size'],
                 True,  # a priori we will always use a hybrid model
@@ -1031,7 +1044,7 @@ class Room(object):
         self.mic_array = micArray
 
         for m in range(self.mic_array.M):
-            self.room_engine.add_mic(self.mic_array.R[:,m])
+            self.room_engine.add_mic(self.mic_array.R[:,None,m])
 
     def add_source(self, position, signal=None, delay=0):
 
@@ -1298,6 +1311,8 @@ class Room(object):
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
                 premix_signals[s,m,d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
+
+        self.sigma2_awgn = None
 
         if callback_mix is not None:
             # Execute user provided callback
