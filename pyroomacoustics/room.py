@@ -311,14 +311,14 @@ def wall_factory(corners, absorption, scattering, name=""):
         return Wall(
                 corners,
                 absorption,
-                [0.],
+                scattering,
                 name,
                 )
     elif corners.shape[0] == 2:
         return Wall2D(
                 corners,
                 absorption,
-                [0.],
+                scattering,
                 name,
                 )
     else:
