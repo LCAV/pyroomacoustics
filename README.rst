@@ -15,7 +15,7 @@ and testing of audio array processing algorithms. The content of the package
 can be divided into three main components: 
 
 1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
-2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
+2. Fast C++ implementation of the image source model and ray tracing for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
 3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single channel denoising.
 
 Together, these components form a package with the potential to speed up the time to market
@@ -49,8 +49,8 @@ image source model that can handle
 * Convex and non-convex rooms
 * 2D/3D rooms
 
-Both a pure Python implementation and a C accelerator are included for maximum
-speed and compatibility.
+The core image source model and ray tracing modules are written in C++ for
+better performance.
 
 The philosophy of the package is to abstract all necessary elements of
 an experiment using an object-oriented programming approach. Each of these elements
