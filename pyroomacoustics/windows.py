@@ -8,13 +8,14 @@ import numpy as np
 from scipy import special
 pi = np.pi
 
+
 # cosine window function
 def cosine(N, flag='asymmetric', length='full'):
-    '''
+    r'''
     The cosine window function
 
-    .. math:: 
-    
+    .. math::
+
         w[n] = \cos(\pi (n/M - 0.5))^2
 
     Parameters
@@ -24,7 +25,8 @@ def cosine(N, flag='asymmetric', length='full'):
     flag: string, optional
         Possible values
 
-        - *asymmetric*: asymmetric windows are used for overlapping transforms (:math:`M=N`)
+        - *asymmetric*: asymmetric windows are used
+          for overlapping transforms (:math:`M=N`)
         - *symmetric*: the window is symmetric (:math:`M=N-1`)
         - *mdct*: impose MDCT condition on the window (:math:`M=N-1` and
           :math:`w[n]^2 + w[n+N/2]^2=1`)
@@ -38,23 +40,23 @@ def cosine(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
 
-    w = np.cos(np.pi * (t - 0.5)) ** 2
+    w = np.cos(pi * (t - 0.5)) ** 2
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         w **= 2
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
@@ -66,11 +68,11 @@ def cosine(N, flag='asymmetric', length='full'):
 
 # triangular window function
 def triang(N, flag='asymmetric', length='full'):
-    '''
+    r'''
     The triangular window function
 
-    .. math:: 
-    
+    .. math::
+
         w[n] = 1 - | 2 n / M - 1 |, n=0,\ldots,N-1
 
     Parameters
@@ -80,7 +82,8 @@ def triang(N, flag='asymmetric', length='full'):
     flag: string, optional
         Possible values
 
-        - *asymmetric*: asymmetric windows are used for overlapping transforms (:math:`M=N`)
+        - *asymmetric*: asymmetric windows are used
+          for overlapping transforms (:math:`M=N`)
         - *symmetric*: the window is symmetric (:math:`M=N-1`)
         - *mdct*: impose MDCT condition on the window (:math:`M=N-1` and
           :math:`w[n]^2 + w[n+N/2]^2=1`)
@@ -93,17 +96,16 @@ def triang(N, flag='asymmetric', length='full'):
         - *left*: the left half of the window is computed
     '''
 
-
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -111,7 +113,7 @@ def triang(N, flag='asymmetric', length='full'):
     w = 1. - np.abs(2. * t - 1.)
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
         w[N / 2:] *= 1. / d
@@ -122,11 +124,11 @@ def triang(N, flag='asymmetric', length='full'):
 
 # hann window function
 def hann(N, flag='asymmetric', length='full'):
-    '''
+    r'''
     The Hann window function
 
-    .. math:: 
-        
+    .. math::
+
         w[n] = 0.5 (1 - \cos(2 \pi n / M)), n=0,\ldots,N-1
 
     Parameters
@@ -136,7 +138,8 @@ def hann(N, flag='asymmetric', length='full'):
     flag: string, optional
         Possible values
 
-        - *asymmetric*: asymmetric windows are used for overlapping transforms (:math:`M=N`)
+        - *asymmetric*: asymmetric windows are used
+          for overlapping transforms (:math:`M=N`)
         - *symmetric*: the window is symmetric (:math:`M=N-1`)
         - *mdct*: impose MDCT condition on the window (:math:`M=N-1` and
           :math:`w[n]^2 + w[n+N/2]^2=1`)
@@ -149,25 +152,24 @@ def hann(N, flag='asymmetric', length='full'):
         - *left*: the left half of the window is computed
     '''
 
-
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
 
-    w = 0.5 * (1 - np.cos(2 * np.pi * t))
+    w = 0.5 * (1 - np.cos(2 * pi * t))
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
         w[N / 2:] *= 1. / d
@@ -178,12 +180,13 @@ def hann(N, flag='asymmetric', length='full'):
 
 # Blackman-Harris window
 def blackman_harris(N, flag='asymmetric', length='full'):
-    '''
+    r'''
     The Hann window function
 
-    .. math:: 
-    
-        w[n] = a_0 - a_1 \cos(2\pi n/M) + a_2 \cos(4\pi n/M) + a_3 \cos(6\pi n/M), n=0,\ldots,N-1
+    .. math::
+
+        w[n] = a_0 - a_1 \cos(2\pi n/M)
+        + a_2 \cos(4\pi n/M) + a_3 \cos(6\pi n/M), n=0,\ldots,N-1
 
     Parameters
     ----------
@@ -192,7 +195,8 @@ def blackman_harris(N, flag='asymmetric', length='full'):
     flag: string, optional
         Possible values
 
-        - *asymmetric*: asymmetric windows are used for overlapping transforms (:math:`M=N`)
+        - *asymmetric*: asymmetric windows are used
+          for overlapping transforms (:math:`M=N`)
         - *symmetric*: the window is symmetric (:math:`M=N-1`)
 
     length: string, optional
@@ -203,36 +207,35 @@ def blackman_harris(N, flag='asymmetric', length='full'):
         - *left*: the left half of the window is computed
     '''
 
-
     # coefficients
     a = np.array([.35875, .48829, .14128, .01168])
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric'):
+    if flag == 'symmetric':
         t = t / float(N - 1)
     else:
         t = t / float(N)
 
-    pi = np.pi
     w = a[0] - a[1]*np.cos(2*pi*t) + a[2]*np.cos(4*pi*t) + a[3]*np.cos(6*pi*t)
 
     return w
 
+
 # Rectangular window function
 def rect(N):
-    '''
+    r'''
     The rectangular window
 
-    .. math:: 
-    
+    .. math::
+
         w[n] = 1, n=0,\ldots,N-1
 
     Parameters
@@ -276,15 +279,15 @@ def bart_hann(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -292,7 +295,7 @@ def bart_hann(N, flag='asymmetric', length='full'):
     w = 0.62 - 0.48 * np.abs(t/N - 0.5) + 0.38 * np.cos(2*pi*(t/N - 0.5))
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         w **= 2
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
@@ -334,15 +337,15 @@ def bart(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -350,7 +353,7 @@ def bart(N, flag='asymmetric', length='full'):
     w = 2/(N-1) * ((N-1)/2 - np.abs(t - (N-1)/2))
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         w **= 2
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
@@ -393,15 +396,15 @@ def blackman(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -409,7 +412,7 @@ def blackman(N, flag='asymmetric', length='full'):
     w = 0.42 - 0.5*np.cos(2*pi*t/(N-1)) + 0.08*np.cos(4*pi*t/(N-1))
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         w **= 2
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
@@ -450,15 +453,15 @@ def bohman(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -468,7 +471,7 @@ def bohman(N, flag='asymmetric', length='full'):
     w = np.r_[0, w, 0]
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
         w[N / 2:] *= 1. / d
@@ -519,15 +522,15 @@ def flattop(N, flag='asymmetric', length='full'):
     a = np.array([.21557895, .41663158, .277263158, .083578947, .006947368])
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric'):
+    if flag == 'symmetric':
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -568,15 +571,15 @@ def gaussian(N, std, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric'):
+    if flag == 'symmetric':
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -619,15 +622,15 @@ def hamming(N, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -635,7 +638,7 @@ def hamming(N, flag='asymmetric', length='full'):
     w = 0.54 - 0.46*np.cos(2*pi*t)
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
         w[N / 2:] *= 1. / d
@@ -683,15 +686,15 @@ def kaiser(N, beta, flag='asymmetric', length='full'):
     '''
 
     # first choose the indexes of points to compute
-    if (length == 'left'):     # left side of window
+    if length == 'left':     # left side of window
         t = np.arange(0, N / 2)
-    elif(length == 'right'):   # right side of window
+    elif length == 'right':   # right side of window
         t = np.arange(N / 2, N)
     else:                   # full window by default
         t = np.arange(0, N)
 
     # if asymmetric window, denominator is N, if symmetric it is N-1
-    if (flag == 'symmetric' or flag == 'mdct'):
+    if flag in ['symmetric', 'mdct']:
         t = t / float(N - 1)
     else:
         t = t / float(N)
@@ -702,7 +705,7 @@ def kaiser(N, beta, flag='asymmetric', length='full'):
          special.i0(beta))
 
     # make the window respect MDCT condition
-    if (flag == 'mdct'):
+    if flag == 'mdct':
         d = w[:N / 2] + w[N / 2:]
         w[:N / 2] *= 1. / d
         w[N / 2:] *= 1. / d
