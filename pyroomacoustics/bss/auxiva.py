@@ -95,6 +95,8 @@ def auxiva(X, n_src=None, n_iter=20, proj_back=True, W0=None,
         # shape: (n_frames, n_src)
         r[:,:] = np.sqrt(np.sum(np.abs(Y * np.conj(Y)), axis=1))
 
+        r[r < 1e-15] = 1e-15
+
         # Apply derivative of contrast function
         G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
 
