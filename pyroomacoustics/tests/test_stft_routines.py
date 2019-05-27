@@ -8,6 +8,9 @@ import numpy as np
 from scipy.signal import fftconvolve
 import pyroomacoustics as pra
 
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
 class TestSTFT(TestCase):
 
     def test_stft_nowindow(self):
