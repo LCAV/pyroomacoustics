@@ -16,12 +16,14 @@ Changed
 
 - Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
   to plot; useful when there's too many impulse responses.
+- Fixed various warnings in tests.
 
 Bugfix
 ~~~~~~
 
 - Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
 - Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
+- Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
 
 
 `0.1.22`_ - 2019-04-11

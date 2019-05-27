@@ -429,7 +429,7 @@ def prony(x, p, q):
 
     Xq = X[q:nx+p-1, 0:p]
 
-    a = np.concatenate((np.ones(1), -np.linalg.lstsq(Xq, X[q+1:nx+p, 0])[0]))
+    a = np.concatenate((np.ones(1), -np.linalg.lstsq(Xq, X[q+1:nx+p, 0], rcond=None)[0]))
     b = np.dot(X[0:q+1, 0:p+1], a)
 
     err = np.inner(np.conj(x[q+1:nx]), np.dot(X[q+1:nx, :p+1], a))
@@ -475,7 +475,7 @@ def shanks(x, p, q):
     g = signal.lfilter(np.ones(1), a, u)
 
     G = convmtx(g, q+1)
-    b = np.linalg.lstsq(G[:nx, :], x)[0]
+    b = np.linalg.lstsq(G[:nx, :], x, rcond=None)[0]
     err = np.inner(np.conj(x), x) - np.inner(np.conj(x), np.dot(G[:nx, :q+1], b))
 
     return a, b, err

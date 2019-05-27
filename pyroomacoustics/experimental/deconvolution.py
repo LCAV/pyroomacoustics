@@ -101,7 +101,7 @@ def wiener_deconvolve(y, x, length=None, noise_variance=1., let_n_points=15, let
     H_candidates = G / X[:,None]
 
     # find the best linear combination of the candidates
-    weights = np.linalg.lstsq(G, Y)[0]
+    weights = np.linalg.lstsq(G, Y, rcond=None)[0]
 
     # compute the estimated filter
     H = np.squeeze(np.dot(H_candidates, weights))
