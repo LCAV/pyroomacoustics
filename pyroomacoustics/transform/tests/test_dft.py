@@ -11,6 +11,14 @@ X_numpy = np.fft.rfft(x, axis=0).astype('complex64')
 analysis_window = pra.hann(nfft)
 synthesis_window = pra.hann(nfft)
 
+eps = np.finfo(x.dtype).eps
+
+try:
+    import pyfftw
+    pyfftw_available = True
+except ImportError:
+    pyfftw_available = False
+
 def no_window(nfft, D, transform, axis=0):
 
     if D == 1:
@@ -29,11 +37,11 @@ def no_window(nfft, D, transform, axis=0):
 
     # forward
     X = dft.analysis(x_local)
-    err_fwd = pra.dB(np.linalg.norm(X_local-X))
+    err_fwd = pra.dB(np.linalg.norm(X_local-X) + eps)
 
     # backward
     x_r = dft.synthesis()
-    err_bwd = pra.dB(np.linalg.norm(x_local-x_r))
+    err_bwd = pra.dB(np.linalg.norm(x_local-x_r) + eps)
 
     return err_fwd, err_bwd
 
@@ -71,9 +79,10 @@ class TestDFT(TestCase):
         res = no_window(nfft, D=1, transform='numpy')
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
-        res = no_window(nfft, D=1, transform='fftw')
-        self.assertTrue(res[0] < tol)
-        self.assertTrue(res[1] < tol)
+        if pyfftw_available:
+            res = no_window(nfft, D=1, transform='fftw')
+            self.assertTrue(res[0] < tol)
+            self.assertTrue(res[1] < tol)
         res = no_window(nfft, D=1, transform='mkl')
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
@@ -82,9 +91,10 @@ class TestDFT(TestCase):
         res = no_window(nfft, D=D, transform='numpy')
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
-        res = no_window(nfft, D=D, transform='fftw')
-        self.assertTrue(res[0] < tol)
-        self.assertTrue(res[1] < tol)
+        if pyfftw_available:
+            res = no_window(nfft, D=D, transform='fftw')
+            self.assertTrue(res[0] < tol)
+            self.assertTrue(res[1] < tol)
         res = no_window(nfft, D=D, transform='mkl')
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
@@ -93,9 +103,10 @@ class TestDFT(TestCase):
         res = no_window(nfft, D=D, transform='numpy', axis=1)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
-        res = no_window(nfft, D=D, transform='fftw', axis=1)
-        self.assertTrue(res[0] < tol)
-        self.assertTrue(res[1] < tol)
+        if pyfftw_available:
+            res = no_window(nfft, D=D, transform='fftw', axis=1)
+            self.assertTrue(res[0] < tol)
+            self.assertTrue(res[1] < tol)
         res = no_window(nfft, D=D, transform='mkl', axis=1)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
@@ -115,8 +126,9 @@ if __name__ == "__main__":
     print("1D")
     res = no_window(nfft, D=1, transform='numpy')
     print("numpy :", res)
-    res = no_window(nfft, D=1, transform='fftw')
-    print("fftw :", res)
+    if pyfftw_available:
+        res = no_window(nfft, D=1, transform='fftw')
+        print("fftw :", res)
     res = no_window(nfft, D=1, transform='mkl')
     print("mkl :", res)
 
@@ -124,8 +136,9 @@ if __name__ == "__main__":
     print("2D, axis=0")
     res = no_window(nfft, D=D, transform='numpy')
     print("numpy :", res)
-    res = no_window(nfft, D=D, transform='fftw')
-    print("fftw :", res)
+    if pyfftw_available:
+        res = no_window(nfft, D=D, transform='fftw')
+        print("fftw :", res)
     res = no_window(nfft, D=D, transform='mkl')
     print("mkl :", res)
 
@@ -134,8 +147,9 @@ if __name__ == "__main__":
     axis=1
     res = no_window(nfft, D=D, transform='numpy', axis=axis)
     print("numpy :", res)
-    res = no_window(nfft, D=D, transform='fftw', axis=axis)
-    print("fftw :", res)
+    if pyfftw_available:
+        res = no_window(nfft, D=D, transform='fftw', axis=axis)
+        print("fftw :", res)
     res = no_window(nfft, D=D, transform='mkl', axis=axis)
     print("mkl :", res)
 
