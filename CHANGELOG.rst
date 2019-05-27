@@ -22,6 +22,8 @@ Bugfix
 
 - Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
 - Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
+- Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
+  underflow and divide by zero.
 
 
 `0.1.22`_ - 2019-04-11
