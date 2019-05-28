@@ -1,8 +1,54 @@
-# @version: 1.0  date: 05/06/2015 by Sidney Barthe
-# @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
-# @copyright: EPFL-IC-LCAV 2015
+# coding=utf-8
+#
+# MIT License
+#
+# Window functions Copyright (C) 2015-2019 Taishi Nakashima, Robin Scheibler
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
 
-'''A collection of windowing functions.'''
+r"""
+Window Functions
+================
+
+This is a collection of many popular window functions used in signal processing.
+
+A few options are provided to correctly construct the required window function.
+The ``flag`` keyword argument can take the following values.
+
+``asymmetric``
+  This way, many of the functions will sum to one when their left part is added
+  to their right part. This is useful for overlapped transforms such as the STFT.
+
+``symmetric``
+  With this flag, the window is perfectly symmetric. This might be more
+  suitable for analysis tasks.
+``mdct``
+  Available for only some of the windows. The window is modified to satisfy
+  the perfect reconstruction condition of the MDCT transform.
+
+Often, we would like to get the full window function, but on some occasions, it is useful
+to get only the left (or right) part. This can be indicated via the keyword argument
+``length`` that can take values ``full`` (default), ``left``, or ``right``.
+"""
 
 import numpy as np
 from scipy import special
@@ -582,6 +628,7 @@ def kaiser(N, beta, flag='asymmetric', length='full'):
        w[n] = I_0\left( \beta \sqrt{1-\frac{4n^2}{(M-1)^2}} \right)/I_0(\beta)
 
     with
+
     .. math::
        \quad -\frac{M-1}{2} \leq n \leq \frac{M-1}{2},
 

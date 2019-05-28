@@ -70,7 +70,7 @@ class SpectralSub(object):
 
     Below is an example of how to use this class to emulate a streaming/online
     input. A full example can be found
-    `here <https://github.com/LCAV/pyroomacoustics/blob/master/examples/noise_reduction_spectral_subtraction.py>`_.
+    `here <https://github.com/LCAV/pyroomacoustics/blob/master/examples/noise_reduction_spectral_subtraction.py>`__.
 
     ::
 

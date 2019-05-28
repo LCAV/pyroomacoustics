@@ -22,7 +22,10 @@ def median(x, alpha=None, axis=-1, keepdims=False):
     axis: int, optional
         the axis of the data on which to operate, by default the last axis
 
-    :returns: A tuple (m, [le, ue]). The confidence interval is [m-le, m+ue].
+    Returns
+    -------
+    :tuple ``(float, [float, float])``
+        This function returns ``(m, [le, ue])`` and the confidence interval is ``[m-le, m+ue]``.
     '''
 
     # place the axis on which to compute median in first position
