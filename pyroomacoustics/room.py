@@ -990,6 +990,10 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(val))
 
+            bbox = self.get_bbox()
+            ax.set_xlim3d(bbox[0, :])
+            ax.set_ylim3d(bbox[1, :])
+            ax.set_zlim3d(bbox[2, :])
 
             # draw the microphones
             if (self.mic_array is not None):
