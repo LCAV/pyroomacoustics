@@ -1107,8 +1107,8 @@ class Room(object):
                 for h in self.room_engine.microphones[r].histograms:
                     # get a copy of the histogram
                     self.rt_histograms[r][s].append(h.get_hist())
-                # reset the receiver's histograms
-                self.room_engine.reset_mics()
+            # reset all the receivers' histograms
+            self.room_engine.reset_mics()
 
     def compute_rir(self):
         """
@@ -1168,6 +1168,7 @@ class Room(object):
                     from .build_rir import fast_rir_builder
                     vis = self.visibility[s][m, :].astype(np.int32)
                     fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
+                    print(len(time), alpha.max(), vis.max(), ir_loc.max())
 
                     if bpf is not None:
                         ir_loc = sosfiltfilt(bpf, ir_loc)
@@ -1191,7 +1192,10 @@ class Room(object):
                     seq_bp_rot[indices, :] /= normalization[indices, None]
                     seq_bp_rot *= np.sqrt(hist[:, None])
 
-                    seq_bp *= np.sqrt(2 * bw / self.fs)
+                    seq_bp *= np.sqrt(bw)
+
+                    distance_seq = np.arange(len(seq_bp)) / self.fs * self.c
+                    seq_bp[1:] /= distance_seq[1:]
 
                     ir_loc[fdl2:fdl2+N] += seq_bp
 

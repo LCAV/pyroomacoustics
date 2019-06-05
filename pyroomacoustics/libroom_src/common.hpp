@@ -49,7 +49,7 @@ typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> VectorXb;
 struct Hit
 {
   float distance = 0.f;
-  Eigen::ArrayXf transmitted;  // vector of transmitted amplitude over frequency bands
+  Eigen::ArrayXf transmitted;  // vector of transmitted energy over frequency bands
 
   Hit(int _nfreq)
   {
