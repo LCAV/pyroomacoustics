@@ -46,7 +46,8 @@ if __name__ == "__main__":
 
     room.add_source([-2.0, 2.0, 1.8])
     room.add_microphone_array(
-        pra.MicrophoneArray(np.array([[-6.0, 6.3, 3.5]]).T, room.fs)
+        pra.MicrophoneArray(
+            np.array([[-6.5, 8.5, 3+0.1], [-6.5, 8.1, 3+0.1]]).T, room.fs)
     )
 
     # compute the rir
