@@ -16,6 +16,21 @@ Added
 
 - Griffin-Lim algorithm for phase reconstruction from STFT magnitude measurements.
 
+Changed
+~~~~~~~
+
+- Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
+  to plot; useful when there's too many impulse responses.
+- Add some window functions in `windows.py` and rearranged it in alphabetical order
+- Fixed various warnings in tests.
+
+Bugfix
+~~~~~~
+
+- Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
+- Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
+  underflow and divide by zero.
+
 `0.1.23`_ - 2019-04-17
 ----------------------
 

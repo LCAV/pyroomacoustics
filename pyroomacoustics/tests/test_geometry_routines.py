@@ -9,28 +9,28 @@ import pyroomacoustics as pra
 class TestGeometryRoutines(TestCase):
 
     def test_area_square(self):
-        self.assertEquals(pra.geometry.area([[0, 4, 4, 0], [0, 0, 4, 4]]), 4*4)
+        self.assertEqual(pra.geometry.area([[0, 4, 4, 0], [0, 0, 4, 4]]), 4*4)
 
     def test_area_triangle(self):
-        self.assertEquals(pra.geometry.area([[0, 4, 2], [0, 0, 2]]), (4*2)/2)
+        self.assertEqual(pra.geometry.area([[0, 4, 2], [0, 0, 2]]), (4*2)/2)
 
     def test_side_left(self):
-        self.assertEquals(pra.geometry.side([-1, 0], [0, 0], [1, 0]), -1)
+        self.assertEqual(pra.geometry.side([-1, 0], [0, 0], [1, 0]), -1)
 
     def test_side_right(self):
-        self.assertEquals(pra.geometry.side([1, 0], [0, 0], [1, 0]), 1)
+        self.assertEqual(pra.geometry.side([1, 0], [0, 0], [1, 0]), 1)
 
     def test_side_middle(self):
-        self.assertEquals(pra.geometry.side([0, 1], [0, 0], [1, 0]), 0)
+        self.assertEqual(pra.geometry.side([0, 1], [0, 0], [1, 0]), 0)
 
     def test_ccw3p_counterclockwise(self):
-        self.assertEquals(pra.geometry.ccw3p([0, 0], [2, 0], [1, 1]), 1)
+        self.assertEqual(pra.geometry.ccw3p([0, 0], [2, 0], [1, 1]), 1)
 
     def test_ccw3p_clockwise(self):
-        self.assertEquals(pra.geometry.ccw3p([1, 1], [2, 0], [0, 0]), -1)
+        self.assertEqual(pra.geometry.ccw3p([1, 1], [2, 0], [0, 0]), -1)
 
     def test_ccw3p_collinear(self):
-        self.assertEquals(pra.geometry.ccw3p([0, 0], [1, 0], [2, 0]), 0)
+        self.assertEqual(pra.geometry.ccw3p([0, 0], [1, 0], [2, 0]), 0)
 
     def test_intersection2DSegments_cross(self):
         p, endOfA, endOfB = pra.geometry.intersection_2D_segments([-2, 0], [2, 0], [0, -2], [0, 2])
