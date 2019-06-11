@@ -25,11 +25,18 @@ Changed
 Bugfix
 ~~~~~~
 
-- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
-- Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
 - Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
 - Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
   underflow and divide by zero.
+
+`0.1.23`_ - 2019-04-17
+----------------------
+
+Bugfix
+~~~~~~
+
+- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+- Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
 
 
 `0.1.22`_ - 2019-04-11
@@ -237,7 +244,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...HEAD
+.. _0.1.23: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...v0.1.23
 .. _0.1.22: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...v0.1.22
 .. _0.1.21: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
 .. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
