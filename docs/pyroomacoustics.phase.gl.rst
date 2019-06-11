@@ -1,5 +1,5 @@
-pyroomacoustics.phase.gl module
-===============================
+Griffin-Lim Phase Reconstruction
+================================
 
 .. automodule:: pyroomacoustics.phase.gl
     :members:

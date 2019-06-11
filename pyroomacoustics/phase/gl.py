@@ -29,15 +29,16 @@ The input to the algorithm is the magnitude from STFT measurements.
 
 The algorithm works by starting by assigning a (possibly random) initial phase to the
 measurements, and then iteratively
+
 1. Reconstruct the time-domain signal
 2. Re-apply STFT
 3. Enforce the known magnitude of the measurements
 
 The implementation supports different types of initialization via the keyword argument ``ini``.
+
 1. If omitted, the initial phase is uniformly zero
 2. If ``ini="random"``, a random phase is used
-3. If ``ini=A`` for a ``numpy.ndarray`` of the same shape as the input
-    magnitude, ``A / numpy.abs(A)`` is used for initialization
+3. If ``ini=A`` for a ``numpy.ndarray`` of the same shape as the input magnitude, ``A / numpy.abs(A)`` is used for initialization
 
 Example
 -------

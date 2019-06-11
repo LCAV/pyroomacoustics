@@ -101,6 +101,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.doa`
     Direction of arrival finding algorithms
 
+:py:obj:`pyroomacoustics.phase`
+    Phase-related processing
+
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 

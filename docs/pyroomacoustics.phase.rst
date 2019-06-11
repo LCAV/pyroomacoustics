@@ -1,5 +1,5 @@
-pyroomacoustics.phase package
-=============================
+Phase Processing
+================
 
 Submodules
 ----------
