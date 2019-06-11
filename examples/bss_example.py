@@ -40,7 +40,7 @@ Depending on the input arguments running this script will do these actions:.
 
 This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` packages for the GUI option.
 '''
-
+import time
 import numpy as np
 from scipy.io import wavfile
 from pyroomacoustics.transform import STFT
@@ -148,6 +148,8 @@ if __name__ == '__main__':
     ## STFT ANALYSIS
     X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
 
+    t_begin = time.perf_counter()
+
     ## START BSS
     bss_type = args.algo
     if bss_type == 'auxiva':
@@ -156,7 +158,7 @@ if __name__ == '__main__':
                            callback=convergence_callback)
     elif bss_type == 'ilrma':
         # Run ILRMA
-        Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True,
                           callback=convergence_callback)
     elif bss_type == 'sparseauxiva':
         # Estimate set of active frequency bins
@@ -168,9 +170,12 @@ if __name__ == '__main__':
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
                                  callback=convergence_callback)
 
+    t_end = time.perf_counter()
+    print("Time for BSS: {:.2f}".format(t_end - t_begin))
     
     ## STFT Synthesis
     y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+
 
     ## Compare SDR and SIR
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])

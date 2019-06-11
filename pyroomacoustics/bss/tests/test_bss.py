@@ -2,7 +2,7 @@
 import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
-from unittest import TestCase
+import unittest
 
 # We use several sound samples for each source to have a long enough length
 wav_files = [
@@ -39,7 +39,10 @@ def freq_bss(algo='auxiva', L=256):
         for f in source_files])
         for source_files in wav_files ]
     delays = [1., 0.]
-    locations = [[2.5,3], [2.5, 6]]
+    if algo == 'overiva':
+        locations = [[2.5,3]]
+    else:
+        locations = [[2.5,3], [2.5, 6]]
 
     # add mic and good source to room
     # Add silent signals to all sources
@@ -77,11 +80,11 @@ def freq_bss(algo='auxiva', L=256):
     if algo == 'auxiva':
         # Run AuxIVA
         Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
-        max_mse = 1e-5
+        max_mse = 5e-2
     elif algo == 'ilrma':
         # Run ILRMA
-        Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True)
-        max_mse = 1e-5
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True)
+        max_mse = 5e-2
     elif algo == 'sparseauxiva':
         # Estimate set of active frequency bins
         ratio = 0.35
@@ -90,10 +93,18 @@ def freq_bss(algo='auxiva', L=256):
         S = np.sort(np.argpartition(average, -k)[-k:])
         # Run SparseAuxIva
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True)
-        max_mse = 1e-4
+        max_mse = 1e-1
+    elif algo == 'overiva':
+        Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True)
+        max_mse = 0.5
+    print(Y.shape)
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+    if algo == 'overiva':
+        y = pra.transform.synthesis(Y[:, :, 0], L, L, zp_front=L//2, zp_back=L//2).T
+        y = y[None, :]
+    else:
+        y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
 
     # Calculate MES
     #############
@@ -101,13 +112,13 @@ def freq_bss(algo='auxiva', L=256):
     y_aligned = y[:,L//2:ref.shape[1]+L//2]
 
     mse = np.mean((ref[:,:y_aligned.shape[1],0] - y_aligned)**2)
-    input_variance = np.var(np.concatenate(signals))
+    ref_var = np.var(np.concatenate(ref[:,:y_aligned.shape[1],0]))
 
     print('%s with a %d frame length: Relative MSE (expected less than %.e)'
-          % (algo, L, max_mse), mse / input_variance)
-    assert (mse / input_variance) < max_mse
+          % (algo, L, max_mse), mse / ref_var)
+    assert (mse / ref_var) < max_mse
 
-class TestBSS(TestCase):
+class TestBSS(unittest.TestCase):
     # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
     def test_bss_auxiva(self):
         for block in L:
@@ -123,15 +134,11 @@ class TestBSS(TestCase):
         for block in L:
             freq_bss(algo='sparseauxiva', L=block)
 
+    # Test overiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_overiva(self):
+        for block in L:
+            freq_bss(algo='overiva', L=block)
+
+
 if __name__ == '__main__':
-    print('Running auxIVA...')
-    for block in L:
-        freq_bss(algo='auxiva', L=block)
-
-    print('Running ILRMA...')
-    for block in L:
-        freq_bss(algo='ilrma', L=block)
-
-    print('Running sparse auxIVA...')
-    for block in L:
-        freq_bss(algo='sparseauxiva', L=block)
+    unittest.main()

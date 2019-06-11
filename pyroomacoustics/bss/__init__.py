@@ -45,7 +45,7 @@ References
 '''
 
 from .trinicon import trinicon
-from .auxiva import auxiva, f_contrasts
+from .auxiva import auxiva
 from .ilrma import ilrma
 from .sparseauxiva import sparseauxiva
 from .common import projection_back, sparir
