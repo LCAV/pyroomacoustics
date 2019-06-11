@@ -22,7 +22,7 @@ AuxIVA
 ======
 
 Blind Source Separation using independent vector analysis based on auxiliary function.
-This function will separate the input signal input statistically independent sources
+This function will separate the input signal into statistically independent sources
 without using any prior information.
 
 The algorithm in the determined case, i.e., when the number of sources is equal to
