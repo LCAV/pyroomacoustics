@@ -42,18 +42,18 @@ ini = [None, "random", X]
 class TestGL(unittest.TestCase):
 
     def test_griffin_lim(self):
-        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, callback=cb)
+        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter)
         error = compute_error(X_mag, rec)
         self.assertTrue(error < test_tol)
 
     def test_griffin_lim_rand(self):
         np.random.seed(0)
-        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, ini="random", callback=cb)
+        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, ini="random")
         error = compute_error(X_mag, rec)
         self.assertTrue(error < test_tol)
 
     def test_griffin_lim_true(self):
-        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, ini=X, callback=cb)
+        rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, ini=X)
         error = compute_error(X_mag, rec)
         self.assertTrue(error < test_tol)
 
