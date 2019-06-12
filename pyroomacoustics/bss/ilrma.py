@@ -128,7 +128,6 @@ def ilrma(
             ## NMF
             ######
 
-            #'''
             iR = 1 / R[s, :, :]
             T[s, :, :] *= np.sqrt(
                 np.dot(P[s, :, :] * iR ** 2, V[s, :, :]) / np.dot(iR, V[s, :, :])
@@ -146,7 +145,6 @@ def ilrma(
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
             iR = 1 / R[s, :, :]
-            #'''
 
             ## IVA
             ######
