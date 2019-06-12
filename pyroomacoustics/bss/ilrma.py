@@ -112,7 +112,9 @@ def ilrma(
 
     demix(Y, X, W)
 
+    # P.shape == R.shape == (n_src, n_freq, n_frames)
     P = np.power(abs(Y.transpose([1, 0, 2])), 2.0)
+    iR = 1 / R
 
     for epoch in range(n_iter):
         if callback is not None and epoch % 10 == 0:
@@ -128,30 +130,30 @@ def ilrma(
             ## NMF
             ######
 
-            iR = 1 / R[s, :, :]
             T[s, :, :] *= np.sqrt(
-                np.dot(P[s, :, :] * iR ** 2, V[s, :, :]) / np.dot(iR, V[s, :, :])
+                np.dot(P[s, :, :] * iR[s, :, :] ** 2, V[s, :, :])
+                / np.dot(iR[s, :, :], V[s, :, :])
             )
             T[T < machine_epsilon] = machine_epsilon
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
-            iR = 1 / R[s, :, :]
+            iR[s, :, :] = 1 / R[s, :, :]
 
-            iR = 1 / R[s, :, :]
             V[s, :, :] *= np.sqrt(
-                np.dot(P[s, :, :].T * iR.T ** 2, T[s, :, :]) / np.dot(iR.T, T[s, :, :])
+                np.dot(P[s, :, :].T * iR[s, :, :].T ** 2, T[s, :, :])
+                / np.dot(iR[s, :, :].T, T[s, :, :])
             )
             V[V < machine_epsilon] = machine_epsilon
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
-            iR = 1 / R[s, :, :]
+            iR[s, :, :] = 1 / R[s, :, :]
 
             ## IVA
             ######
 
             # Compute Auxiliary Variable
             # shape: (n_freq, n_chan, n_chan)
-            C = np.matmul((X * iR[:, None, :]), np.conj(X.swapaxes(1, 2)) / n_frames)
+            C = np.matmul((X * iR[s, :, None, :]), np.conj(X.swapaxes(1, 2)) / n_frames)
 
             WV = np.matmul(W, C)
             W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))
