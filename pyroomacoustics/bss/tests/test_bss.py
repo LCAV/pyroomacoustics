@@ -22,7 +22,7 @@ wav_files = [
 L = [256, 512, 1024, 2048, 4096]
 
 # Frequency Blind Source Separation
-def freq_bss(algo='auxiva', L=256):
+def freq_bss(algo='auxiva', L=256, **kwargs):
 
     # Room dimensions in meters
     room_dim = [8, 9]
@@ -79,11 +79,11 @@ def freq_bss(algo='auxiva', L=256):
     ## START BSS
     if algo == 'auxiva':
         # Run AuxIVA
-        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
+        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, **kwargs)
         max_mse = 5e-2
     elif algo == 'ilrma':
         # Run ILRMA
-        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True)
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True, **kwargs)
         max_mse = 5e-2
     elif algo == 'sparseauxiva':
         # Estimate set of active frequency bins
@@ -92,12 +92,11 @@ def freq_bss(algo='auxiva', L=256):
         k = np.int_(average.shape[0] * ratio)
         S = np.sort(np.argpartition(average, -k)[-k:])
         # Run SparseAuxIva
-        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True)
+        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True, **kwargs)
         max_mse = 1e-1
     elif algo == 'overiva':
-        Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True)
+        Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True, **kwargs)
         max_mse = 0.5
-    print(Y.shape)
 
     ## STFT Synthesis
     if algo == 'overiva':
@@ -118,11 +117,18 @@ def freq_bss(algo='auxiva', L=256):
           % (algo, L, max_mse), mse / ref_var)
     assert (mse / ref_var) < max_mse
 
+    # Now test other parameter combinations, just run, no output check
+
 class TestBSS(unittest.TestCase):
     # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    def test_bss_auxiva(self):
+    def test_bss_auxiva_laplace(self):
         for block in L:
-            freq_bss(algo='auxiva', L=block)
+            freq_bss(algo='auxiva', L=block, model="laplace")
+
+    # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_auxiva_gauss(self):
+        for block in L:
+            freq_bss(algo='auxiva', L=block, model="gauss")
 
     # Test ilrma with frame lengths [256, 512, 1024, 2048, 4096]
     def test_bss_ilrma(self):
@@ -130,9 +136,14 @@ class TestBSS(unittest.TestCase):
             freq_bss(algo='ilrma', L=block)
 
     # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    def test_bss_sparse_auxiva(self):
+    def test_bss_sparse_auxiva_laplace(self):
         for block in L:
-            freq_bss(algo='sparseauxiva', L=block)
+            freq_bss(algo='sparseauxiva', L=block, model="laplace")
+
+    # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_sparse_auxiva_gauss(self):
+        for block in L:
+            freq_bss(algo='sparseauxiva', L=block, model="gauss")
 
     # Test overiva with frame lengths [256, 512, 1024, 2048, 4096]
     def test_bss_overiva(self):

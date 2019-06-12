@@ -43,7 +43,6 @@ This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` pack
 import time
 import numpy as np
 from scipy.io import wavfile
-from pyroomacoustics.transform import STFT
 
 from mir_eval.separation import bss_eval_sources
 
@@ -171,11 +170,10 @@ if __name__ == '__main__':
                                  callback=convergence_callback)
 
     t_end = time.perf_counter()
-    print("Time for BSS: {:.2f}".format(t_end - t_begin))
+    print("Time for BSS: {:.2f} s".format(t_end - t_begin))
     
     ## STFT Synthesis
     y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
-
 
     ## Compare SDR and SIR
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])

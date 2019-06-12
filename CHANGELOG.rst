@@ -21,6 +21,9 @@ Changed
 - Faster implementation of AuxIVA that also includes OverIVA (more mics than sources).
   It also comes with a slightly changed API, Laplace and time-varying Gauss statistical
   models, and two possible initialization schemes.
+- Faster implementation of ILRMA.
+- SparseAuxIVA has slightly changed API, ``f_contrast`` has been replaced by ``model``
+  keyword argument.
 
 Bugfix
 ~~~~~~

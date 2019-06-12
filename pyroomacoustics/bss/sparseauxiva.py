@@ -27,17 +27,20 @@
 import numpy as np
 from .common import projection_back, sparir
 
-# A few contrast functions
-f_contrasts = {
-    'norm': {'f': (lambda r, c, m: c * r), 'df': (lambda r, c, m: c)},
-    'cosh': {'f': (lambda r, c, m: m * np.log(np.cosh(c * r))), 'df': (lambda r, c, m: c * m * np.tanh(c * r))}
-}
 
-def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
-                 f_contrast=None, f_contrast_args=[],
-                 return_filters=False, callback=None):
+def sparseauxiva(
+    X,
+    S=None,
+    n_src=None,
+    n_iter=20,
+    proj_back=True,
+    W0=None,
+    model="laplace",
+    return_filters=False,
+    callback=None,
+):
 
-    '''
+    """
     Implementation of sparse AuxIVA algorithm for BSS presented in
 
     J. Janský, Z. Koldovský, and N. Ono, *A computationally cheaper method
@@ -58,10 +61,8 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
         Scaling on first mic by back projection (default True)
     W0: ndarray (nfrequencies, nchannels, nchannels), optional
         Initial value for demixing matrix
-    f_contrast: dict of functions
-        A dictionary with two elements 'f' and 'df' containing the contrast
-        function taking 3 arguments This should be a ufunc acting element-wise
-        on any array
+    model: str
+        The model of source distribution 'gauss' or 'laplace' (default)
     return_filters: bool
         If true, the function will return the demixing matrix too
     callback: func
@@ -72,7 +73,7 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     Returns an (nframes, nfrequencies, nsources) array. Also returns
     the demixing matrix (nfrequencies, nchannels, nsources)
     if ``return_values`` keyword is True.
-    '''
+    """
 
     n_frames, n_freq, n_chan = X.shape
 
@@ -86,7 +87,12 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
         n_src = X.shape[2]
 
     # for now it only supports determined case
-    assert n_chan == n_src
+    assert (
+        n_chan == n_src
+    ), "Only the determined case is implemented (n_src == n_channels)."
+
+    if model not in ["laplace", "gauss"]:
+        raise ValueError("Model should be either " "laplace" " or " "gauss" ".")
 
     # initialize the demixing matrices
     if W0 is None:
@@ -94,18 +100,14 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
     else:
         W = W0.copy()
 
-    if f_contrast is None:
-        f_contrast = f_contrasts['norm']
-        f_contrast_args = [1, 1]
-
+    eps = 1e-15
     I = np.eye(n_src, n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))
-    G_r = np.zeros((n_frames, n_src))
 
     def demixsparse(Y, X, S, W):
         for f in range(k_freq):
-            Y[:,S[f],:] = np.dot(X[:,S[f],:], np.conj(W[S[f],:,:]))
+            Y[:, S[f], :] = np.dot(X[:, S[f], :], np.conj(W[S[f], :, :]))
 
     # Conventional AuxIVA in the frequency bins k_freq selected by S
     for epoch in range(n_iter):
@@ -113,38 +115,40 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
         if callback is not None and epoch % 10 == 0:
             if proj_back:
-                z = projection_back(Y, X[:,:,0])
-                callback(Y * np.conj(z[None,:,:]))
+                z = projection_back(Y, X[:, :, 0])
+                callback(Y * np.conj(z[None, :, :]))
             else:
                 callback(Y)
 
-        # simple loop as a start
         # shape: (n_frames, n_src)
-        r[:,:] = np.sqrt(np.sum(np.abs(Y * np.conj(Y)), axis=1))
+        if model == "laplace":
+            r[:, :] = 2.0 * np.linalg.norm(Y, axis=1)
+        elif model == "gauss":
+            r[:, :] = (np.linalg.norm(Y, axis=1) ** 2) / n_freq
 
-        # Apply derivative of contrast function
-        G_r[:,:] = f_contrast['df'](r, *f_contrast_args) / r  # shape (n_frames, n_src)
+        # ensure some numerical stability
+        r[r < eps] = eps
+
+        r_inv = 1.0 / r
 
         # Compute Auxiliary Variable
         V = np.mean(
-            (X[:,:,None,:,None] * G_r[:,None,:,None,None])
-            * np.conj(X[:,:,None,None,:]),
+            (X[:, :, None, :, None] * r_inv[:, None, :, None, None])
+            * np.conj(X[:, :, None, None, :]),
             axis=0,
         )
 
         # Update now the demixing matrix
         for s in range(n_src):
-            W_H = np.conj(np.swapaxes(W,1,2))
-            WV = np.matmul(W_H, V[:,s,:,:])
-            rhs = I[None,:,s][[0] * WV.shape[0],:]
-            W[:,:,s] = np.linalg.solve(WV, rhs)
+            W_H = np.conj(np.swapaxes(W, 1, 2))
+            WV = np.matmul(W_H, V[:, s, :, :])
+            rhs = I[None, :, s][[0] * WV.shape[0], :]
+            W[:, :, s] = np.linalg.solve(WV, rhs)
 
             # normalize
-            P1 = np.conj(W[:,:,s])
-            P2 = np.sum(V[:,s,:,:] * W[:,None,:,s], axis=-1)
-            W[:,:,s] /= np.sqrt(
-               np.sum(P1 * P2, axis=1)
-               )[:, None]
+            P1 = np.conj(W[:, :, s])
+            P2 = np.sum(V[:, s, :, :] * W[:, None, :, s], axis=-1)
+            W[:, :, s] /= np.sqrt(np.sum(P1 * P2, axis=1))[:, None]
 
     # LASSO regularization to reconstruct the complete relative transfer function
     Z = np.zeros((n_src, k_freq), dtype=W.dtype)
@@ -153,26 +157,26 @@ def sparseauxiva(X, S=None, n_src=None, n_iter=20, proj_back=True, W0=None,
 
     for i in range(n_src):
         # calculate sparse relative transfer function from demixing matrix
-        Z[i,:] = np.conj(-W[S,0,i] / W[S,1,i]).T
+        Z[i, :] = np.conj(-W[S, 0, i] / W[S, 1, i]).T
 
         # copy selected active frequencies in Z to sparse G
-        G[i,S] = (np.expand_dims(Z[i,:], axis=1))
+        G[i, S] = np.expand_dims(Z[i, :], axis=1)
 
         # apply fast proximal algorithm to reconstruct the complete real-valued relative transfer function
-        hrtf[:,i] = sparir(G[i,:],S)
+        hrtf[:, i] = sparir(G[i, :], S)
 
         # recover relative transfer function back to the frequency domain
-        hrtf[:,i] = np.fft.fft(hrtf[:,i])
+        hrtf[:, i] = np.fft.fft(hrtf[:, i])
         # assemble back the complete demixing matrix
-        W[:,:,i] = np.conj(np.insert(hrtf[:,i,None],1,-1,axis=1))
+        W[:, :, i] = np.conj(np.insert(hrtf[:, i, None], 1, -1, axis=1))
 
     # apply final demixing in the whole frequency range
     demixsparse(Y, X, np.array(range(n_freq)), W)
 
     # Projection back to correct scale ambiguity
     if proj_back:
-        z = projection_back(Y, X[:,:,0])
-        Y *= np.conj(z[None,:,:])
+        z = projection_back(Y, X[:, :, 0])
+        Y *= np.conj(z[None, :, :])
 
     if return_filters:
         return Y, W

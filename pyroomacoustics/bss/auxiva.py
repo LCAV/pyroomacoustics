@@ -140,6 +140,9 @@ def auxiva(
         n_src <= n_chan
     ), "The number of sources cannot be more than the number of channels."
 
+    if model not in ["laplace", "gauss"]:
+        raise ValueError("Model should be either ""laplace"" or ""gauss"".")
+
     # covariance matrix of input signal (n_freq, n_chan, n_chan)
     Cx = np.mean(X[:, :, :, None] * np.conj(X[:, :, None, :]), axis=0)
 
@@ -179,6 +182,7 @@ def auxiva(
         for f in range(n_freq):
             W_hat[f, n_src:, n_src:] = -np.eye(n_chan - n_src)
 
+    eps = 1e-15
     eyes = np.tile(np.eye(n_chan, n_chan), (n_freq, 1, 1))
     V = np.zeros((n_freq, n_chan, n_chan), dtype=X.dtype)
     r_inv = np.zeros((n_src, n_frames))
@@ -205,7 +209,6 @@ def auxiva(
             else:
                 callback(Y_tmp)
 
-        # simple loop as a start
         # shape: (n_frames, n_src)
         if model == "laplace":
             r[:, :] = 2.0 * np.linalg.norm(Y, axis=0)
@@ -213,7 +216,6 @@ def auxiva(
             r[:, :] = (np.linalg.norm(Y, axis=0) ** 2) / n_freq
 
         # ensure some numerical stability
-        eps = 1e-15
         r[r < eps] = eps
 
         r_inv[:, :] = 1.0 / r

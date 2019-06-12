@@ -96,7 +96,7 @@ def ilrma(
     U = np.zeros((n_freq, n_src, n_chan, n_chan), dtype=X.dtype)
     product = np.zeros((n_freq, n_chan, n_chan), dtype=X.dtype)
     lambda_aux = np.zeros(n_src)
-    machine_epsilon = 1e-15
+    eps = 1e-15
     eyes = np.tile(np.eye(n_chan, n_chan), (n_freq, 1, 1))
 
     # Things are more efficient when the frequencies are over the first axis
@@ -134,7 +134,7 @@ def ilrma(
                 np.dot(P[s, :, :] * iR[s, :, :] ** 2, V[s, :, :])
                 / np.dot(iR[s, :, :], V[s, :, :])
             )
-            T[T < machine_epsilon] = machine_epsilon
+            T[T < eps] = eps
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
             iR[s, :, :] = 1 / R[s, :, :]
@@ -143,7 +143,7 @@ def ilrma(
                 np.dot(P[s, :, :].T * iR[s, :, :].T ** 2, T[s, :, :])
                 / np.dot(iR[s, :, :].T, T[s, :, :])
             )
-            V[V < machine_epsilon] = machine_epsilon
+            V[V < eps] = eps
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
             iR[s, :, :] = 1 / R[s, :, :]
