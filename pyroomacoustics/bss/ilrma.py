@@ -100,9 +100,6 @@ def ilrma(
     eyes = np.tile(np.eye(n_chan, n_chan), (n_freq, 1, 1))
 
     # Things are more efficient when the frequencies are over the first axis
-    """
-    Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
-    """
     Y = np.zeros((n_freq, n_src, n_frames), dtype=X.dtype)
     X_original = X
     X = X.transpose([1, 2, 0]).copy()
