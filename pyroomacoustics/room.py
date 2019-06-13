@@ -1612,19 +1612,20 @@ class ShoeBox(Room):
                  absorption=None,  # deprecated
                  materials=None,
                  fs=8000,
-                 temperature=25.,
-                 humidity=70.,
-                 c=None,
-                 air_absorption=None,
+                 t0=0.,
                  max_order=1,
-                 ray_trace_args=None,
+                 sigma2_awgn=None,
                  sources=None,
                  mics=None,
+                 temperature=None,
+                 humidity=None,
+                 air_absorption=False,
+                 ray_tracing=False,
                  ):
 
-        Room._var_init(
-                self, fs, temperature, humidity, c, air_absorption,
-                max_order, sources, mics, ray_trace_args,
+        self._var_init(
+                fs, t0, max_order, sigma2_awgn, sources, mics,
+                temperature, humidity, air_absorption, ray_tracing,
         )
 
         p = np.array(p, dtype=np.float32)
