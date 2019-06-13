@@ -120,13 +120,19 @@ def griffin_lim(
     ----------
     X: array_like, shape (n_frames, n_freq)
         The STFT magnitude measurements
-    stft_kwargs: dict
-        Dictionary of parameters for the STFT
-    ini: str or array_like, np.complex, shape (n_frames, n_freq)
-        The initial value of the phase estimate. If "random", uses a random guess. If ``None``, uses ``0`` phase.
-    n_iter: int
+    hop: int
+        The frame shift of the STFT
+    analysis_window: array_like, shape (fft_size,)
+        The window used for the STFT analysis
+    fft_size: int, optional
+        The FFT size for the STFT, if omitted it is computed from the dimension of ``X``
+    stft_kwargs: dict, optional
+        Dictionary of extra parameters for the STFT
+    n_iter: int, optional
         The number of iteration
-    callback: func
+    ini: str or array_like, np.complex, shape (n_frames, n_freq), optional
+        The initial value of the phase estimate. If "random", uses a random guess. If ``None``, uses ``0`` phase.
+    callback: func, optional
         A callable taking as argument an int and the reconstructed STFT and time-domain signals
     """
 
