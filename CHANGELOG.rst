@@ -23,6 +23,12 @@ Changed
   to plot; useful when there's too many impulse responses.
 - Add some window functions in `windows.py` and rearranged it in alphabetical order
 - Fixed various warnings in tests.
+- Faster implementation of AuxIVA that also includes OverIVA (more mics than sources).
+  It also comes with a slightly changed API, Laplace and time-varying Gauss statistical
+  models, and two possible initialization schemes.
+- Faster implementation of ILRMA.
+- SparseAuxIVA has slightly changed API, ``f_contrast`` has been replaced by ``model``
+  keyword argument.
 
 Bugfix
 ~~~~~~
