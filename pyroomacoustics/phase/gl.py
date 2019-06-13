@@ -95,12 +95,13 @@ References
 # This is needed to check for string types
 # in a way compatible between python 2 and 3
 try:
-  basestring
+    basestring
 except NameError:
-  basestring = str
+    basestring = str
 
 import numpy as np
 from ..transform import STFT, compute_synthesis_window
+
 
 def griffin_lim(
     X,

@@ -29,10 +29,12 @@ X = engine.analysis(audio)
 X_mag = np.abs(X)
 X_mag_norm = np.linalg.norm(X_mag) ** 2
 
+
 def compute_error(X_mag, y):
     """ routine to compute the spectral distance """
     Y_2 = engine.analysis(y)
     return np.linalg.norm(X_mag - np.abs(Y_2)) ** 2 / X_mag_norm
+
 
 np.random.seed(0)
 ini = [None, "random", X]
@@ -40,7 +42,6 @@ ini = [None, "random", X]
 # The actual test case
 # We use deterministic phase initialization (to zero)
 class TestGL(unittest.TestCase):
-
     def test_griffin_lim(self):
         rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter)
         error = compute_error(X_mag, rec)
@@ -56,6 +57,7 @@ class TestGL(unittest.TestCase):
         rec = pra.phase.griffin_lim(X_mag, hop, win_a, n_iter=n_iter, ini=X)
         error = compute_error(X_mag, rec)
         self.assertTrue(error < test_tol)
+
 
 if __name__ == "__main__":
 
