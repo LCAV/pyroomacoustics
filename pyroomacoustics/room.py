@@ -381,20 +381,45 @@ class Room(object):
     :attribute absorption: (numpy.ndarray size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
     :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
+    Parameters
+    ----------
+    walls: list of Wall or Wall2D objects
+        The walls forming the room
+    fs: int, optional
+        The sampling frequency
+    t0: float, optional
+        The global starting time of the simulation
+    max_order: int, optional
+        The maximum reflection order in the image source model
+    sigma2_awgn: float, optional
+        The variance of the additive white Gaussian noise
+    sources: list of SoundSource objects
+        Sources to place in the room
+    mics: MicrophoneArray object
+        The microphone array to place in the room
+    temperature: float
+        The air temperature in the room in degree Celsius
+    humidity: float
+        The relative humidity of the air in the room (between 0 and 100)
+    air_absorption: bool, optional
+        If set to True, absorption of sound energy by the error will be simulated
+    ray_tracing: bool, optional
+        If set to True, the ray tracing simulator will be used
     '''
 
     def __init__(
             self,
             walls,
             fs=8000,
-            temperature=25.,
-            humidity=70.,
-            c=None,
-            air_absorption=None,
+            t0=0.,
             max_order=1,
-            ray_trace_args=None,
+            sigma2_awgn=None,
             sources=None,
             mics=None,
+            temperature=None,
+            humidity=None,
+            air_absorption=False,
+            ray_tracing=False,
             ):
 
         self.walls = walls
@@ -404,8 +429,8 @@ class Room(object):
 
         # initialize everything else
         self._var_init(
-                fs, temperature, humidity, c, air_absorption, max_order,
-                sources, mics, ray_trace_args,
+                fs, t0, max_order, sigma2_awgn, sources, mics,
+                temperature, humidity, air_absorption, ray_tracing,
         )
 
         self._wall_mapping()
@@ -439,67 +464,47 @@ class Room(object):
         else:
             self.room_engine = libroom.Room(*args)
 
-
-
-    def _ray_trace_args_init(self, rt_args):
-
-        rt_args_default = {
-                'n_rays': 10000,
-                'energy_thres': 1e-7,
-                'time_thres': 1.,
-                'receiver_radius': 0.15,
-                'hist_bin_size': 0.004,
-                }
-
-        if rt_args is None:
-            self.rt_args = {}
-        else:
-            self.rt_args = rt_args.copy()
-
-        for key, val in rt_args_default.items():
-            if key not in self.rt_args:
-                self.rt_args[key] = val
-
-        # set the histogram bin size so that it is an integer number of samples
-        self.rt_args['hist_bin_size_samples'] = math.floor(
-                self.fs * self.rt_args['hist_bin_size']
-        )
-        self.rt_args['hist_bin_size'] = (
-                self.rt_args['hist_bin_size_samples'] / self.fs
-        )
-
     def _var_init(
             self,
             fs,
-            temperature,
-            humidity,
-            c,
-            air_absorption,
+            t0,
             max_order,
+            sigma2_awgn,
             sources,
             mics,
-            rt_args,
+            temperature,
+            humidity,
+            air_absorption,
+            ray_tracing,
             ):
 
         self.fs = fs
+        self.t0 = t0
+        self.max_order = max_order
+        self.sigma2_awgn = sigma2_awgn
+
         self.octave_bands = OctaveBandsFactory(fs=self.fs)
 
-        self.max_order = max_order
+        # Keep track of the state of the simulator
+        self.simulator_state = {
+                "ism_needed": (self.max_order >= 0),
+                "rt_needed": ray_tracing,
+                "air_abs_needed": air_absorption,
+                "ism_done": False,
+                "rt_done": False,
+                "rir_done": False,
+                }
 
-        self.physics = Physics(temperature=temperature, humidity=humidity)
-        if c is None:
-            self.c = self.physics.get_sound_speed()
+        if temperature is None and humidity is None:
+            # default to package wide setting when nothing is provided
+            self.physics = Physics().from_speed(constants.get("c"))
         else:
-            # ignore temperature and humidity if c is provided
-            self.c = c
+            # use formulas when temperature and/or humidity are provided
+            self.physics = Physics(temperature=temperature, humidity=humidity)
 
-        if air_absorption is None:
-            self.air_absorption = self.octave_bands(
-                    **self.physics.get_air_absorption()
-            )
-        else:
-            # ignore temperature and humidity if coefficients are provided
-            self.air_absorption = self.octave_bands(**air_absorption)
+        self.set_sound_speed(self.physics.get_sound_speed())
+        self.set_air_absorption(air_absorption)
+        self.set_ray_tracing(ray_tracing)
 
         if sources is not None and isinstance(sources, list):
             self.sources = sources
@@ -514,8 +519,76 @@ class Room(object):
         # initialize the attribute for the impulse responses
         self.rir = None
 
-        # Preparte the ray tracing parameters
-        self._ray_trace_args_init(rt_args)
+    def set_ray_tracing(self,
+            active,
+            n_rays=10000,
+            energy_thres=1e-7,
+            time_thres=10.,
+            receiver_radius=0.15,
+            hist_bin_size=0.004,
+            ):
+        """
+        Activates/deactivates the ray tracer.
+
+        Parameters
+        ----------
+        active: bool
+            Set to True to activate, False to deactivate
+        n_rays: int, optional
+            The number of rays to shoot in the simulation
+        energy_thres: float, optional
+            The energy thresold at which rays are stopped
+        time_thres: float, optional
+            The maximum time of flight of rays
+        receiver_radius: float, optional
+            The radius of the sphere around the microphone in which to
+            integrate the energy
+        hist_bin_size: float
+            The time granularity of bins in the energy histogram
+        """
+
+        self.simulator_state["rt_needed"] = active
+
+        self.rt_args = {}
+        self.rt_args["n_rays"] = n_rays
+        self.rt_args["energy_thres"] = energy_thres
+        self.rt_args["time_thres"] = time_thres
+        self.rt_args["receiver_radius"] = receiver_radius
+        self.rt_args["hist_bin_size"] = hist_bin_size
+
+        # set the histogram bin size so that it is an integer number of samples
+        self.rt_args['hist_bin_size_samples'] = math.floor(
+                self.fs * self.rt_args['hist_bin_size']
+        )
+        self.rt_args['hist_bin_size'] = (
+                self.rt_args['hist_bin_size_samples'] / self.fs
+        )
+
+
+    def set_air_absorption(self, active, coefficients=None):
+        """
+        Activates or deactivates air absorption in the simulation.
+
+        Parameters
+        ----------
+        active: bool
+            Pass True to activate air absorption, False to deactivate
+        coefficients: list of float
+            List of air absorption coefficients, one per octave band
+        """
+
+        self.simulator_state["air_abs_needed"] = active
+        if coefficients is None:
+            self.air_absorption = self.octave_bands(
+                    **self.physics.get_air_absorption()
+            )
+        else:
+            # ignore temperature and humidity if coefficients are provided
+            self.air_absorption = self.physics().get_air_absorption()
+
+    def set_sound_speed(self, c):
+        """ Sets the speed of sound unconditionnaly """
+        self.c = c
 
     def _wall_mapping(self):
 
@@ -789,7 +862,7 @@ class Room(object):
                 True,  # a priori we will always use a hybrid model
                 ]
 
-        # Create the real room object
+        # Update the real room object
         self.room_engine = libroom.Room(*args)
 
     def convex_hull(self):
@@ -1006,7 +1079,7 @@ class Room(object):
 
     def plot_rir(self, FD=False):
 
-        if self.rir is None:
+        if not self.simulator_state["rir_done"]:
             self.compute_rir()
 
         try:
@@ -1065,6 +1138,9 @@ class Room(object):
 
     def image_source_model(self):
 
+        if not self.simulator_state["ism_needed"]:
+            return
+
         self.visibility = []
 
         for source in self.sources:
@@ -1088,7 +1164,13 @@ class Room(object):
                     if not self.is_inside(self.mic_array.R[:, m]):
                         self.visibility[-1][m, :] = 0
 
+        # Update the state
+        self.simulator_state["ism_done"] = True
+
     def ray_tracing(self):
+
+        if not self.simulator_state["rt_needed"]:
+            return
 
         if self.dim == 2:
             grid = GridCircle(n_points=self.rt_args['n_rays'])
@@ -1110,10 +1192,19 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
+        # update the state
+        self.simulator_state["rt_done"] = True
+
     def compute_rir(self):
         """
         Compute the room impulse response between every source and microphone.
         """
+
+        if self.simulator_state["ism_needed"] and not self.simulator_state["ism_done"]:
+            self.image_source_model()
+
+        if self.simulator_state["rt_needed"] and not self.simulator_state["rt_done"]:
+            self.ray_tracing()
 
         self.rir = []
 

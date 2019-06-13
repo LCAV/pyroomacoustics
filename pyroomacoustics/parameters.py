@@ -98,6 +98,11 @@ def calculate_speed_of_sound(t, h, p):
     # using crude approximation for now
     return 331.4 + 0.6 * t + 0.0124 * h
 
+def _calculate_temperature(c, h):
+    """ Compute the temperature give a speed of sound ``c`` and humidity ``h`` """
+
+    return (c - 331.4 - 0.0124 * h) / 0.6
+
 
 r"""
 Air Absorption Coefficients
@@ -135,14 +140,22 @@ class Physics(object):
     ----------
     temperature: float, optional
         The room temperature
-    humidity: float, optional
-        The room humidity
+    humidity: float in range (0, 100), optional
+        The room relative humidity in %
     """
 
-    def __init__(self, temperature=25.0, humidity=0.7):
-        self.T = temperature
-        self.H = humidity
+    def __init__(self, temperature=None, humidity=0.):
+
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
+        self.H = humidity
+
+        if self.H < 0. or self.H > 100:
+            raise ValueError("Relative humidity is a value between 0 and 100.")
+
+        if temperature is None:
+            temperature = _calculate_temperature(constants.get("c"), self.H)
+        else:
+            self.T = temperature
 
     def get_sound_speed(self):
         """
@@ -178,6 +191,16 @@ class Physics(object):
             "coeffs": air_absorption_table[key],
             "center_freqs": air_absorption_table["center_freqs"],
         }
+
+    @classmethod
+    def from_speed(cls, c):
+        """ Choose a temperature and humidity matching a desired speed of sound """
+
+        H = 0.3
+        T = _calculate_temperature(c, H)
+
+        return cls(temperature=T, humidity=H)
+
 
 
 r"""
