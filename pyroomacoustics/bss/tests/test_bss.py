@@ -2,7 +2,7 @@
 import numpy as np
 import pyroomacoustics as pra
 from scipy.io import wavfile
-from unittest import TestCase
+import unittest
 
 # We use several sound samples for each source to have a long enough length
 wav_files = [
@@ -22,7 +22,7 @@ wav_files = [
 L = [256, 512, 1024, 2048, 4096]
 
 # Frequency Blind Source Separation
-def freq_bss(algo='auxiva', L=256):
+def freq_bss(algo='auxiva', L=256, **kwargs):
 
     # Room dimensions in meters
     room_dim = [8, 9]
@@ -39,7 +39,10 @@ def freq_bss(algo='auxiva', L=256):
         for f in source_files])
         for source_files in wav_files ]
     delays = [1., 0.]
-    locations = [[2.5,3], [2.5, 6]]
+    if algo == 'overiva':
+        locations = [[2.5,3]]
+    else:
+        locations = [[2.5,3], [2.5, 6]]
 
     # add mic and good source to room
     # Add silent signals to all sources
@@ -76,12 +79,12 @@ def freq_bss(algo='auxiva', L=256):
     ## START BSS
     if algo == 'auxiva':
         # Run AuxIVA
-        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True)
-        max_mse = 1e-5
+        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, **kwargs)
+        max_mse = 5e-2
     elif algo == 'ilrma':
         # Run ILRMA
-        Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True)
-        max_mse = 1e-5
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True, **kwargs)
+        max_mse = 5e-2
     elif algo == 'sparseauxiva':
         # Estimate set of active frequency bins
         ratio = 0.35
@@ -89,11 +92,18 @@ def freq_bss(algo='auxiva', L=256):
         k = np.int_(average.shape[0] * ratio)
         S = np.sort(np.argpartition(average, -k)[-k:])
         # Run SparseAuxIva
-        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True)
-        max_mse = 1e-4
+        Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True, **kwargs)
+        max_mse = 1e-1
+    elif algo == 'overiva':
+        Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True, **kwargs)
+        max_mse = 0.5
 
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+    if algo == 'overiva':
+        y = pra.transform.synthesis(Y[:, :, 0], L, L, zp_front=L//2, zp_back=L//2).T
+        y = y[None, :]
+    else:
+        y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
 
     # Calculate MES
     #############
@@ -101,17 +111,24 @@ def freq_bss(algo='auxiva', L=256):
     y_aligned = y[:,L//2:ref.shape[1]+L//2]
 
     mse = np.mean((ref[:,:y_aligned.shape[1],0] - y_aligned)**2)
-    input_variance = np.var(np.concatenate(signals))
+    ref_var = np.var(np.concatenate(ref[:,:y_aligned.shape[1],0]))
 
     print('%s with a %d frame length: Relative MSE (expected less than %.e)'
-          % (algo, L, max_mse), mse / input_variance)
-    assert (mse / input_variance) < max_mse
+          % (algo, L, max_mse), mse / ref_var)
+    assert (mse / ref_var) < max_mse
 
-class TestBSS(TestCase):
+    # Now test other parameter combinations, just run, no output check
+
+class TestBSS(unittest.TestCase):
     # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    def test_bss_auxiva(self):
+    def test_bss_auxiva_laplace(self):
         for block in L:
-            freq_bss(algo='auxiva', L=block)
+            freq_bss(algo='auxiva', L=block, model="laplace")
+
+    # Test auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_auxiva_gauss(self):
+        for block in L:
+            freq_bss(algo='auxiva', L=block, model="gauss")
 
     # Test ilrma with frame lengths [256, 512, 1024, 2048, 4096]
     def test_bss_ilrma(self):
@@ -119,19 +136,20 @@ class TestBSS(TestCase):
             freq_bss(algo='ilrma', L=block)
 
     # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
-    def test_bss_sparse_auxiva(self):
+    def test_bss_sparse_auxiva_laplace(self):
         for block in L:
-            freq_bss(algo='sparseauxiva', L=block)
+            freq_bss(algo='sparseauxiva', L=block, model="laplace")
+
+    # Test sparse auxiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_sparse_auxiva_gauss(self):
+        for block in L:
+            freq_bss(algo='sparseauxiva', L=block, model="gauss")
+
+    # Test overiva with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_overiva(self):
+        for block in L:
+            freq_bss(algo='overiva', L=block)
+
 
 if __name__ == '__main__':
-    print('Running auxIVA...')
-    for block in L:
-        freq_bss(algo='auxiva', L=block)
-
-    print('Running ILRMA...')
-    for block in L:
-        freq_bss(algo='ilrma', L=block)
-
-    print('Running sparse auxIVA...')
-    for block in L:
-        freq_bss(algo='sparseauxiva', L=block)
+    unittest.main()
