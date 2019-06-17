@@ -35,7 +35,6 @@ Room<D>::Room(
     const std::vector<Wall<D>> &_walls,
     const std::vector<int> &_obstructing_walls,
     const std::vector<Microphone<D>> &_microphones,
-    const Eigen::ArrayXf &_air_absorption,
     float _sound_speed,
     // parameters for the image source model
     int _ism_order,
@@ -47,7 +46,7 @@ Room<D>::Room(
     bool _is_hybrid_sim
     )
   : walls(_walls), obstructing_walls(_obstructing_walls), microphones(_microphones),
-  air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
+  sound_speed(_sound_speed), ism_order(_ism_order),
   energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
   mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim), is_shoebox(false)
 {
@@ -60,7 +59,6 @@ Room<D>::Room(
     const Eigen::Array<float,Eigen::Dynamic,2*D> &_absorption,
     const Eigen::Array<float,Eigen::Dynamic,2*D> &_scattering,
     const std::vector<Microphone<D>> &_microphones,
-    const Eigen::ArrayXf &_air_absorption,
     float _sound_speed,
     // parameters for the image source model
     int _ism_order,
@@ -72,7 +70,7 @@ Room<D>::Room(
     bool _is_hybrid_sim
     )
   : shoebox_size(_room_size), shoebox_absorption(_absorption), microphones(_microphones),
-  air_absorption(_air_absorption), sound_speed(_sound_speed), ism_order(_ism_order),
+  sound_speed(_sound_speed), ism_order(_ism_order),
   energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
   mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim), is_shoebox(true)
 {

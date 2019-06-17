@@ -51,7 +51,6 @@ PYBIND11_MODULE(libroom, m) {
         const std::vector<Wall<3>> &,
         const std::vector<int> &,
         const std::vector<Microphone<3>> &,
-        const Eigen::ArrayXf &,
         float, int, float, float, float, float, bool
         >())
     .def(py::init<
@@ -59,7 +58,6 @@ PYBIND11_MODULE(libroom, m) {
         const Eigen::Array<float,Eigen::Dynamic,6> &,
         const Eigen::Array<float,Eigen::Dynamic,6> &,
         const std::vector<Microphone<3>> &,
-        const Eigen::ArrayXf &,
         float, int, float, float, float, float, bool
         >())
     .def("set_params", &Room<3>::set_params)
@@ -107,7 +105,6 @@ PYBIND11_MODULE(libroom, m) {
         const std::vector<Wall<2>> &,
         const std::vector<int> &,
         const std::vector<Microphone<2>> &,
-        const Eigen::ArrayXf &,
         float, int, float, float, float, float, bool
         >())
     .def(py::init<
@@ -115,7 +112,6 @@ PYBIND11_MODULE(libroom, m) {
         const Eigen::Array<float,Eigen::Dynamic,4> &,
         const Eigen::Array<float,Eigen::Dynamic,4> &,
         const std::vector<Microphone<2>> &,
-        const Eigen::ArrayXf &,
         float, int, float, float, float, float, bool
         >())
     .def("set_params", &Room<2>::set_params)

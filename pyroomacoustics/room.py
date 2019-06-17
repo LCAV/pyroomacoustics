@@ -442,7 +442,6 @@ class Room(object):
                 self.walls,
                 self.obstructing_walls,
                 [],
-                self.air_absorption,
                 self.c,  # speed of sound
                 self.max_order,
                 self.rt_args['energy_thres'],
@@ -518,8 +517,10 @@ class Room(object):
         self.set_sound_speed(self.physics.get_sound_speed())
         if air_absorption:
             self.set_air_absorption()
-        if ray_tracing:
-            self.set_ray_tracing()
+
+        self.set_ray_tracing()
+        if not ray_tracing:
+            self.unset_ray_tracing()
 
         # in the beginning, nothing has been
         self.visibility = None
@@ -877,7 +878,6 @@ class Room(object):
                 self.walls,
                 self.obstructing_walls,
                 [],
-                self.air_absorption,
                 self.c,  # speed of sound
                 self.max_order,
                 self.rt_args['energy_thres'],
@@ -1869,7 +1869,6 @@ class ShoeBox(Room):
                 absorption_array,
                 scattering_array,
                 [],
-                self.air_absorption,
                 self.c,  # speed of sound
                 self.max_order,
                 self.rt_args['energy_thres'],

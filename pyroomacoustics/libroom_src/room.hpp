@@ -79,7 +79,6 @@ class Room
     std::vector<Wall<D>> walls;
     std::vector<int> obstructing_walls;  // List of obstructing walls
     std::vector<Microphone<D>> microphones;  // The microphones are in the room
-    Eigen::ArrayXf air_absorption;  // the absorption coefficient of air
     float sound_speed = 343.;  // the speed of sound in the room
 
     // Simulation parameters
@@ -117,7 +116,6 @@ class Room
         const std::vector<Wall<D>> &_walls,
         const std::vector<int> &_obstructing_walls,
         const std::vector<Microphone<D>> &_microphones,
-        const Eigen::ArrayXf &_air_absorption,
         float _sound_speed,
         // parameters for the image source model
         int _ism_order,
@@ -135,7 +133,6 @@ class Room
         const Eigen::Array<float,Eigen::Dynamic,2*D> &_absorption,
         const Eigen::Array<float,Eigen::Dynamic,2*D> &_scattering,
         const std::vector<Microphone<D>> &_microphones,
-        const Eigen::ArrayXf &_air_absorption,
         float _sound_speed,
         // parameters for the image source model
         int _ism_order,
