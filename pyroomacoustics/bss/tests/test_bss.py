@@ -93,7 +93,7 @@ def freq_bss(algo='auxiva', L=256, **kwargs):
         S = np.sort(np.argpartition(average, -k)[-k:])
         # Run SparseAuxIva
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True, **kwargs)
-        max_mse = 1e-1
+        max_mse = 1.5e-1
     elif algo == 'overiva':
         Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True, **kwargs)
         max_mse = 0.5

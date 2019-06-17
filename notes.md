@@ -5,6 +5,7 @@
 * Fix documentation
 * Change the `absorption` to `energy_absorption` in materials to make it clear that this
   not the same parameter as the one in room
+* Fix the documentation for contributing. Add the recursive clone command to get Eigen.
 
 ## Test wether the ray tracing follows Sabine
 
