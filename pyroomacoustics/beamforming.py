@@ -492,7 +492,7 @@ class Beamformer(MicrophoneArray):
                                     np.arange(Lgp)))
                 F = np.exp(-2j*np.pi*k*l / self.N)
 
-                self.filters[i] = np.real(np.linalg.lstsq(F, w)[0])
+                self.filters[i] = np.real(np.linalg.lstsq(F, w, rcond=None)[0])
 
     def weights_from_filters(self):
 

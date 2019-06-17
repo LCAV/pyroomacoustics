@@ -1120,10 +1120,44 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, FD=False):
+    def plot_rir(self, select=None, FD=False):
+        """
+        Plot room impulse responses. Compute if not done already.
+
+        Parameters
+        ----------
+        select: list of tuples OR int
+            List of RIR pairs `(mic, src)` to plot, e.g. `[(0,0), (0,1)]`. Or
+            `int` to plot RIR from particular microphone to all sources. Note
+            that microphones and sources are zero-indexed. Default is to plot
+            all microphone-source pairs.
+        FD: bool
+            Whether to plot in the frequency domain, namely the transfer
+            function. Default is False.
+        """
+        n_src = len(self.sources)
+        n_mic = self.mic_array.M
+        if select is None:
+            pairs = [(r, s) for r in range(n_mic) for s in range(n_src)]
+        elif isinstance(select, int):
+            pairs = [(select, s) for s in range(n_src)]
+        elif isinstance(select, list):
+            pairs = select
+        else:
+            raise ValueError('Invalid type for "select".')
 
         if not self.simulator_state["rir_done"]:
             self.compute_rir()
+
+        # for plotting
+        n_mic = len(list(set(pair[0] for pair in pairs)))
+        n_src = len(list(set(pair[1] for pair in pairs)))
+        r_plot = dict()
+        s_plot = dict()
+        for k, r in enumerate(list(set(pair[0] for pair in pairs))):
+            r_plot[r] = k
+        for k, s in enumerate(list(set(pair[1] for pair in pairs))):
+            s_plot[s] = k
 
         try:
             import matplotlib.pyplot as plt
@@ -1134,29 +1168,24 @@ class Room(object):
 
         from . import utilities as u
 
-        M = self.mic_array.M
-        S = len(self.sources)
-
-        n_max = np.max([len(self.rir[r][s]) for s in range(S) for r in range(M)])
-
-        for r in range(M):
-            for s in range(S):
-
-                h = self.rir[r][s]
-
-                h = np.zeros((n_max))
-                h[:len(self.rir[r][s])] = self.rir[r][s]
-                plt.subplot(M, S, r*S + s + 1)
+        for k, _pair in enumerate(pairs):
+            r = _pair[0]
+            s = _pair[1]
+            h = self.rir[r][s]
+            if select is None:    # matrix plot
+                plt.subplot(n_mic, n_src, r_plot[r]*n_src + s_plot[s] + 1)
+            else:                 # one column
+                plt.subplot(len(pairs), 1, k + 1)
+            if not FD:
+                plt.plot(np.arange(len(h)) / float(self.fs), h)
+            else:
+                u.real_spectrum(h)
+            plt.title('RIR: mic'+str(r)+' source'+str(s))
+            if r == n_mic-1:
                 if not FD:
-                    plt.plot(np.arange(len(h)) / float(self.fs), h)
+                    plt.xlabel('Time [s]')
                 else:
-                    u.real_spectrum(h)
-                plt.title('RIR: mic'+str(r)+' source'+str(s))
-                if r == M-1:
-                    if not FD:
-                        plt.xlabel('Time [s]')
-                    else:
-                        plt.xlabel('Normalized frequency')
+                    plt.xlabel('Normalized frequency')
 
         plt.tight_layout()
 

@@ -1,5 +1,9 @@
-Pyroomacoustics
-===============
+.. image:: https://github.com/LCAV/pyroomacoustics/raw/master/logo/pyroomacoustics_logo_horizontal.png
+   :scale: 80 %
+   :alt: Pyroomacoustics logo
+   :align: left
+
+------------------------------------------------------------------------------
 
 .. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
     :target: https://travis-ci.org/LCAV/pyroomacoustics
@@ -177,7 +181,7 @@ beamformer in a room.
 
     # Create a linear array beamformer with 4 microphones
     # with angle 0 degrees and inter mic distance 10 cm
-    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
+    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.1)
     room.add_microphone_array(pra.Beamformer(R, room.fs))
 
     # Now compute the delay and sum weights for the beamformer
@@ -186,6 +190,11 @@ beamformer in a room.
     # plot the room and resulting beamformer
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
+
+More examples
+-------------
+
+A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomacoustics/tree/master/notebooks>`_ are available.  
 
 A comprehensive set of examples covering most of the functionalities
 of the package can be found in the ``examples`` folder of the `GitHub

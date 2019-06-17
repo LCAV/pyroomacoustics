@@ -8,39 +8,93 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+`NextGeneration`_
+------------------
 
 Added
 ~~~~~
 
 - Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
-	can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
-	That's why this function has now several default arguments to run ray tracing (number
-	of rays, scattering coefficient, energy and time thresholds, microphone's radius).
+  can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
+  That's why this function has now several default arguments to run ray tracing (number
+  of rays, scattering coefficient, energy and time thresholds, microphone's radius).
 - Bandpass filterbank construction in ``pyroomacoustics.acoustics.bandpass_filterbank``
 - Acoustic properties of different materials in ``pyroomacoustics.materials``
-- Scattering from the wall is handled via ray tracing method, scattering coefficients are provided in ``pyroomacoustics.materials.Material`` objects
-- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA)
+- Scattering from the wall is handled via ray tracing method, scattering coefficients are provided
+  in ``pyroomacoustics.materials.Material`` objects
+
 
 Changed
 ~~~~~~~
 
 - Deep refactor of Room class. The constructor arguments have changed
-    - No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
+- No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
 - The way absorption is handled has changed. The scalar variables ``absorption`` are deprecated in favor of a list of ``pyroomacoustics.materials.Material``
 - Complete refactor of libroom, the compiled extension module responsible for the
   room simulation, into C++. The bindings to python are now done using pybind11.
 - Removes the pure Python room simulator as it was really slow
 - Compiled wheels are now available for Mac
 
+
+`Unreleased`_
+-------------
+
+Changed
+~~~~~~~
+
+- Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
+  to plot; useful when there's too many impulse responses.
+- Add some window functions in `windows.py` and rearranged it in alphabetical order
+- Fixed various warnings in tests.
+- Faster implementation of AuxIVA that also includes OverIVA (more mics than sources).
+  It also comes with a slightly changed API, Laplace and time-varying Gauss statistical
+  models, and two possible initialization schemes.
+- Faster implementation of ILRMA.
+- SparseAuxIVA has slightly changed API, ``f_contrast`` has been replaced by ``model``
+  keyword argument.
+
 Bugfix
 ~~~~~~
 
-- Remove `np.squeeze` in STFT as it caused errors when an axis that shouldn't
+- Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
+- Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
+  underflow and divide by zero.
+
+`0.1.23`_ - 2019-04-17
+----------------------
+
+Bugfix
+~~~~~~
+
+- Expose ``mu`` parameter for ``adaptive.subband_lms.SubbandLMS``.
+- Add SSL context to ``download_uncompress`` and unit test; error for Python 2.7.
+
+
+`0.1.22`_ - 2019-04-11
+----------------------
+
+Added
+~~~~~
+- Added "precision" parameter to "stft" class to choose between 'single' (float32/complex64) or 'double'
+  (float64/complex128) for processing precision.
+- Unified unit test file for frequency-domain souce separation methods.
+- New algorithm for blind source separation (BSS): Sparse Independent Vector Analysis (SparseAuxIVA).
+
+Changed
+~~~~~~~
+
+- Few README improvements
+
+Bugfix
+~~~~~~
+
+- Remove ``np.squeeze`` in STFT as it caused errors when an axis that shouldn't
   be squeezed was equal to 1.
-- `Beamformer.process` was using old (non-existent) STFT function. Changed to
-  using one-shot function from `transform` module.
+- ``Beamformer.process`` was using old (non-existent) STFT function. Changed to
+  using one-shot function from ``transform`` module.
+- Fixed a bug in ``utilities.fractional_delay_filter_bank`` that would cause the
+  function to crash on some inputs (`issue #87 <https://github.com/LCAV/pyroomacoustics/issues/87>`__).
+
 
 `0.1.21`_ - 2018-12-20
 ----------------------
@@ -221,8 +275,11 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...HEAD
-.. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
+.. _NextGeneration: https://github.com/LCAV/pyroomacoustics/compare/master...next_gen_simulator
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...HEAD
+.. _0.1.23: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...v0.1.23
+.. _0.1.22: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...v0.1.22
+.. _0.1.21: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21
 .. _0.1.20: https://github.com/LCAV/pyroomacoustics/compare/v0.1.19...v0.1.20
 .. _0.1.19: https://github.com/LCAV/pyroomacoustics/compare/v0.1.18...v0.1.19
 .. _0.1.18: https://github.com/LCAV/pyroomacoustics/compare/v0.1.17...v0.1.18

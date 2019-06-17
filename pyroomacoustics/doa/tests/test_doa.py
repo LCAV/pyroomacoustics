@@ -21,7 +21,7 @@ fs = 16000
 nfft = 256
 freq_bins = np.arange(5, 60)
 
-# circular microphone array, 6 mics, radius 15 cm
+# circular microphone array, 12 mics, radius 15 cm
 R = pra.circular_2D_array([0, 0], 12, 0., 0.15)
 
 # propagation filter bank

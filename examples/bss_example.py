@@ -23,7 +23,7 @@ The method implemented is described in the following publications
 3) Sparse Independent Vector Analysis based on auxiliary function (SparseAuxIVA)
 The method implemented is described in the following publication
 
-    J. Jansky, Z. Koldovsky, N. Ono *A computationally cheaper method for blind speech
+    J. Jansky, Z. Koldovsky, and N. Ono *A computationally cheaper method for blind speech
     separation based on AuxIVA and incomplete demixing transform*, Proc. IEEE, IWAENC, 2016.
 
 All the algorithms work in the STFT domain. The test files were extracted from the
@@ -40,10 +40,9 @@ Depending on the input arguments running this script will do these actions:.
 
 This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` packages for the GUI option.
 '''
-
+import time
 import numpy as np
 from scipy.io import wavfile
-from pyroomacoustics.transform import STFT
 
 from mir_eval.separation import bss_eval_sources
 
@@ -81,16 +80,15 @@ if __name__ == '__main__':
 
     import pyroomacoustics as pra
 
-    # Prepare one-shot STFT
+    ## Prepare one-shot STFT
     L = args.block
 
+    ## Create a room with sources and mics
     # Room dimensions in meters
     room_dim = [8, 9]
 
     # source location
     source = np.array([1, 4.5])
-
-    # create a room with sources and mics
     room = pra.ShoeBox(
         room_dim,
         fs=16000,
@@ -106,7 +104,7 @@ if __name__ == '__main__':
     locations = [[2.5,3], [2.5, 6]]
 
     # add mic and good source to room
-    # Add silent signals to all sources
+    # add silent signals to all sources
     for sig, d, loc in zip(signals, delays, locations):
         room.add_source(loc, signal=np.zeros_like(sig), delay=d)
 
@@ -133,37 +131,34 @@ if __name__ == '__main__':
     # Mix down the recorded signals
     mics_signals = np.sum(separate_recordings, axis=0)
 
-    '''
-    Monitor Convergence
-    '''
+
+    ## Monitor Convergence
     ref = np.moveaxis(separate_recordings, 1, 2)
     SDR, SIR = [], []
     def convergence_callback(Y):
         global SDR, SIR
         from mir_eval.separation import bss_eval_sources
         ref = np.moveaxis(separate_recordings, 1, 2)
-        y = np.array([pra.istft(Y[:,:,ch], L, L, transform=np.fft.irfft, zp_front=L//2, zp_back=L//2) for ch in range(Y.shape[2])])
+        y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2).T
         sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
         SDR.append(sdr)
         SIR.append(sir)
 
-    '''
-    STFT analysis
-    '''
-    X = np.array([pra.stft(ch, L, L, transform=np.fft.rfft, zp_front=L // 2, zp_back=L // 2) for ch in mics_signals])
-    X = np.moveaxis(X, 0, 2)
+    ## STFT ANALYSIS
+    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
 
-    """
-    START BSS
-    """
+    t_begin = time.perf_counter()
+
+    ## START BSS
     bss_type = args.algo
     if bss_type == 'auxiva':
         # Run AuxIVA
-        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True, callback=convergence_callback)
+        Y = pra.bss.auxiva(X, n_iter=30, proj_back=True,
+                           callback=convergence_callback)
     elif bss_type == 'ilrma':
         # Run ILRMA
-        Y = pra.bss.ilrma(X, n_iter=30, n_components=30, proj_back=True,
-            callback=convergence_callback)
+        Y = pra.bss.ilrma(X, n_iter=30, n_components=2, proj_back=True,
+                          callback=convergence_callback)
     elif bss_type == 'sparseauxiva':
         # Estimate set of active frequency bins
         ratio = 0.35
@@ -172,20 +167,20 @@ if __name__ == '__main__':
         S = np.sort(np.argpartition(average, -k)[-k:])
         # Run SparseAuxIva
         Y = pra.bss.sparseauxiva(X, S, n_iter=30, proj_back=True,
-            callback=convergence_callback)
+                                 callback=convergence_callback)
 
-    '''
-    STFT Synthesis
-    '''
-    y = np.array([pra.istft(Y[:, :, ch], L, L, transform=np.fft.irfft, zp_front=L // 2, zp_back=L // 2) for ch in range(Y.shape[2])])
-    ''' 
-    Compare SDR and SIR
-    '''
+    t_end = time.perf_counter()
+    print("Time for BSS: {:.2f} s".format(t_end - t_begin))
+    
+    ## STFT Synthesis
+    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+
+    ## Compare SDR and SIR
     sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
-
     print('SDR:', sdr)
     print('SIR:', sir)
 
+    ## PLOT RESULTS
     import matplotlib.pyplot as plt
     plt.figure()
     plt.subplot(2,2,1)
@@ -217,6 +212,7 @@ if __name__ == '__main__':
 
     plt.tight_layout(pad=0.5)
 
+    ## GUI
     if not args.gui:
         plt.show()
     else:
@@ -237,7 +233,7 @@ if __name__ == '__main__':
         from tkinter import Tk, Button, Label
         import sounddevice as sd
 
-        # Now come the GUI part
+        # Now comes the GUI part
         class PlaySoundGUI(object):
             def __init__(self, master, fs, mix, sources):
                 self.master = master
