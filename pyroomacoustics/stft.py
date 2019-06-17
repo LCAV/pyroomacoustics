@@ -58,7 +58,6 @@ def spectroplot(Z, N, hop, fs, fdiv=None, tdiv=None,
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        import warnings
         warnings.warn('Matplotlib is required for plotting')
         return
 

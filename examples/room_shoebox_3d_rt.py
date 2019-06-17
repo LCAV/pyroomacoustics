@@ -22,12 +22,8 @@ shoebox = pra.ShoeBox(
     # absorption=0.2,
     fs=16000,
     max_order=3,
-    ray_trace_args={
-        "n_rays": 10000,
-        "time_thres": 5.,
-        "energy_thres": 1e-6,
-        "receiver_radius": 0.3,
-        }
+    ray_tracing=True,
+    air_absorption=True,
 )
 
 # source and mic locations

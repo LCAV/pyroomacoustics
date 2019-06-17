@@ -31,7 +31,7 @@ def get_rir(size='medium', absorption='medium'):
         
         
     pol = size_coef * np.array([[0,0], [0,4], [3,2], [3,0]]).T
-    room = pra.Room.from_corners(pol, fs=16000, max_order=2, absorption=absor)
+    room = pra.Room.from_corners(pol, fs=32000, max_order=2, absorption=absor, ray_tracing=True)
 
     # Create the 3D room by extruding the 2D by a specific height
     room.extrude(size_coef * 2.5, absorption=absor)

@@ -30,7 +30,7 @@ shoebox.add_microphone_array(
         )
 
 # run ism
-shoebox.image_source_model()
+shoebox.compute_rir()
 
 # Plot the result up to fourth order images
 shoebox.plot(img_order=4)

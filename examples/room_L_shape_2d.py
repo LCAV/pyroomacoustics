@@ -24,7 +24,7 @@ pol = 3 * np.array([[0,0], [0,1], [2,1], [2,0.5], [1,0.5], [1,0]]).T
 room = pra.Room.from_corners(pol, fs=16000, max_order=max_order, absorption=0.1)
 
 # Add two sources in the room
-room.add_source([1.5, 1.2])
+room.add_source([2.1, 0.5])
 room.add_source([5.1, 2.5])
 
 # Place an array of four microphones
@@ -38,6 +38,7 @@ room.plot(img_order=6)
 
 # Display a subset of the room impulse responses
 plt.figure()
-room.plot_rir([(1, 0), (3, 1)])
+room.plot_rir([(3, 0), (1, 0)])
+print("Notice how mic3 - source0 is missing the direct path due to wall obstruction")
 
 plt.show()

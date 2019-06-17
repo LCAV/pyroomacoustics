@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     path_to_musis_stl_file = "./data/raw/MUSIS_3D_no_mics_simple.stl"
 
-    material = pra.Material.make_freq_flat(0.2)
+    material = pra.Material.make_freq_flat(0.2, 0.1)
 
     # with numpy-stl
     the_mesh = mesh.Mesh.from_file(args.file)
@@ -36,13 +36,11 @@ if __name__ == "__main__":
         walls,
         fs=16000,
         max_order=3,
-        ray_trace_args={
-            "n_rays": 10000,
-            "time_thres": 10.0,
-            "energy_thres": 1e-6,
-            "receiver_radius": 1.0,
-        },
+        ray_tracing=True,
+        air_absorption=True,
     )
+    # Set options for the ray tracer
+    room.set_ray_tracing(n_rays=30000, receiver_radius=0.5)
 
     room.add_source([-2.0, 2.0, 1.8])
     room.add_microphone_array(

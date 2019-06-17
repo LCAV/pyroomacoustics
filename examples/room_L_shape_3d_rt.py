@@ -25,13 +25,10 @@ room = pra.Room.from_corners(
         absorption=r_absor,
         materials=pra.Material.make_freq_flat(0.3, 0.2),
         max_order=3,
-        ray_trace_args={
-            "n_rays": 10000,
-            "time_thres": 5.,
-            "energy_thres": 1e-6,
-            "receiver_radius": 1.,
-            },
+        ray_tracing=True,
+        air_absorption=True,
         )
+room.set_ray_tracing(receiver_radius=0.5, energy_thres=1e-5)
 
 # # Create the 3D room by extruding the 2D by 10 meters
 height = 10.
