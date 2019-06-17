@@ -2,6 +2,9 @@
 
 * Set default time threshold in ray tracing to -1 so that it is only based on energy
 * Add back t0 in the simulation
+* Fix documentation
+* Change the `absorption` to `energy_absorption` in materials to make it clear that this
+  not the same parameter as the one in room
 
 ## Test wether the ray tracing follows Sabine
 
@@ -19,6 +22,8 @@ TODO
 * from file, this would definitely the easiest way to handle more complicated
   non-shoebox models. A challenge is to have a file format that handles materials.
   There is currently one example for the STL file format.
+* from a RT60 time (and a room size)
+* random room generator
 
 
 ## Methods that let you construct a room and their API
@@ -72,21 +77,6 @@ Constructs directly from a bunch of walls
 
 * new interface:
     
-        self,
-        walls,
-        fs=8000,
-        temperature=25.,
-        humidity=70.,
-        c=None,
-        air_absorption=None,
-        max_order=1,
-        ray_trace_args=None,
-        sources=None,
-        mics=None,
-
-* compatible new interface
-
-        self,
         walls,
         fs=8000,
         t0=0.,
@@ -96,8 +86,8 @@ Constructs directly from a bunch of walls
         mics=None,
         temperature=None,
         humidity=None,
-        air_absorption=None,
-        ray_trace_args=None,
+        air_absorption=False,
+        ray_tracing=False,
 
 ### from_corners
 
@@ -118,8 +108,13 @@ Constructs a 2D room (floorplan) from a bunch of points forming a polygon
     
         corners,
         absorption=None,
-        materials=None,
         fs=8000,
+        t0=0.,
+        max_order=1,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        materials=None,
         **kwargs,
 
 ### extrude
@@ -134,11 +129,10 @@ Normally follows a construction by `from_corners` to make a 3D room from a 2D fl
 
 * new interface:
   
-        self,
         height,
         v_vec=None,
-        materials=None,
         absorption=None,
+        materials=None,
 
 ### Shoebox
 
@@ -157,14 +151,15 @@ Constructor of the Shoebox class
 * new interface:
   
         p,
-        absorption=None,  # deprecated
-        materials=None,
         fs=8000,
-        temperature=25.,
-        humidity=70.,
-        c=None,
-        air_absorption=None,
+        t0=0.,
+        absorption=None,  # deprecated
         max_order=1,
-        ray_trace_args=None,
+        sigma2_awgn=None,
         sources=None,
         mics=None,
+        materials=None,
+        temperature=None,
+        humidity=None,
+        air_absorption=False,
+        ray_tracing=False,

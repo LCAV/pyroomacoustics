@@ -429,8 +429,8 @@ class Room(object):
 
         # initialize everything else
         self._var_init(
-                fs, t0, max_order, sigma2_awgn, sources, mics,
-                temperature, humidity, air_absorption, ray_tracing,
+                fs, t0, max_order, sigma2_awgn, temperature,
+                humidity, air_absorption, ray_tracing,
         )
 
         self._wall_mapping()
@@ -464,14 +464,23 @@ class Room(object):
         else:
             self.room_engine = libroom.Room(*args)
 
+        # add the sources
+        self.sources = []
+        if sources is not None and isinstance(sources, list):
+            for src in sources:
+                self.add_soundsource(src)
+
+        # add the microphone array
+        if mics is not None:
+            self.add_microphone_array(mics)
+
+
     def _var_init(
             self,
             fs,
             t0,
             max_order,
             sigma2_awgn,
-            sources,
-            mics,
             temperature,
             humidity,
             air_absorption,
@@ -509,13 +518,6 @@ class Room(object):
         self.set_sound_speed(self.physics.get_sound_speed())
         self.set_air_absorption(air_absorption)
         self.set_ray_tracing(ray_tracing)
-
-        if sources is not None and isinstance(sources, list):
-            self.sources = sources
-        else:
-            self.sources = []
-
-        self.mic_array = mics
 
         # in the beginning, nothing has been
         self.visibility = None
@@ -607,8 +609,13 @@ class Room(object):
             cls,
             corners,
             absorption=None,
-            materials=None,
             fs=8000,
+            t0=0.,
+            max_order=1,
+            sigma2_awgn=None,
+            sources=None,
+            mics=None,
+            materials=None,
             **kwargs,
             ):
         '''
@@ -626,6 +633,8 @@ class Room(object):
         -------
         Instance of a 2D room
         '''
+        # make sure the corners are wrapped in an ndarray
+        corners = np.array(corners)
         n_walls = corners.shape[1]
 
         corners = np.array(corners)
@@ -714,8 +723,8 @@ class Room(object):
             self,
             height,
             v_vec=None,
-            materials=None,
             absorption=None,
+            materials=None,
             ):
         '''
         Creates a 3D room by extruding a 2D polygon.
@@ -997,7 +1006,7 @@ class Room(object):
                 ax.scatter(
                     source.position[0],
                     source.position[1],
-                    c=cmap(1.),
+                    c=[cmap(1.)],
                     s=20,
                     marker=markers[i %len(markers)],
                     edgecolor=cmap(1.))
@@ -1062,7 +1071,7 @@ class Room(object):
                 ax.scatter(source.images[0, I],
                     source.images[1, I],
                     source.images[2, I],
-                    c=cmap(val),
+                    c=[cmap(val)],
                     s=20,
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(val))
@@ -1128,6 +1137,19 @@ class Room(object):
             self.room_engine.add_mic(self.mic_array.R[:,None,m])
 
     def add_source(self, position, signal=None, delay=0):
+        """
+        Adds a sound source given by its position in the room. Optionally
+        a source signal and a delay can be provided.
+
+        Parameters
+        ----------
+        position: array_like (length 2 or 3 depending on room dimension)
+            The location of the source in the room
+        signal: array_like, 1D, optional
+            The signal played by the source
+        delay: float
+            A time delay until the source starts playing the signal
+        """
 
         if (not self.is_inside(np.array(position))):
             raise ValueError('The source must be added inside the room.')
@@ -1139,6 +1161,21 @@ class Room(object):
                     delay=delay
                     )
                 )
+
+    def add_soundsource(self, sndsrc):
+        """
+        Adds a :py:obj:`pyroomacoustics.soundsource.SoundSource` object to the room.
+
+        Parameters
+        ----------
+        sndsrc: pyroomacoustics.SoundSource object
+            The SoundSource object to add to the room
+        """
+
+        if (not self.is_inside(sndsrc.position)):
+            raise ValueError('The source must be added inside the room.')
+
+        self.sources.append(sndsrc)
 
     def image_source_model(self):
 
@@ -1279,7 +1316,6 @@ class Room(object):
                         from .build_rir import fast_rir_builder
                         vis = self.visibility[s][m, :].astype(np.int32)
                         fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
-                        print(len(time), alpha.max(), vis.max(), ir_loc.max())
 
                         if bpf is not None:
                             ir_loc = sosfiltfilt(bpf, ir_loc)
@@ -1629,24 +1665,19 @@ class ShoeBox(Room):
 
     def __init__(self,
                  p,
-                 absorption=None,  # deprecated
-                 materials=None,
                  fs=8000,
                  t0=0.,
+                 absorption=None,  # deprecated
                  max_order=1,
                  sigma2_awgn=None,
                  sources=None,
                  mics=None,
+                 materials=None,
                  temperature=None,
                  humidity=None,
                  air_absorption=False,
                  ray_tracing=False,
                  ):
-
-        self._var_init(
-                fs, t0, max_order, sigma2_awgn, sources, mics,
-                temperature, humidity, air_absorption, ray_tracing,
-        )
 
         p = np.array(p, dtype=np.float32)
 
@@ -1657,6 +1688,12 @@ class ShoeBox(Room):
 
         # record shoebox dimension in object
         self.shoebox_dim = np.array(p)
+
+        # initialize the attributes of the room
+        self._var_init(
+                fs, t0, max_order, sigma2_awgn,
+                temperature, humidity, air_absorption, ray_tracing,
+        )
 
         # Keep the correctly ordered naming of walls
         # This is the correct order for the shoebox computation later
@@ -1774,6 +1811,15 @@ class ShoeBox(Room):
 
         Room._wall_mapping(self)
 
+        # add the sources
+        self.sources = []
+        if sources is not None and isinstance(sources, list):
+            for src in sources:
+                self.add_soundsource(src)
+
+        # add the microphone array
+        if mics is not None:
+            self.add_microphone_array(mics)
 
     def extrude(self, height):
         ''' Overload the extrude method from 3D rooms '''
