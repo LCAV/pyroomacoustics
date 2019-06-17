@@ -516,8 +516,10 @@ class Room(object):
             self.physics = Physics(temperature=temperature, humidity=humidity)
 
         self.set_sound_speed(self.physics.get_sound_speed())
-        self.set_air_absorption(air_absorption)
-        self.set_ray_tracing(ray_tracing)
+        if air_absorption:
+            self.set_air_absorption()
+        if ray_tracing:
+            self.set_ray_tracing()
 
         # in the beginning, nothing has been
         self.visibility = None
@@ -526,34 +528,31 @@ class Room(object):
         self.rir = None
 
     def set_ray_tracing(self,
-            active,
             n_rays=10000,
+            receiver_radius=0.5,
             energy_thres=1e-7,
             time_thres=10.,
-            receiver_radius=0.15,
             hist_bin_size=0.004,
             ):
         """
-        Activates/deactivates the ray tracer.
+        Activates the ray tracer.
 
         Parameters
         ----------
-        active: bool
-            Set to True to activate, False to deactivate
         n_rays: int, optional
             The number of rays to shoot in the simulation
+        receiver_radius: float, optional
+            The radius of the sphere around the microphone in which to
+            integrate the energy
         energy_thres: float, optional
             The energy thresold at which rays are stopped
         time_thres: float, optional
             The maximum time of flight of rays
-        receiver_radius: float, optional
-            The radius of the sphere around the microphone in which to
-            integrate the energy
         hist_bin_size: float
             The time granularity of bins in the energy histogram
         """
 
-        self.simulator_state["rt_needed"] = active
+        self.simulator_state["rt_needed"] = True
 
         self.rt_args = {}
         self.rt_args["n_rays"] = n_rays
@@ -570,20 +569,21 @@ class Room(object):
                 self.rt_args['hist_bin_size_samples'] / self.fs
         )
 
+    def unset_ray_tracing(self):
+        """ Deactivates the ray tracer """
+        self.simulator_state["rt_needed"] = False
 
-    def set_air_absorption(self, active, coefficients=None):
+    def set_air_absorption(self, coefficients=None):
         """
         Activates or deactivates air absorption in the simulation.
 
         Parameters
         ----------
-        active: bool
-            Pass True to activate air absorption, False to deactivate
         coefficients: list of float
             List of air absorption coefficients, one per octave band
         """
 
-        self.simulator_state["air_abs_needed"] = active
+        self.simulator_state["air_abs_needed"] = True
         if coefficients is None:
             self.air_absorption = self.octave_bands(
                     **self.physics.get_air_absorption()
@@ -591,6 +591,10 @@ class Room(object):
         else:
             # ignore temperature and humidity if coefficients are provided
             self.air_absorption = self.physics().get_air_absorption()
+
+    def unset_air_absorption(self):
+        """ Deactivates the ray tracer """
+        self.simulator_state["air_abs_needed"] = False
 
     def set_sound_speed(self, c):
         """ Sets the speed of sound unconditionnaly """
@@ -1332,7 +1336,7 @@ class Room(object):
                     dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
                     time = dist / self.c
                     t_max = time.max()
-                    N = math.ceil(t_max * self.fs)
+                    N = int(math.ceil(t_max * self.fs))
 
                 if self.simulator_state["rt_needed"]:
 
@@ -1346,7 +1350,7 @@ class Room(object):
                     # round up to multiple of the histogram bin size
                     # add the lengths of the fractional delay filter
                     hbss = self.rt_args['hist_bin_size_samples']
-                    N = math.ceil(t_max * self.fs / hbss) * hbss
+                    N = int(math.ceil(t_max * self.fs / hbss) * hbss)
 
                 # this is where we will compose the RIR
                 ir = np.zeros(N + fdl)
@@ -1526,8 +1530,6 @@ class Room(object):
                 h = self.rir[m][s]
                 premix_signals[s,m,d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
 
-        self.sigma2_awgn = None
-
         if callback_mix is not None:
             # Execute user provided callback
             signals = callback_mix(premix_signals, **callback_mix_kwargs)
@@ -1555,6 +1557,23 @@ class Room(object):
         if return_premix:
             return premix_signals
 
+    def direct_snr(self, x, source=0):
+        ''' Computes the direct Signal-to-Noise Ratio '''
+
+        if source >= len(self.sources):
+            raise ValueError('No such source')
+
+        if self.sources[source].signal is None:
+            raise ValueError('No signal defined for source ' + str(source))
+
+        if self.sigma2_awgn is None:
+            return float('inf')
+
+        x = np.array(x)
+        sigma2_s = np.mean(self.sources[0].signal**2)
+        d2 = np.sum((x - self.sources[source].position)**2)
+
+        return sigma2_s/self.sigma2_awgn/(16*np.pi**2*d2)
 
     def get_wall_by_name(self, name):
         '''
