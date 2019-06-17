@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # This file contains code related to acoustics (critical / octave bands, etc)
 # Copyright (C) 2019  Robin Scheibler
 #
