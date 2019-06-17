@@ -26,56 +26,45 @@ import numpy as np
 import pyroomacoustics as pra
 
 wall_corners = [
-        np.array([  # left
-            [ 0, 3, 3, 0],
-            [ 0, 0, 0, 0],
-            [ 0, 0, 2, 2],
-            ]),
-        np.array([  # right
-            [ 0, 0, 6, 6],
-            [ 8, 8, 8, 8],
-            [ 0, 4, 4, 0],
-            ]),
-        np.array([  # floor
-            [ 0, 0, 6, 3, ],
-            [ 0, 8, 8, 0, ],
-            [ 0, 0, 0, 0, ],
-            ]),
-        np.array([  # ceiling
-            [ 0, 3, 6, 0, ],
-            [ 0, 0, 8, 8, ],
-            [ 2, 2, 4, 4, ],
-            ]),
-        np.array([  # back
-            [ 0, 0, 0, 0, ],
-            [ 0, 0, 8, 8, ],
-            [ 0, 2, 4, 0, ],
-            ]),
-        np.array([  # front
-            [ 3, 6, 6, 3, ],
-            [ 0, 8, 8, 0, ],
-            [ 0, 0, 4, 2, ],
-            ]),
-        ]
+    np.array([[0, 3, 3, 0], [0, 0, 0, 0], [0, 0, 2, 2]]),  # left
+    np.array([[0, 0, 6, 6], [8, 8, 8, 8], [0, 4, 4, 0]]),  # right
+    np.array([[0, 0, 6, 3], [0, 8, 8, 0], [0, 0, 0, 0]]),  # floor
+    np.array([[0, 3, 6, 0], [0, 0, 8, 8], [2, 2, 4, 4]]),  # ceiling
+    np.array([[0, 0, 0, 0], [0, 0, 8, 8], [0, 2, 4, 0]]),  # back
+    np.array([[3, 6, 6, 3], [0, 8, 8, 0], [0, 0, 4, 2]]),  # front
+]
 
-absorptions = [ 0.1, 0.25, 0.25, 0.25, 0.2, 0.15 ]
+absorptions = [0.1, 0.25, 0.25, 0.25, 0.2, 0.15]
+scatterings = [0.1, 0.05, 0.1, 0.02, 0.2, 0.3]
+
 
 def test_room_construct():
 
-    walls = [pra.wall_factory(c, a) for c, a in zip(wall_corners, absorptions)]
+    walls = [
+        pra.wall_factory(c, [a], [s])
+        for c, a, s in zip(wall_corners, absorptions, scatterings)
+    ]
     obstructing_walls = []
-    microphones = np.array([
-        [ 1, ],
-        [ 2, ],
-        [ 1, ],
-        ])
+    microphones = np.array([[1], [2], [1]])
 
-    room = pra.room_factory(walls, obstructing_walls, microphones)
+    room = pra.libroom.Room(
+        walls,
+        [],
+        [],
+        pra.constants.get("c"),  # speed of sound
+        3,
+        1e-7,  # energy_thres
+        1.0,  # time_thres
+        0.5,  # receiver_radius
+        0.004,  # hist_bin_size
+        True,  # a priori we will always use a hybrid model
+    )
 
     print(room.max_dist)
 
     return room
 
-if __name__ == '__main__':
-    
+
+if __name__ == "__main__":
+
     room = test_room_construct()
