@@ -717,7 +717,15 @@ class Room(object):
                 "wall_"+str(i),
                 ))
 
-        return cls(walls, fs=fs, **kwargs)
+        return cls(walls,
+                fs=fs,
+                t0=t0,
+                max_order=max_order,
+                sigma2_awgn=sigma2_awgn,
+                sources=sources,
+                mics=mics,
+                **kwargs,
+        )
 
     def extrude(
             self,
@@ -1000,6 +1008,10 @@ class Room(object):
             # define some markers for different sources and colormap for damping
             markers = ['o', 's', 'v', '.']
             cmap = plt.get_cmap('YlGnBu')
+
+            # use this to check some image sources were drawn
+            has_drawn_img = False
+
             # draw the scatter of images
             for i, source in enumerate(self.sources):
                 # draw source
@@ -1016,6 +1028,8 @@ class Room(object):
                     img_order = self.max_order
 
                 I = source.orders <= img_order
+                if len(I) > 0:
+                    has_drawn_img = True
 
                 val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.) / 10.
                 # plot the images
@@ -1025,6 +1039,13 @@ class Room(object):
                     s=20,
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(val))
+
+            # When no image source has been drawn, we need to use the bounding box
+            # to set correctly the limits of the plot
+            if not has_drawn_img:
+                bbox = self.get_bbox()
+                ax.set_xlim(bbox[0, :])
+                ax.set_ylim(bbox[1, :])
 
             return fig, ax
 
@@ -1048,6 +1069,10 @@ class Room(object):
             # define some markers for different sources and colormap for damping
             markers = ['o', 's', 'v', '.']
             cmap = plt.get_cmap('YlGnBu')
+
+            # use this to check some image sources were drawn
+            has_drawn_img = False
+
             # draw the scatter of images
             for i, source in enumerate(self.sources):
                 # draw source
@@ -1055,7 +1080,7 @@ class Room(object):
                     source.position[0],
                     source.position[1],
                     source.position[2],
-                    c=cmap(1.),
+                    c=[cmap(1.)],
                     s=20,
                     marker=markers[i %len(markers)],
                     edgecolor=cmap(1.))
@@ -1065,21 +1090,26 @@ class Room(object):
                     img_order = self.max_order
 
                 I = source.orders <= img_order
+                if len(I) > 0:
+                    has_drawn_img = True
 
                 val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.) / 10.
                 # plot the images
                 ax.scatter(source.images[0, I],
                     source.images[1, I],
                     source.images[2, I],
-                    c=[cmap(val)],
+                    c=cmap(val),
                     s=20,
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(val))
 
-            bbox = self.get_bbox()
-            ax.set_xlim3d(bbox[0, :])
-            ax.set_ylim3d(bbox[1, :])
-            ax.set_zlim3d(bbox[2, :])
+            # When no image source has been drawn, we need to use the bounding box
+            # to set correctly the limits of the plot
+            if not has_drawn_img:
+                bbox = self.get_bbox()
+                ax.set_xlim3d(bbox[0, :])
+                ax.set_ylim3d(bbox[1, :])
+                ax.set_zlim3d(bbox[2, :])
 
             # draw the microphones
             if (self.mic_array is not None):
