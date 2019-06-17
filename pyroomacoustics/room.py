@@ -616,7 +616,7 @@ class Room(object):
             sources=None,
             mics=None,
             materials=None,
-            **kwargs,
+            **kwargs
             ):
         '''
         Creates a 2D room by giving an array of corners.
@@ -724,7 +724,7 @@ class Room(object):
                 sigma2_awgn=sigma2_awgn,
                 sources=sources,
                 mics=mics,
-                **kwargs,
+                **kwargs
         )
 
     def extrude(
