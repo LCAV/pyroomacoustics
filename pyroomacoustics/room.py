@@ -479,7 +479,11 @@ class Room(object):
             ):
 
         self.fs = fs
+
+        if t0 != 0.:
+            raise NotImplementedError("Global simulation delay not implemented (aka t0)")
         self.t0 = t0
+
         self.max_order = max_order
         self.sigma2_awgn = sigma2_awgn
 
@@ -1223,22 +1227,36 @@ class Room(object):
                 fdl = constants.get('frac_delay_length')
                 fdl2 = fdl // 2
 
-                # get the maximum length from the histograms
-                n_bins = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0][-1] + 1
-                t_max = n_bins * self.rt_args['hist_bin_size']
+                # default, just in case both ism and rt are disabled (should never happen)
+                N = fdl
 
-                # the number of samples needed
-                # round up to multiple of the histogram bin size
-                # add the lengths of the fractional delay filter
-                hbss = self.rt_args['hist_bin_size_samples']
-                N = math.ceil(t_max * self.fs / hbss) * hbss
+                if self.simulator_state["ism_needed"]:
 
-                # compute the distance from image sources
-                dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
-                time = dist / self.c
+                    # compute the distance from image sources
+                    dist = np.sqrt(np.sum((src.images - mic[:, None])**2, axis=0))
+                    time = dist / self.c
+                    t_max = time.max()
+                    N = math.ceil(t_max * self.fs)
+
+                if self.simulator_state["rt_needed"]:
+
+                    # get the maximum length from the histograms
+                    n_bins = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0][-1] + 1
+                    t_max = np.maximum(
+                            t_max,  n_bins * self.rt_args['hist_bin_size']
+                            )
+
+                    # the number of samples needed
+                    # round up to multiple of the histogram bin size
+                    # add the lengths of the fractional delay filter
+                    hbss = self.rt_args['hist_bin_size_samples']
+                    N = math.ceil(t_max * self.fs / hbss) * hbss
 
                 # this is where we will compose the RIR
                 ir = np.zeros(N + fdl)
+
+                # This is the distance travelled wrt time
+                distance_rir = np.arange(N) / self.fs * self.c
 
                 # this is the random sequence for the tail generation
                 seq = sequence_generation(volume_room, N / self.fs, self.c, self.fs)
@@ -1250,52 +1268,54 @@ class Room(object):
                 rir_bands = []
                 for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
 
-                    # IS method
                     ir_loc = np.zeros_like(ir)
 
-                    alpha = src.damping[b, :] / dist
+                    # IS method
+                    if self.simulator_state["ism_needed"]:
 
-                    # Use the Cython extension for the fractional delays
-                    from .build_rir import fast_rir_builder
-                    vis = self.visibility[s][m, :].astype(np.int32)
-                    fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
-                    print(len(time), alpha.max(), vis.max(), ir_loc.max())
+                        alpha = src.damping[b, :] / dist
 
-                    if bpf is not None:
-                        ir_loc = sosfiltfilt(bpf, ir_loc)
+                        # Use the Cython extension for the fractional delays
+                        from .build_rir import fast_rir_builder
+                        vis = self.visibility[s][m, :].astype(np.int32)
+                        fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
+                        print(len(time), alpha.max(), vis.max(), ir_loc.max())
 
-                    ir += ir_loc
+                        if bpf is not None:
+                            ir_loc = sosfiltfilt(bpf, ir_loc)
+
+                        ir += ir_loc
 
                     # Ray Tracing
-                    if bpf is not None:
-                        seq_bp = sosfiltfilt(bpf, seq)
-                    else:
-                        seq_bp = seq.copy()
+                    if self.simulator_state["rt_needed"]:
 
-                    # interpolate the histogram and multiply the sequence
-                    seq_bp_rot = seq_bp.reshape((-1, hbss))
-                    new_n_bins = seq_bp_rot.shape[0]
+                        if bpf is not None:
+                            seq_bp = sosfiltfilt(bpf, seq)
+                        else:
+                            seq_bp = seq.copy()
 
-                    hist = self.rt_histograms[m][s][0][b, :new_n_bins]
+                        # interpolate the histogram and multiply the sequence
+                        seq_bp_rot = seq_bp.reshape((-1, hbss))
+                        new_n_bins = seq_bp_rot.shape[0]
 
-                    normalization = np.linalg.norm(seq_bp_rot, axis=1)
-                    indices = normalization > 0.
-                    seq_bp_rot[indices, :] /= normalization[indices, None]
-                    seq_bp_rot *= np.sqrt(hist[:, None])
+                        hist = self.rt_histograms[m][s][0][b, :new_n_bins]
 
-                    seq_bp *= np.sqrt(bw)
+                        normalization = np.linalg.norm(seq_bp_rot, axis=1)
+                        indices = normalization > 0.
+                        seq_bp_rot[indices, :] /= normalization[indices, None]
+                        seq_bp_rot *= np.sqrt(hist[:, None])
 
-                    distance_seq = np.arange(len(seq_bp)) / self.fs * self.c
-                    seq_bp[1:] /= distance_seq[1:]
+                        seq_bp *= np.sqrt(bw)
 
-                    ir_loc[fdl2:fdl2+N] += seq_bp
+                        seq_bp[1:] /= distance_rir[1:]
+
+                        ir_loc[fdl2:fdl2+N] += seq_bp
 
                     # keep for further processing
                     rir_bands.append(ir_loc)
 
                 # Do Air absorption
-                distance_rir = np.arange(N) / self.fs * self.c
-                if self.air_absorption is not None:
+                if self.simulator_state["air_abs_needed"]:
 
                     # In case this was not multi-band, do the band pass filtering
                     if len(rir_bands) == 1:
