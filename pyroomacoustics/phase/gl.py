@@ -1,6 +1,6 @@
 # coding=utf-8
-# Blind Source Separation for sparsely mixed signals based on Independent Vector Analysis (IVA)
-# with Auxiliary Function
+# Phase reconstruction with the Griffin-Lim algorithm
+#
 # Copyright (C) 2019 Robin Scheibler, MIT License
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
