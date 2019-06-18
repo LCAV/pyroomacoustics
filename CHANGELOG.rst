@@ -11,6 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- Griffin-Lim algorithm for phase reconstruction from STFT magnitude measurements.
+
 Changed
 ~~~~~~~
 

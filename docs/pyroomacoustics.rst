@@ -12,6 +12,7 @@ Subpackages
     pyroomacoustics.denoise
     pyroomacoustics.doa
     pyroomacoustics.experimental
+    pyroomacoustics.phase
     pyroomacoustics.transform
 
 Submodules
