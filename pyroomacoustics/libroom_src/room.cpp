@@ -76,7 +76,7 @@ Room<D>::Room(
 {
   if (shoebox_absorption.rows() != _scattering.rows())
   {
-    throw std::runtime_error("Error: The same number of absorption and scattering coefficients are reqquired");
+    throw std::runtime_error("Error: The same number of absorption and scattering coefficients are required");
   }
 
   make_shoebox_walls(shoebox_size, _absorption, _scattering);

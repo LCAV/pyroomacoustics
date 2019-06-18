@@ -289,6 +289,7 @@ from __future__ import print_function, division
 
 import math
 import numpy as np
+import warnings
 import scipy.spatial as spatial
 from scipy.signal import sosfiltfilt
 from scipy.interpolate import interp1d
@@ -473,7 +474,6 @@ class Room(object):
         if mics is not None:
             self.add_microphone_array(mics)
 
-
     def _var_init(
             self,
             fs,
@@ -489,7 +489,8 @@ class Room(object):
         self.fs = fs
 
         if t0 != 0.:
-            raise NotImplementedError("Global simulation delay not implemented (aka t0)")
+            raise NotImplementedError("Global simulation delay not "
+                                      "implemented (aka t0)")
         self.t0 = t0
 
         self.max_order = max_order
@@ -1743,7 +1744,7 @@ class ShoeBox(Room):
 
     def __init__(self,
                  p,
-                 fs=8000,
+                 fs=16000,
                  t0=0.,
                  absorption=None,  # deprecated
                  max_order=1,
@@ -1792,10 +1793,10 @@ class ShoeBox(Room):
         else:
             absorption_compatibility_request = True
 
-        import warnings
-        warnings.warn('absorption parameter is deprecated for ShoeBox', DeprecationWarning)
+        warnings.warn('absorption parameter is deprecated for `ShoeBox`',
+                      DeprecationWarning)
 
-        # copy over the aborption coefficent
+        # copy over the absorption coefficient
         if isinstance(absorption, float):
             absorption = dict(
                     zip(self.wall_names, [absorption] * n_walls)
@@ -1808,28 +1809,32 @@ class ShoeBox(Room):
         if materials is not None:
 
             if absorption_compatibility_request:
-                import warnings
                 warnings.warn(
-                        'Because materials were specified, deprecated absorption parameter is ignored.',
+                        'Because `materials` were specified, deprecated '
+                        '`absorption` parameter is ignored.',
                         DeprecationWarning,
                         )
 
             if isinstance(materials, Material):
                 materials = dict(zip(self.wall_names, [materials] * n_walls))
-            elif not isinstance(materials, dict):
-                raise ValueError('Materials must be a string, Material object, or dictionary')
+            else:
+                raise ValueError('`materials` must be a `Material` object.')
 
             for w_name in self.wall_names:
-                assert isinstance(materials[w_name], Material), 'Material not specified using correct class'
+                assert isinstance(materials[w_name], Material), \
+                    'Material not specified using correct class'
 
         elif absorption_compatibility_request:
 
-            import warnings
-            warnings.warn('Using absorption parameter is deprecated. Use materials instead.')
+            warnings.warn('Using absorption parameter is deprecated. '
+                          'Use `materials` with `Material` object instead.')
 
             # order the wall absorptions
             if not isinstance(absorption, dict):
-                raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+                raise ValueError("`absorption` must be either a scalar or a "
+                                 "2x dim dictionary with entries for each "
+                                 "wall, namely: 'east', 'west', 'north', "
+                                 "'south', 'ceiling' (3d), 'floor' (3d).")
 
             materials = {}
             for w_name in self.wall_names:
@@ -1838,19 +1843,25 @@ class ShoeBox(Room):
                     # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
                     # <=> a2 == 1 - (1 - a1) ** 2
                     correct_abs = 1. - (1. - absorption[w_name]) ** 2
-                    materials[w_name] = Material.make_freq_flat(absorption=correct_abs)
+                    materials[w_name] = Material.make_freq_flat(
+                        absorption=correct_abs)
                 else:
                     raise KeyError(
-                            "Absorption needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            "Absorption needs to have keys 'east', 'west', "
+                            "'north', 'south', 'ceiling' (3d), 'floor' (3d)."
                             )
         else:
 
-            # In this case, no material is provided, use totally reflective walls, no scattering
-            materials = dict(zip(self.wall_names, [Material.make_freq_flat(absorption=0.)] * n_walls))
+            # In this case, no material is provided, use totally reflective
+            # walls, no scattering
+            materials = dict(
+                zip(self.wall_names,
+                    [Material.make_freq_flat(absorption=0.)] * n_walls)
+            )
 
-        # At this point, we should determine if the simulation is single or multi-band
+        # At this point, we should determine if the simulation is single or
+        # multi-band
         self.multi_band = not Material.all_flat(materials)
-
         if self.multi_band:
             for mat in materials.values():
                 mat.resample(self.octave_bands)

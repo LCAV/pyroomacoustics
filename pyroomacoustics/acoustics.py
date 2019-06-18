@@ -93,7 +93,7 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     return filters
 
 
-def octave_bands(fc=1000, third=False, start=0, n=8):
+def octave_bands(fc=1000, third=False, start=0., n=8):
     """
     Create a bank of octave bands
 
@@ -103,15 +103,19 @@ def octave_bands(fc=1000, third=False, start=0, n=8):
         The center frequency
     third : bool, optional
         Use third octave bands (default False)
+    start : float, optional
+        Starting frequency for octave bands in Hz (default 0.)
+    n : int, optional
+        Number of frequency bands (default 8)
     """
 
     div = 1
-    if third == True:
+    if third:
         div = 3
 
     # Octave Bands
     fcentre = fc * (
-        (2.0) ** (np.arange(start * div, (start + n) * div - (div - 1)) / div)
+        2.0 ** (np.arange(start * div, (start + n) * div - (div - 1)) / div)
     )
     fd = 2 ** (0.5 / div)
     bands = np.array([[f / fd, f * fd] for f in fcentre])
@@ -121,7 +125,8 @@ def octave_bands(fc=1000, third=False, start=0, n=8):
 
 class OctaveBandsFactory(object):
     """
-    A class to process uniformly all properties that are defined on octave bands
+    A class to process uniformly all properties that are defined on octave
+    bands.
 
     Each property is stored for an octave band.
 

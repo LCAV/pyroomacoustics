@@ -208,8 +208,8 @@ Material Properties
 -------------------
 
 Different materials have different absorbant and scattering coefficients.
-We define a class to hold these values. The values are typically measured for octave-bands
-at 125, 250, 500, 1k, 2k, 4k, and sometimes 8k.
+We define a class to hold these values. The values are typically measured for
+octave-bands at 125, 250, 500, 1k, 2k, 4k, and sometimes 8k.
 
 The values given here are taken from the annex of the book
 
@@ -221,7 +221,8 @@ Simulation, Algorithms, and Acoustic Virtual Reality, Springer, 1st Edition,
 materials_absorption_table = {
     "anechoic": {"description": "Anechoic material", "coeffs": [1.0]},
     "hard_surface": {
-        "description": "Walls, hard surfaces average (brick walls, plaster, hard floors, etc.)",
+        "description": "Walls, hard surfaces average (brick walls, plaster, "
+                       "hard floors, etc.)",
         "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05, 0.05],
         "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
     },
@@ -265,7 +266,8 @@ materials_scattering_table = {
         "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
     },
     "amphitheatre_steps": {
-        "description": "Amphitheatre steps, length 82 cm, height 30 cm (Farnetani 2005)",
+        "description": "Amphitheatre steps, length 82 cm, height 30 cm "
+                       "(Farnetani 2005)",
         "coeffs": [0.05, 0.45, 0.75, 0.9, 0.9],
         "center_freqs": [125, 250, 500, 1000, 2000],
     },
@@ -279,21 +281,50 @@ class Material(object):
     Attributes
     ----------
     absorption: dict
-        A dictionary containing keys ``description``, ``coeffs``, ``center_freqs``
+        A dictionary containing keys ``description``, ``coeffs``, and
+        ``center_freqs``.
     scattering: dict
-        A dictionary containing keys ``description``, ``coeffs``, ``center_freqs``
+        A dictionary containing keys ``description``, ``coeffs``, and
+        ``center_freqs``.
     """
 
     def __init__(self, absorption, scattering):
+
+        # checks for `absorption` dict
+        assert isinstance(absorption, dict), '`absorption` must be a ' \
+                                             'dictionary with the keys ' \
+                                             '`coeffs` and `center_freqs`.'
+        assert 'coeffs' in absorption.keys(), 'Missing `coeffs` keys in ' \
+                                              '`absorption` dict.'
+        if len(absorption['coeffs']) > 1:
+            assert len(absorption['coeffs']) == \
+                   len(absorption['center_freqs']), \
+                "Length of `absorption['coeffs']` and " \
+                "absorption['center_freqs'] must match."
+
+        # checks for `scattering` dict
+        assert isinstance(scattering, dict), '`scattering` must be a ' \
+                                             'dictionary with the keys ' \
+                                             '`coeffs` and `center_freqs`.'
+        assert 'coeffs' in scattering.keys(), 'Missing `coeffs` keys in ' \
+                                              '`scattering` dict.'
+        if len(scattering['coeffs']) > 1:
+            assert len(scattering['coeffs']) == \
+                   len(scattering['center_freqs']), \
+                "Length of `scattering['coeffs']` and " \
+                "scattering['center_freqs'] must match."
+
         self.absorption = absorption
         self.scattering = scattering
 
     def is_freq_flat(self):
         """
-        Returns ``True`` if the material has flat characteristics over frequency, ``False`` otherwise
+        Returns ``True`` if the material has flat characteristics over
+        frequency, ``False`` otherwise.
         """
         return (
-            len(self.absorption["coeffs"]) == 1 and len(self.scattering["coeffs"]) == 1
+            len(self.absorption["coeffs"]) == 1 and
+            len(self.scattering["coeffs"]) == 1
         )
 
     def get_abs(self):
@@ -318,7 +349,8 @@ class Material(object):
     @classmethod
     def from_db(cls, abs_name, scat_name="no_scattering"):
         """
-        Constructs a ``Material`` object from names of entries in the materials database
+        Constructs a ``Material`` object from names of entries in the materials
+        database.
 
         Parameters
         ----------
@@ -328,7 +360,8 @@ class Material(object):
             Name of scattering characteristic (default: ``no_scattering``)
         """
         return cls(
-            materials_absorption_table[abs_name], materials_scattering_table[scat_name]
+            materials_absorption_table[abs_name],
+            materials_scattering_table[scat_name]
         )
 
     @classmethod
