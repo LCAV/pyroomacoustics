@@ -60,8 +60,7 @@ void Wall<D>::init()
 
   if (absorption.size() != scatter.size())
   {
-    std::cerr << "Error: the number of absorption and scattering coefficients should be the same." << std::endl;
-    throw std::exception();
+    throw std::runtime_error("The number of absorption and scattering coefficients is different");
   }
 }
 
@@ -109,8 +108,7 @@ Wall<3>::Wall(
   // The rank deficiency is because all the corners are in a 2D subspace of 3D space
   if (svd.singularValues().coeff(2) > libroom_eps)
   {
-    fprintf(stderr, "The corners of the wall should lie in a plane");
-    throw std::exception();
+    throw std::runtime_error("The corners of the wall do not lie in a plane");
   }
 
   // The basis is the leading two left singular vectors

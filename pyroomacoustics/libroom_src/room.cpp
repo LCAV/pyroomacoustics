@@ -69,15 +69,14 @@ Room<D>::Room(
     float _mic_hist_res,
     bool _is_hybrid_sim
     )
-  : shoebox_size(_room_size), shoebox_absorption(_absorption), microphones(_microphones),
-  sound_speed(_sound_speed), ism_order(_ism_order),
-  energy_thres(_energy_thres), time_thres(_time_thres), mic_radius(_mic_radius),
-  mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim), is_shoebox(true)
+  : microphones(_microphones),
+  sound_speed(_sound_speed), ism_order(_ism_order), energy_thres(_energy_thres), time_thres(_time_thres),
+  mic_radius(_mic_radius), mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim),
+  is_shoebox(true), shoebox_size(_room_size), shoebox_absorption(_absorption)
 {
   if (shoebox_absorption.rows() != _scattering.rows())
   {
-    std::cout << "Error: The same number of absorption and scattering coefficients are reqquired" << std::endl;
-    throw std::exception();
+    throw std::runtime_error("Error: The same number of absorption and scattering coefficients are reqquired");
   }
 
   make_shoebox_walls(shoebox_size, _absorption, _scattering);
@@ -163,14 +162,17 @@ void Room<D>::init()
     for (auto &wall : walls)
       if (n_bands != wall.get_n_bands())
       {
-        std::cerr << "Error: All walls should have the same number of frequency bands" << std::endl;
-        throw std::exception();
+        throw std::runtime_error("Error: All walls should have the same number of frequency bands");
       }
   }
   else
   {
-    std::cerr << "Error: The minimum number of walls is " << D + 1 << std::endl;
-    throw std::exception();
+    if (D == 2)
+      throw std::runtime_error("Error: The minimum number of walls is 3");
+    else if (D == 3)
+      throw std::runtime_error("Error: The minimum number of walls is 4");
+    else
+      throw std::runtime_error("Rooms of dimension other than 2 and 3 not supported");
   }
 
   // Useful for ray tracing
@@ -393,7 +395,7 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
 {
   // precompute powers of the transmission coefficients
   std::vector<Eigen::ArrayXXf> transmission_pwr;
-  for (size_t i(0) ; i <= ism_order ; ++i)
+  for (int i(0) ; i <= ism_order ; ++i)
     transmission_pwr.push_back(Eigen::ArrayXXf(n_bands, 2*D));
 
   transmission_pwr[0].setOnes();
@@ -666,7 +668,7 @@ bool Room<D>::scat_ray(
   float distance_thres = time_thres * sound_speed;
 
   bool ret = true;  
-  for(int k(0); k < microphones.size(); ++k)
+  for(size_t k(0); k < microphones.size(); ++k)
   {
 
     Vectorf<D> mic_pos = microphones[k].get_loc();
@@ -794,7 +796,7 @@ void Room<D>::simul_ray(
     // Check if the specular ray hits any of the microphone
     if (!already_in_ism)
     {
-      for(int k(0) ; k < microphones.size() ; k++)
+      for(size_t k(0) ; k < microphones.size() ; k++)
       {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)

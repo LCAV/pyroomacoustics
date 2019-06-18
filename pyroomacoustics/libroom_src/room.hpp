@@ -50,7 +50,7 @@ struct ImageSource
   ImageSource *parent;
   VectorXb visible_mics;
 
-  ImageSource(int n_bands)
+  ImageSource(size_t n_bands)
     : order(0), gen_wall(-1), parent(NULL)
   {
     loc.setZero();
@@ -58,7 +58,7 @@ struct ImageSource
     attenuation.setOnes();
   }
 
-  ImageSource(const Vectorf<D> &_loc, int n_bands)
+  ImageSource(const Vectorf<D> &_loc, size_t n_bands)
     : loc(_loc), order(0), gen_wall(-1), parent(NULL)
   {
     attenuation.resize(n_bands);
@@ -97,7 +97,7 @@ class Room
     Eigen::Array<float,Eigen::Dynamic,2*D> shoebox_absorption;
 
     // The number of frequency bands used
-    int n_bands;
+    size_t n_bands;
     // 2. A distance after which a ray must have hit at least 1 wall
     float max_dist;
 

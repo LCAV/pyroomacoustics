@@ -125,7 +125,7 @@ class Histogram2D
       }
     }
 
-    void log(int row, int col, float val)
+    void log(Eigen::Index row, Eigen::Index col, float val)
     {
       if (row >= array.rows())
         resize_rows(get_new_size(row, array.rows()));
@@ -137,7 +137,7 @@ class Histogram2D
       counts.coeffRef(row, col)++;
     }
 
-    void log_col(size_t col, const Eigen::ArrayXf &val)
+    void log_col(Eigen::Index col, const Eigen::ArrayXf &val)
     {
       if (col >= array.cols())
         resize_cols(get_new_size(col, array.cols()));
@@ -146,7 +146,7 @@ class Histogram2D
       counts.col(col) += 1;
     }
 
-    void log_row(int row, const Eigen::ArrayXf &val)
+    void log_row(Eigen::Index row, const Eigen::ArrayXf &val)
     {
       if (row >= array.rows())
         resize_rows(get_new_size(row, array.rows()));
@@ -155,7 +155,7 @@ class Histogram2D
       counts.row(row) += 1;
     }
 
-    float bin(int row, int col) const
+    float bin(Eigen::Index row, Eigen::Index col) const
     {
       if (counts.coeff(row, col) != 0)
         return array.coeff(row, col) / counts.coeff(row, col);
