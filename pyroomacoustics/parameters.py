@@ -33,7 +33,7 @@ This file defines the main physical constants of the system:
 # tolerance for computations
 eps = 1e-10
 
-# We implement the constants as a dictionnary so that they can
+# We implement the constants as a dictionary so that they can
 # be modified at runtime.
 # The class Constants gives an interface to update the value of
 # constants or add new ones.
@@ -216,6 +216,7 @@ The values given here are taken from the annex of the book
 Michael Vorlaender, Auralization: Fundamentals of Acoustics, Modelling,
 Simulation, Algorithms, and Acoustic Virtual Reality, Springer, 1st Edition,
 2008.
+
 """
 
 materials_absorption_table = {
@@ -239,6 +240,12 @@ materials_absorption_table = {
     "smooth_concrete": {
         "description": "Smooth unpainted concrete",
         "coeffs": [0.01, 0.01, 0.02, 0.02, 0.02, 0.05, 0.05],
+        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
+    },
+    "6mm_carpet": {
+        "description": "(Floor covering) 6 mm pile carpet bonded to "
+                       "closed-cell foam underlay",
+        "coeffs": [0.03, 0.09, 0.25, 0.31, 0.33, 0.44, 0.44],
         "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
     },
 }
