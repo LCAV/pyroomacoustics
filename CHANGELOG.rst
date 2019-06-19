@@ -19,6 +19,7 @@ Added
 Changed
 ~~~~~~~
 
+- Removed the supperfluous warnings in `pyroomacoustics.transform.stft`.
 - Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
   to plot; useful when there's too many impulse responses.
 - Add some window functions in `windows.py` and rearranged it in alphabetical order

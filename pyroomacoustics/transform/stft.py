@@ -27,7 +27,6 @@ from __future__ import division
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
-import warnings
 from .dft import DFT
 
 
@@ -331,9 +330,6 @@ class STFT(object):
                 self.num_frames = int(np.ceil(x_shape[0]/self.hop))
                 extra_samples = (self.num_frames*self.hop)-x_shape[0]
                 if extra_samples:
-                    warnings.warn('Received %d samples. Appending %d zeros for '
-                                  'integer multiple of hops.' % (x_shape[0],
-                                                                 extra_samples))
                     if self.mono:
                         x = np.concatenate((x, np.zeros(extra_samples)))
                     else:
@@ -357,9 +353,6 @@ class STFT(object):
                     # raise ValueError('Not enough samples. Received %d; need \
                     #     at least %d.' % (x_shape[0],self.num_samples))
                     extra_samples = self.num_samples - x_shape[0]
-                    warnings.warn('Not enough samples. Received %d; appending '
-                                  '%d zeros for full valid frame.'
-                                  % (x_shape[0], extra_samples))
                     if self.mono:
                         x = np.concatenate((x, np.zeros(extra_samples)))
                     else:
@@ -374,9 +367,6 @@ class STFT(object):
                     extra_samples = ((self.num_frames-1)*self.hop +
                                      self.num_samples)-x_shape[0]
                     if extra_samples:
-                        warnings.warn('Received %d samples. Appending %d zeros '
-                                      'for integer multiple of hops.'
-                                      % (x_shape[0], extra_samples))
                         if self.mono:
                             x = np.concatenate((x, np.zeros(extra_samples)))
                         else:
@@ -547,7 +537,6 @@ class STFT(object):
 
         # check that there is filter
         if self.H is None:
-            warnings.warn('No filter is set! Exiting...')
             return
 
         if X is not None:
