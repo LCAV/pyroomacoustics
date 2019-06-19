@@ -146,7 +146,7 @@ void Room<3>::make_shoebox_walls(
   corners << rs[0], rs[0], 0.f, 0.f,
              0.f, rs[1], rs[1], 0.f,
              rs[2], rs[2], rs[2], rs[2];
-  walls.push_back(Wall<3>(corners, abs.col(4), scat.col(4), "ceiling"));
+  walls.push_back(Wall<3>(corners, abs.col(5), scat.col(5), "ceiling"));
 }
 
 
