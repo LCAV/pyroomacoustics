@@ -11,9 +11,11 @@ corpus and are included for testing purposes.
 * cmu_arctic_us_aew_a0003.wav
 * cmu_arctic_us_axb_a0005.wav
 
-The following noise sample was taken from Google's [Speech Commands Dataset](https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html)
+The following noise samples were taken from Google's [Speech Commands Dataset](https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html)
 
 * doing_the_dishes.wav
+* exercise_bike.wav
+* running_tap.wav
 
 The following two samples are from unknown origin and were found online.
 

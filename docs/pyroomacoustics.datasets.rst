@@ -25,4 +25,6 @@ Tools and Helpers
 
    pyroomacoustics.datasets.base
    pyroomacoustics.datasets.utils
+   pyroomacoustics.datasets.distribution
+   pyroomacoustics.datasets.room
 
