@@ -471,8 +471,10 @@ def sample_source_distance(room, mic_loc, orientation):
                  spher2cart(diag_dist, orientation[0], orientation[1])
 
     # determine intersection and then sample distance in between
+    intersection = np.zeros(3, dtype=np.float32)
+    mic_loc = np.array(mic_loc).astype(np.float32)
+    test_point = np.array(test_point).astype(np.float32)
     for k, w in enumerate(room.walls):
-        if w.intersects(mic_loc, test_point)[0]:
-            intersection = w.intersection(mic_loc, test_point)[0]
+        if w.intersection(mic_loc, test_point, intersection) == 0:
             max_dist = np.sqrt(sum((mic_loc - intersection) ** 2))
             return np.random.uniform(0, max_dist)

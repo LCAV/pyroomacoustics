@@ -137,6 +137,7 @@ from . import experimental
 from . import datasets
 from . import bss
 from . import denoise
+from . import random
 
 import warnings
 warnings.warn(
