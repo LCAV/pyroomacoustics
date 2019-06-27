@@ -29,7 +29,7 @@ import uuid
 import json
 
 import pyroomacoustics as pra
-from pyroomacoustics.datasets.distribution import DiscreteDistribution, \
+from pyroomacoustics.random.distribution import DiscreteDistribution, \
     MultiUniformDistribution, UniformDistribution
 from pyroomacoustics.doa.utils import spher2cart
 from pyroomacoustics.room import ShoeBox

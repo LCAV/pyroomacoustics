@@ -40,6 +40,7 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
+  - conda activate base
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a

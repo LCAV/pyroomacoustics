@@ -8,7 +8,7 @@ import random
 import soundfile as sf
 
 from pyroomacoustics.utilities import rms, sample_audio
-from pyroomacoustics.datasets.room import ShoeBoxRoomGenerator
+from pyroomacoustics.random.room import ShoeBoxRoomGenerator
 
 
 """

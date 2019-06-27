@@ -1,4 +1,4 @@
-# Utility functions generating a dataset of room impulse responses.
+# Classes for creating distributions to randomly sample.
 # Copyright (C) 2019  Eric Bezzam
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,16 +22,17 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 
-from abc import ABCMeta, abstractmethod
 import numpy as np
+from abc import ABCMeta, abstractmethod
 
 
-class Distribution(metaclass=ABCMeta):
+class Distribution(object):
     """
-
     Abstract class for distributions.
-
     """
+
+    __metaclass__ = ABCMeta
+
     @abstractmethod
     def __init__(self):
         pass
@@ -136,5 +137,4 @@ class MultiDiscreteDistribution(Distribution):
 
     def sample(self):
         return [d.sample() for d in self.distributions]
-
 
