@@ -33,12 +33,14 @@ simulation scenario is created by first defining a room to which a few sound
 sources and a microphone array are attached. The actual audio is attached to
 the source as raw audio samples. The image source method (ISM) is then used to
 find all image sources up to a maximum specified order and room impulse
-responses (RIR) are generated from their positions. The microphone signals are
-then created by convolving the audio samples associated to sources with the
-appropriate RIR. Since the simulation is done on discrete-time signals, a
-sampling frequency is specified for the room and the sources it contains.
-Microphones can optionally operate at a different sampling frequency; a rate
-conversion is done in this case.
+responses (RIR) are generated from their positions. Ray tracing can be used to
+complement ISM in order to better capture the later reflections.
+
+The microphone signals are then created by convolving audio samples associated
+to sources with the appropriate RIR. Since the simulation is done on
+discrete-time signals, a sampling frequency is specified for the room and the
+sources it contains. Microphones can optionally operate at a different sampling
+frequency; a rate conversion is done in this case.
 
 Simulating a Shoebox Room
 -------------------------
@@ -49,10 +51,11 @@ We will first walk through the steps to simulate a shoebox-shaped room in 3D.
 Create the room
 ~~~~~~~~~~~~~~~
 
-So-called shoebox rooms are pallelepipedic rooms with 4 or 6 walls (in 2D and 3D,
-respectiely), all at right angles. They are defined by a single vector that contains
-the lengths of the walls. They have the advantage of being simple to define and very
-efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply defined like this
+So-called shoebox rooms are pallelepipedic rooms with 4 or 6 walls (in 2D and
+3D respectiely), all at right angles. They are defined by a single vector that
+contains the lengths of the walls. They have the advantage of being simple to
+define and very efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply
+defined like this:
 
 .. code-block:: python
 
@@ -70,6 +73,44 @@ The relationship between ``absorption``/``max_order`` and `reverberation time
 acoustics literature) is not straightforward. `Sabine's formula
 <https://en.wikipedia.org/wiki/Reverberation#Sabine_equation>`_ can be used to
 some extent to set these parameters.
+
+Note that the ``absorption`` parameter will be deprecated. It is recommended
+to use the ``materials`` parameters which can be used to set the same
+**energy** absorption for all walls and over all frequencies as such:
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    m = pra.Material.make_freq_flat(absorption=0.03)
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
+
+The absorption coefficients can also be set to a particular material:
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    m = pra.Material.from_db('hard_surface')
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
+
+Moreover, different materials can be set for each wall.
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    m = {
+        'ceiling': pra.Material.from_db('hard_surface'),
+        'floor': pra.Material.from_db('6mm_carpet'),
+        'east': pra.Material.from_db('brickwork'),
+        'west': pra.Material.from_db('brickwork'),
+        'north': pra.Material.from_db('brickwork'),
+        'south': pra.Material.from_db('brickwork'),
+    }
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17,
+                       air_absorption=True, ray_tracing=True)
+
+Note that in the above example ``ray_tracing=True`` to complement the ISM
+approach with ray tracing and ``air_absorption=True`` to take into account
+the absorption due to air.
 
 
 Add sources and microphones
@@ -289,6 +330,7 @@ from __future__ import print_function, division
 
 import math
 import numpy as np
+import warnings
 import scipy.spatial as spatial
 from scipy.signal import sosfiltfilt
 from scipy.interpolate import interp1d
@@ -381,30 +423,40 @@ class Room(object):
     :attribute absorption: (numpy.ndarray size N, N=number of walls)  array containing the absorption factor for each wall, used for calculations
     :attribute dim: (int) dimension of the room (2 or 3 meaning 2D or 3D)
     :attribute wallsId: (int dictionary) stores the mapping "wall name -> wall id (in the array walls)"
+
     Parameters
     ----------
     walls: list of Wall or Wall2D objects
-        The walls forming the room
+        The walls forming the room.
     fs: int, optional
-        The sampling frequency
+        The sampling frequency in Hz. Default is 8000.
     t0: float, optional
-        The global starting time of the simulation
+        The global starting time of the simulation in seconds. Default is 0.
     max_order: int, optional
-        The maximum reflection order in the image source model
+        The maximum reflection order in the image source model. Default is 1,
+        namely direct sound and first order reflections.
     sigma2_awgn: float, optional
-        The variance of the additive white Gaussian noise
-    sources: list of SoundSource objects
-        Sources to place in the room
-    mics: MicrophoneArray object
-        The microphone array to place in the room
-    temperature: float
-        The air temperature in the room in degree Celsius
-    humidity: float
-        The relative humidity of the air in the room (between 0 and 100)
+        The variance of the additive white Gaussian noise added during
+        simulation. By default, none is added.
+    sources: list of SoundSource objects, optional
+        Sources to place in the room. Sources can be added after room creating
+        with the `add_source` method by providing coordinates.
+    mics: MicrophoneArray object, optional
+        The microphone array to place in the room. A single microphone or
+        microphone array can be added after room creation with the
+        `add_microphone_array` method.
+    temperature: float, optional
+        The air temperature in the room in degree Celsius. By default, set so
+        that speed of sound is 343 m/s.
+    humidity: float, optional
+        The relative humidity of the air in the room (between 0 and 100). By
+        default set to 0.
     air_absorption: bool, optional
-        If set to True, absorption of sound energy by the error will be simulated
+        If set to True, absorption of sound energy by the air will be
+        simulated.
     ray_tracing: bool, optional
-        If set to True, the ray tracing simulator will be used
+        If set to True, the ray tracing simulator will be used along with
+        image source model.
     '''
 
     def __init__(
@@ -473,7 +525,6 @@ class Room(object):
         if mics is not None:
             self.add_microphone_array(mics)
 
-
     def _var_init(
             self,
             fs,
@@ -489,7 +540,8 @@ class Room(object):
         self.fs = fs
 
         if t0 != 0.:
-            raise NotImplementedError("Global simulation delay not implemented (aka t0)")
+            raise NotImplementedError("Global simulation delay not "
+                                      "implemented (aka t0)")
         self.t0 = t0
 
         self.max_order = max_order
@@ -1738,7 +1790,49 @@ class Room(object):
 
 class ShoeBox(Room):
     '''
-    This class extends room for shoebox room in 3D space.
+    This class provides an API for creating a ShoeBox room in 2D or 3D.
+
+    Parameters
+    ----------
+    p : array
+        Length 2 (width, length) or 3 (width, lenght, height) depending on
+        the desired dimension of the room.
+    fs: int, optional
+        The sampling frequency in Hz. Default is 8000.
+    t0: float, optional
+        The global starting time of the simulation in seconds. Default is 0.
+    absorption : float
+        Average amplitude absorption of walls. Note that this parameter is
+        deprecated; use `materials` instead!
+    max_order: int, optional
+        The maximum reflection order in the image source model. Default is 1,
+        namely direct sound and first order reflections.
+    sigma2_awgn: float, optional
+        The variance of the additive white Gaussian noise added during
+        simulation. By default, none is added.
+    sources: list of SoundSource objects, optional
+        Sources to place in the room. Sources can be added after room creating
+        with the `add_source` method by providing coordinates.
+    mics: MicrophoneArray object, optional
+        The microphone array to place in the room. A single microphone or
+        microphone array can be added after room creation with the
+        `add_microphone_array` method.
+    materials : `Material` object or `dict` of `Material` objects
+        See `pyroomacoustics.parameters.Material`. If providing a `dict`,
+        you must provide a `Material` object for each wall: 'east',
+        'west', 'north', 'south', 'ceiling' (3D), 'floor' (3D).
+    temperature: float, optional
+        The air temperature in the room in degree Celsius. By default, set so
+        that speed of sound is 343 m/s.
+    humidity: float, optional
+        The relative humidity of the air in the room (between 0 and 100). By
+        default set to 0.
+    air_absorption: bool, optional
+        If set to True, absorption of sound energy by the air will be
+        simulated.
+    ray_tracing: bool, optional
+        If set to True, the ray tracing simulator will be used along with
+        image source model.
     '''
 
     def __init__(self,
@@ -1759,8 +1853,8 @@ class ShoeBox(Room):
 
         p = np.array(p, dtype=np.float32)
 
-        if len(p.shape) > 1:
-            raise ValueError("p must be a vector of length 2 or 3.")
+        if len(p.shape) > 1 and (len(p) != 2 or len(p) != 3):
+            raise ValueError('`p` must be a vector of length 2 or 3.')
 
         self.dim = p.shape[0]
 
@@ -1792,10 +1886,11 @@ class ShoeBox(Room):
         else:
             absorption_compatibility_request = True
 
-        import warnings
-        warnings.warn('absorption parameter is deprecated for ShoeBox', DeprecationWarning)
+        warnings.warn('`absorption` parameter is deprecated for `ShoeBox`. '
+                      'Use `materials` parameters instead.',
+                      DeprecationWarning)
 
-        # copy over the aborption coefficent
+        # copy over the absorption coefficient
         if isinstance(absorption, float):
             absorption = dict(
                     zip(self.wall_names, [absorption] * n_walls)
@@ -1808,28 +1903,35 @@ class ShoeBox(Room):
         if materials is not None:
 
             if absorption_compatibility_request:
-                import warnings
                 warnings.warn(
-                        'Because materials were specified, deprecated absorption parameter is ignored.',
+                        'Because `materials` were specified, deprecated '
+                        '`absorption` parameter is ignored.',
                         DeprecationWarning,
                         )
 
             if isinstance(materials, Material):
                 materials = dict(zip(self.wall_names, [materials] * n_walls))
             elif not isinstance(materials, dict):
-                raise ValueError('Materials must be a string, Material object, or dictionary')
+                raise ValueError("`materials` must be a `Material` object or "
+                                 "a `dict` specifying a `Material` object for"
+                                 " each wall: 'east', 'west', 'north', "
+                                 "'south', 'ceiling' (3D), 'floor' (3D).")
 
             for w_name in self.wall_names:
-                assert isinstance(materials[w_name], Material), 'Material not specified using correct class'
+                assert isinstance(materials[w_name], Material), \
+                    'Material not specified using correct class'
 
         elif absorption_compatibility_request:
 
-            import warnings
-            warnings.warn('Using absorption parameter is deprecated. Use materials instead.')
+            warnings.warn('Using absorption parameter is deprecated. '
+                          'Use `materials` with `Material` object instead.')
 
             # order the wall absorptions
             if not isinstance(absorption, dict):
-                raise ValueError("Absorption must be either a scalar or a 2x dim dictionnary with entries for 'east', 'west', etc.")
+                raise ValueError("`absorption` must be either a scalar or a "
+                                 "2x dim dictionary with entries for each "
+                                 "wall, namely: 'east', 'west', 'north', "
+                                 "'south', 'ceiling' (3d), 'floor' (3d).")
 
             materials = {}
             for w_name in self.wall_names:
@@ -1838,19 +1940,25 @@ class ShoeBox(Room):
                     # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
                     # <=> a2 == 1 - (1 - a1) ** 2
                     correct_abs = 1. - (1. - absorption[w_name]) ** 2
-                    materials[w_name] = Material.make_freq_flat(absorption=correct_abs)
+                    materials[w_name] = Material.make_freq_flat(
+                        absorption=correct_abs)
                 else:
                     raise KeyError(
-                            "Absorption needs to have keys 'east', 'west', 'north', 'south', 'ceiling' (3d), 'floor' (3d)"
+                            "Absorption needs to have keys 'east', 'west', "
+                            "'north', 'south', 'ceiling' (3d), 'floor' (3d)."
                             )
         else:
 
-            # In this case, no material is provided, use totally reflective walls, no scattering
-            materials = dict(zip(self.wall_names, [Material.make_freq_flat(absorption=0.)] * n_walls))
+            # In this case, no material is provided, use totally reflective
+            # walls, no scattering
+            materials = dict(
+                zip(self.wall_names,
+                    [Material.make_freq_flat(absorption=0.)] * n_walls)
+            )
 
-        # At this point, we should determine if the simulation is single or multi-band
+        # At this point, we should determine if the simulation is single or
+        # multi-band
         self.multi_band = not Material.all_flat(materials)
-
         if self.multi_band:
             for mat in materials.values():
                 mat.resample(self.octave_bands)
@@ -1908,6 +2016,3 @@ class ShoeBox(Room):
 
         # update the shoebox dim
         self.shoebox_dim = np.append(self.shoebox_dim, height)
-
-
-
