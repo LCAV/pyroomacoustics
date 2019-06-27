@@ -1456,9 +1456,9 @@ class Room(object):
                         seq_bp_rot[indices, :] /= normalization[indices, None]
                         seq_bp_rot *= np.sqrt(hist[:, None])
 
-                        seq_bp *= np.sqrt(bw)
-
-                        seq_bp[1:] /= distance_rir[1:]
+                        # Normalize the band power
+                        # The bands should normally sum up to fs / 2
+                        seq_bp *= np.sqrt(bw / self.fs * 2.)
 
                         ir_loc[fdl2:fdl2+N] += seq_bp
 
