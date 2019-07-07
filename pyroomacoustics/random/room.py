@@ -27,6 +27,7 @@ import datetime
 import os
 import uuid
 import json
+from pprint import pprint
 
 import pyroomacoustics as pra
 from pyroomacoustics.random.distribution import DiscreteDistribution, \
@@ -148,7 +149,7 @@ class ShoeBoxRoomGenerator(object):
                  mic_min_dist_wall=0.1,
                  source_min_dist_wall=0.5,
                  source_min_dist_mic=0.1,
-                 sample_rate=1source_min_dist_mic6000,
+                 sample_rate=16000,
                  ism_order=17,
                  air_absorption=True,
                  ray_tracing=True,
@@ -188,7 +189,7 @@ class ShoeBoxRoomGenerator(object):
         self.ray_tracing = ray_tracing
         self.timeout = timeout
 
-    def create_dataset(self, n_rooms, output_dir=None):
+    def create_dataset(self, n_rooms, output_dir=None, verbose=False):
         """
         Create a dataset of room impulse responses with the following
         structure::
@@ -312,6 +313,16 @@ class ShoeBoxRoomGenerator(object):
                         count += 1
                         continue
 
+                    # compute room impulse responses (RIRs)
+                    room.add_source(list(target_loc))
+                    for n in range(n_noise):
+                        room.add_source(list(noise_loc[n]))
+                    try:
+                        room.compute_rir()
+                    except:
+                        count += 1
+                        continue
+
                     # found valid configuration
                     break
 
@@ -342,14 +353,8 @@ class ShoeBoxRoomGenerator(object):
             }
             room_metadata[room_uuid] = room_params
 
-            from pprint import pprint
-            pprint(room_params)
-
-            # compute room impulse responses (RIRs)
-            room.add_source(list(target_loc))
-            for n in range(n_noise):
-                room.add_source(list(noise_loc[n]))
-            room.compute_rir()
+            if verbose:
+                pprint(room_params)
 
             # collect RIRs
             n_mics = R.shape[1]

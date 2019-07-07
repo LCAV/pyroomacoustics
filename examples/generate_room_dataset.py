@@ -1,11 +1,11 @@
 import numpy as np
 import json
-import click
 import os
 from glob import glob
 from pprint import pprint
 import random
 import soundfile as sf
+import argparse
 
 from pyroomacoustics.utilities import rms, sample_audio
 from pyroomacoustics.random.room import ShoeBoxRoomGenerator
@@ -38,14 +38,7 @@ example_noise_files = [
 ]
 
 
-@click.group()
-def main():
-    pass
-
-
-@main.command('make_dataset')
-@click.option('--n_rooms', type=int, default=50)
-def make_dataset(n_rooms):
+def make_dataset(n_rooms, source_min_dist_mic):
     """
 
     Generate a dataset of room impulse responses. A new folder will be created
@@ -71,19 +64,15 @@ def make_dataset(n_rooms):
     -----------
     n_rooms : int
         Number of room configurations to generate.
+    source_min_dist_mic : float
+        Minimum distance between each source and the microphone(s).
     """
 
-    room_generator = ShoeBoxRoomGenerator()
+    room_generator = ShoeBoxRoomGenerator(
+        source_min_dist_mic=source_min_dist_mic)
     room_generator.create_dataset(n_rooms)
 
 
-@main.command('apply_rir')
-@click.option('--room_dataset', type=str, default=None)
-@click.option('--target_speech', type=str,
-              default='examples/input_samples/cmu_arctic_us_aew_a0001.wav')
-@click.option('--noise_dir', type=str, default=None)
-@click.option('--snr_db', type=float, default=5.)
-@click.option('--output_file', type=str, default='simulated_output.wav')
 def apply_rir(room_dataset, target_speech, noise_dir, snr_db, output_file):
     """
 
@@ -188,4 +177,41 @@ def apply_rir(room_dataset, target_speech, noise_dir, snr_db, output_file):
 
 
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser(
+        description='Show how to generate a dataset of random room '
+                    'configurations and how to apply the impulse responses '
+                    'of one of the rooms.')
+    parser.add_argument('-n', '--n_rooms', type=int, default=50,
+                        help='Number of rooms to generate')
+    parser.add_argument('-d', '--source_min_dist_mic', type=float,
+                        default=0.5,
+                        help='Minimum distance between each source and the'
+                             'microphone(s)')
+    parser.add_argument('-a', '--apply_room', type=str,
+                        help='Path to room dataset. If provided, a room will'
+                             'be randomly selected.')
+    parser.add_argument('-t', '--target_speech', type=str,
+                        default='examples/input_samples/cmu_arctic_us_aew_a0001.wav',
+                        help='Path to a target speech WAV file.')
+    parser.add_argument('-v', '--noise_dir', type=str,
+                        help='Path to a directory with noise WAV files. '
+                             'Default is to apply the room impulse response '
+                             'to WAV file(s) from `examples/input_samples`.')
+    parser.add_argument('-s', '--snr_db', type=float,
+                        default=5.,
+                        help='Desired signal-to-noise ratio resulting from '
+                             'simulation.')
+    parser.add_argument('-o', '--output_file', type=str,
+                        default='simulated_output.wav',
+                        help='Path of output WAV file from simulation.')
+    args = parser.parse_args()
+
+    if args.apply_room is not None:
+        apply_rir(room_dataset=args.apply_room,
+                  target_speech=args.target_speech,
+                  noise_dir=args.noise_dir,
+                  snr_db=args.snr_db,
+                  output_file=args.output_file)
+    else:
+        make_dataset(args.n_rooms, args.source_min_dist_mic)

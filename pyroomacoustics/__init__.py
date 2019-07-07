@@ -104,6 +104,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 
+:py:obj:`pyroomacoustics.random`
+    Tools for random generation of rooms
+
 
 Utilities
 ---------

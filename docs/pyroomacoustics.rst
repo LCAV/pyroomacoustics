@@ -13,6 +13,7 @@ Subpackages
     pyroomacoustics.doa
     pyroomacoustics.experimental
     pyroomacoustics.transform
+    pyroomacoustics.random
 
 Submodules
 ----------
