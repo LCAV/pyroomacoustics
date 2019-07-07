@@ -147,7 +147,8 @@ class ShoeBoxRoomGenerator(object):
                  mic_height_distrib=None,
                  mic_min_dist_wall=0.1,
                  source_min_dist_wall=0.5,
-                 sample_rate=16000,
+                 source_min_dist_mic=0.1,
+                 sample_rate=1source_min_dist_mic6000,
                  ism_order=17,
                  air_absorption=True,
                  ray_tracing=True,
@@ -180,6 +181,7 @@ class ShoeBoxRoomGenerator(object):
 
         self.mic_min_dist_wall = mic_min_dist_wall
         self.source_min_dist_wall = source_min_dist_wall
+        self.source_min_dist_mic = source_min_dist_mic
         self.sample_rate = sample_rate
         self.ism_order = ism_order
         self.air_absorption = air_absorption
@@ -263,6 +265,9 @@ class ShoeBoxRoomGenerator(object):
                     target_orientation = \
                         self.target_orientation_distrib.sample()
                     target_dist = self.target_mic_dist_distrib.sample()
+                    if target_dist < self.source_min_dist_mic:
+                        count += 1
+                        continue
                     target_loc = mic_loc + \
                                  spher2cart(r=target_dist,
                                             azimuth=target_orientation[0],
@@ -286,6 +291,8 @@ class ShoeBoxRoomGenerator(object):
                         noise_orientations.append(noise_orientation)
                         noise_dist = sample_source_distance(room, mic_loc,
                                                             noise_orientation)
+                        if noise_dist < self.source_min_dist_mic:
+                            break
                         noise_dists.append(noise_dist)
                         _noise_loc = mic_loc + \
                                      spher2cart(
@@ -334,6 +341,9 @@ class ShoeBoxRoomGenerator(object):
                 'noise_orientation': noise_orientations,
             }
             room_metadata[room_uuid] = room_params
+
+            from pprint import pprint
+            pprint(room_params)
 
             # compute room impulse responses (RIRs)
             room.add_source(list(target_loc))
