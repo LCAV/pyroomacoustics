@@ -14,6 +14,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Added FastMNMF (Fast Multichannel Nonnegative Matrix Factorization) to ``bss`` subpackage.
 - Griffin-Lim algorithm for phase reconstruction from STFT magnitude measurements.
 
 Changed

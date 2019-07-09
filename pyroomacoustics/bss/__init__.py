@@ -17,6 +17,9 @@ ILRMA
 SparseAuxIVA
     | Sparse Independent Vector Analysis [4]_
     | :py:mod `pyroomacoustics.bss.sparseauxiva`
+FastMNMF
+    | Fast Multichannel Nonnegative Matrix Factorization [5]_
+    | :py:mod `pyroomacoustics.bss.fastmnmf`
 
 
 A few commonly used functions, such as projection back, can be found in
@@ -42,10 +45,14 @@ References
     for blind speech separation based on AuxIVA and incomplete demixing transform,*
     Proc. IEEE, IWAENC, pp. 1-5, Sept. 2016.
 
+.. [5] K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
+    Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
+
 '''
 
 from .trinicon import trinicon
 from .auxiva import auxiva
 from .ilrma import ilrma
 from .sparseauxiva import sparseauxiva
+from .fastmnmf import fastmnmf
 from .common import projection_back, sparir
