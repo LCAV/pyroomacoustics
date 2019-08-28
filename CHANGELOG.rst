@@ -37,6 +37,7 @@ Bugfix
 - Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
 - Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
   underflow and divide by zero.
+- Fixed problem caused by dependency of setup.py on Cython (Issue #117)
 
 `0.1.23`_ - 2019-04-17
 ----------------------
