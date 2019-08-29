@@ -1012,14 +1012,15 @@ class Room(object):
 
                     self.visibility.append(is_visible.copy())
 
-                    # free the C malloc'ed memory
-                    libroom.free_sources(c_room)
-
                     # We need to check that microphones are indeed in the room
                     for m in range(self.mic_array.R.shape[1]):
                         # if not, it's not visible from anywhere!
                         if not self.is_inside(self.mic_array.R[:,m]):
                             self.visibility[-1][m,:] = 0
+
+                # free the C malloc'ed memory
+                libroom.free_sources(c_room)
+
 
 
     def compute_rir(self):
