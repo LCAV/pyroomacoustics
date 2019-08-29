@@ -27,6 +27,12 @@ The method implemented is described in the following publication
     J. Jansky, Z. Koldovsky, and N. Ono *A computationally cheaper method for blind speech
     separation based on AuxIVA and incomplete demixing transform*, Proc. IEEE, IWAENC, 2016.
 
+4) Fast Multichannel Nonnegative Matrix Factorization (FastMNMF)
+The method implemented is described in the following publication
+
+    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
+    Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
+
 All the algorithms work in the STFT domain. The test files are recorded by an external
 microphone array.
 Depending on the input arguments running this script will do these actions:.
@@ -53,7 +59,7 @@ import sounddevice as sd
 
 if __name__ == '__main__':
 
-    choices = ['ilrma', 'auxiva', 'sparseauxiva']
+    choices = ['ilrma', 'auxiva', 'sparseauxiva', 'fastmnmf']
 
     import argparse
     parser = argparse.ArgumentParser(description='Records a segment of speech and then performs separation')
@@ -103,6 +109,10 @@ if __name__ == '__main__':
     elif bss_type == 'ilrma':
         # Run ILRMA
         Y = pra.bss.ilrma(X, n_iter=args.n_iter, n_components=30, proj_back=True,
+            callback=cb_print)
+    elif bss_type == 'fastmnmf':
+        # Run FastMNMF
+        Y = pra.bss.fastmnmf(X, n_iter=args.n_iter, n_components=8, n_src=2,
             callback=cb_print)
     elif bss_type == 'sparseauxiva':
         # Estimate set of active frequency bins
