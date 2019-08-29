@@ -233,7 +233,6 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
   int dir;
   image_source_t new_is;
 
-
   // Check the visibility of the source from the different microphones
   int any_visible = 0;
   visible_mics = (int *)malloc(sizeof(int) * room->n_microphones);
@@ -259,28 +258,28 @@ void image_sources_dfs(room_t *room,  image_source_t *is, int max_order)
     is_list_insert(&visible_sources, new_node);
   }
 
-  // If we reached maximal depth, stop
-  if (max_order == 0)
-    return;
-
-  // Then, check all the reflections across the walls
-  for (wi=0 ;  wi < room->n_walls ; wi++)
+  // If we haven't reached maximal depth, check all the reflections
+  if (max_order > 0)
   {
-    wall = room->walls + wi;
-    dir = wall_reflect(wall, is->loc, new_is.loc);
+    // Then, check all the reflections across the walls
+    for (wi=0 ;  wi < room->n_walls ; wi++)
+    {
+      wall = room->walls + wi;
+      dir = wall_reflect(wall, is->loc, new_is.loc);
 
-    // We only check valid reflections (normals should point outward from the room
-    if (dir <= 0)
-      continue;
+      // We only check valid reflections (normals should point outward from the room
+      if (dir <= 0)
+        continue;
 
-    new_is.attenuation = is->attenuation * (1. - wall->absorption);
-    new_is.order = is->order + 1;
-    new_is.gen_wall = wi;
-    new_is.parent = is;
+      new_is.attenuation = is->attenuation * (1. - wall->absorption);
+      new_is.order = is->order + 1;
+      new_is.gen_wall = wi;
+      new_is.parent = is;
 
 
-    // Run the DFS recursion
-    image_sources_dfs(room, &new_is, max_order - 1);
+      // Run the DFS recursion
+      image_sources_dfs(room, &new_is, max_order - 1);
+    }
   }
 
   // free allocated resources
