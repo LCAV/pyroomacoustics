@@ -14,8 +14,6 @@ except ImportError:
     from distutils.core import setup
     from distutils.extension import Extension
 
-from Cython.Build import cythonize
-
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -68,7 +66,7 @@ setup_kwargs = dict(
             ],
 
         # Libroom C extension
-        ext_modules=[libroom_ext] + cythonize(cython_ext),
+        ext_modules=[libroom_ext, cython_ext],
 
         # Necessary to keep the source files
         package_data={
@@ -123,5 +121,5 @@ except:
     # Retry without the C module
     print("Error. Probably building C extension failed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
-    setup_kwargs['ext_modules'] = cythonize(cython_ext)
+    setup_kwargs['ext_modules'] = [cython_ext]
     setup(**setup_kwargs)

@@ -283,8 +283,10 @@ py_free_sources(PyObject *self, PyObject *args)
    * t#: the room c structure and its size
    */
 
-  if (!PyArg_ParseTuple(args, "w*", &arg1))
+  if (!PyArg_ParseTuple(args, "w*", &arg1)) {
+        PyErr_SetString(PyExc_TypeError, "libroom.free_sources: wrong argument");
         return NULL;
+  }
 
   // Check the size of the first argument
   if (arg1.len != sizeof(room_t)) {
