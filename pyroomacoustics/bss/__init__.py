@@ -16,10 +16,10 @@ ILRMA
     | :py:mod:`pyroomacoustics.bss.ilrma`
 SparseAuxIVA
     | Sparse Independent Vector Analysis [4]_
-    | :py:mod `pyroomacoustics.bss.sparseauxiva`
+    | :py:mod:`pyroomacoustics.bss.sparseauxiva`
 FastMNMF
     | Fast Multichannel Nonnegative Matrix Factorization [5]_
-    | :py:mod `pyroomacoustics.bss.fastmnmf`
+    | :py:mod:`pyroomacoustics.bss.fastmnmf`
 
 
 A few commonly used functions, such as projection back, can be found in
