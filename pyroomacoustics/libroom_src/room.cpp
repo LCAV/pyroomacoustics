@@ -693,13 +693,17 @@ bool Room<D>::scat_ray(
     {
       // As the ray is shot towards the microphone center,
       // the hop dist can be easily computed
-      float hop_dist = (hit_point - mic_pos).norm();
+      Vectorf<D> hit_point_to_mic = mic_pos - hit_point;
+      float hop_dist = hit_point_to_mic.norm();
       float travel_dist_at_mic = travel_dist + hop_dist;
 
       // compute the scattered energy reaching the microphone
       float m_sq = mic_radius * mic_radius;
       float h_sq = hop_dist * hop_dist;
-      Eigen::VectorXf scat_trans = wall.scatter * transmitted * 2.f * m_sq / h_sq;
+      float p_hit_equal = (1.f - (1.f - m_sq / h_sq).sqrt());
+      // cos(theta) = dot(u, v)/ (|u|*|v|)
+      float p_lambert = hit_point_to_mic.dot(wall.normal) / hop_dist
+      Eigen::VectorXf scat_trans = wall.scatter * transmitted * p_hit_equal * p_lambert;
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
