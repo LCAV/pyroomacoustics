@@ -194,7 +194,7 @@ class OctaveBandsFactory(object):
             interpolator to use. Default is ‘linear’.
         """
 
-        if not isinstance(coeffs, list):
+        if not isinstance(coeffs, (list, np.ndarray)):
             # when the parameter is a scalar just do flat extrapolation
             ret = [coeffs] * self.n_bands
 
