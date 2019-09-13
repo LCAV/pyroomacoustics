@@ -199,7 +199,7 @@ class OctaveBandsFactory(object):
             ret = [coeffs] * self.n_bands
 
         if len(coeffs) == 1:
-            ret = coeffs * self.n_bands
+            ret = coeffs * int(self.n_bands)
 
         else:
             # by default infer the center freq to be the low ones
