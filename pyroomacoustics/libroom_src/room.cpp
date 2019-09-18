@@ -701,8 +701,9 @@ bool Room<D>::scat_ray(
       float m_sq = mic_radius * mic_radius;
       float h_sq = hop_dist * hop_dist;
       float p_hit_equal = 1.f - sqrt(1.f - m_sq / h_sq);
-      // for P_lambert, use: cos(theta) = dot(u, v)/ (|u|*|v|)
-      float p_lambert = 2 * hit_point_to_mic.dot(wall.normal) / hop_dist;
+      // cosine angle should be positive, but could be negative if normal is
+      // facing out of room so we take abs
+      float p_lambert = 2 * abs(wall.cosine_angle(hit_point_to_mic));
       Eigen::VectorXf scat_trans = wall.scatter * transmitted * p_hit_equal * p_lambert;
 
       // We add an entry to output and we increment the right element

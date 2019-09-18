@@ -117,6 +117,10 @@ class Wall
         const Vectorf<D> &start,
         const Vectorf<D> &hit_point,
         float length) const;
+
+    float cosine_angle(   // cosine angle with respect to surface normal
+        const Vectorf<D> &p
+        ) const;
 }; 
 
 #include "wall.cpp"

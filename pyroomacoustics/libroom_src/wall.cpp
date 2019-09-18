@@ -308,4 +308,16 @@ Vectorf<D> Wall<D>::normal_reflect(
   return hit_point + length * (incident - normal * 2 * incident.dot(normal));
 }
 
+template<size_t D>
+float Wall<D>::cosine_angle(
+    const Vectorf<D> &p) const
+{
+    /*
+    Compute the cosine angle between the surface normal and a given vector.
+    */
+
+    return p.dot(normal) / p.norm();
+
+}
+
 
