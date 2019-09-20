@@ -873,7 +873,7 @@ void Room<D>::get_rir_entries(
   const Vectorf<D> source_pos
   )
 {
-  float energy_0 = 4.f / (mic_radius * mic_radius * angles.cols());
+  float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
 
   for (int k(0) ; k < angles.cols() ; k++)
   {

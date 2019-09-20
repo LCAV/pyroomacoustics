@@ -51,7 +51,7 @@ class SimpleHistogram(list):
 
 
 class TestRayEnergy(unittest.TestCase):
-    def test_sqare_room(self):
+    def test_square_room(self):
 
         """
         This is a cubic room of 2x2x2 meters. The source is placed at [0.5,0.5, 1]
@@ -75,7 +75,7 @@ class TestRayEnergy(unittest.TestCase):
 
         while transmitted / distance > energy_thresh:
             histogram_gt.add(distance, transmitted)
-            transmitted *= (1. - absorption) ** 4
+            transmitted *= (1. - absorption) ** 4     # 4 wall hits
             distance += round_trip
 
         print("Creating the python room")
