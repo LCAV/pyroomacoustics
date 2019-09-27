@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixed docstring and an argument of `pyroomacoustics.bss.ilrma`
 
 `0.2.0`_ - 2019-09-04
 ---------------------
