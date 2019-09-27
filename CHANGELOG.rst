@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Added
+~~~~~
+
+- The routine ``pyroomacoustics.experimental.measure_rt60`` to automatically
+  measure the reverberation time of impulse responses. This is useful for
+  measured and simulated responses.
 
 `0.2.0`_ - 2019-09-04
 ---------------------
