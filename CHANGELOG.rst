@@ -18,6 +18,11 @@ Added
   measure the reverberation time of impulse responses. This is useful for
   measured and simulated responses.
 
+Bugfix
+~~~~~~
+
+- Fixed docstring and an argument of `pyroomacoustics.bss.ilrma`
+
 `0.2.0`_ - 2019-09-04
 ---------------------
 
