@@ -89,6 +89,9 @@ if __name__ == '__main__':
 
     ## Prepare one-shot STFT
     L = args.block
+    hop = L // 2
+    win_a = pra.hann(L)
+    win_s = pra.transform.compute_synthesis_window(win_a, hop)
 
     ## Create a room with sources and mics
     # Room dimensions in meters
@@ -146,13 +149,15 @@ if __name__ == '__main__':
         global SDR, SIR
         from mir_eval.separation import bss_eval_sources
         ref = np.moveaxis(separate_recordings, 1, 2)
-        y = pra.transform.synthesis(Y, L, L, zp_back=L//2, zp_front=L//2).T
-        sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+        y = pra.transform.synthesis(Y, L, hop, win=win_s)
+        y = y[L-hop: , :].T
+        m = np.minimum(y.shape[1], ref.shape[1])
+        sdr, sir, sar, perm = bss_eval_sources(ref[:, :m, 0], y[:, :m])
         SDR.append(sdr)
         SIR.append(sir)
 
     ## STFT ANALYSIS
-    X = pra.transform.analysis(mics_signals.T, L, L, zp_front=L//2, zp_back=L//2)
+    X = pra.transform.analysis(mics_signals.T, L, hop, win=win_a)
 
     t_begin = time.perf_counter()
 
@@ -184,10 +189,12 @@ if __name__ == '__main__':
     print("Time for BSS: {:.2f} s".format(t_end - t_begin))
     
     ## STFT Synthesis
-    y = pra.transform.synthesis(Y, L, L, zp_front=L//2, zp_back=L//2).T
+    y = pra.transform.synthesis(Y, L, hop, win=win_s)
 
     ## Compare SDR and SIR
-    sdr, sir, sar, perm = bss_eval_sources(ref[:,:y.shape[1]-L//2,0], y[:,L//2:ref.shape[1]+L//2])
+    y = y[L-hop:, :].T
+    m = np.minimum(y.shape[1], ref.shape[1])
+    sdr, sir, sar, perm = bss_eval_sources(ref[:, :m, 0], y[:, :m])
     print('SDR:', sdr)
     print('SIR:', sir)
 
