@@ -27,7 +27,7 @@ from __future__ import division
 
 import math
 import numpy as np
-from scipy.signal import butter
+from scipy.signal import butter, sosfiltfilt
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
 from .stft import stft
@@ -221,7 +221,6 @@ class OctaveBandsFactory(object):
 
         return ret
 
-
     def get_filters(self, order=8, output="sos"):
         """
         Create the IIR band-pass filters for the octave bands
@@ -233,11 +232,17 @@ class OctaveBandsFactory(object):
         output: {'ba', 'zpk', 'sos'}
             Type of output: numerator/denominator ('ba'), pole-zero ('zpk'), or
             second-order sections ('sos'). Default is 'ba'.
+
+        Returns
+        -------
+        A list of callables that will each apply one of the band-pass filters
         """
 
-        return bandpass_filterbank(
+        filter_bank = bandpass_filterbank(
             self.bands, fs=self.fs, order=order, output=output
         )
+
+        return [lambda sig: sosfiltfilt(bpf, sig) for bpf in filter_bank]
 
 
 def critical_bands():

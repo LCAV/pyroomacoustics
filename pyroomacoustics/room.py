@@ -332,7 +332,6 @@ import math
 import numpy as np
 import warnings
 import scipy.spatial as spatial
-from scipy.signal import sosfiltfilt
 from scipy.interpolate import interp1d
 
 #import .beamforming as bf
@@ -1433,7 +1432,7 @@ class Room(object):
                         fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
 
                         if bpf is not None:
-                            ir_loc = sosfiltfilt(bpf, ir_loc)
+                            ir_loc = bpf(ir_loc)
 
                         ir += ir_loc
 
@@ -1441,7 +1440,7 @@ class Room(object):
                     if self.simulator_state["rt_needed"]:
 
                         if bpf is not None:
-                            seq_bp = sosfiltfilt(bpf, seq)
+                            seq_bp = bpf(seq)
                         else:
                             seq_bp = seq.copy()
 
@@ -1472,7 +1471,7 @@ class Room(object):
                     if len(rir_bands) == 1:
                         new_bands = []
                         for bpf in self.octave_bands.get_filters():
-                            new_bands.append(sosfiltfilt(bpf, rir_bands[0]))
+                            new_bands.append(bpf(rir_bands[0]))
                         rir_bands = new_bands
 
                     # Now apply air absorption
