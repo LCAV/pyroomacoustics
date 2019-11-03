@@ -334,7 +334,6 @@ import warnings
 import scipy.spatial as spatial
 from scipy.interpolate import interp1d
 
-#import .beamforming as bf
 from . import beamforming as bf
 from .soundsource import SoundSource
 from .acoustics import OctaveBandsFactory
@@ -1392,7 +1391,12 @@ class Room(object):
                 if self.simulator_state["rt_needed"]:
 
                     # get the maximum length from the histograms
-                    n_bins = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0][-1] + 1
+                    nz_bins_loc = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0]
+                    if len(nz_bins_loc) == 0:
+                        n_bins = 0
+                    else:
+                        n_bins = nz_bins_loc[0][-1] + 1
+
                     t_max = np.maximum(
                             t_max,  n_bins * self.rt_args['hist_bin_size']
                             )
@@ -1429,7 +1433,12 @@ class Room(object):
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder
                         vis = self.visibility[s][m, :].astype(np.int32)
-                        fast_rir_builder(ir_loc, time, alpha, vis, self.fs, fdl)
+                        # we add the delay due to the factional delay filter to
+                        # the arrival times to avoid problems when propagation
+                        # is shorter than the delay to to the filter
+                        # hence: time + fdl2
+                        time_adjust = time + fdl2 / self.fs
+                        fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
 
                         if bpf is not None:
                             ir_loc = bpf(ir_loc)
