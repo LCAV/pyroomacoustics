@@ -8,11 +8,11 @@ from pyroomacoustics.transform import analysis, synthesis
 # test parameters
 tol = -100  # dB
 np.random.seed(0)
-D = 4
+D = 3
 block_size = 512
 
 # test signal (noise)
-x = np.random.randn(block_size*100, D).astype(np.float32)
+x = np.random.randn(block_size*20, D).astype(np.float32)
 
 
 def no_overlap(D):
