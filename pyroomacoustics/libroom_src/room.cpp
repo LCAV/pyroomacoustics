@@ -72,7 +72,8 @@ Room<D>::Room(
   : microphones(_microphones),
   sound_speed(_sound_speed), ism_order(_ism_order), energy_thres(_energy_thres), time_thres(_time_thres),
   mic_radius(_mic_radius), mic_hist_res(_mic_hist_res), is_hybrid_sim(_is_hybrid_sim),
-  is_shoebox(true), shoebox_size(_room_size), shoebox_absorption(_absorption)
+  is_shoebox(true), shoebox_size(_room_size), shoebox_absorption(_absorption),
+  shoebox_scattering(_scattering)
 {
   if (shoebox_absorption.rows() != _scattering.rows())
   {
@@ -286,6 +287,10 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
     // The reflection is valid, fill in the image source attributes
     new_is.attenuation *= walls[wi].get_transmission();
+    if (walls[wi].scatter.maxCoeff() > 0.f && is_hybrid_sim)
+    {
+      new_is.attenuation *= (1 - walls[wi].scatter).sqrt();
+    }
     new_is.order = is.order + 1;
     new_is.gen_wall = wi;
     new_is.parent = &is;
@@ -400,7 +405,13 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
 
   transmission_pwr[0].setOnes();
   if (ism_order > 0)
+  {
     transmission_pwr[1] = (1.f - shoebox_absorption).sqrt();
+    if (shoebox_scattering.maxCoeff() > 0.f && is_hybrid_sim)
+    {
+      transmission_pwr[1] *= (1 - shoebox_scattering).sqrt();
+    }
+  }
   for (int i = 2 ; i <= ism_order ; ++i)
     transmission_pwr[i] = transmission_pwr[i-1] * transmission_pwr[1];
 
@@ -839,7 +850,7 @@ void Room<D>::simul_ray(
     transmitted *= wall.get_energy_reflection();
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-    if (wall.scatter.maxCoeff() > 0.f && !already_in_ism)
+    if (wall.scatter.maxCoeff() > 0.f && is_hybrid_sim)
     {
       // Shoot the scattered ray
       scat_ray(
