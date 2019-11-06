@@ -69,7 +69,7 @@ class TestRayEnergy(unittest.TestCase):
         histogram_gt = SimpleHistogram(hist_bin_size * pra.constants.get("c"))
 
         # Create the groundtruth list of energy and travel time
-        initial_energy = 2. / detector_radius ** 2  # defined in libroom.Room.get_rir_entries
+        initial_energy = 4. / detector_radius ** 2  # defined in libroom.Room.get_rir_entries
         transmitted = 1.0 * (1. - absorption) ** 2 * initial_energy
         distance = round_trip / 2.0
 
