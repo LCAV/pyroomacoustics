@@ -13,6 +13,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Nothing yet.
 
+`0.3.1`_ - 2019-11-06
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixed a non-unicode character in ``pyroomacoustics.experimental.rt60`` breaking
+  the tests
+
 `0.3.0`_ - 2019-11-06
 ---------------------
 
@@ -276,7 +285,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...HEAD
+.. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
 .. _0.2.0: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...v0.2.0
 .. _0.1.23: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...v0.1.23
