@@ -1395,7 +1395,7 @@ class Room(object):
                     if len(nz_bins_loc) == 0:
                         n_bins = 0
                     else:
-                        n_bins = nz_bins_loc[0][-1] + 1
+                        n_bins = nz_bins_loc[-1] + 1
 
                     t_max = np.maximum(
                             t_max,  n_bins * self.rt_args['hist_bin_size']
