@@ -51,7 +51,12 @@ that. On Mac and Linux, GCC is required, while Visual C++ 14.0 is necessary for
 
    .. code-block:: shell
 
+       # Clone the pyroomacoustics repository
        git clone git@github.com:LCAV/pyroomacoustics.git
+
+       # Change branch and init submodules
+       git checkout next_gen_simulator
+       git submodule update --init
 
 2. Compile locally
 
