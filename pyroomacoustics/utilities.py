@@ -25,9 +25,36 @@
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
+import random
 
 from .parameters import constants, eps
 from .sync import correlate
+
+
+def sample_audio(audio_data, desired_len):
+    """
+    Sample a segment of audio of desired length. If audio is too short, repeat
+    it.
+
+    Parameters
+    -----------
+    audio_data : array
+        1D numpy array containing audio data.
+    desired_len : int
+        Desired length in samples.
+    """
+    data_len = len(audio_data)
+
+    if data_len < desired_len:
+        # repeat file
+        n_times = int(np.ceil(desired_len / float(data_len)))
+        audio_data = np.tile(audio_data, (n_times, 1))
+        data_len = len(audio_data)
+
+    # randomly pick segment
+    start = random.randint(0, data_len - desired_len)
+    end = start + desired_len
+    return audio_data[start:end]
 
 
 def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):

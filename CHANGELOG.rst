@@ -22,6 +22,7 @@ Added
 - Acoustic properties of different materials in ``pyroomacoustics.materials``
 - Scattering from the wall is handled via ray tracing method, scattering coefficients are provided
   in ``pyroomacoustics.materials.Material`` objects
+- ``random`` sub-package for room generation tools.
 
 
 Changed

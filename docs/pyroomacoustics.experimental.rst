@@ -1,4 +1,4 @@
-pyroomacoustics.experimental package
+Experimental
 ====================================
 
 Submodules
