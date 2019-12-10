@@ -21,8 +21,8 @@
 RT60 Measurement Routine
 ========================
 
-Automatically determine the reverberation time of an impulse response
-according to the method by Schroeder [1].
+Automatically determines the reverberation time of an impulse response
+using the Schroeder method [1]_.
 
 References
 ----------

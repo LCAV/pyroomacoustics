@@ -19,7 +19,7 @@
 # SOFTWARE.
 """
 FastMNMF
-=====
+========
 
 Blind Source Separation based on Fast Multichannel Nonnegative Matrix Factorization (FastMNMF)
 """
