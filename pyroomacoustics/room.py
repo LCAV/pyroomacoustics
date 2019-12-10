@@ -79,7 +79,7 @@ Sources are fairly straighforward to create. They take their location as single
 mandatory argument, and a signal and start time as optional arguments.  Here we
 create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
 the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the
-simulation.  The ``signal`` keyword arguement to the
+simulation.  The ``signal`` keyword argument to the
 :py:func:`pyroomacoustics.room.Room.add_source` method should be a
 one-dimensional ``numpy.ndarray`` containing the desired sound signal.
 
