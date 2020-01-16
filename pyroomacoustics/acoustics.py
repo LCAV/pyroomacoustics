@@ -194,12 +194,12 @@ class OctaveBandsFactory(object):
             interpolator to use. Default is ‘linear’.
         """
 
-        if not isinstance(coeffs, list):
+        if not isinstance(coeffs, (list, np.ndarray)):
             # when the parameter is a scalar just do flat extrapolation
             ret = [coeffs] * self.n_bands
 
         if len(coeffs) == 1:
-            ret = coeffs * self.n_bands
+            ret = coeffs * int(self.n_bands)
 
         else:
             # by default infer the center freq to be the low ones

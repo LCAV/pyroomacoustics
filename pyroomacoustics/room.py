@@ -1404,7 +1404,7 @@ class Room(object):
                     # the number of samples needed
                     # round up to multiple of the histogram bin size
                     # add the lengths of the fractional delay filter
-                    hbss = self.rt_args['hist_bin_size_samples']
+                    hbss = int(self.rt_args['hist_bin_size_samples'])
                     N = int(math.ceil(t_max * self.fs / hbss) * hbss)
 
                 # this is where we will compose the RIR

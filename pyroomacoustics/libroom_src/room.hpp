@@ -95,6 +95,7 @@ class Room
     bool is_shoebox = false;
     Vectorf<D> shoebox_size;
     Eigen::Array<float,Eigen::Dynamic,2*D> shoebox_absorption;
+    Eigen::Array<float,Eigen::Dynamic,2*D> shoebox_scattering;
 
     // The number of frequency bands used
     size_t n_bands;

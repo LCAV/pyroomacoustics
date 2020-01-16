@@ -47,22 +47,33 @@ using the package, you will then also need to compile the C++ extension for
 that. On Mac and Linux, GCC is required, while Visual C++ 14.0 is necessary for
 `windows <https://wiki.python.org/moin/WindowsCompilers>`__. 
 
-1. Get the source code
+1. Get the source code. Use recursive close so that Eigen (a sub-module of this
+   repository) is also downloaded.
 
    .. code-block:: shell
 
-       # Clone the pyroomacoustics repository
-       git clone git@github.com:LCAV/pyroomacoustics.git
+       git clone --recursive git@github.com:LCAV/pyroomacoustics.git
 
-       # Change branch and init submodules
-       git checkout next_gen_simulator
-       git submodule update --init
+   Alternatively, you can clone without the `--recursive` flag and directly
+   install the Eigen library. For macOS, you can find installation instruction
+   here: https://stackoverflow.com/a/35658421. After installation you can
+   create a symbolic link as such:
 
-2. Compile locally
+    .. code-block:: shell
+
+        ln -s PATH_TO_EIGEN pyroomacoustics/libroom_src/ext/eigen/Eigen
+
+2. Install a few pre-requisites
+
+    .. code-block:: shell
+
+        pip install numpy Cython pybind11
+
+3. Compile locally
 
    .. code-block:: shell
 
-         python setup.py build_ext --install
+         python setup.py build_ext --inplace
 
    On recent Mac OS (Mojave), it is necessary in some cases to add a
    higher deployment target
@@ -71,7 +82,7 @@ that. On Mac and Linux, GCC is required, while Visual C++ 14.0 is necessary for
 
          MACOSX_DEPLOYMENT_TARGET=10.9 python setup.py build_ext --inplace
 
-3. Update ``$PYTHONPATH`` so that python knows where to find the local package
+4. Update ``$PYTHONPATH`` so that python knows where to find the local package
 
    .. code-block:: shell
 
@@ -81,13 +92,13 @@ that. On Mac and Linux, GCC is required, while Visual C++ 14.0 is necessary for
    For windows, see `this question <https://stackoverflow.com/questions/3701646/how-to-add-to-the-pythonpath-in-windows>`__
    on stackoverflow.
 
-4. Install the dependencies listed in ``requirements.txt``
+5. Install the dependencies listed in ``requirements.txt``
 
    .. code-block:: shell
 
       pip install -r requirements.txt
 
-5. Now fire up ``python`` or ``ipython`` and check that the package can be
+6. Now fire up ``python`` or ``ipython`` and check that the package can be
    imported
 
    .. code-block:: python

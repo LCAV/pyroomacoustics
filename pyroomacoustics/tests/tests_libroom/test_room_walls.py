@@ -342,14 +342,13 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(not room.scat_ray(energy, prev_wall, prev_last_hit, last_hit,
                                       total_dist))
 
-
     def test_scat_ray_ok(self):
 
         walls = [pra.wall_factory(c, [a], [s]) for c, a, s in zip(wall_corners_2D_non_convex, absorptions_2D, scatterings_2D)]
-        obstructing_walls = [1,2]
+        obstructing_walls = [1, 2]
         microphones = np.array([
-            [0.5 ],
-            [0.2 ]
+            [0.5],
+            [0.2]
             ])
 
         room = room_factory(walls, obstructing_walls, microphones)
@@ -365,8 +364,7 @@ class TestRoomWalls(unittest.TestCase):
 
         prev_wall = room.get_wall(0)
 
-
-        prev_last_hit = [2,0.2]
+        prev_last_hit = [2, 0.2]
         last_hit = [0, 1.9]
         total_dist = 0.
 
