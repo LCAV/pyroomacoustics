@@ -172,6 +172,9 @@ class Room
       is_hybrid_sim = _is_hybrid_sim;
     }
 
+    void set_is_hybrid_sim(bool state) { is_hybrid_sim = state; }
+    bool get_is_hybrid_sim() { return is_hybrid_sim; }
+
     void add_mic(const Vectorf<D> &loc)
     {
       microphones.push_back(

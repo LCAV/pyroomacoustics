@@ -477,17 +477,19 @@ class Room(object):
         # Get the room dimension from that of the walls
         self.dim = walls[0].dim
 
+        # Create a mapping with friendly names for walls
+        self._wall_mapping()
+
+        # check which walls are part of the convex hull
+        self.convex_hull()
+
         # initialize everything else
         self._var_init(
                 fs, t0, max_order, sigma2_awgn, temperature,
                 humidity, air_absorption, ray_tracing,
         )
 
-        self._wall_mapping()
-
-        # check which walls are part of the convex hull
-        self.convex_hull()
-
+        # initialize the C++ room engine
         args = [
                 self.walls,
                 self.obstructing_walls,
@@ -498,20 +500,20 @@ class Room(object):
                 self.rt_args['time_thres'],
                 self.rt_args['receiver_radius'],
                 self.rt_args['hist_bin_size'],
-                True,  # a priori we will always use a hybrid model
+                self.simulator_state["ism_needed"] and self.simulator_state["rt_needed"],
                 ]
-
-        # Check if simulation should be mono or multi-band
-        self.multi_band = False
-        for w in walls:
-            if len(w.absorption) > 1:
-                self.multi_band = True
 
         # Create the real room object
         if self.dim == 2:
             self.room_engine = libroom.Room2D(*args)
         else:
             self.room_engine = libroom.Room(*args)
+
+        # Check if simulation should be mono or multi-band
+        self.multi_band = False
+        for w in walls:
+            if len(w.absorption) > 1:
+                self.multi_band = True
 
         # add the sources
         self.sources = []
@@ -557,6 +559,9 @@ class Room(object):
                 "rir_done": False,
                 }
 
+        # make it clear the room (C++) engine is not ready yet
+        self.room_engine = None
+
         if temperature is None and humidity is None:
             # default to package wide setting when nothing is provided
             self.physics = Physics().from_speed(constants.get("c"))
@@ -568,6 +573,7 @@ class Room(object):
         if air_absorption:
             self.set_air_absorption()
 
+        # default values for ray tracing parameters
         self.set_ray_tracing()
         if not ray_tracing:
             self.unset_ray_tracing()
@@ -577,6 +583,21 @@ class Room(object):
 
         # initialize the attribute for the impulse responses
         self.rir = None
+
+    def _update_room_engine_params(self):
+
+        # Now, if it exists, set the parameters of room engine
+        if self.room_engine is not None:
+            self.room_engine.set_params(
+                self.c,  # speed of sound
+                self.max_order,
+                self.rt_args['energy_thres'],
+                self.rt_args['time_thres'],
+                self.rt_args['receiver_radius'],
+                self.rt_args['hist_bin_size'],
+                (self.simulator_state["ism_needed"]
+                    and self.simulator_state["rt_needed"]),
+            )
 
     def set_ray_tracing(self,
             n_rays=10000,
@@ -620,9 +641,12 @@ class Room(object):
                 self.rt_args['hist_bin_size_samples'] / self.fs
         )
 
+        self._update_room_engine_params()
+
     def unset_ray_tracing(self):
         """ Deactivates the ray tracer """
         self.simulator_state["rt_needed"] = False
+        self._update_room_engine_params()
 
     def set_air_absorption(self, coefficients=None):
         """
@@ -650,6 +674,7 @@ class Room(object):
     def set_sound_speed(self, c):
         """ Sets the speed of sound unconditionnaly """
         self.c = c
+        self._update_room_engine_params()
 
     def _wall_mapping(self):
 
