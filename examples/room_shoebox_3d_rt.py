@@ -16,38 +16,64 @@ room_dim = [7.5, 9.9, 3]
 # Create the shoebox
 
 materials = {
-    'ceiling': pra.Material.from_db('hard_surface'),
-    'floor': pra.Material.from_db('6mm_carpet'),
-    'east': pra.Material.from_db('brickwork'),
-    'west': pra.Material.from_db('brickwork'),
-    'north': pra.Material.from_db('brickwork'),
-    'south': pra.Material.from_db('brickwork'),
+    "ceiling": pra.Material.from_db("hard_surface"),
+    "floor": pra.Material.from_db("6mm_carpet"),
+    "east": pra.Material.from_db("rough_concrete"),
+    "west": pra.Material.from_db("rough_concrete"),
+    "north": pra.Material.from_db("rough_concrete"),
+    "south": pra.Material.from_db("rough_concrete"),
 }
 
-shoebox = pra.ShoeBox(
-    room_dim,
-    # materials=pra.Material.from_db('brickwork', 'rpg_skyline'),
-    materials=materials,
-    # materials=pra.Material.from_db('brickwork'),
-    # materials=pra.Material.make_freq_flat(0.1, 0.2),
-    # absorption=0.2,
-    fs=16000,
-    max_order=3,
-    ray_tracing=True,
-    air_absorption=True,
-)
+params = {
+    "Hybrid17": {"max_order": 17, "ray_tracing": True},
+    "Hybrid3": {"max_order": 3, "ray_tracing": True},
+    "ISM": {"max_order": 17, "ray_tracing": False},
+}
 
-# source and mic locations
-shoebox.add_source([2, 3.1, 2])
-shoebox.add_microphone_array(
-        pra.MicrophoneArray(np.array([[2, 1.5, 2]]).T, shoebox.fs)
-        )
-
-shoebox.image_source_model()
-shoebox.ray_tracing()
-shoebox.compute_rir()
+rirs = {}
 
 plt.figure()
-shoebox.plot_rir()
 
+for name, config in params.items():
+
+    print("Simulate: ", name)
+
+    shoebox = pra.ShoeBox(
+        room_dim,
+        # materials=pra.Material.from_db('brickwork', 'rpg_skyline'),
+        # materials=materials,
+        # materials=pra.Material.from_db("brickwork"),
+        materials=pra.Material.make_freq_flat(0.07, 0.0),
+        # absorption=0.2,
+        fs=16000,
+        max_order=config["max_order"],
+        ray_tracing=config["ray_tracing"],
+        air_absorption=True,
+    )
+
+    if config["ray_tracing"]:
+        shoebox.set_ray_tracing(receiver_radius=1.)
+
+    # source and mic locations
+    shoebox.add_source([2, 3.1, 2])
+    shoebox.add_microphone_array(
+        pra.MicrophoneArray(np.array([[2, 1.5, 2]]).T, shoebox.fs)
+    )
+
+    shoebox.image_source_model()
+    shoebox.ray_tracing()
+    shoebox.compute_rir()
+
+    rirs[name] = shoebox.rir[0][0]
+
+    print(
+        f"{name}: RT60 == ", pra.experimental.measure_rt60(shoebox.rir[0][0], shoebox.fs)
+    )
+
+    rir = shoebox.rir[0][0]
+
+    time = np.arange(rir.shape[0]) / shoebox.fs
+    plt.plot(time, rir, label=name)
+
+plt.legend()
 plt.show()
