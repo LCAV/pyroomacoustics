@@ -393,6 +393,59 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
     return seq
 
 
+def find_non_convex_walls(walls):
+    '''
+    Finds the walls that are not in the convex hull
+
+    Parameters
+    ----------
+    walls: list of Wall objects
+        The walls that compose the room
+
+    Returns
+    -------
+    list of int
+        The indices of the walls no in the convex hull
+    '''
+
+    all_corners = []
+    for wall in walls[1:]:
+        all_corners.append(wall.corners.T)
+    X = np.concatenate(all_corners, axis=0)
+    convex_hull = spatial.ConvexHull(X, incremental=True)
+
+    # Now we need to check which walls are on the surface
+    # of the hull
+    in_convex_hull = [False] * len(walls)
+    for i, wall in enumerate(walls):
+        # We check if the center of the wall is co-linear or co-planar
+        # with a face of the convex hull
+        point = np.mean(wall.corners, axis=1)
+
+        for simplex in convex_hull.simplices:
+            if point.shape[0] == 2:
+                # check if co-linear
+                p0 = convex_hull.points[simplex[0]]
+                p1 = convex_hull.points[simplex[1]]
+                if libroom.ccw3p(p0, p1, point) == 0:
+                    # co-linear point add to hull
+                    in_convex_hull[i] = True
+
+            elif point.shape[0] == 3:
+                # Check if co-planar
+                p0 = convex_hull.points[simplex[0]]
+                p1 = convex_hull.points[simplex[1]]
+                p2 = convex_hull.points[simplex[2]]
+
+                normal = np.cross(p1 - p0, p2 - p0)
+                if np.abs(np.inner(normal, point - p0)) < eps:
+                    # co-planar point found!
+                    in_convex_hull[i] = True
+
+    return [i for i in range(len(walls)) if not in_convex_hull[i]]
+
+
+
 class Room(object):
     '''
     A Room object has as attributes a collection of
@@ -480,9 +533,6 @@ class Room(object):
         # Create a mapping with friendly names for walls
         self._wall_mapping()
 
-        # check which walls are part of the convex hull
-        self.convex_hull()
-
         # initialize everything else
         self._var_init(
                 fs, t0, max_order, sigma2_awgn, temperature,
@@ -490,30 +540,7 @@ class Room(object):
         )
 
         # initialize the C++ room engine
-        args = [
-                self.walls,
-                self.obstructing_walls,
-                [],
-                self.c,  # speed of sound
-                self.max_order,
-                self.rt_args['energy_thres'],
-                self.rt_args['time_thres'],
-                self.rt_args['receiver_radius'],
-                self.rt_args['hist_bin_size'],
-                self.simulator_state["ism_needed"] and self.simulator_state["rt_needed"],
-                ]
-
-        # Create the real room object
-        if self.dim == 2:
-            self.room_engine = libroom.Room2D(*args)
-        else:
-            self.room_engine = libroom.Room(*args)
-
-        # Check if simulation should be mono or multi-band
-        self.multi_band = False
-        for w in walls:
-            if len(w.absorption) > 1:
-                self.multi_band = True
+        self._init_room_engine()
 
         # add the sources
         self.sources = []
@@ -584,6 +611,37 @@ class Room(object):
         # initialize the attribute for the impulse responses
         self.rir = None
 
+    def _init_room_engine(self, *args):
+
+        args = list(args)
+
+        if len(args) == 0:
+            # This is a polygonal room
+            # find the non convex walls
+            obstructing_walls = find_non_convex_walls(self.walls)
+            args += [self.walls, obstructing_walls]
+
+        # for shoebox rooms, the required arguments are passed to
+        # the function
+
+        # initialize the C++ room engine
+        args += [
+            [],
+            self.c,  # speed of sound
+            self.max_order,
+            self.rt_args['energy_thres'],
+            self.rt_args['time_thres'],
+            self.rt_args['receiver_radius'],
+            self.rt_args['hist_bin_size'],
+            self.simulator_state["ism_needed"] and self.simulator_state["rt_needed"],
+        ]
+
+        # Create the real room object
+        if self.dim == 2:
+            self.room_engine = libroom.Room2D(*args)
+        else:
+            self.room_engine = libroom.Room(*args)
+
     def _update_room_engine_params(self):
 
         # Now, if it exists, set the parameters of room engine
@@ -598,6 +656,14 @@ class Room(object):
                 (self.simulator_state["ism_needed"]
                     and self.simulator_state["rt_needed"]),
             )
+
+    @property
+    def is_multi_band(self):
+        multi_band = False
+        for w in self.walls:
+            if len(w.absorption) > 1:
+                multi_band = True
+        return multi_band
 
     def set_ray_tracing(self,
             n_rays=10000,
@@ -946,66 +1012,8 @@ class Room(object):
         self.walls = walls
         self.dim = 3
 
-        # recheck which walls are in the convex hull
-        self.convex_hull()
-
-        args = [
-                self.walls,
-                self.obstructing_walls,
-                [],
-                self.c,  # speed of sound
-                self.max_order,
-                self.rt_args['energy_thres'],
-                self.rt_args['time_thres'],
-                self.rt_args['receiver_radius'],
-                self.rt_args['hist_bin_size'],
-                True,  # a priori we will always use a hybrid model
-                ]
-
         # Update the real room object
-        self.room_engine = libroom.Room(*args)
-
-    def convex_hull(self):
-
-        '''
-        Finds the walls that are not in the convex hull
-        '''
-
-        all_corners = []
-        for wall in self.walls[1:]:
-            all_corners.append(wall.corners.T)
-        X = np.concatenate(all_corners, axis=0)
-        convex_hull = spatial.ConvexHull(X, incremental=True)
-
-        # Now we need to check which walls are on the surface
-        # of the hull
-        self.in_convex_hull = [False] * len(self.walls)
-        for i, wall in enumerate(self.walls):
-            # We check if the center of the wall is co-linear or co-planar
-            # with a face of the convex hull
-            point = np.mean(wall.corners, axis=1)
-
-            for simplex in convex_hull.simplices:
-                if point.shape[0] == 2:
-                    # check if co-linear
-                    p0 = convex_hull.points[simplex[0]]
-                    p1 = convex_hull.points[simplex[1]]
-                    if libroom.ccw3p(p0, p1, point) == 0:
-                        # co-linear point add to hull
-                        self.in_convex_hull[i] = True
-
-                elif point.shape[0] == 3:
-                    # Check if co-planar
-                    p0 = convex_hull.points[simplex[0]]
-                    p1 = convex_hull.points[simplex[1]]
-                    p2 = convex_hull.points[simplex[2]]
-
-                    normal = np.cross(p1 - p0, p2 - p0)
-                    if np.abs(np.inner(normal, point - p0)) < eps:
-                        # co-planar point found!
-                        self.in_convex_hull[i] = True
-
-        self.obstructing_walls = [i for i in range(len(self.walls)) if not self.in_convex_hull[i]]
+        self._init_room_engine()
 
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
@@ -1443,8 +1451,9 @@ class Room(object):
                 seq = seq[:N]
 
                 # Do band-wise RIR construction
-                bp_filt = self.octave_bands.get_filters() if self.multi_band else [None]
-                bws = self.octave_bands.get_bw() if self.multi_band else [self.fs / 2]
+                is_multi_band = self.is_multi_band
+                bp_filt = self.octave_bands.get_filters(order=16) if is_multi_band else [None]
+                bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
                 rir_bands = []
                 for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
 
@@ -1989,10 +1998,9 @@ class ShoeBox(Room):
                     [Material.make_freq_flat(absorption=0.)] * n_walls)
             )
 
-        # At this point, we should determine if the simulation is single or
-        # multi-band
-        self.multi_band = not Material.all_flat(materials)
-        if self.multi_band:
+        # If some of the materials used are multi-band, we need to resample
+        # all of them to have the same number of values
+        if not Material.all_flat(materials):
             for mat in materials.values():
                 mat.resample(self.octave_bands)
 
@@ -2005,25 +2013,12 @@ class ShoeBox(Room):
                 [materials[w].get_scat() for w in self.wall_names]
                 ).T
 
-        args = [
-                self.shoebox_dim,
-                absorption_array,
-                scattering_array,
-                [],
-                self.c,  # speed of sound
-                self.max_order,
-                self.rt_args['energy_thres'],
-                self.rt_args['time_thres'],
-                self.rt_args['receiver_radius'],
-                self.rt_args['hist_bin_size'],
-                True,  # a priori we will always use a hybrid model
-                ]
-
         # Create the real room object
-        if self.dim == 2:
-            self.room_engine = libroom.Room2D(*args)
-        else:
-            self.room_engine = libroom.Room(*args)
+        self._init_room_engine(
+            self.shoebox_dim,
+            absorption_array,
+            scattering_array,
+        )
 
         self.walls = self.room_engine.walls
 
