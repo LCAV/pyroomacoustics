@@ -31,10 +31,10 @@ def ilrma(
     X,
     n_src=None,
     n_iter=20,
-    proj_back=False,
+    proj_back=True,
     W0=None,
     n_components=2,
-    return_filters=0,
+    return_filters=False,
     callback=None,
 ):
     """
@@ -70,7 +70,7 @@ def ilrma(
     -------
     Returns an (nframes, nfrequencies, nsources) array. Also returns
     the demixing matrix W (nfrequencies, nchannels, nsources)
-    if ``return_values`` keyword is True.
+    if ``return_filters`` keyword is True.
     """
     n_frames, n_freq, n_chan = X.shape
 

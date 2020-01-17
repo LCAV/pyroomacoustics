@@ -18,8 +18,6 @@ except ImportError:
     from distutils.extension import Extension
     from distutils.command.build_ext import build_ext
 
-from Cython.Build import cythonize
-
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -170,6 +168,7 @@ setup_kwargs = dict(
             'pyroomacoustics.datasets',
             'pyroomacoustics.bss',
             'pyroomacoustics.denoise',
+            'pyroomacoustics.phase',
             ],
 
         # Libroom C extension

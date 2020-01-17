@@ -119,7 +119,10 @@ Add sources and microphones
 Sources are fairly straighforward to create. They take their location as single
 mandatory argument, and a signal and start time as optional arguments.  Here we
 create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
-the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the simulation.
+the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the
+simulation.  The ``signal`` keyword argument to the
+:py:func:`pyroomacoustics.room.Room.add_source` method should be a
+one-dimensional ``numpy.ndarray`` containing the desired sound signal.
 
 .. code-block:: python
 
@@ -128,10 +131,8 @@ the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the simula
     from scipy.io import wavfile
     _, audio = wavfile.read('speech.wav')
 
-    my_source = pra.SoundSource([2.5, 3.73, 1.76], signal=audio, delay=1.3)
-
     # place the source in the room
-    room.add_source(my_source)
+    room.add_source([2.5, 3.73, 1.76], signal=audio, delay=1.3)
 
 The locations of the microphones in the array should be provided in a numpy
 ``nd-array`` of size ``(ndim, nmics)``, that is each column contains the
@@ -1288,13 +1289,14 @@ class Room(object):
         a source signal and a delay can be provided.
 
         Parameters
-        ----------
-        position: array_like (length 2 or 3 depending on room dimension)
+        -----------
+        position: ndarray, shape: (2,) or (3,)
             The location of the source in the room
-        signal: array_like, 1D, optional
+        signal: ndarray, shape: (n_samples,), optional
             The signal played by the source
-        delay: float
-            A time delay until the source starts playing the signal
+        delay: float, optional
+            A time delay until the source signal starts
+            in the simulation
         """
 
         if (not self.is_inside(np.array(position))):

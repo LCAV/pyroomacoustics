@@ -20,6 +20,7 @@ Table of contents
   pyroomacoustics.bss
   pyroomacoustics.doa
   pyroomacoustics.denoise
+  pyroomacoustics.phase
   pyroomacoustics
 
 Indices and tables

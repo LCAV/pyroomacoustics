@@ -39,9 +39,48 @@ Changed
 `Unreleased`_
 -------------
 
+Bugfix
+~~~~~~
+
+- Fixed some bugs in the documentation
+
+`0.3.1`_ - 2019-11-06
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixed a non-unicode character in ``pyroomacoustics.experimental.rt60`` breaking
+  the tests
+
+`0.3.0`_ - 2019-11-06
+---------------------
+
+Added
+~~~~~
+
+- The routine ``pyroomacoustics.experimental.measure_rt60`` to automatically
+  measure the reverberation time of impulse responses. This is useful for
+  measured and simulated responses.
+
+Bugfix
+~~~~~~
+
+- Fixed docstring and an argument of `pyroomacoustics.bss.ilrma`
+
+`0.2.0`_ - 2019-09-04
+---------------------
+
+Added
+~~~~~
+
+- Added FastMNMF (Fast Multichannel Nonnegative Matrix Factorization) to ``bss`` subpackage.
+- Griffin-Lim algorithm for phase reconstruction from STFT magnitude measurements.
+
 Changed
 ~~~~~~~
 
+- Removed the supperfluous warnings in `pyroomacoustics.transform.stft`.
 - Add option in `pyroomacoustics.room.Room.plot_rir` to set pair of channels
   to plot; useful when there's too many impulse responses.
 - Add some window functions in `windows.py` and rearranged it in alphabetical order
@@ -59,6 +98,8 @@ Bugfix
 - Set ``rcond=None`` in all calls to ``numpy.linalg.lstsq`` to remove a ``FutureWarning``
 - Add a lower bound to activations in ``pyroomacoustics.bss.auxiva`` to avoid
   underflow and divide by zero.
+- Fixed a memory leak in the C engine for polyhedral room (issue #116).
+- Fixed problem caused by dependency of setup.py on Cython (Issue #117)
 
 `0.1.23`_ - 2019-04-17
 ----------------------
@@ -276,7 +317,10 @@ Changed
 
 
 .. _NextGeneration: https://github.com/LCAV/pyroomacoustics/compare/master...next_gen_simulator
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...HEAD
+.. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
+.. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
+.. _0.2.0: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...v0.2.0
 .. _0.1.23: https://github.com/LCAV/pyroomacoustics/compare/v0.1.22...v0.1.23
 .. _0.1.22: https://github.com/LCAV/pyroomacoustics/compare/v0.1.21...v0.1.22
 .. _0.1.21: https://github.com/LCAV/pyroomacoustics/compare/v0.1.20...v0.1.21

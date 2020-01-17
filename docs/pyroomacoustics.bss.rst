@@ -19,4 +19,4 @@ Algorithms
    pyroomacoustics.bss.ilrma
    pyroomacoustics.bss.sparseauxiva
    pyroomacoustics.bss.common
-   
+   pyroomacoustics.bss.fastmnmf
