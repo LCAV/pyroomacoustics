@@ -25,9 +25,9 @@ materials = {
 }
 
 params = {
+    "ISM": {"max_order": 17, "ray_tracing": False},
     "Hybrid17": {"max_order": 17, "ray_tracing": True},
     "Hybrid3": {"max_order": 3, "ray_tracing": True},
-    "ISM": {"max_order": 17, "ray_tracing": False},
 }
 
 rirs = {}
@@ -43,16 +43,19 @@ for name, config in params.items():
         # materials=pra.Material.from_db('brickwork', 'rpg_skyline'),
         # materials=materials,
         # materials=pra.Material.from_db("brickwork"),
-        materials=pra.Material.make_freq_flat(0.07, 0.0),
+        materials=pra.Material.make_freq_flat(0.15, 0.1),
         # absorption=0.2,
         fs=16000,
         max_order=config["max_order"],
         ray_tracing=config["ray_tracing"],
-        air_absorption=True,
+        # air_absorption=True,
     )
 
+    print("Hybrid ?", shoebox.room_engine.is_hybrid_sim)
+    print("RT enabled?", shoebox.simulator_state["rt_needed"])
+
     if config["ray_tracing"]:
-        shoebox.set_ray_tracing(receiver_radius=1.)
+        shoebox.set_ray_tracing(receiver_radius=0.5, n_rays=10000)
 
     # source and mic locations
     shoebox.add_source([2, 3.1, 2])
