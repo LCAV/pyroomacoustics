@@ -373,7 +373,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1./3.)
-    times = [0.]
+    times = [t0]
 
     while times[-1] < t0 + duration:
 
@@ -1423,6 +1423,9 @@ class Room(object):
                     t_max = time.max()
                     N = int(math.ceil(t_max * self.fs))
 
+                else:
+                    t_max = 0.
+
                 if self.simulator_state["rt_needed"]:
 
                     # get the maximum length from the histograms
@@ -1464,7 +1467,7 @@ class Room(object):
                     # IS method
                     if self.simulator_state["ism_needed"]:
 
-                        alpha = src.damping[b, :] / dist
+                        alpha = src.damping[b, :] / (dist)
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder

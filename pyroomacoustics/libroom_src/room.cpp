@@ -25,6 +25,7 @@
  */
 
 #include <iostream>
+#include <algorithm>
 #include "room.hpp"
 
 const double pi = 3.14159265358979323846;
@@ -723,7 +724,11 @@ bool Room<D>::scat_ray(
       {
         //output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
         //microphones[k].log_histogram(output[k].back(), hit_point);
-        microphones[k].log_histogram(Hit(travel_dist_at_mic, scat_trans), hit_point);
+        double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
+        double m_sq = double(mic_radius) * mic_radius;
+        auto p_hit = ( 1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
+        Eigen::ArrayXf e = scat_trans / (r_sq * p_hit) ;
+        microphones[k].log_histogram(Hit(travel_dist_at_mic, e), hit_point);
       }
       else
         ret = false;
@@ -784,6 +789,8 @@ void Room<D>::simul_ray(
   float e_thres = energy_0 * energy_thres;
   float distance_thres = time_thres * sound_speed;
 
+  double m_sq = mic_radius * mic_radius;
+
   //---------------------------------------------
 
 
@@ -839,7 +846,10 @@ void Room<D>::simul_ray(
 
           //output[k].push_back(Hit(travel_dist_at_mic, transmitted));
           //microphones[k].log_histogram(output[k].back(), start);
-          microphones[k].log_histogram(Hit(travel_dist_at_mic, transmitted), start);
+          double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
+          auto p_hit = ( 1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
+          Eigen::ArrayXf e = transmitted / (r_sq * p_hit);
+          microphones[k].log_histogram(Hit(travel_dist_at_mic, e), start);
         }
       }
     }
@@ -850,7 +860,7 @@ void Room<D>::simul_ray(
     transmitted *= wall.get_energy_reflection();
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-    if (wall.scatter.maxCoeff() > 0.f && is_hybrid_sim)
+    if (wall.scatter.maxCoeff() > 0.f)
     {
       // Shoot the scattered ray
       scat_ray(
@@ -884,7 +894,8 @@ void Room<D>::get_rir_entries(
   const Vectorf<D> source_pos
   )
 {
-  float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
+  // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
+  float energy_0 = 2.f / angles.cols();
 
   for (int k(0) ; k < angles.cols() ; k++)
   {
