@@ -667,7 +667,7 @@ class Room(object):
         return multi_band
 
     def set_ray_tracing(self,
-            n_rays=10000,
+            n_rays=None,
             receiver_radius=0.5,
             energy_thres=1e-7,
             time_thres=10.,
@@ -692,6 +692,11 @@ class Room(object):
         """
 
         self.simulator_state["rt_needed"] = True
+
+        if n_rays is None:
+            # Try to set a sensible default based on the room volume
+            k1 = self.volume / (np.pi * receiver_radius ** 2 * self.c * hist_bin_size)
+            n_rays = 4 * int(k1)
 
         self.rt_args = {}
         self.rt_args["n_rays"] = n_rays
@@ -1457,10 +1462,9 @@ class Room(object):
 
                 # Do band-wise RIR construction
                 is_multi_band = self.is_multi_band
-                bp_filt = self.octave_bands.get_filters(order=16) if is_multi_band else [None]
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
                 rir_bands = []
-                for b, [bpf, bw] in enumerate(zip(bp_filt, bws)):
+                for b, bw in enumerate(bws):
 
                     ir_loc = np.zeros_like(ir)
 
@@ -1479,16 +1483,16 @@ class Room(object):
                         time_adjust = time + fdl2 / self.fs
                         fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
 
-                        if bpf is not None:
-                            ir_loc = bpf(ir_loc)
+                        if is_multi_band:
+                            ir_loc = self.octave_bands.analysis(ir_loc, band=b)
 
                         ir += ir_loc
 
                     # Ray Tracing
                     if self.simulator_state["rt_needed"]:
 
-                        if bpf is not None:
-                            seq_bp = bpf(seq)
+                        if is_multi_band:
+                            seq_bp = self.octave_bands.analysis(seq, band=b)
                         else:
                             seq_bp = seq.copy()
 
@@ -1517,10 +1521,7 @@ class Room(object):
 
                     # In case this was not multi-band, do the band pass filtering
                     if len(rir_bands) == 1:
-                        new_bands = []
-                        for bpf in self.octave_bands.get_filters():
-                            new_bands.append(bpf(rir_bands[0]))
-                        rir_bands = new_bands
+                        rir_bands = self.octave_bands.analysis(rir_bands[0]).T
 
                     # Now apply air absorption
                     for band, air_abs in zip(rir_bands, self.air_absorption):
@@ -1834,6 +1835,10 @@ class Room(object):
 
         return wall_sum / 3.
 
+    @property
+    def volume(self):
+        return self.get_volume()
+
 
 class ShoeBox(Room):
     '''
@@ -2049,3 +2054,13 @@ class ShoeBox(Room):
 
         # update the shoebox dim
         self.shoebox_dim = np.append(self.shoebox_dim, height)
+
+    def get_volume(self):
+
+        """
+        Computes the volume of a room
+        :param room: the room object
+        :return: the volume in cubic unit
+        """
+
+        return np.prod(self.shoebox_dim)

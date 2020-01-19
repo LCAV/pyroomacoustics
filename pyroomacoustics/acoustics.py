@@ -27,7 +27,7 @@ from __future__ import division
 
 import math
 import numpy as np
-from scipy.signal import butter, sosfiltfilt
+from scipy.signal import butter, sosfiltfilt, fftconvolve
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
 from .stft import stft
@@ -156,21 +156,54 @@ class OctaveBandsFactory(object):
         Use third octave bands if True (default: False)
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, third=False):
+    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
 
         self.base_freq = base_frequency
         self.fs = fs
+        self.n_fft = n_fft
 
         # compute the number of bands
         self.n_bands = math.floor(np.log2(fs / base_frequency))
 
         self.bands, self.centers = octave_bands(
-            fc=self.base_freq, n=self.n_bands, third=third
+            fc=self.base_freq, n=self.n_bands, third=False
         )
+
+        self._make_filters()
 
     def get_bw(self):
         """ Returns the bandwidth of the bands """
         return np.array([b2 - b1 for b1, b2 in self.bands])
+
+    def analysis(self, x, band=None):
+        """
+        Process a signal x through the filter bank
+
+        Parameters
+        ----------
+        x: ndarray (n_samples)
+            The input signal
+
+        Returns
+        -------
+        ndarray (n_samples, n_bands)
+            The input signal filters through all the bands
+        """
+
+        if band is None:
+            bands = range(self.filters.shape[1])
+        else:
+            bands = [band]
+
+        output = np.zeros((x.shape[0], self.filters.shape[1]), dtype=x.dtype)
+
+        for b in bands:
+            output[:, b] = fftconvolve(x, self.filters[:, b], mode="same")
+
+        if band is None:
+            return output
+        else:
+            return output[:, 0]
 
     def __call__(self, coeffs=0., center_freqs=None, interp_kind="linear", **kwargs):
         """
@@ -221,7 +254,7 @@ class OctaveBandsFactory(object):
 
         return ret
 
-    def get_filters(self, order=8, output="sos"):
+    def _make_filters(self):
         """
         Create the IIR band-pass filters for the octave bands
 
@@ -238,11 +271,45 @@ class OctaveBandsFactory(object):
         A list of callables that will each apply one of the band-pass filters
         """
 
+        """
         filter_bank = bandpass_filterbank(
             self.bands, fs=self.fs, order=order, output=output
         )
 
         return [lambda sig: sosfiltfilt(bpf, sig) for bpf in filter_bank]
+        """
+
+        # This seems to work only for Octave bands out of the box
+        centers = self.centers
+        n = len(self.centers)
+
+        new_bands = [[centers[0] / 2, centers[1]]]
+        for i in range(1, n - 1):
+            new_bands.append([centers[i - 1], centers[i + 1]])
+        new_bands.append([centers[-2], self.fs / 2])
+
+        n_freq = self.n_fft // 2 + 1
+        freq_resp = np.zeros((n_freq, n))
+        freq = np.arange(n_freq) / self.n_fft * self.fs
+
+        for b, (band, center) in enumerate(zip(new_bands, centers)):
+            lo = np.logical_and(band[0] <= freq, freq < center)
+            freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
+
+            if b != n - 1:
+                hi = np.logical_and(center <= freq, freq < band[1])
+                freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
+            else:
+                hi = center <= freq
+                freq_resp[hi, b] = 0.5
+
+        filters = np.fft.fftshift(
+            np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
+            axes=[0],
+        )
+
+        # remove the first sample to make them odd-length symmetric filters
+        self.filters = filters[1:, :]
 
 
 def critical_bands():
