@@ -216,14 +216,19 @@ class Room
         float energy_0
         );
 
-    void get_rir_entries(
+    void ray_tracing(
         const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
         const Vectorf<D> source_pos
         );
 
-    void get_rir_entries(
+    void ray_tracing(
         size_t nb_phis,
         size_t nb_thetas,
+        const Vectorf<D> source_pos
+        );
+
+    void ray_tracing(
+        size_t n_rays,
         const Vectorf<D> source_pos
         );
 

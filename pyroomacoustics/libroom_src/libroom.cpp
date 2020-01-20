@@ -69,21 +69,28 @@ PYBIND11_MODULE(libroom, m) {
     .def("next_wall_hit", &Room<3>::next_wall_hit)
     .def("scat_ray", &Room<3>::scat_ray)
     .def("simul_ray", &Room<3>::simul_ray)
-    .def("get_rir_entries",
+    .def("ray_tracing",
         (void (Room<3>::*)(
                              const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
                              const Vectorf<3> source_pos
                              )
         )
-        &Room<3>::get_rir_entries)
-    .def("get_rir_entries",
+        &Room<3>::ray_tracing)
+    .def("ray_tracing",
         (void (Room<3>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
                              const Vectorf<3> source_pos
                              )
         )
-        &Room<3>::get_rir_entries)
+        &Room<3>::ray_tracing)
+    .def("ray_tracing",
+        (void (Room<3>::*)(
+                             size_t nb_rays,
+                             const Vectorf<3> source_pos
+                             )
+        )
+        &Room<3>::ray_tracing)
     .def("contains", &Room<3>::contains)
     .def_property("is_hybrid_sim", &Room<3>::get_is_hybrid_sim, &Room<3>::set_is_hybrid_sim)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
@@ -124,21 +131,28 @@ PYBIND11_MODULE(libroom, m) {
     .def("next_wall_hit", &Room<2>::next_wall_hit)
     .def("scat_ray", &Room<2>::scat_ray)
     .def("simul_ray", &Room<2>::simul_ray)
-    .def("get_rir_entries",
+    .def("ray_tracing",
         (void (Room<2>::*)(
                              const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
                              const Vectorf<2> source_pos
                             )
         )
-        &Room<2>::get_rir_entries)
-    .def("get_rir_entries",
+        &Room<2>::ray_tracing)
+    .def("ray_tracing",
         (void (Room<2>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
                              const Vectorf<2> source_pos
                             )
         )
-        &Room<2>::get_rir_entries)
+        &Room<2>::ray_tracing)
+    .def("ray_tracing",
+        (void (Room<2>::*)(
+                             size_t n_rays,
+                             const Vectorf<2> source_pos
+                            )
+        )
+        &Room<2>::ray_tracing)
     .def("contains", &Room<2>::contains)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_property("is_hybrid_sim", &Room<2>::get_is_hybrid_sim, &Room<2>::set_is_hybrid_sim)

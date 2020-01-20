@@ -5,10 +5,13 @@ room impulse responses of shoebox shaped rooms in 3d.
 
 from __future__ import print_function
 
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 
 import pyroomacoustics as pra
+
+np.random.seed(0)
 
 # room dimension
 room_dim = [7.5, 10.0, 3.1]
@@ -25,8 +28,8 @@ materials = {
 }
 
 params = {
-    "ISM": {"max_order": 150, "ray_tracing": False},
-    "Hybrid17": {"max_order": 30, "ray_tracing": True},
+    "ISM17": {"max_order": 17, "ray_tracing": False},
+    "Hybrid17": {"max_order": 17, "ray_tracing": True},
     "Hybrid3": {"max_order": 3, "ray_tracing": True},
     "Hybrid0": {"max_order": -1, "ray_tracing": True},
 }
@@ -37,9 +40,9 @@ def make_room(config):
     shoebox = pra.ShoeBox(
         room_dim,
         # materials=pra.Material.from_db('brickwork', 'rpg_skyline'),
-        # materials=materials,
+        materials=materials,
         # materials=pra.Material.from_db("brickwork"),
-        materials=pra.Material.make_freq_flat(0.07),
+        # materials=pra.Material.make_freq_flat(0.07),
         # absorption=0.2,
         fs=16000,
         max_order=config["max_order"],
@@ -59,6 +62,13 @@ def make_room(config):
     return shoebox
 
 
+def chrono(f, *args, **kwargs):
+    t = time.perf_counter()
+    ret = f(*args, **kwargs)
+    runtime = time.perf_counter() - t
+    return runtime, ret
+
+
 rirs = {}
 
 plt.figure()
@@ -69,25 +79,26 @@ for name, config in params.items():
 
     shoebox = make_room(config)
 
-    shoebox.image_source_model()
-    shoebox.ray_tracing()
-    shoebox.compute_rir()
+    t_ism, _ = chrono(shoebox.image_source_model)
+    t_rt, _ = chrono(shoebox.ray_tracing)
+    t_rir, _ = chrono(shoebox.compute_rir)
 
     rir = shoebox.rir[0][0].copy()
     rirs[name] = rir
 
-    print(
-        f"{name}: RT60 == ",
-        pra.experimental.measure_rt60(rir, shoebox.fs, decay_db=60),
-    )
-
-    time = np.arange(rir.shape[0]) / shoebox.fs
+    time_vec = np.arange(rir.shape[0]) / shoebox.fs
     plt.figure(1)
-    plt.plot(time, rir, label=name)
+    plt.plot(time_vec, rir, label=name)
     plt.legend()
 
     plt.figure(2)
-    pra.experimental.measure_rt60(rir, plot=True, decay_db=60, fs=shoebox.fs)
+    rt60 = pra.experimental.measure_rt60(rir, plot=True, decay_db=60, fs=shoebox.fs)
+
+    print(
+        f"{name}: RT60 == {rt60:.3f} t_ism == {t_ism:.6f} "
+        f"t_rt == {t_rt:.6f} t_rir == {t_rir:.6f}"
+    )
+
 
 plt.legend()
 plt.show()

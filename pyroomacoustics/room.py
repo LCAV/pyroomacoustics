@@ -1367,17 +1367,12 @@ class Room(object):
         if not self.simulator_state["rt_needed"]:
             return
 
-        if self.dim == 2:
-            grid = GridCircle(n_points=self.rt_args['n_rays'])
-        else:
-            grid = GridSphere(n_points=self.rt_args['n_rays'])
-
         # this will be a list of lists with
         # shape (n_mics, n_src, n_directions, n_bands, n_time_bins)
         self.rt_histograms = [[] for r in range(self.mic_array.M)]
 
         for s, src in enumerate(self.sources):
-            self.room_engine.get_rir_entries(grid.spherical, src.position)
+            self.room_engine.ray_tracing(self.rt_args["n_rays"], src.position)
 
             for r in range(self.mic_array.M):
                 self.rt_histograms[r].append([])

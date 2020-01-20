@@ -97,12 +97,17 @@ class Microphone
       hits.push_back(copy_hit);
     }
 
-    void log_histogram(const Hit &the_hit, const Vectorf<D> &origin)
+    void log_histogram(float distance, const Eigen::ArrayXf &energy, const Vectorf<D> &origin)
     {
       // first find the bin index
-      auto dist_bin_index = size_t(the_hit.distance / hist_resolution);
+      auto dist_bin_index = size_t(distance / hist_resolution);
       auto dir_index = get_dir_bin(origin);
-      histograms[dir_index].log_col(dist_bin_index, the_hit.transmitted);
+      histograms[dir_index].log_col(dist_bin_index, energy);
+    }
+
+    void log_histogram(const Hit &the_hit, const Vectorf<D> &origin)
+    {
+      log_histogram(the_hit.distance, the_hit.transmitted, origin);
     }
 };
 

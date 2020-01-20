@@ -206,7 +206,6 @@ class GridSphere(Grid):
             self.azimuth[:] = np.arctan2(self.y, self.x)
             self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
 
-        
         # To perform the peak detection in 2D on a non-squared grid it is
         # necessary to know the neighboring points of each grid point.  The
         # Convex Hull of points on the sphere is equivalent to the Delauney

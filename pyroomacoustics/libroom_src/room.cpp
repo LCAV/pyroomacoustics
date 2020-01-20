@@ -724,11 +724,10 @@ bool Room<D>::scat_ray(
       {
         //output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
         //microphones[k].log_histogram(output[k].back(), hit_point);
-        double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
-        double m_sq = double(mic_radius) * mic_radius;
-        auto p_hit = ( 1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
-        Eigen::ArrayXf e = scat_trans / (r_sq * p_hit) ;
-        microphones[k].log_histogram(Hit(travel_dist_at_mic, e), hit_point);
+        float r_sq = travel_dist_at_mic * travel_dist_at_mic;
+        auto p_hit = (1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
+        Eigen::ArrayXf energy = scat_trans / (r_sq * p_hit) ;
+        microphones[k].log_histogram(travel_dist_at_mic, energy, hit_point);
       }
       else
         ret = false;
@@ -778,6 +777,7 @@ void Room<D>::simul_ray(
 
   // The ray's characteristics
   Eigen::ArrayXf transmitted = Eigen::ArrayXf::Ones(n_bands) * energy_0;
+  Eigen::ArrayXf energy = Eigen::ArrayXf::Ones(n_bands);
   float travel_dist = 0;
   
   // To count the number of times the ray bounces on the walls
@@ -844,12 +844,10 @@ void Room<D>::simul_ray(
           //   because the ray will continue its way          
           float travel_dist_at_mic = travel_dist + distance;
 
-          //output[k].push_back(Hit(travel_dist_at_mic, transmitted));
-          //microphones[k].log_histogram(output[k].back(), start);
           double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
-          auto p_hit = ( 1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
-          Eigen::ArrayXf e = transmitted / (r_sq * p_hit);
-          microphones[k].log_histogram(Hit(travel_dist_at_mic, e), start);
+          auto p_hit = (1 - sqrt(1 - m_sq / std::max(m_sq, r_sq)));
+          energy = transmitted / (r_sq * p_hit);
+          microphones[k].log_histogram(travel_dist_at_mic, energy, start);
         }
       }
     }
@@ -889,7 +887,7 @@ void Room<D>::simul_ray(
 
 
 template<size_t D>
-void Room<D>::get_rir_entries(
+void Room<D>::ray_tracing(
   const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
   const Vectorf<D> source_pos
   )
@@ -911,7 +909,7 @@ void Room<D>::get_rir_entries(
 
 
 template<size_t D>
-void Room<D>::get_rir_entries(
+void Room<D>::ray_tracing(
     size_t nb_phis,
     size_t nb_thetas,
     const Vectorf<D> source_pos
@@ -921,12 +919,12 @@ void Room<D>::get_rir_entries(
 
   /*This method produced all the time/energy entries needed to compute
    the RIR using ray-tracing with the following parameters
-    
+
    nb_phis: the number of different planar directions that will be used
    nb_thetas: the number of different elevation angles that will be used
      (NOTE: nb_phis*nb_thetas is the number of simulated rays
    source_pos: (array size 2 or 3) represents the position of the sound source
-   
+
    :returns: 
    a std::vector where each entry is a tuple (time, energy)
    reprensenting a ray (scattered or not) reaching the microphone
@@ -935,7 +933,7 @@ void Room<D>::get_rir_entries(
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = 4.f / (mic_radius * mic_radius * nb_phis * nb_thetas);
+  float energy_0 = 2.f / (nb_phis * nb_thetas);
 
   // ------------------ RAY TRACING --------------------
 
@@ -964,6 +962,56 @@ void Room<D>::get_rir_entries(
         break;
       }
     }
+  }
+}
+
+
+template<size_t D>
+void Room<D>::ray_tracing(
+    size_t n_rays,
+    const Vectorf<D> source_pos
+    )
+{
+  /*This method produced all the time/energy entries needed to compute
+   the RIR using ray-tracing with the following parameters
+
+   n_rays: the number of rays to use, rays are sampled pseudo-uniformly from
+      the sphere using the Fibonacci algorithm
+   source_pos: (array size 2 or 3) represents the position of the sound source
+   */
+
+
+  // ------------------ INIT --------------------
+  // initial energy of one ray
+  float energy_0 = 2.f / n_rays;
+
+  // ------------------ RAY TRACING --------------------
+  if (D == 3)
+  {
+    auto offset = 2.f / n_rays;
+    auto increment = pi * (3.f - sqrt(5.f));  // phi increment
+
+    for (size_t i(0); i < n_rays ; ++i)
+    {
+      auto z = (i * offset - 1) + offset / 2.f;
+      auto rho = sqrt(1.f - z * z);
+
+      float phi = i * increment;
+
+      auto x = cos(phi) * rho;
+      auto y = sin(phi) * rho;
+
+      auto azimuth = atan2(y, x);
+      auto colatitude = atan2(sqrt(x * x + y * y), z);
+
+      simul_ray(azimuth, colatitude, source_pos, energy_0);
+    }
+  }
+  else if (D == 2)
+  {
+    float offset = 2. * pi / n_rays;
+    for (size_t i(0) ; i < n_rays ; ++i)
+      simul_ray(i * offset, 0.f, source_pos, energy_0);
   }
 }
 

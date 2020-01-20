@@ -19,20 +19,22 @@ from scipy.io import wavfile
 # Create the 2D L-shaped room from the floor polygon
 pol = np.array([[0,0], [0,10], [10,7.5], [7.5,6], [5,6], [5,0]]).T
 r_absor = 0.1
+mat = pra.Material.make_freq_flat(0.3, 0.1)
 room = pra.Room.from_corners(
         pol,
         fs=16000,
-        absorption=r_absor,
-        materials=pra.Material.make_freq_flat(0.3, 0.2),
+        # absorption=r_absor,
+        materials=mat,
         max_order=3,
         ray_tracing=True,
         air_absorption=True,
         )
-room.set_ray_tracing(receiver_radius=0.5, energy_thres=1e-5)
 
 # # Create the 3D room by extruding the 2D by 10 meters
 height = 10.
-room.extrude(height, absorption=r_absor)
+room.extrude(height, materials=mat)
+
+room.set_ray_tracing(receiver_radius=0.5, energy_thres=1e-5)
 
 # # Add a source somewhere in the room
 fs, audio_anechoic = wavfile.read('examples/input_samples/cmu_arctic_us_aew_a0001.wav')
