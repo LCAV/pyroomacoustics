@@ -69,12 +69,14 @@ class TestRayEnergy(unittest.TestCase):
         histogram_gt = SimpleHistogram(hist_bin_size * pra.constants.get("c"))
 
         # Create the groundtruth list of energy and travel time
-        initial_energy = 4. / detector_radius ** 2  # defined in libroom.Room.get_rir_entries
+        initial_energy = 2.  # defined in libroom.Room.get_rir_entries
         transmitted = 1.0 * (1. - absorption) ** 2 * initial_energy
         distance = round_trip / 2.0
 
         while transmitted / distance > energy_thresh:
-            histogram_gt.add(distance, transmitted)
+            r_sq = distance ** 2
+            p_hit = 1. - np.sqrt(1. - detector_radius ** 2 / r_sq)
+            histogram_gt.add(distance, transmitted / (r_sq * p_hit))
             transmitted *= (1. - absorption) ** 4     # 4 wall hits
             distance += round_trip
 
@@ -96,7 +98,7 @@ class TestRayEnergy(unittest.TestCase):
         )
 
         print("Running ray tracing")
-        room.room_engine.get_rir_entries(
+        room.room_engine.ray_tracing(
             np.c_[[-np.pi / 4.0, np.pi / 2.0]], room.sources[0].position  # source loc
         )
 
