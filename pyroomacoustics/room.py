@@ -337,6 +337,7 @@ from scipy.interpolate import interp1d
 
 from . import beamforming as bf
 from .soundsource import SoundSource
+from .beamforming import MicrophoneArray
 from .acoustics import OctaveBandsFactory
 from .parameters import constants, eps, Physics, Material
 from .utilities import fractional_delay
@@ -1283,11 +1284,82 @@ class Room(object):
 
         plt.tight_layout()
 
-    def add_microphone_array(self, micArray):
-        self.mic_array = micArray
+    def add(self, obj):
+        """
+        Adds a sound source or microphone to a room
 
-        for m in range(self.mic_array.M):
-            self.room_engine.add_mic(self.mic_array.R[:,None,m])
+        Parameters
+        ----------
+        obj: SoundSource or Microphone object
+            The object to add
+
+        Returns
+        -------
+        room: Room
+            Returns the room object for further operations
+        """
+
+        if isinstance(obj, SoundSource):
+
+            if obj.dim != self.dim:
+                raise ValueError(
+                    f"The Room and SoundSource objects must be of the same "
+                    f"dimensionality. The Room is {self.dim}D but the SoundSource "
+                    f"is {obj.dim}D"
+                )
+
+            if not self.is_inside(np.array(obj.position)):
+                raise ValueError('The source must be added inside the room.')
+
+            self.sources.append(obj)
+
+        elif isinstance(obj, MicrophoneArray):
+
+            if obj.dim != self.dim:
+                raise ValueError(
+                    f"The Room and MicrophoneArray objects must be of the same "
+                    f"dimensionality. The Room is {self.dim}D but the SoundSource "
+                    f"is {obj.dim}D"
+                )
+
+            if "mic_array" not in self.__dict__ or self.mic_array is None:
+                self.mic_array = obj
+            else:
+                self.mic_array.append(obj)
+
+            # microphone need to be added to the room_engine
+            for m in range(len(obj)):
+                self.room_engine.add_mic(obj.R[:, None, m])
+
+        else:
+            raise TypeError(
+                "The add method from Room only takes SoundSource or "
+                "MicrophoneArray objects as parameter"
+            )
+
+        return self
+
+    def add_microphone(self, loc, fs=None):
+
+        # make sure this is a 
+        loc = np.array(loc)
+
+        # if array, make it a 2D array as expected
+        if loc.ndim == 1:
+            loc = loc[:, None]
+
+        if fs is None:
+            fs = self.fs
+
+        return self.add(MicrophoneArray(loc, fs))
+
+    def add_microphone_array(self, mic_array):
+
+        if not isinstance(mic_array, MicrophoneArray):
+            # if the type is not a microphone array, try to parse a numpy array
+            mic_array = MicrophoneArray(mic_array, self.fs)
+
+        return self.add(mic_array)
 
     def add_source(self, position, signal=None, delay=0):
         """
@@ -1305,16 +1377,10 @@ class Room(object):
             in the simulation
         """
 
-        if (not self.is_inside(np.array(position))):
-            raise ValueError('The source must be added inside the room.')
-
-        self.sources.append(
-                SoundSource(
-                    position,
-                    signal=signal,
-                    delay=delay
-                    )
-                )
+        if isinstance(position, SoundSource):
+            return self.add(position)
+        else:
+            return self.add(SoundSource(position, signal=signal, delay=delay))
 
     def add_soundsource(self, sndsrc):
         """
@@ -1326,10 +1392,7 @@ class Room(object):
             The SoundSource object to add to the room
         """
 
-        if (not self.is_inside(sndsrc.position)):
-            raise ValueError('The source must be added inside the room.')
-
-        self.sources.append(sndsrc)
+        return self.add(sndsrc)
 
     def image_source_model(self):
 

@@ -284,9 +284,22 @@ class MicrophoneArray(object):
     def __init__(self, R, fs):
 
         R = np.array(R)
-
         self.dim = R.shape[0]   # are we in 2D or in 3D
-        self.M = R.shape[1]     # number of microphones
+
+        # Check the shape of the passed array
+        if self.dim != 2 and self.dim != 3:
+            dim_mismatch = True
+        else:
+            dim_mismatch = False
+
+        if R.ndim != 2 or dim_mismatch:
+            raise ValueError(
+                "The location of microphones should be described by an array_like "
+                "object with 2 dimensions of shape `(2 or 3, n_mics)` "
+                "where `n_mics` is the number of microphones. Each column contains "
+                "the location of a microphone."
+            )
+
         self.R = R              # array geometry
 
         self.fs = fs            # sampling frequency of microphones
@@ -294,7 +307,6 @@ class MicrophoneArray(object):
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
-
 
     def record(self, signals, fs):
         '''
@@ -337,7 +349,6 @@ class MicrophoneArray(object):
 
         else:
             self.signals = signals
-
 
     def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
         '''
@@ -386,6 +397,36 @@ class MicrophoneArray(object):
         signal = np.array(signal, dtype=bitdepth)
 
         wavfile.write(filename, self.fs, signal)
+
+    def append(self, locs):
+        """
+        Add some microphones to the array
+
+        Parameters
+        ----------
+        locs: numpy.ndarray (2 or 3, n_mics)
+            Adds `n_mics` microphones to the array. The coordinates are passed as
+            a `numpy.ndarray` with each column containing the coordinates of a
+            microphone.
+        """
+        self.R = np.concatenate((self.R, locs), axis=1)
+
+        # in case there was already some signal recorded, just pad with zeros
+        if self.signals is not None:
+            self.signals = np.concatenate((
+                self.signals,
+                np.zeros(
+                    (locs.shape[1], self.signals.shape[1]), dtype=self.signals.dtype
+                )),
+                axis=0,
+            )
+
+    def __len__(self):
+        return self.R.shape[1]
+
+    @property
+    def M(self):
+        return self.__len__()
 
 
 class Beamformer(MicrophoneArray):

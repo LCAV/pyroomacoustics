@@ -22,16 +22,34 @@ class SoundSource(object):
     def __init__(
             self,
             position,
-            images=None, #source position
+            images=None,  # source position
             damping=None,
-            generators=None, #parent source
-            walls=None, #generating wall
+            generators=None,  # parent source
+            walls=None,  # generating wall
             orders=None,
             signal=None,
             delay=0):
 
-        self.position = np.array(position)
-        self.dim = self.position.shape[0]
+        position = np.array(position)
+        self.dim = position.shape[0]
+
+        # Check the shape of the passed array
+        if self.dim != 2 and self.dim != 3:
+            dim_mismatch = True
+        else:
+            dim_mismatch = False
+
+        if position.ndim == 2 and position.shape[1] == 1:
+            position = position[:, 0]
+
+        if position.ndim != 1 or dim_mismatch:
+            raise ValueError(
+                "The source location of microphones should be provided as an object "
+                "that can be converted to a numpy.ndarray. The array should be of "
+                "shape `(2,)`, `(2, 1)`, `(3,)`, or `(3, 1)`."
+            )
+
+        self.position = position
 
         if (images is None):
             # set to empty list if nothing provided
