@@ -710,10 +710,8 @@ class Room(object):
         if n_rays is None:
             # Try to set a sensible default based on the room volume
             k1 = self.get_volume() / (np.pi * (self.rt_args["receiver_radius"] ** 2) * self.c * self.rt_args["hist_bin_size"])
-            print(k1)
             n_rays = 20 * int(k1)
         self.rt_args["n_rays"] = n_rays
-        print(self.rt_args)
 
 
         self._update_room_engine_params()
