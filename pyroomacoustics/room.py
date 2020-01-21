@@ -1302,11 +1302,11 @@ class Room(object):
         if isinstance(obj, SoundSource):
 
             if obj.dim != self.dim:
-                raise ValueError(
-                    f"The Room and SoundSource objects must be of the same "
-                    f"dimensionality. The Room is {self.dim}D but the SoundSource "
-                    f"is {obj.dim}D"
-                )
+                raise ValueError((
+                    "The Room and SoundSource objects must be of the same "
+                    "dimensionality. The Room is {}D but the SoundSource "
+                    "is {}D"
+                ).format(self.dim, obj.dim))
 
             if not self.is_inside(np.array(obj.position)):
                 raise ValueError('The source must be added inside the room.')
@@ -1316,11 +1316,11 @@ class Room(object):
         elif isinstance(obj, MicrophoneArray):
 
             if obj.dim != self.dim:
-                raise ValueError(
-                    f"The Room and MicrophoneArray objects must be of the same "
-                    f"dimensionality. The Room is {self.dim}D but the SoundSource "
-                    f"is {obj.dim}D"
-                )
+                raise ValueError((
+                    "The Room and MicrophoneArray objects must be of the same "
+                    "dimensionality. The Room is {}D but the SoundSource "
+                    "is {}D"
+                ).format(self.dim, obj.dim))
 
             if "mic_array" not in self.__dict__ or self.mic_array is None:
                 self.mic_array = obj

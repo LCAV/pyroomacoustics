@@ -81,8 +81,8 @@ class TOPS(MUSIC):
                 self._subspace_decomposition(C_hat[k,:,:])
 
         # create transformation matrix
-        f = 1.0/self.nfft/self.c*1j*2*np.pi*self.fs*(np.linspace(0,self.nfft/2,
-            self.nfft/2+1)-f0)
+        f = 1.0/self.nfft/self.c*1j*2*np.pi*self.fs*(np.linspace(0, self.nfft // 2,
+            self.nfft // 2+1)-f0)
 
         Phi = np.zeros((len(f),self.M,self.grid.n_points), dtype='complex64')
 
