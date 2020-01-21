@@ -37,27 +37,24 @@ params = {
 
 def make_room(config):
 
-    shoebox = pra.ShoeBox(
-        room_dim,
-        # materials=pra.Material.from_db('brickwork', 'rpg_skyline'),
-        materials=materials,
-        # materials=pra.Material.from_db("brickwork"),
-        # materials=pra.Material.make_freq_flat(0.07),
-        # absorption=0.2,
-        fs=16000,
-        max_order=config["max_order"],
-        ray_tracing=config["ray_tracing"],
-        air_absorption=True,
+    shoebox = (
+        pra.ShoeBox(
+            room_dim,
+            materials=materials,
+            # materials=pra.Material.make_freq_flat(0.07),
+            fs=16000,
+            max_order=config["max_order"],
+            ray_tracing=config["ray_tracing"],
+            air_absorption=True,
+        )
+        .add_source([2.5, 7.1, 2])
+        .add_microphone([2, 1.5, 2])
     )
 
     if config["ray_tracing"]:
         shoebox.set_ray_tracing(receiver_radius=0.5, n_rays=10000)
 
     # source and mic locations
-    shoebox.add_source([2.5, 7.1, 2])
-    shoebox.add_microphone_array(
-        pra.MicrophoneArray(np.array([[2, 1.5, 2]]).T, shoebox.fs)
-    )
 
     return shoebox
 
