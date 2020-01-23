@@ -13,7 +13,7 @@ def test_issue_115_ism_breaking():
     print("Test with source close to microphone.")
     shoebox = pra.ShoeBox(
         [9.29447785567344, 6.529510207957697, 4.4677460263160995],
-        materials=pra.Material.make_freq_flat(absorption=0.1675976883006225),
+        materials=pra.Material.make_freq_flat(energy_absorption=0.1675976883006225),
         fs=16000,
         max_order=17
     )
@@ -46,7 +46,7 @@ def test_issue_115_rt_breaking():
     print("Test with high order ISM")
     shoebox = pra.ShoeBox(
         [4.232053263716528, 3.9244954007318853, 5.563810437305445],
-        materials=pra.Material.make_freq_flat(absorption=0.6965517438548237),
+        materials=pra.Material.make_freq_flat(energy_absorption=0.6965517438548237),
         fs=16000,
         max_order=17,
         ray_tracing=True,

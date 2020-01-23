@@ -202,7 +202,6 @@ class Physics(object):
         return cls(temperature=T, humidity=H)
 
 
-
 r"""
 Material Properties
 -------------------
@@ -287,7 +286,7 @@ class Material(object):
 
     Attributes
     ----------
-    absorption: dict
+    energy_absorption: dict
         A dictionary containing keys ``description``, ``coeffs``, and
         ``center_freqs``.
     scattering: dict
@@ -295,19 +294,19 @@ class Material(object):
         ``center_freqs``.
     """
 
-    def __init__(self, absorption, scattering):
+    def __init__(self, energy_absorption, scattering):
 
-        # checks for `absorption` dict
-        assert isinstance(absorption, dict), '`absorption` must be a ' \
+        # checks for `energy_absorption` dict
+        assert isinstance(energy_absorption, dict), '`energy_absorption` must be a ' \
                                              'dictionary with the keys ' \
                                              '`coeffs` and `center_freqs`.'
-        assert 'coeffs' in absorption.keys(), 'Missing `coeffs` keys in ' \
-                                              '`absorption` dict.'
-        if len(absorption['coeffs']) > 1:
-            assert len(absorption['coeffs']) == \
-                   len(absorption['center_freqs']), \
-                "Length of `absorption['coeffs']` and " \
-                "absorption['center_freqs'] must match."
+        assert 'coeffs' in energy_absorption.keys(), 'Missing `coeffs` keys in ' \
+                                              '`energy_absorption` dict.'
+        if len(energy_absorption['coeffs']) > 1:
+            assert len(energy_absorption['coeffs']) == \
+                   len(energy_absorption['center_freqs']), \
+                "Length of `energy_absorption['coeffs']` and " \
+                "energy_absorption['center_freqs'] must match."
 
         # checks for `scattering` dict
         assert isinstance(scattering, dict), '`scattering` must be a ' \
@@ -321,7 +320,7 @@ class Material(object):
                 "Length of `scattering['coeffs']` and " \
                 "scattering['center_freqs'] must match."
 
-        self.absorption = absorption
+        self.energy_absorption = energy_absorption
         self.scattering = scattering
 
     def is_freq_flat(self):
@@ -330,22 +329,24 @@ class Material(object):
         frequency, ``False`` otherwise.
         """
         return (
-            len(self.absorption["coeffs"]) == 1 and
+            len(self.energy_absorption["coeffs"]) == 1 and
             len(self.scattering["coeffs"]) == 1
         )
 
-    def get_abs(self):
-        """ shorthand to the absorption coefficients """
-        return self.absorption["coeffs"]
+    @property
+    def absorption_coeffs(self):
+        """ shorthand to the energy absorption coefficients """
+        return self.energy_absorption["coeffs"]
 
-    def get_scat(self):
+    @property
+    def scattering_coeffs(self):
         """ shorthand to the scattering coefficients """
         return self.scattering["coeffs"]
 
     def resample(self, octave_bands):
         """ resample at given octave bands """
-        self.absorption = {
-            "coeffs": octave_bands(**self.absorption),
+        self.energy_absorption = {
+            "coeffs": octave_bands(**self.energy_absorption),
             "center_freqs": octave_bands.centers,
         }
         self.scattering = {
@@ -372,18 +373,18 @@ class Material(object):
         )
 
     @classmethod
-    def make_freq_flat(cls, absorption=0.0, scattering=0.0):
+    def make_freq_flat(cls, energy_absorption=0.0, scattering=0.0):
         """
         Construct a material with flat characteristics over frequency
 
         Parameters
         ----------
-        absorption: float
-            The absorption coefficient
+        energy_absorption: float
+            The sound energy absorption coefficient
         scattering: float
             The scattering coefficient
         """
-        return cls({"coeffs": [absorption]}, {"coeffs": [scattering]})
+        return cls({"coeffs": [energy_absorption]}, {"coeffs": [scattering]})
 
     @classmethod
     def all_flat(cls, materials):

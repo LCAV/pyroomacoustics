@@ -866,8 +866,8 @@ class Room(object):
         for i in range(n_walls):
             walls.append(wall_factory(
                 np.array([corners[:, i], corners[:, (i+1) % n_walls]]).T,
-                materials[i].get_abs(),
-                materials[i].get_scat(),
+                materials[i].absorption_coeffs,
+                materials[i].scattering_coeffs,
                 "wall_"+str(i),
                 ))
 
@@ -1012,8 +1012,8 @@ class Room(object):
         for key in ["floor", "ceiling"]:
             walls.append(wall_factory(
                 new_corners[key],
-                materials[key].get_abs(),
-                materials[key].get_scat(),
+                materials[key].absorption_coeffs,
+                materials[key].scattering_coeffs,
                 name=key,
                 ))
 
@@ -2052,7 +2052,7 @@ class ShoeBox(Room):
                     # <=> a2 == 1 - (1 - a1) ** 2
                     correct_abs = 1. - (1. - absorption[w_name]) ** 2
                     materials[w_name] = Material.make_freq_flat(
-                        absorption=correct_abs)
+                        energy_absorption=correct_abs)
                 else:
                     raise KeyError(
                             "Absorption needs to have keys 'east', 'west', "
@@ -2064,7 +2064,7 @@ class ShoeBox(Room):
             # walls, no scattering
             materials = dict(
                 zip(self.wall_names,
-                    [Material.make_freq_flat(absorption=0.)] * n_walls)
+                    [Material.make_freq_flat(energy_absorption=0.)] * n_walls)
             )
 
         # If some of the materials used are multi-band, we need to resample
@@ -2076,11 +2076,11 @@ class ShoeBox(Room):
         # Get the absorption and scattering as arrays
         # shape: (n_bands, n_walls)
         absorption_array = np.array(
-                [materials[w].get_abs() for w in self.wall_names]
-                ).T
+            [materials[w].absorption_coeffs for w in self.wall_names]
+        ).T
         scattering_array = np.array(
-                [materials[w].get_scat() for w in self.wall_names]
-                ).T
+            [materials[w].scattering_coeffs for w in self.wall_names]
+        ).T
 
         # Create the real room object
         self._init_room_engine(
