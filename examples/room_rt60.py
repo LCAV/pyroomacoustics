@@ -11,6 +11,7 @@ import numpy as np
 
 import pyroomacoustics as pra
 
+
 def sabine(room_dim, absorption, c):
 
     volume = np.prod(room_dim)
@@ -23,13 +24,14 @@ def sabine(room_dim, absorption, c):
     d_c = 0.25 * np.sqrt(surface / np.pi)
     return rt60, d_c
 
+
 # room dimension
 room_dim = [30, 15.9, 6]
 energy_absorption = 0.25
 mic_src_angle = np.radians(37.5)
 
 # compute the theoretical properties
-rt60_thy, d_c = sabine(room_dim, energy_absorption, pra.constants.get('c'))
+rt60_thy, d_c = sabine(room_dim, energy_absorption, pra.constants.get("c"))
 
 # Create the shoebox
 room = pra.ShoeBox(
@@ -46,15 +48,17 @@ room.set_ray_tracing(n_rays=50000, receiver_radius=0.5)
 # by at least the critical distance
 x, y = 0.5 * d_c * np.cos(mic_src_angle), 0.6 * d_c * np.sin(mic_src_angle)
 room.add_source([room_dim[0] / 2 + x, room_dim[1] / 2 + y, 2])
-room.add_microphone_array(
-        pra.MicrophoneArray(np.array([[room_dim[0] / 2. - x, room_dim[1] / 2. - y, 2]]).T, room.fs)
-        )
+room.add_microphone([room_dim[0] / 2.0 - x, room_dim[1] / 2.0 - y, 2])
 
 room.compute_rir()
 
 rt60_exp = pra.experimental.measure_rt60(room.rir[0][0], room.fs)
 
-print("RT60 in theory={:.3f} and practice={:.3f}".format(rt60_thy, rt60_exp))
+print(
+    "RT60 in theory={:.3f} practice={:.3f} relative error={:.2f}%".format(
+        rt60_thy, rt60_exp, np.abs(rt60_thy - rt60_exp) / rt60_thy * 100
+    )
+)
 
 plt.figure()
 room.plot_rir()

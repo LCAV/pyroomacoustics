@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # with numpy-stl
     the_mesh = mesh.Mesh.from_file(args.file)
     ntriang, nvec, npts = the_mesh.vectors.shape
-    size_reduc_factor = 500.  # to get a realistic room size (not 3km)
+    size_reduc_factor = 500.0  # to get a realistic room size (not 3km)
 
     # create one wall per triangle
     walls = []
@@ -33,11 +33,7 @@ if __name__ == "__main__":
         )
 
     room = pra.Room(
-        walls,
-        fs=16000,
-        max_order=3,
-        ray_tracing=True,
-        air_absorption=True,
+        walls, fs=16000, max_order=3, ray_tracing=True, air_absorption=True,
     )
     # Set options for the ray tracer
     room.set_ray_tracing(n_rays=30000, receiver_radius=0.5)
@@ -45,7 +41,8 @@ if __name__ == "__main__":
     room.add_source([-2.0, 2.0, 1.8])
     room.add_microphone_array(
         pra.MicrophoneArray(
-            np.array([[-6.5, 8.5, 3+0.1], [-6.5, 8.1, 3+0.1]]).T, room.fs)
+            np.array([[-6.5, 8.5, 3 + 0.1], [-6.5, 8.1, 3 + 0.1]]).T, room.fs
+        )
     )
 
     # compute the rir

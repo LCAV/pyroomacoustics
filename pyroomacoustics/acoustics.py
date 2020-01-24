@@ -30,7 +30,7 @@ import numpy as np
 from scipy.signal import butter, sosfiltfilt, fftconvolve
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
-from .stft import stft
+from .transform import stft
 
 
 def binning(S, bands):
@@ -503,7 +503,7 @@ def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0.0, fh=0.5):
     """
 
     # perform STFT, X contains frames in rows
-    X = stft(x, L, hop, transform=np.fft.rfft)
+    X = stft.analysis(x, L, hop, transform=np.fft.rfft)
 
     # get and apply the mel filter bank
     # and compute log energy

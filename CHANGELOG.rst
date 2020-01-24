@@ -29,12 +29,26 @@ Changed
 
 - Deep refactor of Room class. The constructor arguments have changed
 - No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
-- The way absorption is handled has changed. The scalar variables ``absorption`` are deprecated in favor of a list of ``pyroomacoustics.materials.Material``
+- The way absorption is handled has changed. The scalar variables
+  ``absorption`` are deprecated in favor of a list of
+  ``pyroomacoustics.materials.Material``
 - Complete refactor of libroom, the compiled extension module responsible for the
   room simulation, into C++. The bindings to python are now done using pybind11.
 - Removes the pure Python room simulator as it was really slow
-- Compiled wheels are now available for Mac
-
+- ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``,
+  ``pyroomacoustics.transform.compute_synthesis_window``, have been deprecated in favor of
+  ``pyroomacoustics.transform.stft.analysis``, ``pyroomacoustics.transform.stft.synthesis``,
+  ``pyroomacoustics.transform.stft.compute_synthesis_window``.
+- ``pyroomacoustics.Room`` has a new method ``add`` that can be used to add
+  either a ``SoundSource``, or a ``MicrophoneArray`` object.  Subsequent calls
+  to the method will always add source/microphones. There exists also methods
+  ``add_source`` and ``add_microphone`` that can be used to add
+  source/microphone via coordinates. The method ``add_microphone_array`` can be
+  used to add a ``MicrophoneArray`` object, or a 2D array containing the
+  locations of several microphones in its columns.  While the
+  ``add_microphone_array`` method used to replace the existing array by the
+  argument, the new behavior is to add in addition to other microphones already
+  present.
 
 `Unreleased`_
 -------------

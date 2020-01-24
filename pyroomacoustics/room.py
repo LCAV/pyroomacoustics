@@ -2034,8 +2034,11 @@ class ShoeBox(Room):
 
         elif absorption_compatibility_request:
 
-            warnings.warn('Using absorption parameter is deprecated. '
-                          'Use `materials` with `Material` object instead.')
+            warnings.warn(
+                "Using absorption parameter is deprecated. Use `materials` with "
+                "`Material` object instead.",
+                DeprecationWarning,
+            )
 
             # order the wall absorptions
             if not isinstance(absorption, dict):

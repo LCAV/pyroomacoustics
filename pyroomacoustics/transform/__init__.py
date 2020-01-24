@@ -15,7 +15,6 @@ STFT
 
 """
 
-import warnings
 
 from .dft import DFT
 from .stft import STFT
@@ -23,6 +22,7 @@ from . import stft
 
 
 def analysis(*args, **kwargs):
+    import warnings
     warnings.warn(
         "The `pyroomacoustics.transform.analysis` function is deprecated in favor of "
         "`pyroomacoustics.transform.stft.analysis`.",
@@ -32,6 +32,7 @@ def analysis(*args, **kwargs):
 
 
 def synthesis(*args, **kwargs):
+    import warnings
     warnings.warn(
         "The `pyroomacoustics.transform.synthesis` function is deprecated in favor of "
         "'pyroomacoustics.transform.stft.synthesis`.",
@@ -41,6 +42,7 @@ def synthesis(*args, **kwargs):
 
 
 def compute_synthesis_window(*args, **kwargs):
+    import warnings
     warnings.warn(
         "The `pyroomacoustics.transform.compute_synthesis_window` function is "
         "deprecated in favor of "

@@ -6,7 +6,7 @@ import platform
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 
-from .stft import stft
+from .transform import stft
 
 def median(x, alpha=None, axis=-1, keepdims=False):
     '''
@@ -106,7 +106,7 @@ def mse(x1, x2):
 # Itakura-Saito distance function
 def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
-  P1 = np.abs(stft(x1, stft_L, stft_hop))**2
+  P1 = np.abs(stft.analysis(x1, stft_L, stft_hop))**2
   P2 = np.abs(stft(x2, stft_L, stft_hop))**2
 
   VAD1 = P1.mean(axis=1) > 2*stft_L**2*sigma2_n

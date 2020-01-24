@@ -30,39 +30,47 @@ from pyroomacoustics.denoise import SpectralSub
 """
 Test and algorithm parameters
 """
-snr = 5         # SNR of input signal.
-db_reduc = 10   # Maximum suppression per frequency bin. Large suppresion can result in more musical noise.
-nfft = 512      # Frame length will be nfft/2 as we will use an STFT with 50% overlap.
-lookback = 12   # How many frames to look back for the noise floor estimate.
-beta = 3        # An overestimation factor to "push" the suppression towards db_reduc.
-alpha = 1.2     # An exponential factor to tune the suppresion (see documentation of 'SpectralSub').
+snr = 5  # SNR of input signal.
+db_reduc = 10  # Maximum suppression per frequency bin. Large suppresion can result in more musical noise.
+nfft = 512  # Frame length will be nfft/2 as we will use an STFT with 50% overlap.
+lookback = 12  # How many frames to look back for the noise floor estimate.
+beta = 3  # An overestimation factor to "push" the suppression towards db_reduc.
+alpha = 1.2  # An exponential factor to tune the suppresion (see doc. of 'SpectralSub').
 
 plot_spec = True
 
 """
 Prepare input file
 """
-signal_fp = os.path.join(os.path.dirname(__file__), 'input_samples',
-                         'cmu_arctic_us_aew_a0001.wav')
-noise_fp = os.path.join(os.path.dirname(__file__), 'input_samples',
-                        'doing_the_dishes.wav')
-noisy_signal, signal, noise, fs = pra.create_noisy_signal(signal_fp,
-                                                          snr=snr,
-                                                          noise_fp=noise_fp)
-wavfile.write(os.path.join(os.path.dirname(__file__), 'output_samples',
-                           'denoise_input_SpectralSub.wav'), fs,
-              noisy_signal.astype(np.float32))
+signal_fp = os.path.join(
+    os.path.dirname(__file__), "input_samples", "cmu_arctic_us_aew_a0001.wav"
+)
+noise_fp = os.path.join(
+    os.path.dirname(__file__), "input_samples", "doing_the_dishes.wav"
+)
+noisy_signal, signal, noise, fs = pra.create_noisy_signal(
+    signal_fp, snr=snr, noise_fp=noise_fp
+)
+wavfile.write(
+    os.path.join(
+        os.path.dirname(__file__), "output_samples", "denoise_input_SpectralSub.wav"
+    ),
+    fs,
+    noisy_signal.astype(np.float32),
+)
 
 """
 Create STFT and SCNR objects
 """
 hop = nfft // 2
-window = pra.hann(nfft, flag='asymmetric', length='full')
-stft = pra.transform.STFT(nfft, hop=hop, analysis_window=window,
-                          streaming=True)
+window_a = pra.hann(nfft)
+window_s = pra.transform.stft.compute_synthesis_window(window_a, hop)
+stft = pra.transform.STFT(
+    nfft, hop=hop, analysis_window=window_a, synthesis_window=window_s, streaming=True
+)
 
 scnr = SpectralSub(nfft, db_reduc, lookback, beta, alpha)
-lookback_time = hop/fs * lookback
+lookback_time = hop / fs * lookback
 print("Lookback : %f seconds" % lookback_time)
 
 """
@@ -74,11 +82,11 @@ n = 0
 while noisy_signal.shape[0] - n >= hop:
 
     # SCNR in frequency domain
-    stft.analysis(noisy_signal[n:(n+hop), ])
+    stft.analysis(noisy_signal[n : (n + hop)])
     gain_filt = scnr.compute_gain_filter(stft.X)
 
     # back to time domain
-    processed_audio[n:n+hop, ] = stft.synthesis(gain_filt*stft.X)
+    processed_audio[n : n + hop] = stft.synthesis(gain_filt * stft.X)
 
     # update step
     n += hop
@@ -87,12 +95,17 @@ while noisy_signal.shape[0] - n >= hop:
 """
 Save and plot spectrogram
 """
-wavfile.write(os.path.join(os.path.dirname(__file__),
-                           'output_samples',
-                           'denoise_output_SpectralSub.wav'), fs,
-              pra.normalize(processed_audio).astype(np.float32))
-print("Noisy and denoised file written to: '%s'" %
-      os.path.join(os.path.dirname(__file__), 'output_samples'))
+wavfile.write(
+    os.path.join(
+        os.path.dirname(__file__), "output_samples", "denoise_output_SpectralSub.wav"
+    ),
+    fs,
+    pra.normalize(processed_audio).astype(np.float32),
+)
+print(
+    "Noisy and denoised file written to: '%s'"
+    % os.path.join(os.path.dirname(__file__), "output_samples")
+)
 
 signal_norm = signal / np.abs(signal).max()
 
@@ -101,16 +114,13 @@ if plot_spec:
     max_val = -40
     plt.figure()
     plt.subplot(3, 1, 1)
-    plt.specgram(noisy_signal[:n-hop], NFFT=256, Fs=fs,
-                 vmin=min_val, vmax=max_val)
-    plt.title('Noisy Signal')
+    plt.specgram(noisy_signal[: n - hop], NFFT=256, Fs=fs, vmin=min_val, vmax=max_val)
+    plt.title("Noisy Signal")
     plt.subplot(3, 1, 2)
-    plt.specgram(processed_audio[hop:n], NFFT=256, Fs=fs,
-                 vmin=min_val, vmax=max_val)
-    plt.title('Denoised Signal')
+    plt.specgram(processed_audio[hop:n], NFFT=256, Fs=fs, vmin=min_val, vmax=max_val)
+    plt.title("Denoised Signal")
     plt.subplot(3, 1, 3)
-    plt.specgram(signal_norm[:n-hop], NFFT=256, Fs=fs,
-                 vmin=min_val, vmax=max_val)
-    plt.title('Original Signal')
+    plt.specgram(signal_norm[: n - hop], NFFT=256, Fs=fs, vmin=min_val, vmax=max_val)
+    plt.title("Original Signal")
     plt.tight_layout(pad=0.5)
     plt.show()
