@@ -10,6 +10,8 @@
 .. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=pypi-release
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/next_gen_simulator?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
 
 Summary
 -------

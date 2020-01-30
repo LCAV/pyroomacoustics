@@ -256,7 +256,7 @@ class OctaveBandsFactory(object):
 
     def _make_filters(self):
         """
-        Create the IIR band-pass filters for the octave bands
+        Create the band-pass filters for the octave bands
 
         Parameters
         ----------
@@ -301,7 +301,7 @@ class OctaveBandsFactory(object):
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
                 hi = center <= freq
-                freq_resp[hi, b] = 0.5
+                freq_resp[hi, b] = 1.
 
         filters = np.fft.fftshift(
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),

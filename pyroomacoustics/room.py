@@ -2073,8 +2073,10 @@ class ShoeBox(Room):
         # If some of the materials used are multi-band, we need to resample
         # all of them to have the same number of values
         if not Material.all_flat(materials):
-            for mat in materials.values():
+            for name, mat in materials.items():
                 mat.resample(self.octave_bands)
+                print(name, mat.absorption_coeffs)
+                print(name, mat.scattering_coeffs)
 
         # Get the absorption and scattering as arrays
         # shape: (n_bands, n_walls)
