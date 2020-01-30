@@ -190,20 +190,21 @@ class OctaveBandsFactory(object):
             The input signal filters through all the bands
         """
 
+
         if band is None:
             bands = range(self.filters.shape[1])
         else:
             bands = [band]
 
-        output = np.zeros((x.shape[0], self.filters.shape[1]), dtype=x.dtype)
+        output = np.zeros((x.shape[0], len(bands)), dtype=x.dtype)
 
-        for b in bands:
-            output[:, b] = fftconvolve(x, self.filters[:, b], mode="same")
+        for i, b in enumerate(bands):
+            output[:, i] = fftconvolve(x, self.filters[:, b], mode="same")
 
-        if band is None:
-            return output
-        else:
+        if output.shape[1] == 1:
             return output[:, 0]
+        else:
+            return output
 
     def __call__(self, coeffs=0., center_freqs=None, interp_kind="linear", **kwargs):
         """

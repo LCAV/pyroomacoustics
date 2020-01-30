@@ -1499,9 +1499,7 @@ class Room(object):
                     else:
                         n_bins = nz_bins_loc[-1] + 1
 
-                    t_max = np.maximum(
-                            t_max,  n_bins * self.rt_args['hist_bin_size']
-                            )
+                    t_max = np.maximum(t_max, n_bins * self.rt_args['hist_bin_size'])
 
                     # the number of samples needed
                     # round up to multiple of the histogram bin size
@@ -1523,6 +1521,7 @@ class Room(object):
                 is_multi_band = self.is_multi_band
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
                 rir_bands = []
+
                 for b, bw in enumerate(bws):
 
                     ir_loc = np.zeros_like(ir)
@@ -1570,7 +1569,7 @@ class Room(object):
                         # The bands should normally sum up to fs / 2
                         seq_bp *= np.sqrt(bw / self.fs * 2.)
 
-                        ir_loc[fdl2:fdl2+N] += seq_bp
+                        ir_loc[fdl2:fdl2 + N] += seq_bp
 
                     # keep for further processing
                     rir_bands.append(ir_loc)
@@ -1591,6 +1590,8 @@ class Room(object):
                 np.sum(rir_bands, axis=0, out=ir)
 
                 self.rir[-1].append(ir)
+
+        self.simulator_state["rir_done"] = True
 
     def simulate(self,
             snr=None,
