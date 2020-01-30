@@ -2075,8 +2075,6 @@ class ShoeBox(Room):
         if not Material.all_flat(materials):
             for name, mat in materials.items():
                 mat.resample(self.octave_bands)
-                print(name, mat.absorption_coeffs)
-                print(name, mat.scattering_coeffs)
 
         # Get the absorption and scattering as arrays
         # shape: (n_bands, n_walls)
