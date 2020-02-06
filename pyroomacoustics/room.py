@@ -553,6 +553,8 @@ class Room(object):
         # add the microphone array
         if mics is not None:
             self.add_microphone_array(mics)
+        else:
+            self.mic_array = None
 
     def _var_init(
             self,
@@ -2106,6 +2108,8 @@ class ShoeBox(Room):
         # add the microphone array
         if mics is not None:
             self.add_microphone_array(mics)
+        else:
+            self.mic_array = None
 
     def extrude(self, height):
         ''' Overload the extrude method from 3D rooms '''
