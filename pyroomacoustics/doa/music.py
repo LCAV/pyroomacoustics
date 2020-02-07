@@ -1,7 +1,9 @@
 # Author: Eric Bezzam
 # Date: July 15, 2016
 
-from .doa import *
+import numpy as np
+from .doa import DOA
+
 
 class MUSIC(DOA):
     """
