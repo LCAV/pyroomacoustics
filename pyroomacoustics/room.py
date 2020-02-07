@@ -81,7 +81,7 @@ to use the ``materials`` parameters which can be used to set the same
 .. code-block:: python
 
     import pyroomacoustics as pra
-    m = pra.Material.make_freq_flat(absorption=0.03)
+    m = pra.Material(energy_absorption=0.03)
     room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
 
 The absorption coefficients can also be set to a particular material:
@@ -89,7 +89,7 @@ The absorption coefficients can also be set to a particular material:
 .. code-block:: python
 
     import pyroomacoustics as pra
-    m = pra.Material.from_db('hard_surface')
+    m = pra.Material(energy_absorption="hard_surface")
     room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
 
 Moreover, different materials can be set for each wall.
@@ -97,14 +97,14 @@ Moreover, different materials can be set for each wall.
 .. code-block:: python
 
     import pyroomacoustics as pra
-    m = {
-        'ceiling': pra.Material.from_db('hard_surface'),
-        'floor': pra.Material.from_db('6mm_carpet'),
-        'east': pra.Material.from_db('brickwork'),
-        'west': pra.Material.from_db('brickwork'),
-        'north': pra.Material.from_db('brickwork'),
-        'south': pra.Material.from_db('brickwork'),
-    }
+    m = pra.make_materials(
+        ceiling="hard_surface",
+        floor="6mm_carpet",
+        east="brickwork",
+        west="brickwork",
+        north="brickwork",
+        south="brickwork",
+    )
     room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17,
                        air_absorption=True, ray_tracing=True)
 
@@ -339,7 +339,7 @@ from . import beamforming as bf
 from .soundsource import SoundSource
 from .beamforming import MicrophoneArray
 from .acoustics import OctaveBandsFactory
-from .parameters import constants, eps, Physics, Material
+from .parameters import constants, eps, Physics, Material, make_materials
 from .utilities import fractional_delay
 from .doa import GridCircle, GridSphere
 
@@ -851,11 +851,11 @@ class Room(object):
             # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
             # <=> a2 == 1 - (1 - a1) ** 2
             correct_absorption = 1. - (1. - absorption) ** 2
-            materials = [Material.make_freq_flat(a) for a in correct_absorption]
+            materials = make_materials(*correct_absorption)
 
         else:
             # In this case, no material is provided, use totally reflective walls, no scattering
-            materials = [Material.make_freq_flat(0., 0.)] * n_walls
+            materials = [Material(0., 0.)] * n_walls
 
         # Resample material properties at octave bands
         octave_bands = OctaveBandsFactory(fs=fs)
@@ -994,14 +994,14 @@ class Room(object):
                         "for the floor and ceiling"
                         )
 
-            materials = {
-                    "floor": Material.make_freq_flat(absorption[0], 0.),
-                    "ceiling": Material.make_freq_flat(absorption[0], 0.)
-                    }
+            materials = make_materials(
+                floor=(absorption[0], 0.),
+                ceiling=(absorption[0], 0.),
+            )
 
         else:
             # In this case, no material is provided, use totally reflective walls, no scattering
-            new_mat = Material.make_freq_flat(0., 0.)
+            new_mat = Material(0., 0.)
             materials = {"floor": new_mat, "ceiling": new_mat}
 
         new_corners = {}
@@ -2057,8 +2057,7 @@ class ShoeBox(Room):
                     # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
                     # <=> a2 == 1 - (1 - a1) ** 2
                     correct_abs = 1. - (1. - absorption[w_name]) ** 2
-                    materials[w_name] = Material.make_freq_flat(
-                        energy_absorption=correct_abs)
+                    materials[w_name] = Material(energy_absorption=correct_abs)
                 else:
                     raise KeyError(
                             "Absorption needs to have keys 'east', 'west', "
@@ -2070,7 +2069,7 @@ class ShoeBox(Room):
             # walls, no scattering
             materials = dict(
                 zip(self.wall_names,
-                    [Material.make_freq_flat(energy_absorption=0.)] * n_walls)
+                    [Material(energy_absorption=0.)] * n_walls)
             )
 
         # If some of the materials used are multi-band, we need to resample

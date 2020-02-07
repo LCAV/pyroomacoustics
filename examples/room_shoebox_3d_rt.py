@@ -18,14 +18,14 @@ room_dim = [7.5, 10.0, 3.1]
 
 # Create the shoebox
 
-materials = {
-    "ceiling": pra.Material.make_freq_flat(0.25, 0.01),
-    "floor": pra.Material.make_freq_flat(0.5, 0.1),
-    "east": pra.Material.make_freq_flat(0.15, 0.15),
-    "west": pra.Material.make_freq_flat(0.07, 0.15),
-    "north": pra.Material.make_freq_flat(0.15, 0.15),
-    "south": pra.Material.make_freq_flat(0.10, 0.15),
-}
+materials = pra.make_materials(
+    ceiling=(0.25, 0.01),
+    floor=(0.5, 0.1),
+    east=(0.15, 0.15),
+    west=(0.07, 0.15),
+    north=(0.15, 0.15),
+    south=(0.10, 0.15),
+)
 
 params = {
     "ISM17": {"max_order": 17, "ray_tracing": False},

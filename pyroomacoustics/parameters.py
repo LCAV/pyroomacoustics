@@ -29,6 +29,7 @@ This file defines the main physical constants of the system:
     * Scattering coefficients
     * Air absorption
 """
+import numpy as np
 
 # tolerance for computations
 eps = 1e-10
@@ -98,6 +99,7 @@ def calculate_speed_of_sound(t, h, p):
     # using crude approximation for now
     return 331.4 + 0.6 * t + 0.0124 * h
 
+
 def _calculate_temperature(c, h):
     """ Compute the temperature give a speed of sound ``c`` and humidity ``h`` """
 
@@ -144,12 +146,12 @@ class Physics(object):
         The room relative humidity in %
     """
 
-    def __init__(self, temperature=None, humidity=0.):
+    def __init__(self, temperature=None, humidity=0.0):
 
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
         self.H = humidity
 
-        if self.H < 0. or self.H > 100:
+        if self.H < 0.0 or self.H > 100:
             raise ValueError("Relative humidity is a value between 0 and 100.")
 
         if temperature is None:
@@ -222,7 +224,7 @@ materials_absorption_table = {
     "anechoic": {"description": "Anechoic material", "coeffs": [1.0]},
     "hard_surface": {
         "description": "Walls, hard surfaces average (brick walls, plaster, "
-                       "hard floors, etc.)",
+        "hard floors, etc.)",
         "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05, 0.05],
         "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
     },
@@ -243,7 +245,7 @@ materials_absorption_table = {
     },
     "6mm_carpet": {
         "description": "(Floor covering) 6 mm pile carpet bonded to "
-                       "closed-cell foam underlay",
+        "closed-cell foam underlay",
         "coeffs": [0.03, 0.09, 0.25, 0.31, 0.33, 0.44, 0.44],
         "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
     },
@@ -273,7 +275,7 @@ materials_scattering_table = {
     },
     "amphitheatre_steps": {
         "description": "Amphitheatre steps, length 82 cm, height 30 cm "
-                       "(Farnetani 2005)",
+        "(Farnetani 2005)",
         "coeffs": [0.05, 0.45, 0.75, 0.9, 0.9],
         "center_freqs": [125, 250, 500, 1000, 2000],
     },
@@ -282,7 +284,8 @@ materials_scattering_table = {
 
 class Material(object):
     """
-    A class to access materials
+    A class that describes the energy absorption and scattering
+    properties of walls.
 
     Attributes
     ----------
@@ -292,33 +295,105 @@ class Material(object):
     scattering: dict
         A dictionary containing keys ``description``, ``coeffs``, and
         ``center_freqs``.
+
+    Parameters
+    ----------
+    energy_absorption: float, str, or dict
+        * float: The material created will be equally absorbing at all frequencies
+            (i.e. flat).
+        * str: The absorption values will be obtained from the database.
+        * dict: A dictionary containing keys ``description``, ``coeffs``, and
+            ``center_freqs``.
+    scattering: float, str, or dict
+        * float: The material created will be equally scattering at all frequencies
+            (i.e. flat).
+        * str: The scattering values will be obtained from the database.
+        * dict: A dictionary containing keys ``description``, ``coeffs``, and
+            ``center_freqs``.
     """
 
-    def __init__(self, energy_absorption, scattering):
+    def __init__(self, energy_absorption, scattering=None):
+
+        # Handle the energy absorption input based on its type
+        if isinstance(energy_absorption, (float, np.float32, np.float64)):
+            # This material is flat over frequencies
+            energy_absorption = {"coeffs": [energy_absorption]}
+
+        elif isinstance(energy_absorption, str):
+            # Get the coefficients from the database
+            energy_absorption = materials_absorption_table[energy_absorption].copy()
+
+        elif not isinstance(energy_absorption, dict):
+            raise TypeError(
+                "The energy absorption of a material can be defined by a scalar value "
+                "for a flat absorber, a name refering to a material in the database, "
+                "or a list with one absoption coefficients per frequency band"
+            )
+
+        if scattering is None:
+            # By default there is no scattering
+            scattering = 0.0
+
+        if isinstance(scattering, (float, np.float32, np.float64)):
+            # This material is flat over frequencies
+            # We match the number of coefficients for the absorption
+            if len(energy_absorption["coeffs"]) > 1:
+                scattering = {
+                    "coeffs": [scattering] * len(energy_absorption["coeffs"]),
+                    "center_freqs": energy_absorption["center_freqs"],
+                }
+            else:
+                scattering = {"coeffs": [scattering]}
+
+        elif isinstance(scattering, str):
+            # Get the coefficients from the database
+            scattering = materials_scattering_table[scattering].copy()
+
+        elif not isinstance(scattering, dict):
+            # In all other cases, the material should be a dictionary
+            raise TypeError(
+                "The scattering of a material can be defined by a scalar value "
+                "for a flat absorber, a name refering to a material in the database, "
+                "or a list with one absoption coefficients per frequency band"
+            )
+
+        # Now handle the case where energy absorption is flat, but scattering is not
+        if len(scattering["coeffs"]) > 1 and len(energy_absorption["coeffs"]) == 1:
+            n_coeffs = len(scattering["coeffs"])
+            energy_absorption["coeffs"] = energy_absorption["coeffs"] * n_coeffs
+            energy_absorption["center_freqs"] = scattering["center_freqs"].copy()
 
         # checks for `energy_absorption` dict
-        assert isinstance(energy_absorption, dict), '`energy_absorption` must be a ' \
-                                             'dictionary with the keys ' \
-                                             '`coeffs` and `center_freqs`.'
-        assert 'coeffs' in energy_absorption.keys(), 'Missing `coeffs` keys in ' \
-                                              '`energy_absorption` dict.'
-        if len(energy_absorption['coeffs']) > 1:
-            assert len(energy_absorption['coeffs']) == \
-                   len(energy_absorption['center_freqs']), \
-                "Length of `energy_absorption['coeffs']` and " \
+        assert isinstance(energy_absorption, dict), (
+            "`energy_absorption` must be a "
+            "dictionary with the keys "
+            "`coeffs` and `center_freqs`."
+        )
+        assert "coeffs" in energy_absorption.keys(), (
+            "Missing `coeffs` keys in " "`energy_absorption` dict."
+        )
+        if len(energy_absorption["coeffs"]) > 1:
+            assert len(energy_absorption["coeffs"]) == len(
+                energy_absorption["center_freqs"]
+            ), (
+                "Length of `energy_absorption['coeffs']` and "
                 "energy_absorption['center_freqs'] must match."
+            )
 
         # checks for `scattering` dict
-        assert isinstance(scattering, dict), '`scattering` must be a ' \
-                                             'dictionary with the keys ' \
-                                             '`coeffs` and `center_freqs`.'
-        assert 'coeffs' in scattering.keys(), 'Missing `coeffs` keys in ' \
-                                              '`scattering` dict.'
-        if len(scattering['coeffs']) > 1:
-            assert len(scattering['coeffs']) == \
-                   len(scattering['center_freqs']), \
-                "Length of `scattering['coeffs']` and " \
+        assert isinstance(scattering, dict), (
+            "`scattering` must be a "
+            "dictionary with the keys "
+            "`coeffs` and `center_freqs`."
+        )
+        assert "coeffs" in scattering.keys(), (
+            "Missing `coeffs` keys in " "`scattering` dict."
+        )
+        if len(scattering["coeffs"]) > 1:
+            assert len(scattering["coeffs"]) == len(scattering["center_freqs"]), (
+                "Length of `scattering['coeffs']` and "
                 "scattering['center_freqs'] must match."
+            )
 
         self.energy_absorption = energy_absorption
         self.scattering = scattering
@@ -329,8 +404,8 @@ class Material(object):
         frequency, ``False`` otherwise.
         """
         return (
-            len(self.energy_absorption["coeffs"]) == 1 and
-            len(self.scattering["coeffs"]) == 1
+            len(self.energy_absorption["coeffs"]) == 1
+            and len(self.scattering["coeffs"]) == 1
         )
 
     @property
@@ -355,38 +430,6 @@ class Material(object):
         }
 
     @classmethod
-    def from_db(cls, abs_name, scat_name="no_scattering"):
-        """
-        Constructs a ``Material`` object from names of entries in the materials
-        database.
-
-        Parameters
-        ----------
-        abs_name: str
-            Name of absorbing material
-        scat_name: str, optional
-            Name of scattering characteristic (default: ``no_scattering``)
-        """
-        return cls(
-            materials_absorption_table[abs_name],
-            materials_scattering_table[scat_name]
-        )
-
-    @classmethod
-    def make_freq_flat(cls, energy_absorption=0.0, scattering=0.0):
-        """
-        Construct a material with flat characteristics over frequency
-
-        Parameters
-        ----------
-        energy_absorption: float
-            The sound energy absorption coefficient
-        scattering: float
-            The scattering coefficient
-        """
-        return cls({"coeffs": [energy_absorption]}, {"coeffs": [scattering]})
-
-    @classmethod
     def all_flat(cls, materials):
         """
         Checks if all materials in a list are frequency flat
@@ -404,3 +447,47 @@ class Material(object):
             return all([m.is_freq_flat() for m in materials.values()])
         else:
             return all([m.is_freq_flat() for m in materials])
+
+
+def make_materials(*args, **kwargs):
+    """
+    Helper method to conveniently create multiple materials.
+
+    Each positional and keyword argument should be a valid input
+    for the Material class. Then, for each of the argument, a
+    Material will be created by calling the constructor.
+
+    If at least one positional argument is provided, a list of
+    Material objects constructed using the provided positional
+    arguments is returned.
+
+    If at least one keyword argument is provided, a dict with keys
+    corresponding to the keywords and containing Material objects
+    constructed with the keyword values is returned.
+
+    If only positional arguments are provided, only the list is returned.
+    If only keyword arguments are provided, only the dict is returned.
+    If both are provided, both are returned.
+    If no argument is provided, an empty list is returned.
+    """
+
+    ret_args = []
+    for parameters in args:
+        if isinstance(parameters, (list, tuple)):
+            ret_args.append(Material(*parameters))
+        else:
+            ret_args.append(Material(parameters))
+
+    ret_kwargs = {}
+    for name, parameters in kwargs.items():
+        if isinstance(parameters, (list, tuple)):
+            ret_kwargs[name] = Material(*parameters)
+        else:
+            ret_kwargs[name] = Material(parameters)
+
+    if len(ret_kwargs) == 0:
+        return ret_args
+    elif len(ret_args) == 0:
+        return ret_kwargs
+    else:
+        return ret_args, ret_kwargs
