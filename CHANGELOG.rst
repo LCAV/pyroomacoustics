@@ -15,6 +15,11 @@ Bugfix
 ~~~~~~
 
 - Fixed some bugs in the documentation
+- Fixed normalization part in FastMNMF
+
+Changed
+~~~~~~~
+- Changed initialization of FastMNMF to accelerate convergence
 - Fixed bug in doa/tops (float -> integer division)
 
 `0.3.1`_ - 2019-11-06
