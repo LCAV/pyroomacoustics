@@ -308,3 +308,12 @@ Changed
 .. _0.1.16: https://github.com/LCAV/pyroomacoustics/compare/v0.1.15...v0.1.16
 .. _0.1.15: https://github.com/LCAV/pyroomacoustics/compare/v0.1.14...v0.1.15
 .. _0.1.14: https://github.com/LCAV/pyroomacoustics/compare/v0.1.13...v0.1.14
+
+`0.1.14`_ - 2018-02-20
+----------------------
+
+Added
+~~~~~
+
+-  From Issue #150, added `room_isinside_max_iter` in `parameters.py`, default set 
+   to 20 rather than 5 as it was in `is_inside` function of the Room class 
