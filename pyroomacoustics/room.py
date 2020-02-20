@@ -1455,7 +1455,7 @@ class Room(object):
 
         # re-run until we get a non-ambiguous result
         it = 0
-        while it < constants.get('max_iter_is_inside'):
+        while it < constants.get('room_isinside_max_iter'):
 
             # Get random point outside the bounding box
             random_vec = np.random.randn(self.dim)
