@@ -14,6 +14,25 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Bugfix
 ~~~~~~
 
+- From Issue #150, increase max iterations to check if point is inside room
+
+Added
+~~~~~~~
+
+- Added `room_isinside_max_iter` in `parameters.py`
+- Default set to 20 rather than 5 as it was in `pyroomacoustics.room.Room.isinside`
+
+Changed
+~~~~~~~
+
+- Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
+
+`0.3.2`_ - 2019-02-23
+---------------------
+
+Bugfix
+~~~~~~
+
 - Fixed some bugs in the documentation
 - Fixed normalization part in FastMNMF
 
@@ -308,12 +327,3 @@ Changed
 .. _0.1.16: https://github.com/LCAV/pyroomacoustics/compare/v0.1.15...v0.1.16
 .. _0.1.15: https://github.com/LCAV/pyroomacoustics/compare/v0.1.14...v0.1.15
 .. _0.1.14: https://github.com/LCAV/pyroomacoustics/compare/v0.1.13...v0.1.14
-
-`0.1.14`_ - 2018-02-20
-----------------------
-
-Added
-~~~~~
-
--  From Issue #150, added `room_isinside_max_iter` in `parameters.py`, default set 
-   to 20 rather than 5 as it was in `is_inside` function of the Room class 
