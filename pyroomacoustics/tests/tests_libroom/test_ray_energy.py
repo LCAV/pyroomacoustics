@@ -60,7 +60,7 @@ class TestRayEnergy(unittest.TestCase):
         hit travels a further 4*sqrt(2) until the threshold energy is reached.
         """
 
-        absorption = 0.07
+        energy_absorption = 0.07
         round_trip = 4 * np.sqrt(2)
         energy_thresh = 1e-7
         detector_radius = 0.15
@@ -69,19 +69,21 @@ class TestRayEnergy(unittest.TestCase):
         histogram_gt = SimpleHistogram(hist_bin_size * pra.constants.get("c"))
 
         # Create the groundtruth list of energy and travel time
-        initial_energy = 2.  # defined in libroom.Room.get_rir_entries
-        transmitted = 1.0 * (1. - absorption) ** 2 * initial_energy
+        initial_energy = 2.0  # defined in libroom.Room.get_rir_entries
+        transmitted = 1.0 * (1.0 - energy_absorption) ** 2 * initial_energy
         distance = round_trip / 2.0
 
         while transmitted / distance > energy_thresh:
             r_sq = distance ** 2
-            p_hit = 1. - np.sqrt(1. - detector_radius ** 2 / r_sq)
+            p_hit = 1.0 - np.sqrt(1.0 - detector_radius ** 2 / r_sq)
             histogram_gt.add(distance, transmitted / (r_sq * p_hit))
-            transmitted *= (1. - absorption) ** 4     # 4 wall hits
+            transmitted *= (1.0 - energy_absorption) ** 4  # 4 wall hits
             distance += round_trip
 
         print("Creating the python room")
-        room = pra.ShoeBox([2, 2, 2], fs=16000, materials=pra.Material.make_freq_flat(absorption))
+        room = pra.ShoeBox(
+            [2, 2, 2], fs=16000, materials=pra.Material(energy_absorption)
+        )
         # room = pra.Room(walls, fs=16000)
         room.add_source([0.5, 0.5, 1])
         room.add_microphone_array(pra.MicrophoneArray(np.c_[[1.5, 1.5, 1.0]], room.fs))
@@ -103,7 +105,7 @@ class TestRayEnergy(unittest.TestCase):
         )
 
         h = room.room_engine.microphones[0].histograms[0].get_hist()
-        histogram_rt = np.array(h[0])[:len(histogram_gt)]
+        histogram_rt = np.array(h[0])[: len(histogram_gt)]
 
         self.assertTrue(np.allclose(histogram_rt, histogram_gt))
 
