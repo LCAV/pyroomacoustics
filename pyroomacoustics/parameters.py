@@ -321,7 +321,7 @@ class Material(object):
 
         elif isinstance(energy_absorption, str):
             # Get the coefficients from the database
-            energy_absorption = materials_absorption_table[energy_absorption].copy()
+            energy_absorption = dict(materials_absorption_table[energy_absorption])
 
         elif not isinstance(energy_absorption, dict):
             raise TypeError(
@@ -347,7 +347,7 @@ class Material(object):
 
         elif isinstance(scattering, str):
             # Get the coefficients from the database
-            scattering = materials_scattering_table[scattering].copy()
+            scattering = dict(materials_scattering_table[scattering])
 
         elif not isinstance(scattering, dict):
             # In all other cases, the material should be a dictionary
@@ -361,7 +361,7 @@ class Material(object):
         if len(scattering["coeffs"]) > 1 and len(energy_absorption["coeffs"]) == 1:
             n_coeffs = len(scattering["coeffs"])
             energy_absorption["coeffs"] = energy_absorption["coeffs"] * n_coeffs
-            energy_absorption["center_freqs"] = scattering["center_freqs"].copy()
+            energy_absorption["center_freqs"] = list(scattering["center_freqs"])
 
         # checks for `energy_absorption` dict
         assert isinstance(energy_absorption, dict), (
