@@ -143,19 +143,22 @@ class Physics(object):
     temperature: float, optional
         The room temperature
     humidity: float in range (0, 100), optional
-        The room relative humidity in %
+        The room relative humidity in %. Default is 0.
     """
 
-    def __init__(self, temperature=None, humidity=0.0):
+    def __init__(self, temperature=None, humidity=None):
 
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
-        self.H = humidity
+        if humidity is None:
+            self.H = 0.0
+        else:
+            self.H = humidity
 
         if self.H < 0.0 or self.H > 100:
             raise ValueError("Relative humidity is a value between 0 and 100.")
 
         if temperature is None:
-            temperature = _calculate_temperature(constants.get("c"), self.H)
+            self.T = _calculate_temperature(constants.get("c"), self.H)
         else:
             self.T = temperature
 
