@@ -56,7 +56,32 @@ Changed
 Bugfix
 ~~~~~~
 
+- From Issue #150, increase max iterations to check if point is inside room
+
+Added
+~~~~~~~
+
+- Added `room_isinside_max_iter` in `parameters.py`
+- Default set to 20 rather than 5 as it was in `pyroomacoustics.room.Room.isinside`
+
+Changed
+~~~~~~~
+
+- Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
+
+`0.3.2`_ - 2019-02-23
+---------------------
+
+Bugfix
+~~~~~~
+
 - Fixed some bugs in the documentation
+- Fixed normalization part in FastMNMF
+
+Changed
+~~~~~~~
+- Changed initialization of FastMNMF to accelerate convergence
+- Fixed bug in doa/tops (float -> integer division)
 
 `0.3.1`_ - 2019-11-06
 ---------------------

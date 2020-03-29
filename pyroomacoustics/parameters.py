@@ -44,6 +44,7 @@ _constants_default = {
     "ffdist": 10.0,  # distance to the far field
     "fc_hp": 300.0,  # cut-off frequency of standard high-pass filter
     "frac_delay_length": 81,  # Length of the fractional delay filters used for RIR gen
+    'room_isinside_max_iter': 20, # Max iterations for checking if point is inside room 
 }
 
 

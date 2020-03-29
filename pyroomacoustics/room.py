@@ -1800,9 +1800,8 @@ class Room(object):
         bbox_max_dist = np.linalg.norm(bbox[:,1] - bbox[:,0]) / 2
 
         # re-run until we get a non-ambiguous result
-        max_iter = 5
         it = 0
-        while it < max_iter:
+        while it < constants.get('room_isinside_max_iter'):
 
             # Get random point outside the bounding box
             random_vec = np.random.randn(self.dim)

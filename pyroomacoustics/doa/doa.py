@@ -7,7 +7,8 @@ from .utils import polar_distance
 """Direction of Arrival (DoA) estimation."""
 
 import numpy as np
-import math, sys
+import math
+import sys
 import warnings
 from abc import ABCMeta, abstractmethod
 

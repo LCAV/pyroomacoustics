@@ -173,7 +173,7 @@ if __name__ == '__main__':
                           callback=convergence_callback)
     elif bss_type == 'fastmnmf':
         # Run FastMNMF
-        Y = pra.bss.fastmnmf(X, n_iter=100, n_components=8, n_src=2,
+        Y = pra.bss.fastmnmf(X, n_iter=30, n_components=8, n_src=2,
                           callback=convergence_callback)
     elif bss_type == 'sparseauxiva':
         # Estimate set of active frequency bins
