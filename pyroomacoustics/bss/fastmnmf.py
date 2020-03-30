@@ -36,7 +36,7 @@ def fastmnmf(
     mic_index=0,
     interval_update_Q=1,
     interval_normalize=10,
-    initialize_ilrma=False
+    initialize_ilrma=False,
 ):
     """
     Implementation of FastMNMF algorithm presented in
@@ -82,43 +82,56 @@ def fastmnmf(
     n_freq, n_frames, n_chan = X_FTM.shape
     XX_FTMM = np.matmul(X_FTM[:, :, :, None], X_FTM[:, :, None, :].conj())
     if n_src is None:
-        n_src = X_FTM.shape[2] # determined case (the number of source = the number of microphone)
+        n_src = X_FTM.shape[
+            2
+        ]  # determined case (the number of source = the number of microphone)
 
-    if initialize_ilrma: # initialize by using ILRMA
+    if initialize_ilrma:  # initialize by using ILRMA
         from pyroomacoustics.bss.ilrma import ilrma
-        Y_TFM, W = ilrma(X, n_iter=10, n_components=2, proj_back=False, return_filters=True)
+
+        Y_TFM, W = ilrma(
+            X, n_iter=10, n_components=2, proj_back=False, return_filters=True
+        )
         Q_FMM = W
         sep_power_M = np.abs(Y_TFM).mean(axis=(0, 1))
         g_NFM = np.ones([n_src, n_freq, n_chan]) * 1e-2
         for n in range(n_src):
             g_NFM[n, :, sep_power_M.argmax()] = 1
             sep_power_M[sep_power_M.argmax()] = 0
-    elif W0 != None: # initialize by W0
+    elif W0 != None:  # initialize by W0
         Q_FMM = W0
         g_NFM = np.ones([n_src, n_freq, n_chan]) * 1e-2
         for m in range(n_chan):
-            g_NFM[m%n_src, :, m] = 1
-    else: # initialize by using observed signals
+            g_NFM[m % n_src, :, m] = 1
+    else:  # initialize by using observed signals
         Q_FMM = np.tile(np.eye(n_chan).astype(np.complex), [n_freq, 1, 1])
         g_NFM = np.ones([n_src, n_freq, n_chan]) * 1e-2
         for m in range(n_chan):
-            g_NFM[m%n_src, :, m] = 1
+            g_NFM[m % n_src, :, m] = 1
     for m in range(n_chan):
         mu_F = (Q_FMM[:, m] * Q_FMM[:, m].conj()).sum(axis=1).real
         Q_FMM[:, m] = Q_FMM[:, m] / np.sqrt(mu_F[:, None])
     H_NKT = np.random.rand(n_src, n_components, n_frames)
     W_NFK = np.random.rand(n_src, n_freq, n_components)
     lambda_NFT = np.matmul(W_NFK, H_NKT)
-    Qx_power_FTM = np.abs((  np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None])  )[:, :, :, 0]) ** 2
+    Qx_power_FTM = (
+        np.abs((np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None]))[:, :, :, 0]) ** 2
+    )
     Y_FTM = (lambda_NFT[..., None] * g_NFM[:, :, None]).sum(axis=0)
 
     separated_spec = np.zeros([n_src, n_freq, n_frames], dtype=np.complex)
+
     def separate():
         Qx_FTM = (Q_FMM[:, None] * X_FTM[:, :, None]).sum(axis=3)
         diagonalizer_inv_FMM = np.linalg.inv(Q_FMM)
-        tmp_NFTM = lambda_NFT[..., None]* g_NFM[:, :, None]
+        tmp_NFTM = lambda_NFT[..., None] * g_NFM[:, :, None]
         for n in range(n_src):
-            tmp = (  np.matmul(diagonalizer_inv_FMM[:, None], (Qx_FTM * ( tmp_NFTM[n] / (tmp_NFTM).sum(axis=0) ) )[..., None])  )[:, :, mic_index, 0]
+            tmp = (
+                np.matmul(
+                    diagonalizer_inv_FMM[:, None],
+                    (Qx_FTM * (tmp_NFTM[n] / (tmp_NFTM).sum(axis=0)))[..., None],
+                )
+            )[:, :, mic_index, 0]
             separated_spec[n] = tmp
         return separated_spec.transpose(2, 1, 0)
 
@@ -128,7 +141,9 @@ def fastmnmf(
             callback(separate())
 
         # update_WH (basis and activation of NMF)
-        tmp_yb1 = (g_NFM[:, :, None] * (Qx_power_FTM / (Y_FTM ** 2))[None]).sum(axis=3)  # [N, F, T]
+        tmp_yb1 = (g_NFM[:, :, None] * (Qx_power_FTM / (Y_FTM ** 2))[None]).sum(
+            axis=3
+        )  # [N, F, T]
         tmp_yb2 = (g_NFM[:, :, None] / Y_FTM[None]).sum(axis=3)  # [N, F, T]
         a_1 = (H_NKT[:, None, :, :] * tmp_yb1[:, :, None]).sum(axis=3)  # [N, F, K]
         b_1 = (H_NKT[:, None, :, :] * tmp_yb2[:, :, None]).sum(axis=3)  # [N, F, K]
@@ -139,11 +154,13 @@ def fastmnmf(
         H_NKT *= np.sqrt(a_1 / b_1)
 
         np.matmul(W_NFK, H_NKT, out=lambda_NFT)
-        np.maximum(lambda_NFT, 1e-10, out=lambda_NFT)
+        np.maximum(lambda_NFT, 1e-9, out=lambda_NFT)
         Y_FTM = (lambda_NFT[..., None] * g_NFM[:, :, None]).sum(axis=0)
 
         # update diagonal element of spatial covariance matrix
-        a_1 = (lambda_NFT[..., None] * (Qx_power_FTM / (Y_FTM ** 2))[None]).sum(axis=2) # N F T M
+        a_1 = (lambda_NFT[..., None] * (Qx_power_FTM / (Y_FTM ** 2))[None]).sum(
+            axis=2
+        )  # N F T M
         b_1 = (lambda_NFT[..., None] / Y_FTM[None]).sum(axis=2)
         g_NFM *= np.sqrt(a_1 / b_1)
         Y_FTM = (lambda_NFT[..., None] * g_NFM[:, :, None]).sum(axis=0)
@@ -152,9 +169,21 @@ def fastmnmf(
         if (interval_update_Q <= 0) or ((epoch + 1) % interval_update_Q == 0):
             for m in range(n_chan):
                 V_FMM = (XX_FTMM / Y_FTM[:, :, m, None, None]).mean(axis=1)
-                tmp_FM = np.linalg.solve(np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m])
-                Q_FMM[:, m] = (tmp_FM / np.sqrt(( (tmp_FM.conj()[:, :, None] * V_FMM).sum(axis=1) * tmp_FM).sum(axis=1) )[:, None]).conj()
-            Qx_power_FTM = np.abs((np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None]))[:, :, :, 0]) ** 2
+                tmp_FM = np.linalg.solve(
+                    np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
+                )
+                Q_FMM[:, m] = (
+                    tmp_FM
+                    / np.sqrt(
+                        ((tmp_FM.conj()[:, :, None] * V_FMM).sum(axis=1) * tmp_FM).sum(
+                            axis=1
+                        )
+                    )[:, None]
+                ).conj()
+            Qx_power_FTM = (
+                np.abs((np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None]))[:, :, :, 0])
+                ** 2
+            )
 
         # normalize
         if (interval_normalize <= 0) or (epoch % interval_normalize == 0):
@@ -166,13 +195,16 @@ def fastmnmf(
             g_NFM /= mu_NF[:, :, None]
             W_NFK *= mu_NF[:, :, None]
 
-            mu_NK = W_NFK.sum(axis=1) 
+            mu_NK = W_NFK.sum(axis=1)
             W_NFK /= mu_NK[:, None]
             H_NKT *= mu_NK[:, :, None]
             np.matmul(W_NFK, H_NKT, out=lambda_NFT)
             np.maximum(lambda_NFT, 1e-10, out=lambda_NFT)
 
-            Qx_power_FTM = np.abs((  np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None])  )[:, :, :, 0]) ** 2
+            Qx_power_FTM = (
+                np.abs((np.matmul(Q_FMM[:, None], X_FTM[:, :, :, None]))[:, :, :, 0])
+                ** 2
+            )
             Y_FTM = (lambda_NFT[..., None] * g_NFM[:, :, None]).sum(axis=0)
 
     return separate()

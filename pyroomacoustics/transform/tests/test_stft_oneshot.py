@@ -2,7 +2,7 @@ from __future__ import division, print_function
 from unittest import TestCase
 import numpy as np
 import pyroomacoustics as pra
-from pyroomacoustics.transform import analysis, synthesis
+from pyroomacoustics.transform import stft
 
 
 # test parameters
@@ -12,7 +12,7 @@ D = 3
 block_size = 512
 
 # test signal (noise)
-x = np.random.randn(block_size*20, D).astype(np.float32)
+x = np.random.randn(block_size * 20, D).astype(np.float32)
 
 
 def no_overlap(D):
@@ -25,10 +25,10 @@ def no_overlap(D):
     hop = block_size
 
     # analysis
-    X = analysis(x_local, L=block_size, hop=hop)
+    X = stft.analysis(x_local, L=block_size, hop=hop)
 
     # synthesis
-    x_r = synthesis(X, L=block_size, hop=hop)
+    x_r = stft.synthesis(X, L=block_size, hop=hop)
 
     return pra.dB(np.max(np.abs(x_local - x_r)))
 
@@ -40,24 +40,25 @@ def half_overlap(D):
     else:
         x_local = x[:, :D]
 
-    hop = block_size//2
+    hop = block_size // 2
 
     # analysis
     analysis_win = pra.hann(block_size)
-    X = analysis(x_local, L=block_size, hop=hop, win=analysis_win)
+    X = stft.analysis(x_local, L=block_size, hop=hop, win=analysis_win)
 
     # synthesis
-    x_r = synthesis(X, L=block_size, hop=hop)
+    x_r = stft.synthesis(X, L=block_size, hop=hop)
 
-    return pra.dB(np.max(np.abs(x_local[:-block_size + hop, ] -
-                                x_r[block_size - hop:, ])))
+    return pra.dB(
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
+    )
 
 
 def append_one_sample(D):
     hop = block_size // 2
     n_samples = x.shape[0]
     n_frames = n_samples // hop
-    x_local = x[:n_frames*hop-1, :]
+    x_local = x[: n_frames * hop - 1, :]
 
     if D == 1:
         x_local = x_local[:, 0]
@@ -66,13 +67,14 @@ def append_one_sample(D):
 
     # analysis
     analysis_win = pra.hann(block_size)
-    X = analysis(x_local, L=block_size, hop=hop, win=analysis_win)
+    X = stft.analysis(x_local, L=block_size, hop=hop, win=analysis_win)
 
     # synthesis
-    x_r = synthesis(X, L=block_size, hop=hop)
+    x_r = stft.synthesis(X, L=block_size, hop=hop)
 
-    return pra.dB(np.max(np.abs(x_local[:-block_size + hop, ] -
-                                x_r[block_size - hop:-1, ])))
+    return pra.dB(
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop : -1,]))
+    )
 
 
 def hop_one_sample(D):
@@ -86,18 +88,18 @@ def hop_one_sample(D):
 
     # analysis
     analysis_win = pra.hann(block_size)
-    X = analysis(x_local, L=block_size, hop=hop, win=analysis_win)
+    X = stft.analysis(x_local, L=block_size, hop=hop, win=analysis_win)
 
     # synthesis
-    synthesis_win = pra.transform.compute_synthesis_window(analysis_win, hop)
-    x_r = synthesis(X, L=block_size, hop=hop, win=synthesis_win)
+    synthesis_win = pra.transform.stft.compute_synthesis_window(analysis_win, hop)
+    x_r = stft.synthesis(X, L=block_size, hop=hop, win=synthesis_win)
 
-    return pra.dB(np.max(np.abs(x_local[:-block_size+hop, ] -
-                                x_r[block_size-hop:, ])))
+    return pra.dB(
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
+    )
 
 
 class TestSTFTOneShot(TestCase):
-
     def test_no_overlap(self):
         self.assertTrue(no_overlap(1) < tol)
         self.assertTrue(no_overlap(D) < tol)
