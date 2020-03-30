@@ -39,7 +39,7 @@
 
 namespace py = pybind11;
 
-float libroom_eps = 1e-5;  // epsilon is set to 0.01 millimeter (10 um)
+float libroom_eps = 1e-4;  // epsilon is set to 0.1 millimeter (100 um)
 
 
 PYBIND11_MODULE(libroom, m) {
@@ -180,7 +180,8 @@ PYBIND11_MODULE(libroom, m) {
     .def("intersects", &Wall<3>::intersects)
     .def("side", &Wall<3>::side)
     .def("reflect", &Wall<3>::reflect)
-    .def("normal_reflect", &Wall<3>::normal_reflect)
+    .def("normal_reflect", (Vectorf<3>(Wall<3>::*)(const Vectorf<3>&, const Vectorf<3>&, float) const)&Wall<3>::normal_reflect)
+    .def("normal_reflect", (Vectorf<3>(Wall<3>::*)(const Vectorf<3>&) const)&Wall<3>::normal_reflect)
     .def("same_as", &Wall<3>::same_as)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
     .def_readwrite("absorption", &Wall<3>::absorption)
@@ -212,7 +213,8 @@ PYBIND11_MODULE(libroom, m) {
     .def("intersects", &Wall<2>::intersects)
     .def("side", &Wall<2>::side)
     .def("reflect", &Wall<2>::reflect)
-    .def("normal_reflect", &Wall<2>::normal_reflect)
+    .def("normal_reflect", (Vectorf<2>(Wall<2>::*)(const Vectorf<2>&, const Vectorf<2>&, float) const)&Wall<2>::normal_reflect)
+    .def("normal_reflect", (Vectorf<2>(Wall<2>::*)(const Vectorf<2>&) const)&Wall<2>::normal_reflect)
     .def("same_as", &Wall<2>::same_as)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_readwrite("absorption", &Wall<2>::absorption)

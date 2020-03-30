@@ -305,7 +305,17 @@ Vectorf<D> Wall<D>::normal_reflect(
    */
 
   Vectorf<D> incident = (hit_point - start).normalized();
+  // return hit_point + length * normal_reflect(incident);
   return hit_point + length * (incident - normal * 2 * incident.dot(normal));
+}
+
+template<size_t D>
+Vectorf<D> Wall<D>::normal_reflect(const Vectorf<D> &incident) const
+{
+  /*
+   * Same as the previous function, but works on a direction vector instead
+   */
+  return incident - normal * 2 * incident.dot(normal);
 }
 
 template<size_t D>

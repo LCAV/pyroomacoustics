@@ -118,6 +118,8 @@ class Wall
         const Vectorf<D> &hit_point,
         float length) const;
 
+    Vectorf<D> normal_reflect(const Vectorf<D> &incident) const;
+
     float cosine_angle(   // cosine angle with respect to surface normal
         const Vectorf<D> &p
         ) const;

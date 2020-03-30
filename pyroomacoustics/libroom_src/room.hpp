@@ -87,7 +87,8 @@ class Room
     // Ray tracing parameters
     float energy_thres = 1e-7;
     float time_thres = 1.;
-    float mic_radius = 0.15;  // receiver radius in meters
+    float mic_radius = 0.15f;  // receiver radius in meters
+    double mic_radius_sq = 0.15f * 0.15f;  // receiver radius in meters
     float mic_hist_res = 0.004;  // in seconds
     bool is_hybrid_sim = true;
 
@@ -100,7 +101,7 @@ class Room
     // The number of frequency bands used
     size_t n_bands;
     // 2. A distance after which a ray must have hit at least 1 wall
-    float max_dist;
+    float max_dist = 0.;
 
     // This is a list of image sources
     Eigen::Matrix<float,D,Eigen::Dynamic> sources;
@@ -168,6 +169,7 @@ class Room
       energy_thres = _energy_thres;
       time_thres = _time_thres;
       mic_radius = _mic_radius;
+      mic_radius_sq = _mic_radius * _mic_radius;
       mic_hist_res = _mic_hist_res;
       is_hybrid_sim = _is_hybrid_sim;
     }
@@ -195,7 +197,7 @@ class Room
 
     float get_max_distance();
 
-    std::tuple < Vectorf<D>, int > next_wall_hit(
+    std::tuple < Vectorf<D>, int, float > next_wall_hit(
         const Vectorf<D> &start,
         const Vectorf<D> &end,
         bool scattered_ray
