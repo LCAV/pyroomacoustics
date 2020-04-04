@@ -29,7 +29,7 @@ can be divided into three main components:
 
 Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
-performance evaluation step. Please refer to `this notebook <http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb>`_
+performance evaluation step. Please refer to `this notebook <https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb>`_
 for a demonstration of the different components of this package.
 
 Room Acoustics Simulation
