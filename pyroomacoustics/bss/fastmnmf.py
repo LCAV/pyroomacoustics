@@ -77,6 +77,8 @@ def fastmnmf(
         An (nframes, nfrequencies, nsources) array. 
     """
 
+    eps = 1e-7
+
     # initialize parameter
     X_FTM = X.transpose(1, 0, 2)
     n_freq, n_frames, n_chan = X_FTM.shape
@@ -154,7 +156,7 @@ def fastmnmf(
         H_NKT *= np.sqrt(a_1 / b_1)
 
         np.matmul(W_NFK, H_NKT, out=lambda_NFT)
-        np.maximum(lambda_NFT, 1e-9, out=lambda_NFT)
+        np.maximum(lambda_NFT, eps, out=lambda_NFT)
         Y_FTM = (lambda_NFT[..., None] * g_NFM[:, :, None]).sum(axis=0)
 
         # update diagonal element of spatial covariance matrix
