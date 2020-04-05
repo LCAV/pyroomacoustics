@@ -1189,7 +1189,7 @@ class Room(object):
 
             # When no image source has been drawn, we need to use the bounding box
             # to set correctly the limits of the plot
-            if not has_drawn_img:
+            if not has_drawn_img or img_order == 0:
                 bbox = self.get_bbox()
                 ax.set_xlim(bbox[0, :])
                 ax.set_ylim(bbox[1, :])
@@ -1255,7 +1255,7 @@ class Room(object):
 
             # When no image source has been drawn, we need to use the bounding box
             # to set correctly the limits of the plot
-            if not has_drawn_img:
+            if not has_drawn_img or img_order == 0:
                 bbox = self.get_bbox()
                 ax.set_xlim3d(bbox[0, :])
                 ax.set_ylim3d(bbox[1, :])
