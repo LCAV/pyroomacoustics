@@ -470,7 +470,7 @@ class Beamformer(MicrophoneArray):
         MicrophoneArray.__init__(self, R, fs)
 
         # only support even length (in freq)
-        if N % 2 is 1:
+        if N % 2 == 1:
             N += 1
 
         self.N = int(N)  # FFT length
@@ -885,7 +885,7 @@ class Beamformer(MicrophoneArray):
             )
 
             # remove the zero padding from output signal
-            if self.zpb is 0:
+            if self.zpb == 0:
                 output = output[self.zpf :]
             else:
                 output = output[self.zpf : -self.zpb]
