@@ -10,3 +10,8 @@ docs/_build
 dist/
 local_examples/
 *.ipynb_checkpoints
+# files added after editable install (pip install -e . )
+pyroomacoustics.egg-info/
+pyroomacoustics/build_rir.c
+pyroomacoustics/build_rir.cpython-36m-x86_64-linux-gnu.so
+pyroomacoustics/c_package/libroom.cpython-36m-x86_64-linux-gnu.so
