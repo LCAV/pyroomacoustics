@@ -372,7 +372,8 @@ class Room(object):
         self.visibility = None
 
         # Get the room dimension from that of the walls
-        self.dim = walls[0].dim
+        if len(walls) > 0:
+            self.dim = walls[0].dim
 
         # mapping between wall names and indices
         self.wallsId = {}
@@ -381,10 +382,16 @@ class Room(object):
                 self.wallsId[self.walls[i].name] = i
 
         # check which walls are part of the convex hull
-        self.convex_hull()
+        if len(walls) > 0:
+            self.convex_hull()
+        else:
+            self.obstructing_walls = np.array([])
 
         # initialize the attribute for the impulse responses
         self.rir = None
+
+    def __str__(self):
+        print(f'Room instance in {self.dim}D with {len(self.walls)} walls.')
 
     @classmethod
     def from_corners(
@@ -516,9 +523,7 @@ class Room(object):
         # recheck which walls are in the convex hull
         self.convex_hull()
 
-
     def convex_hull(self):
-
         ''' 
         Finds the walls that are not in the convex hull
         '''
@@ -531,7 +536,7 @@ class Room(object):
 
         # Now we need to check which walls are on the surface
         # of the hull
-        self.in_convex_hull = [False] * len(self.walls)
+        in_convex_hull = [False] * len(self.walls)
         for i, wall in enumerate(self.walls):
             # We check if the center of the wall is co-linear or co-planar
             # with a face of the convex hull
@@ -544,7 +549,7 @@ class Room(object):
                     p1 = convex_hull.points[simplex[1]]
                     if geom.ccw3p(p0, p1, point) == 0:
                         # co-linear point add to hull
-                        self.in_convex_hull[i] = True
+                        in_convex_hull[i] = True
 
                 elif point.shape[0] == 3:
                     # Check if co-planar
@@ -557,8 +562,7 @@ class Room(object):
                         # co-planar point found!
                         self.in_convex_hull[i] = True
 
-        self.obstructing_walls = np.array([i for i in range(len(self.walls)) if not self.in_convex_hull[i]], dtype=np.int32)
-
+        self.obstructing_walls = np.array([i for i in range(len(self.walls)) if not in_convex_hull[i]], dtype=np.int32)
 
     def plot(self, img_order=None, freq=None, figsize=None, no_axis=False, mic_marker_size=10, **kwargs):
         ''' Plots the room with its walls, microphones, sources and images '''
@@ -822,7 +826,6 @@ class Room(object):
                 )
 
     def first_order_images(self, source_position):
-
         # projected length onto normal
         ip = np.sum(self.normals * (self.corners - source_position[:, np.newaxis]), axis=0)
 
@@ -842,7 +845,6 @@ class Room(object):
 
 
     def image_source_model(self, use_libroom=True):
-
         self.visibility = []
 
         for source in self.sources:
@@ -949,15 +951,16 @@ class Room(object):
                 # visibility is a list with first index for sources, and second for mics
                 self.visibility.append([])
                 for mic in self.mic_array.R.T:
-                    if isinstance(self, ShoeBox):
-                        # All sources are visible in shoebox rooms
-                        self.visibility[-1].append(np.ones(source.images.shape[1], dtype=bool))
+                    if isinstance(self, ShoeBox) or isinstance(self, InfiniteRoom):
+                        # All sources are visible in shoebox or infinite rooms
+                        self.visibility[-1].append(np.ones(source.images.shape[1]))
                     else:
                         # In general, we need to check
                         self.visibility[-1].append(
                                 self.check_visibility_for_all_images(source, mic, use_libroom=False)
                                 )
-                self.visibility[-1] = np.array(self.visibility[-1])
+                # the type has to be a standard int for the C extensions.
+                self.visibility[-1] = np.array(self.visibility[-1], dtype=np.int32)
 
                 I = np.zeros(self.visibility[-1].shape[1], dtype=bool)
                 for mic_vis in self.visibility[-1]:
@@ -1034,8 +1037,6 @@ class Room(object):
 
                 # free the C malloc'ed memory
                 libroom.free_sources(c_room)
-
-
 
     def compute_rir(self):
         ''' Compute the room impulse response between every source and microphone '''
@@ -1176,7 +1177,6 @@ class Room(object):
         if return_premix:
             return premix_signals
 
-
     def direct_snr(self, x, source=0):
         ''' Computes the direct Signal-to-Noise Ratio '''
 
@@ -1197,7 +1197,6 @@ class Room(object):
 
         return sigma2_s/self.sigma2_awgn/(16*np.pi**2*d2)
 
-
     def get_wall_by_name(self, name):
         '''
         Returns the instance of the wall by giving its name.
@@ -1213,7 +1212,6 @@ class Room(object):
             raise ValueError('The wall '+name+' cannot be found.')
 
     def print_wall_sequences(self, source):
-
         visibilityCheck = np.zeros_like(source.images[0])-1
         
         for imageId in range(len(visibilityCheck)-1, -1, -1):
@@ -1319,7 +1317,6 @@ class Room(object):
             
         return visibilityCheck
 
-            
     def is_visible(self, source, p, imageId = 0):
         '''
         Returns true if the given sound source (with image source id) is visible from point p.
@@ -1505,8 +1502,6 @@ class Room(object):
                 )
 
 
-# Room 3D
-
 class ShoeBox(Room):
     '''
     This class extends room for shoebox room in 3D space.
@@ -1586,9 +1581,38 @@ class ShoeBox(Room):
 
         Room.__init__(self, walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
+    def __str__(self):
+        return f'ShoeBox instance in {self.dim}D with {len(self.walls)} walls'
+
     def extrude(self, height):
         ''' Overload the extrude method from 3D rooms '''
 
         Room.extrude(self, np.array([0., 0., height]))
 
+class InfiniteRoom(Room):
+    '''
+    This class extends room for an "infinite room", which is equivalent to an anaechoic room.
+    '''
 
+    def __init__(self, 
+            fs=8000,
+            dim=2,
+            t0=0.,
+            max_order=0,
+            sigma2_awgn=None,
+            sources=None,
+            mics=None):
+        self.dim = dim
+        self.walls = []
+        self.wall_names = []
+        Room.__init__(self, self.walls, fs, t0, max_order, sigma2_awgn, sources, mics)
+
+    def __str__(self):
+        return f'InfiniteRoom instance in {self.dim}D.'
+
+    def image_source_model(self, *args):
+        # force this model to not use the libroom package, as it is not necessary.
+        return Room.image_source_model(self, use_libroom=False)
+
+    def is_inside(self, p):
+        return True
