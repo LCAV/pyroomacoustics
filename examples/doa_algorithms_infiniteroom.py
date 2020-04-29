@@ -42,12 +42,10 @@ Then we perform DOA estimation and compare the errors for different algorithms
 '''
 
 import numpy as np
-from scipy.signal import fftconvolve
 import matplotlib.pyplot as plt
 
 import pyroomacoustics as pra
 from pyroomacoustics.doa import circ_dist
-from pyroomacoustics.signal import Signal
 
 ######
 # We define a meaningful distance measure on the circle
@@ -73,8 +71,7 @@ aroom = pra.InfiniteRoom(dim=dim, fs=fs, sigma2_awgn=sigma2)
 
 # add the source
 source_location = distance * np.r_[np.cos(azimuth), np.sin(azimuth)]
-n_signal = (nfft // 2 + 1) * nfft
-source_signal = Signal(signal_type='random', fs=fs, N=n_signal)
+source_signal = np.random.randn((nfft // 2 + 1) * nfft)
 aroom.add_source(source_location, signal=source_signal)
 
 # We use a circular array with radius 15 cm # and 12 microphones

@@ -130,7 +130,6 @@ from .metrics import *
 from .multirate import *
 from .acoustics import *
 from .recognition import *
-from .signal import *
 
 from . import doa
 from . import adaptive
