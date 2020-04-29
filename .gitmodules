@@ -1,0 +1,3 @@
+[submodule "pyroomacoustics/libroom_src/ext/eigen"]
+	path = pyroomacoustics/libroom_src/ext/eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git

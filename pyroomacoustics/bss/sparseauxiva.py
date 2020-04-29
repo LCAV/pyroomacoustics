@@ -100,7 +100,7 @@ def sparseauxiva(
     else:
         W = W0.copy()
 
-    eps = 1e-15
+    eps = 1e-10
     I = np.eye(n_src, n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))

@@ -2,13 +2,13 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-from unittest import TestCase
+import unittest
 import numpy as np
 
 import pyroomacoustics as pra
 
 fs = 8000
-t0 = 1./(fs*np.pi*1e-2)
+t0 = 0.
 absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
@@ -16,11 +16,11 @@ sigma2_n = 5e-7
 corners = np.array([[0,0,6,6],[0,6,6,0]])
 room = pra.Room.from_corners(
     corners,
-    absorption,
-    fs,
-    t0,
-    max_order_sim,
-    sigma2_n)
+    absorption=absorption,
+    fs=fs,
+    t0=t0,
+    max_order=max_order_sim,
+    sigma2_awgn=sigma2_n)
 
 room.extrude(6)
 
@@ -81,7 +81,7 @@ visible_outside = np.array(
                  dtype=bool)
 
 
-class TestVisibilityShoeBox3D(TestCase):
+class TestVisibilityShoeBox3D(unittest.TestCase):
 
     def test_sources(self):
         self.assertTrue(np.allclose(images_found, sources))
@@ -97,3 +97,6 @@ class TestVisibilityShoeBox3D(TestCase):
         
     def test_visibility_outside(self):
         self.assertTrue(np.allclose(images_found[:,visibilities[3,:]], sources[:,visible_outside]))
+
+if __name__ == '__main__':
+    unittest.main()

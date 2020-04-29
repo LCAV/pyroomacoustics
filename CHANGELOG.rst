@@ -8,6 +8,48 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
+`NextGeneration`_
+------------------
+
+Added
+~~~~~
+
+- Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
+  can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
+  That's why this function has now several default arguments to run ray tracing (number
+  of rays, scattering coefficient, energy and time thresholds, microphone's radius).
+- Bandpass filterbank construction in ``pyroomacoustics.acoustics.bandpass_filterbank``
+- Acoustic properties of different materials in ``pyroomacoustics.materials``
+- Scattering from the wall is handled via ray tracing method, scattering coefficients are provided
+  in ``pyroomacoustics.materials.Material`` objects
+
+
+Changed
+~~~~~~~
+
+- Deep refactor of Room class. The constructor arguments have changed
+- No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
+- The way absorption is handled has changed. The scalar variables
+  ``absorption`` are deprecated in favor of a list of
+  ``pyroomacoustics.materials.Material``
+- Complete refactor of libroom, the compiled extension module responsible for the
+  room simulation, into C++. The bindings to python are now done using pybind11.
+- Removes the pure Python room simulator as it was really slow
+- ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``,
+  ``pyroomacoustics.transform.compute_synthesis_window``, have been deprecated in favor of
+  ``pyroomacoustics.transform.stft.analysis``, ``pyroomacoustics.transform.stft.synthesis``,
+  ``pyroomacoustics.transform.stft.compute_synthesis_window``.
+- ``pyroomacoustics.Room`` has a new method ``add`` that can be used to add
+  either a ``SoundSource``, or a ``MicrophoneArray`` object.  Subsequent calls
+  to the method will always add source/microphones. There exists also methods
+  ``add_source`` and ``add_microphone`` that can be used to add
+  source/microphone via coordinates. The method ``add_microphone_array`` can be
+  used to add a ``MicrophoneArray`` object, or a 2D array containing the
+  locations of several microphones in its columns.  While the
+  ``add_microphone_array`` method used to replace the existing array by the
+  argument, the new behavior is to add in addition to other microphones already
+  present.
+
 `Unreleased`_
 -------------
 
@@ -314,6 +356,7 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
+.. _NextGeneration: https://github.com/LCAV/pyroomacoustics/compare/master...next_gen_simulator
 .. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...HEAD
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0

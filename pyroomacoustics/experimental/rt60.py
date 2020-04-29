@@ -98,7 +98,6 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
         T = get_time(power_db, fs)
 
         # plot power and energy
-        plt.plot(T, power_db, label="Power")
         plt.plot(get_time(energy_db, fs), energy_db, label="Energy")
 
         # now the linear fit
