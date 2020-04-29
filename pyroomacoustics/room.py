@@ -451,7 +451,7 @@ class Room(object):
     :py:func:`pyroomacoustics.room.Room.extrude` is provided to lift a 2D room
     into 3D space by adding vertical walls and parallel floor and ceiling.
 
-    The Room is sub-classed by :py:obj:pyroomacoustics.room.ShoeBox` which
+    The Room is sub-classed by :py:obj:`pyroomacoustics.room.ShoeBox` which
     creates a rectangular (2D) or parallelepipedic (3D) room. Such rooms
     benefit from an efficient algorithm for the image source method.
 
@@ -660,6 +660,9 @@ class Room(object):
                 ),
             )
 
+    def __str__(self):
+        return 'Room instance in {}D with {} walls.'.format(self.dim, len(self.walls))
+
     @property
     def is_multi_band(self):
         multi_band = False
@@ -759,9 +762,6 @@ class Room(object):
         for i in range(len(self.walls)):
             if self.walls[i].name is not None:
                 self.wallsId[self.walls[i].name] = i
-
-    def __str__(self):
-        print(f'Room instance in {self.dim}D with {len(self.walls)} walls.')
 
     @classmethod
     def from_corners(
@@ -1930,7 +1930,13 @@ class Room(object):
     def wall_area(self, wall):
 
         """Computes the area of a 3D planar wall.
-        :param wall: the wall object that is defined in the 3D space"""
+
+        Parameters
+        ----------
+        wall: Wall instance 
+            the wall object that is defined in 3D space
+            
+        """
 
         # Algo : http://geomalgorithms.com/a01-_area.
 
@@ -1941,7 +1947,7 @@ class Room(object):
         n = wall.normal / np.linalg.norm(wall.normal)
 
         if len(c) != 3:
-            raise ValueError("The function wall_area3D only supports ")
+            raise ValueError("The function wall_area only supports 3d")
 
         sum_vect = [0.0, 0.0, 0.0]
         num_vertices = len(c[0])
@@ -1954,11 +1960,13 @@ class Room(object):
     def get_volume(self):
 
         """
-        Computes the volume of a room
-        :param room: the room object
-        :return: the volume in cubic unit
-        """
+        Computes the volume of the room
 
+        Returns
+        -------
+        float
+            the volume of the room
+        """
         wall_sum = 0.0
 
         for w in self.walls:
@@ -2185,6 +2193,9 @@ class ShoeBox(Room):
         else:
             self.mic_array = None
 
+    def __str__(self):
+        return 'ShoeBox instance in {}D.'.format(self.dim)
+
     def extrude(self, height):
         """ Overload the extrude method from 3D rooms """
 
@@ -2196,19 +2207,13 @@ class ShoeBox(Room):
 
     def get_volume(self):
 
-        """
-        Computes the volume of a room
-        :param room: the room object
-        :return: the volume in cubic unit
-        """
-
         return np.prod(self.shoebox_dim)
 
 
 class InfiniteRoom(Room):
-    '''
-    This class extends room for an "infinite room", which is equivalent to an anaechoic room.
-    '''
+    """
+    This class implements an "infinite room", which is equivalent to an anaechoic room.
+    """
 
     def __init__(self, 
             fs=8000,
@@ -2224,7 +2229,7 @@ class InfiniteRoom(Room):
         Room.__init__(self, self.walls, fs, t0, max_order, sigma2_awgn, sources, mics)
 
     def __str__(self):
-        return f'InfiniteRoom instance in {self.dim}D.'
+        return 'InfiniteRoom instance in {}D.'.format(self.dim)
 
     def image_source_model(self, *args):
         # force this model to not use the libroom package, as it is not necessary.
