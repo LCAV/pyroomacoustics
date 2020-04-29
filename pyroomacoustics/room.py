@@ -299,6 +299,7 @@ from .soundsource import SoundSource
 from .wall import Wall
 from .geometry import area, ccw3p
 from .parameters import constants, eps
+from .signal import Signal
 
 from .c_package import libroom_available, CWALL, CROOM, libroom, c_wall_p, c_int_p, c_float_p, c_room_p
 
@@ -1148,7 +1149,12 @@ class Room(object):
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
-                premix_signals[s,m,d:d + len(sig) + len(h) - 1] += fftconvolve(h, sig)
+
+                if isinstance(sig, Signal):
+                    premix_signal = sig.convolve(h)
+                else:
+                    premix_signal = fftconvolve(h, sig)
+                premix_signals[s,m,d:d + len(sig) + len(h) - 1] += premix_signal
 
         if callback_mix is not None:
             # Execute user provided callback
