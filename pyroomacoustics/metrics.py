@@ -148,7 +148,7 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin='./bin/pesq'):
     if isinstance(deg_files, str):
         deg_files = [deg_files]
 
-    if platform.system() is 'Windows':
+    if platform.system() == 'Windows':
         bin = bin + '.exe'
 
     if not os.path.isfile(ref_file):
