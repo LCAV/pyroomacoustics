@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Issue #162 (crash with max_order>31 on windows), seems fixed by the new C++ simulator
+- Test for issue #162 added
 
 `0.4.0`_ - 2020-06-03
 ---------------------
