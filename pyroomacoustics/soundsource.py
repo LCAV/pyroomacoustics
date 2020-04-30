@@ -96,7 +96,7 @@ class SoundSource(object):
         self.max_order = np.max(self.orders)
 
     def __str__(self):
-        return 'Soundsource instance at {self.position} with signal of length {}'.format(self.position, len(self.signal))
+        return 'Soundsource instance at {} with signal of length {}'.format(self.position, len(self.signal))
 
     def add_signal(self, signal):
         ''' Sets `signal` attribute 
