@@ -137,6 +137,7 @@ def ilrma(
             T[T < eps] = eps
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
+            R[R < eps] = eps
             iR[s, :, :] = 1 / R[s, :, :]
 
             V[s, :, :] *= np.sqrt(
@@ -146,6 +147,7 @@ def ilrma(
             V[V < eps] = eps
 
             R[s, :, :] = np.dot(T[s, :, :], V[s, :, :].T)
+            R[R < eps] = eps
             iR[s, :, :] = 1 / R[s, :, :]
 
             ## IVA
