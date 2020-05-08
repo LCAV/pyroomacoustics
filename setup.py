@@ -119,7 +119,7 @@ try:
     setup(**setup_kwargs)
 except:
     # Retry without the C module
-    print("Error. Probably building C extension failed. Installing pure python.")
+    print("Error. Probably building C extension failed. Check if cython is installed. Installing pure python.")
     setup_kwargs.pop('ext_modules')
     setup_kwargs['ext_modules'] = [cython_ext]
     setup(**setup_kwargs)
