@@ -519,8 +519,7 @@ class Room(object):
         self.walls = walls
 
         # Get the room dimension from that of the walls
-        if len(walls):        
-            self.dim = walls[0].dim
+        self.dim = walls[0].dim
 
         # Create a mapping with friendly names for walls
         self._wall_mapping()
@@ -606,7 +605,6 @@ class Room(object):
         if not ray_tracing:
             self.unset_ray_tracing()
 
-
         # initialize the attributes for the impulse responses and visibility.
         self.rir = None
         self.visibility = None
@@ -660,7 +658,7 @@ class Room(object):
             )
 
     def __str__(self):
-        return 'Room instance in {}D with {} walls.'.format(self.dim, len(self.walls))
+        return "Room instance in {}D with {} walls.".format(self.dim, len(self.walls))
 
     @property
     def is_multi_band(self):
@@ -822,7 +820,7 @@ class Room(object):
             )
 
         ############################
-        # BEGIN COMPATIBILITY CODE #
+        # END COMPATIBILITY CODE #
         ############################
 
         if materials is not None:
@@ -1079,15 +1077,16 @@ class Room(object):
                 ax = fig.add_subplot(111, aspect="equal", **kwargs)
 
             # draw room
-            corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-            polygons = [Polygon(corners.T, True)]
-            p = PatchCollection(
-                polygons,
-                cmap=matplotlib.cm.jet,
-                facecolor=np.array([1, 1, 1]),
-                edgecolor=np.array([0, 0, 0]),
-            )
-            ax.add_collection(p)
+            if self.walls:
+                corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+                polygons = [Polygon(corners.T, True)]
+                p = PatchCollection(
+                    polygons,
+                    cmap=matplotlib.cm.jet,
+                    facecolor=np.array([1, 1, 1]),
+                    edgecolor=np.array([0, 0, 0]),
+                )
+                ax.add_collection(p)
 
             # draw the microphones
             if self.mic_array is not None:
@@ -1141,9 +1140,11 @@ class Room(object):
                     H = np.abs(H) ** 2 / np.abs(H).max() ** 2
 
                     # a normalization factor according to room size
-                    norm = np.linalg.norm(
-                        (corners - self.mic_array.center), axis=0
-                    ).max()
+                    norm = 1
+                    if self.walls:
+                        norm = np.linalg.norm(
+                            (corners - self.mic_array.center), axis=0
+                        ).max()
 
                     # plot all the beam patterns
                     i = 0
@@ -1386,7 +1387,7 @@ class Room(object):
                 raise ValueError(
                     (
                         "The Room and MicrophoneArray objects must be of the same "
-                        "dimensionality. The Room is {}D but the SoundSource "
+                        "dimensionality. The Room is {}D but the MicrophoneArray "
                         "is {}D"
                     ).format(self.dim, obj.dim)
                 )
@@ -1398,10 +1399,7 @@ class Room(object):
 
             # microphone need to be added to the room_engine
             for m in range(len(obj)):
-
-		# because for the anechoic room, we don't have a room_engine.
-                if self.room_engine is not None:
-                    self.room_engine.add_mic(obj.R[:, None, m])
+                self.room_engine.add_mic(obj.R[:, None, m])
 
         else:
             raise TypeError(
@@ -1731,6 +1729,8 @@ class Room(object):
             raise ValueError("There are no sound sources in the room.")
         if self.mic_array is None:
             raise ValueError("There is no microphone in the room.")
+        if any([s.signal is None for s in self.sources]):
+            raise ValueError("There are unspecified source signals.")
 
         # compute RIR if necessary
         if self.rir is None or len(self.rir) == 0 or recompute_rir:
@@ -1761,8 +1761,6 @@ class Room(object):
         for m in np.arange(M):
             for s in np.arange(S):
                 sig = self.sources[s].signal
-                if sig is None:
-                    continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
                 premix_signals[s, m, d : d + len(sig) + len(h) - 1] += fftconvolve(
@@ -1835,11 +1833,10 @@ class Room(object):
             raise ValueError("The wall " + name + " cannot be found.")
 
     def get_bbox(self):
-        """ Returns a bounding box for the room """
+        """ Returns a bounding box for the room, for plotting. """
 
         lower = np.amin(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
         upper = np.amax(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
-
         return np.c_[lower, upper]
 
     def is_inside(self, p, include_borders=True):
@@ -2100,7 +2097,7 @@ class ShoeBox(Room):
             absorption = dict(zip(self.wall_names, [absorption] * n_walls))
 
         ##########################
-        # END COMPATIBILITY CODE #
+        # BEGIN COMPATIBILITY CODE #
         ##########################
 
         if materials is not None:
@@ -2202,7 +2199,7 @@ class ShoeBox(Room):
             self.mic_array = None
 
     def __str__(self):
-        return 'ShoeBox instance in {}D.'.format(self.dim)
+        return "ShoeBox instance in {}D.".format(self.dim)
 
     def extrude(self, height):
         """ Overload the extrude method from 3D rooms """
@@ -2212,230 +2209,57 @@ class ShoeBox(Room):
 
         Room.extrude(self, np.array([0.0, 0.0, height]))
 
-
     def get_volume(self):
 
         return np.prod(self.shoebox_dim)
 
 
-class InfiniteRoom(Room):
-    """
-    This class implements an "infinite room", which is equivalent to an anaechoic room.
+class AnechoicRoom(ShoeBox):
+    """ 
+    This class provides an API for creating an Anechoic "room" in 2D or 3D.
+
+    Parameters
+    ----------
+    dim: int
+        Dimension of the room (2 or 3).
+    **kwargs:
+        All other kwargs are passed on to the :py:obj:`pyroomacoustics.room.Room` initializer.
+
     """
 
-    def __init__(self, 
-            fs=8000,
-            dim=2,
-            t0=0.,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None,
-            temperature=None,
-            humidity=None,
-            air_absorption=False
-        ):
-
+    def __init__(self, dim, **kwargs):
         self.dim = dim
-        self.walls = []
-        self.obstructing_walls = []
-        self.wall_names = []
+        if "max_order" in kwargs.keys():
+            raise ValueError("Cannot specify max_order for Anechoic room")
+        kwargs["max_order"] = 0
 
-        #ray tracing and max_order only make sense with walls.
-        ray_tracing = False
-        max_order = 0
+        # TODO(FD) check that ray tracing and walls was not passed, like above.
+        kwargs["ray_tracing"] = False
 
-        # initialize everything else
-        self._var_init(
-            fs,
-            t0,
-            max_order,
-            sigma2_awgn,
-            temperature,
-            humidity,
-            air_absorption,
-            ray_tracing,
-        )
-
-        # add the sources
-        self.sources = []
-        if sources is not None and isinstance(sources, list):
-            for src in sources:
-                self.add_soundsource(src)
-
-        # add the microphone array
-        if mics is not None:
-            self.add_microphone_array(mics)
-        else:
-            self.mic_array = None
+        # Create some dummy walls
+        p = np.ones((dim,))
+        materials = Material(energy_absorption=1.0, scattering=0.0)  #
+        ShoeBox.__init__(self, p=p, materials=materials, **kwargs)
 
     def __str__(self):
-        return 'InfiniteRoom instance in {}D.'.format(self.dim)
+        return "AnechoicRoom instance in {}D.".format(self.dim)
 
     def is_inside(self, p):
+        # always return True because we want the walls to have no effect.
         return True
 
-    def simulate(
-        self,
-        snr=None,
-        reference_mic=0,
-        callback_mix=None,
-        callback_mix_kwargs={},
-        return_premix=False):
-        r"""
-        Simulates the microphone signal at every microphone in the array
+    def get_bbox(self):
+        """ Returns a bounding box for the mics and sources, for plotting. """
 
-        Parameters
-        ----------
-        reference_mic: int, optional
-            The index of the reference microphone to use for SNR and delay computations.
-            The default reference microphone is the first one (index 0)
-        snr: float, optional
-            The target signal-to-noise ratio (SNR) in decibels at the reference microphone.
-            When this option is used the argument
-            :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is ignored. The variance of
-            every source at the reference microphone is normalized to one and
-            the variance of the noise \\(\\sigma_n^2\\) is chosen
+        lower = np.inf * np.ones((self.dim,))
+        upper = -np.inf * np.ones((self.dim,))
 
-            .. math::
+        if self.mic_array is not None:
+            lower = np.min(np.r_[lower[None, :], self.mic_array.R], axis=0)
+            upper = np.max(np.r_[upper[None, :], self.mic_array.R], axis=0)
 
-                \mathsf{SNR} = 10 \log_{10} \frac{ K }{ \sigma_n^2 }
+        for i, source in enumerate(self.sources):
+            lower = np.min(np.r_[lower[None, :], source.position[None, :]], axis=0)
+            upper = np.max(np.c_[upper[None, :], source.position[None, :]], axis=0)
 
-            The value of :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is also set
-            to \\(\\sigma_n^2\\) automatically
-
-        callback_mix: func, optional
-            A function that will perform the mix, it takes as first argument
-            an array of shape ``(n_sources, n_mics, n_samples)`` that contains
-            the source signals convolved with the room impulse response prior
-            to mixture at the microphone. It should return an array of shape
-            ``(n_mics, n_samples)`` containing the mixed microphone signals.
-            If such a function is provided, the ``snr`` option is ignored
-            and :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is set to ``None``.
-        callback_mix_kwargs: dict, optional
-            A dictionary that contains optional arguments for ``callback_mix``
-            function
-        return_premix: bool, optional
-            If set to ``True``, the function will return an array of shape
-            ``(n_sources, n_mics, n_samples)`` containing the microphone
-            signals with individual sources, prior to mixing
-
-        Returns
-        -------
-        Nothing or an array of shape ``(n_sources, n_mics, n_samples)``
-            Depends on the value of ``return_premix`` option
-        """
-        # Throw an error if we are missing some hardware in the room
-        if len(self.sources) == 0:
-            raise ValueError("There are no sound sources in the room.")
-        if self.mic_array is None:
-            raise ValueError("There is no microphone in the room.")
-
-        # number of mics and sources
-        M = self.mic_array.M
-        S = len(self.sources)
-
-        # compute all delays from M microphones to S sources, and 
-        # maximum signal length
-
-        max_sig_len = 0 
-
-        # TODO(FD) make this faster using broadcasting
-        delays = np.zeros((M, S), dtype=np.int)
-        for m in range(M):
-            for s in range(S):
-
-                source_delay = self.sources[s].delay * self.fs
-                mic_delay = self.get_delay(s, m)  * self.fs
-
-                #TODO(FD) use floor or round here? 
-                delay = int(source_delay + mic_delay)
-                delays[m, s] = delay
-
-                max_sig_len = max(delay + len(self.sources[s].signal), max_sig_len)
-
-        # TODO(FD) not sure if removing the zero-signal stretch poses problems
-        # for applications other than DOA. 
-        min_delay = delays.min()
-        max_sig_len -= min_delay
-        delays -= min_delay
-
-        # the array that will receive all the signals
-        premix_signals = np.zeros((S, M, max_sig_len))
-
-        # compute the signal at every microphone in the array
-        for m in np.arange(M):
-            for s in np.arange(S):
-                sig = self.sources[s].signal
-                if sig is None:
-                    continue
-
-                d = delays[m, s]
-                premix_signals[s, m, d:d+len(sig)] += sig
-
-        if callback_mix is not None:
-            # Execute user provided callback
-            signals = callback_mix(premix_signals, **callback_mix_kwargs)
-            self.sigma2_awgn = None
-
-        elif snr is not None:
-            # Normalize all signals so that
-            denom = np.std(premix_signals[:, reference_mic, :], axis=1)
-            premix_signals /= denom[:, None, None]
-            signals = np.sum(premix_signals, axis=0)
-
-            # Compute the variance of the microphone noise
-            self.sigma2_awgn = 10 ** (-snr / 10) * S
-
-        else:
-            signals = np.sum(premix_signals, axis=0)
-
-        # add white gaussian noise if necessary
-        if self.sigma2_awgn is not None:
-            signals += np.random.normal(0.0, np.sqrt(self.sigma2_awgn), signals.shape)
-
-        # record the signals in the microphones
-        self.mic_array.record(signals, self.fs)
-
-        if return_premix:
-            return premix_signals
-
-    # TODO(FD): not sure if we want the far-field option below? 
-    def get_delay(self, source_idx, mic_idx, mic_ref_idx=None):
-        '''
-        Get the delay in seconds between source and mic.
-
-        Parameters
-        ----------
-        source_idx: int
-            Index of source
-        mic_idx: int
-            Index of mic
-        mic_ref_idx: int, optional
-            Index of reference mic. If given, then we assume that the source is in 
-            far-field, and the direction of the source is given by the vector pointing
-            from positon of mic_ref to the position of the source. 
-
-        Returns
-        -------
-        float
-            The delay (in seconds) 
-        '''
-
-        source = self.sources[source_idx].position
-        mic = self.mic_array.R[:, mic_idx]
-
-        if mic_ref_idx is not None:
-            mic_ref = self.mic_array.R[:, mic_ref_idx]
-
-            # compute the travel difference between mic and mic_ref, for source in far-field
-            delta_source = np.linalg.norm(mic_ref - source)
-            if delta_source == 0:
-                raise ValueError('Excpecting source in far field, but \
-                                  source coincides with mic {}'.format(mic_idx))
-
-            delta = np.inner(mic - source, mic_ref - source) / delta_source
-
-        else: 
-            # compute the travel difference between mic and source
-            delta = np.linalg.norm(mic - source)
-        return delta / self.c
+        return np.c_[lower, upper]

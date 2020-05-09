@@ -10,7 +10,7 @@ import numpy as np
 import math
 import sys
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 from .grid import GridCircle, GridSphere
 

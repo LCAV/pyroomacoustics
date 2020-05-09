@@ -187,7 +187,7 @@ def square_2D_array(center, M, N, phi, d):
         The center of the array
     M: int
         The number of points in the first dimension
-    M: int
+    N: int
         The number of points in the second dimension
     phi: float
         The counterclockwise rotation of the array (from the x-axis)
