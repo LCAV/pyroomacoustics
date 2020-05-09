@@ -887,7 +887,9 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs,
+            # fmt: off
+            **kwargs
+            # fmt: on
         )
 
     def extrude(
@@ -2159,7 +2161,7 @@ class AnechoicRoom(ShoeBox):
     ----------
     dim: int
         Dimension of the room (2 or 3).
-    **kwargs:
+    kwargs:
         All other kwargs are passed on to the :py:obj:`pyroomacoustics.room.Room` initializer.
     """
 
