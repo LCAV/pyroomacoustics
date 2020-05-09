@@ -15,6 +15,7 @@ Bugfix
 ~~~~~~
 
 - From Issue #150, increase max iterations to check if point is inside room
+- Issues #117 #163, adds project file `pyproject.toml` so that pip can know which dependencies are necessary for setup
 
 Added
 ~~~~~~~
