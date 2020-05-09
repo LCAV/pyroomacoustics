@@ -820,7 +820,7 @@ class Room(object):
             )
 
         ############################
-        # END COMPATIBILITY CODE #
+        # BEGIN COMPATIBILITY CODE #
         ############################
 
         if materials is not None:
@@ -887,7 +887,7 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs
+            **kwargs,
         )
 
     def extrude(
@@ -1054,9 +1054,6 @@ class Room(object):
         """ Plots the room with its walls, microphones, sources and images """
 
         try:
-            import matplotlib
-            from matplotlib.patches import Circle, Wedge, Polygon
-            from matplotlib.collections import PatchCollection
             import matplotlib.pyplot as plt
         except ImportError:
             import warnings
@@ -1076,82 +1073,21 @@ class Room(object):
             else:
                 ax = fig.add_subplot(111, aspect="equal", **kwargs)
 
-            # draw room
-            if self.walls:
-                corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-                polygons = [Polygon(corners.T, True)]
-                p = PatchCollection(
-                    polygons,
-                    cmap=matplotlib.cm.jet,
-                    facecolor=np.array([1, 1, 1]),
-                    edgecolor=np.array([0, 0, 0]),
+        elif self.dim == 3:
+            import mpl_toolkits.mplot3d as a3
+
+            fig = plt.figure(figsize=figsize)
+            ax = a3.Axes3D(fig)
+
+        # draw walls
+        norm = self.plot_walls(ax)
+
+        # draw the microphones
+        if self.mic_array is not None:
+            for mic in self.mic_array.R.T:
+                ax.scatter(
+                    *mic, marker="x", linewidth=0.5, s=mic_marker_size, c="k",
                 )
-                ax.add_collection(p)
-
-            # draw the microphones
-            if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
-                    ax.scatter(
-                        mic[0],
-                        mic[1],
-                        marker="x",
-                        linewidth=0.5,
-                        s=mic_marker_size,
-                        c="k",
-                    )
-
-                # draw the beam pattern of the beamformer if requested (and available)
-                if (
-                    freq is not None
-                    and isinstance(self.mic_array, bf.Beamformer)
-                    and (
-                        self.mic_array.weights is not None
-                        or self.mic_array.filters is not None
-                    )
-                ):
-
-                    freq = np.array(freq)
-                    if freq.ndim == 0:
-                        freq = np.array([freq])
-
-                    # define a new set of colors for the beam patterns
-                    newmap = plt.get_cmap("autumn")
-                    desat = 0.7
-                    try:
-                        # this is for matplotlib >= 2.0.0
-                        ax.set_prop_cycle(
-                            color=[
-                                newmap(k) for k in desat * np.linspace(0, 1, len(freq))
-                            ]
-                        )
-                    except:
-                        # keep this for backward compatibility
-                        ax.set_color_cycle(
-                            [newmap(k) for k in desat * np.linspace(0, 1, len(freq))]
-                        )
-
-                    phis = np.arange(360) * 2 * np.pi / 360.0
-                    newfreq = np.zeros(freq.shape)
-                    H = np.zeros((len(freq), len(phis)), dtype=complex)
-                    for i, f in enumerate(freq):
-                        newfreq[i], H[i] = self.mic_array.response(phis, f)
-
-                    # normalize max amplitude to one
-                    H = np.abs(H) ** 2 / np.abs(H).max() ** 2
-
-                    # a normalization factor according to room size
-                    norm = 1
-                    if self.walls:
-                        norm = np.linalg.norm(
-                            (corners - self.mic_array.center), axis=0
-                        ).max()
-
-                    # plot all the beam patterns
-                    i = 0
-                    for f, h in zip(newfreq, H):
-                        x = np.cos(phis) * h * norm + self.mic_array.center[0, 0]
-                        y = np.sin(phis) * h * norm + self.mic_array.center[1, 0]
-                        ax.plot(x, y, "-", linewidth=0.5)
 
             # define some markers for different sources and colormap for damping
             markers = ["o", "s", "v", "."]
@@ -1164,8 +1100,7 @@ class Room(object):
             for i, source in enumerate(self.sources):
                 # draw source
                 ax.scatter(
-                    source.position[0],
-                    source.position[1],
+                    *source.position,
                     c=[cmap(1.0)],
                     s=20,
                     marker=markers[i % len(markers)],
@@ -1183,8 +1118,7 @@ class Room(object):
                 val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.0) / 10.0
                 # plot the images
                 ax.scatter(
-                    source.images[0, I],
-                    source.images[1, I],
+                    *source.images[:, I],
                     c=cmap(val),
                     s=20,
                     marker=markers[i % len(markers)],
@@ -1195,90 +1129,92 @@ class Room(object):
             # to set correctly the limits of the plot
             if not has_drawn_img:
                 bbox = self.get_bbox()
-                ax.set_xlim(bbox[0, :])
-                ax.set_ylim(bbox[1, :])
+                if self.dim == 2:
+                    ax.set_xlim(bbox[0, :])
+                    ax.set_ylim(bbox[1, :])
+                else:
+                    ax.set_xlim3d(bbox[0, :])
+                    ax.set_ylim3d(bbox[1, :])
+                    ax.set_zlim3d(bbox[2, :])
 
-            return fig, ax
+            # draw the beam pattern of the beamformer if requested (and available)
+            if (
+                freq is not None
+                and self.dim == 2
+                and isinstance(self.mic_array, bf.Beamformer)
+                and (
+                    self.mic_array.weights is not None
+                    or self.mic_array.filters is not None
+                )
+            ):
+
+                freq = np.array(freq)
+                if freq.ndim == 0:
+                    freq = np.array([freq])
+
+                # define a new set of colors for the beam patterns
+                newmap = plt.get_cmap("autumn")
+                desat = 0.7
+                try:
+                    # this is for matplotlib >= 2.0.0
+                    ax.set_prop_cycle(
+                        color=[newmap(k) for k in desat * np.linspace(0, 1, len(freq))]
+                    )
+                except:
+                    # keep this for backward compatibility
+                    ax.set_color_cycle(
+                        [newmap(k) for k in desat * np.linspace(0, 1, len(freq))]
+                    )
+
+                phis = np.arange(360) * 2 * np.pi / 360.0
+                newfreq = np.zeros(freq.shape)
+                H = np.zeros((len(freq), len(phis)), dtype=complex)
+                for i, f in enumerate(freq):
+                    newfreq[i], H[i] = self.mic_array.response(phis, f)
+
+                # normalize max amplitude to one
+                H = np.abs(H) ** 2 / np.abs(H).max() ** 2
+
+                # plot all the beam patterns
+                i = 0
+                for f, h in zip(newfreq, H):
+                    x = np.cos(phis) * h * norm + self.mic_array.center[0, 0]
+                    y = np.sin(phis) * h * norm + self.mic_array.center[1, 0]
+                    ax.plot(x, y, "-", linewidth=0.5)
+        return fig, ax
+
+    def plot_walls(self, ax):
+        """ Plot the walls in 2D or 3D. """
+        import matplotlib.cm
+        from matplotlib.collections import PatchCollection
+        from matplotlib.patches import Polygon
+        import matplotlib
 
         if self.dim == 3:
-
-            import mpl_toolkits.mplot3d as a3
-            import matplotlib.colors as colors
-            import matplotlib.pyplot as plt
             import scipy as sp
+            import matplotlib.colors as colors
+            import mpl_toolkits.mplot3d as a3
 
-            fig = plt.figure(figsize=figsize)
-            ax = a3.Axes3D(fig)
-
-            # plot the walls
             for w in self.walls:
                 tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
                 tri.set_color(colors.rgb2hex(sp.rand(3)))
                 tri.set_edgecolor("k")
                 ax.add_collection3d(tri)
+            return 1
+        else:
+            corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+            polygons = [Polygon(corners.T, True)]
+            p = PatchCollection(
+                polygons,
+                cmap=matplotlib.cm.jet,
+                facecolor=np.array([1, 1, 1]),
+                edgecolor=np.array([0, 0, 0]),
+            )
+            ax.add_collection(p)
 
-            # define some markers for different sources and colormap for damping
-            markers = ["o", "s", "v", "."]
-            cmap = plt.get_cmap("YlGnBu")
-
-            # use this to check some image sources were drawn
-            has_drawn_img = False
-
-            # draw the scatter of images
-            for i, source in enumerate(self.sources):
-                # draw source
-                ax.scatter(
-                    source.position[0],
-                    source.position[1],
-                    source.position[2],
-                    c=[cmap(1.0)],
-                    s=20,
-                    marker=markers[i % len(markers)],
-                    edgecolor=cmap(1.0),
-                )
-
-                # draw images
-                if img_order is None:
-                    img_order = self.max_order
-
-                I = source.orders <= img_order
-                if len(I) > 0:
-                    has_drawn_img = True
-
-                val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.0) / 10.0
-                # plot the images
-                ax.scatter(
-                    source.images[0, I],
-                    source.images[1, I],
-                    source.images[2, I],
-                    c=cmap(val),
-                    s=20,
-                    marker=markers[i % len(markers)],
-                    edgecolor=cmap(val),
-                )
-
-            # When no image source has been drawn, we need to use the bounding box
-            # to set correctly the limits of the plot
-            if not has_drawn_img:
-                bbox = self.get_bbox()
-                ax.set_xlim3d(bbox[0, :])
-                ax.set_ylim3d(bbox[1, :])
-                ax.set_zlim3d(bbox[2, :])
-
-            # draw the microphones
-            if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
-                    ax.scatter(
-                        mic[0],
-                        mic[1],
-                        mic[2],
-                        marker="x",
-                        linewidth=0.5,
-                        s=mic_marker_size,
-                        c="k",
-                    )
-
-            return fig, ax
+            # a normalization factor according to room size
+            norm = np.linalg.norm((corners - self.mic_array.center), axis=0).max()
+            return norm
 
     def plot_rir(self, select=None, FD=False):
         """
@@ -1837,6 +1773,7 @@ class Room(object):
 
         lower = np.amin(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
         upper = np.amax(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
+
         return np.c_[lower, upper]
 
     def is_inside(self, p, include_borders=True):
@@ -2097,7 +2034,7 @@ class ShoeBox(Room):
             absorption = dict(zip(self.wall_names, [absorption] * n_walls))
 
         ##########################
-        # BEGIN COMPATIBILITY CODE #
+        # END COMPATIBILITY CODE #
         ##########################
 
         if materials is not None:
@@ -2224,27 +2161,30 @@ class AnechoicRoom(ShoeBox):
         Dimension of the room (2 or 3).
     **kwargs:
         All other kwargs are passed on to the :py:obj:`pyroomacoustics.room.Room` initializer.
-
     """
 
     def __init__(self, dim, **kwargs):
-        self.dim = dim
-        if "max_order" in kwargs.keys():
-            raise ValueError("Cannot specify max_order for Anechoic room")
-        kwargs["max_order"] = 0
+        forbidden = ["max_order", "ray_tracing", "walls", "p"]
+        for kw in forbidden:
+            if kw in kwargs.keys():
+                warnings.warn(
+                    "Ignoring for Anechoic room: {}={}".format(kw, kwargs[kw])
+                )
 
-        # TODO(FD) check that ray tracing and walls was not passed, like above.
+        kwargs["max_order"] = 0
         kwargs["ray_tracing"] = False
 
         # Create some dummy walls
         p = np.ones((dim,))
         materials = Material(energy_absorption=1.0, scattering=0.0)  #
+
         ShoeBox.__init__(self, p=p, materials=materials, **kwargs)
 
     def __str__(self):
         return "AnechoicRoom instance in {}D.".format(self.dim)
 
     def is_inside(self, p):
+        """ Overloaded function to eliminate testing if objects are "inside" room. """
         # always return True because we want the walls to have no effect.
         return True
 
@@ -2263,3 +2203,7 @@ class AnechoicRoom(ShoeBox):
             upper = np.max(np.c_[upper[None, :], source.position[None, :]], axis=0)
 
         return np.c_[lower, upper]
+
+    def plot_walls(self, ax):
+        """ Overloaded function to eliminate wall plotting."""
+        return 1

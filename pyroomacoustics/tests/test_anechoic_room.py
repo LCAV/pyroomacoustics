@@ -3,7 +3,13 @@ import pyroomacoustics as pra
 
 
 def test_anechoic_room(debug=False):
+
+    # sound signal
     fs = 40000
+    freq = 440
+    times = np.linspace(0, 1, 100)
+    signal = np.sin(2 * np.pi * freq * times)
+
     for dim in [2, 3]:
 
         # create Anechoic room using the correct class
@@ -13,10 +19,6 @@ def test_anechoic_room(debug=False):
         room_shoebox = pra.ShoeBox([10] * dim, fs=fs, max_order=0)
 
         # Add a source somewhere in the room
-        # signal = np.random.rand(100)
-        freq = 440
-        times = np.linspace(0, 1, 100)
-        signal = np.sin(2 * np.pi * freq * times)
         soundsource = pra.SoundSource([5] * dim, signal=signal)
         room_infinite.add_soundsource(soundsource)
         room_shoebox.add_soundsource(soundsource)
@@ -35,7 +37,8 @@ def test_anechoic_room(debug=False):
         # Now compute the delay and sum weights for the beamformer
         for room in [room_infinite, room_shoebox]:
             room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
-            # room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
+            if debug:
+                room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
 
         # create signal
         room_infinite.sources[0].add_signal(signal)
@@ -70,5 +73,4 @@ def test_anechoic_room(debug=False):
 if __name__ == "__main__":
     import matplotlib.pylab as plt
 
-    # test_anechoic_room(debug=True)
-    test_anechoic_room(debug=False)
+    test_anechoic_room(debug=True)
