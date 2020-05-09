@@ -56,11 +56,13 @@ Changed
 Bugfix
 ~~~~~~
 
+- Raise an error if Room.simulate() is run with unspecified signals
 - From Issue #150, increase max iterations to check if point is inside room
 
 Added
 ~~~~~~~
 
+- Create an anechoic room class without walls to simulate free space
 - Added `room_isinside_max_iter` in `parameters.py`
 - Default set to 20 rather than 5 as it was in `pyroomacoustics.room.Room.isinside`
 - Added Binder link in the README for online interactive demo
