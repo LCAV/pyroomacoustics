@@ -350,9 +350,9 @@ from .libroom import Wall, Wall2D
 def wall_factory(corners, absorption, scattering, name=""):
     """ Call the correct method according to wall dimension """
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(corners, absorption, scattering, name)
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(corners, absorption, scattering, name)
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -879,6 +879,7 @@ class Room(object):
                 )
             )
 
+        # fmt: off
         return cls(
             walls,
             fs=fs,
@@ -887,10 +888,9 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            # fmt: off
             **kwargs
-            # fmt: on
         )
+        # fmt: on
 
     def extrude(
         self, height, v_vec=None, absorption=None, materials=None,
@@ -1087,9 +1087,10 @@ class Room(object):
         # draw the microphones
         if self.mic_array is not None:
             for mic in self.mic_array.R.T:
-                ax.scatter(
-                    *mic, marker="x", linewidth=0.5, s=mic_marker_size, c="k",
-                )
+
+                # fmt:off
+                ax.scatter(*mic, marker="x", linewidth=0.5, s=mic_marker_size, c="k")
+                # fmt:on
 
             # define some markers for different sources and colormap for damping
             markers = ["o", "s", "v", "."]
@@ -1101,13 +1102,15 @@ class Room(object):
             # draw the scatter of images
             for i, source in enumerate(self.sources):
                 # draw source
+                # fmt:off
                 ax.scatter(
                     *source.position,
                     c=[cmap(1.0)],
                     s=20,
                     marker=markers[i % len(markers)],
-                    edgecolor=cmap(1.0),
+                    edgecolor=cmap(1.0)
                 )
+                # fmt:on
 
                 # draw images
                 if img_order is None:
@@ -1118,14 +1121,15 @@ class Room(object):
                     has_drawn_img = True
 
                 val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.0) / 10.0
-                # plot the images
+                # fmt:off
                 ax.scatter(
                     *source.images[:, I],
                     c=cmap(val),
                     s=20,
                     marker=markers[i % len(markers)],
-                    edgecolor=cmap(val),
+                    edgecolor=cmap(val)
                 )
+                # fmt:on
 
             # When no image source has been drawn, we need to use the bounding box
             # to set correctly the limits of the plot
@@ -1187,10 +1191,6 @@ class Room(object):
 
     def plot_walls(self, ax):
         """ Plot the walls in 2D or 3D. """
-        import matplotlib.cm
-        from matplotlib.collections import PatchCollection
-        from matplotlib.patches import Polygon
-        import matplotlib
 
         if self.dim == 3:
             import scipy as sp
@@ -1202,8 +1202,13 @@ class Room(object):
                 tri.set_color(colors.rgb2hex(sp.rand(3)))
                 tri.set_edgecolor("k")
                 ax.add_collection3d(tri)
-            return 1
+
+            return 1.0
         else:
+            import matplotlib.cm
+            from matplotlib.collections import PatchCollection
+            from matplotlib.patches import Polygon
+
             corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
             polygons = [Polygon(corners.T, True)]
             p = PatchCollection(
@@ -1214,9 +1219,10 @@ class Room(object):
             )
             ax.add_collection(p)
 
-            # a normalization factor according to room size
-            norm = np.linalg.norm((corners - self.mic_array.center), axis=0).max()
-            return norm
+            # a normalization factor according to room size, used for plotting the beamshape
+            if self.mic_array is not None:
+                return np.linalg.norm((corners - self.mic_array.center), axis=0).max()
+            return 1.0
 
     def plot_rir(self, select=None, FD=False):
         """

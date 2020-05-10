@@ -53,13 +53,15 @@ def test_anechoic_room(debug=False):
             plt.figure()
             for m in range(premix_infinite.shape[1]):
                 plt.plot(
-                    premix_infinite[0][m], label=f"mic {m} infinite", color=f"C{m}"
+                    premix_infinite[0][m],
+                    label="mic {} infinite".format(m),
+                    color="C{}".format(m),
                 )
                 plt.plot(
                     premix_shoebox[0][m],
-                    label=f"mic {m} shoebox",
+                    label="mic {} shoebox".format(m),
                     ls=":",
-                    color=f"C{m}",
+                    color="C{}".format(m),
                 )
             plt.legend()
         else:
