@@ -4,6 +4,7 @@ from __future__ import division, print_function
 
 from .doa import *
 
+
 class SRP(DOA):
     """
     Class to apply Steered Response Power (SRP) direction-of-arrival (DoA) for 
@@ -36,15 +37,38 @@ class SRP(DOA):
         Candidate elevation angles (in radians) with respect to z-axis.
         Default is x-y plane search: np.pi/2*np.ones(1)
     """
-    def __init__(self, L, fs, nfft, c=343.0, num_src=1, mode='far', r=None, 
-        azimuth=None, colatitude=None, **kwargs):
 
-        DOA.__init__(self, L=L, fs=fs, nfft=nfft, c=c, num_src=num_src, 
-            mode=mode, r=r, azimuth=azimuth, colatitude=colatitude, **kwargs)
+    def __init__(
+        self,
+        L,
+        fs,
+        nfft,
+        c=343.0,
+        num_src=1,
+        mode="far",
+        r=None,
+        azimuth=None,
+        colatitude=None,
+        **kwargs
+    ):
 
-        self.num_pairs = self.M*(self.M-1)/2
+        DOA.__init__(
+            self,
+            L=L,
+            fs=fs,
+            nfft=nfft,
+            c=c,
+            num_src=num_src,
+            mode=mode,
+            r=r,
+            azimuth=azimuth,
+            colatitude=colatitude,
+            **kwargs
+        )
 
-        #self.mode_vec = np.conjugate(self.mode_vec)
+        self.num_pairs = self.M * (self.M - 1) / 2
+
+        # self.mode_vec = np.conjugate(self.mode_vec)
 
     def _process(self, X):
         """
@@ -63,24 +87,26 @@ class SRP(DOA):
 
         CC = []
         for k in self.freq_bins:
-            CC.append( np.dot(pX[:,k,:], np.conj(pX[:,k,:]).T) )
+            CC.append(np.dot(pX[:, k, :], np.conj(pX[:, k, :]).T))
         CC = np.array(CC)
 
         for n in range(self.grid.n_points):
 
             # get the mode vector axis: (frequency, microphones)
-            mode_vec = self.mode_vec[self.freq_bins,:,n]
+            mode_vec = self.mode_vec[self.freq_bins, :, n]
 
             # compute the outer product along the microphone axis
-            mode_mat = np.conj(mode_vec[:,:,None]) * mode_vec[:,None,:]
+            mode_mat = np.conj(mode_vec[:, :, None]) * mode_vec[:, None, :]
 
             # multiply covariance by mode vectors and sum over the frequencies
             R = np.sum(CC * mode_mat, axis=0)
 
-            # Now sum over all distince microphone pairs
+            # Now sum over all distinct microphone pairs
             sum_val = np.inner(ones, np.dot(np.triu(R, 1), ones))
 
             # Finally normalize
-            srp_cost[n] = np.abs(sum_val) / self.num_snap/self.num_freq/self.num_pairs
+            srp_cost[n] = (
+                np.abs(sum_val) / self.num_snap / self.num_freq / self.num_pairs
+            )
 
         self.grid.set_values(srp_cost)

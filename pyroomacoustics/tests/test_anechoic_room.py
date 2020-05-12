@@ -45,8 +45,6 @@ def test_anechoic_room(debug=False):
 
         # make sure that the premix signals for both are the same.
         premix_infinite = room_infinite.simulate(return_premix=True)
-        len_direct_sound = premix_infinite.shape[2]
-
         premix_shoebox = room_shoebox.simulate(return_premix=True)
 
         if debug:
@@ -66,7 +64,7 @@ def test_anechoic_room(debug=False):
             plt.legend()
         else:
             np.testing.assert_allclose(
-                premix_infinite, premix_shoebox[:, :, :len_direct_sound]
+                premix_infinite, premix_shoebox
             )
     if debug:
         plt.show()

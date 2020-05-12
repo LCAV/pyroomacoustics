@@ -879,7 +879,6 @@ class Room(object):
                 )
             )
 
-        # fmt: off
         return cls(
             walls,
             fs=fs,
@@ -890,7 +889,6 @@ class Room(object):
             mics=mics,
             **kwargs
         )
-        # fmt: on
 
     def extrude(
         self, height, v_vec=None, absorption=None, materials=None,
@@ -1088,9 +1086,7 @@ class Room(object):
         if self.mic_array is not None:
             for mic in self.mic_array.R.T:
 
-                # fmt:off
                 ax.scatter(*mic, marker="x", linewidth=0.5, s=mic_marker_size, c="k")
-                # fmt:on
 
             # define some markers for different sources and colormap for damping
             markers = ["o", "s", "v", "."]
@@ -1102,7 +1098,6 @@ class Room(object):
             # draw the scatter of images
             for i, source in enumerate(self.sources):
                 # draw source
-                # fmt:off
                 ax.scatter(
                     *source.position,
                     c=[cmap(1.0)],
@@ -1110,7 +1105,6 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(1.0)
                 )
-                # fmt:on
 
                 # draw images
                 if img_order is None:
@@ -1121,7 +1115,6 @@ class Room(object):
                     has_drawn_img = True
 
                 val = (np.log2(np.mean(source.damping, axis=0)[I]) + 10.0) / 10.0
-                # fmt:off
                 ax.scatter(
                     *source.images[:, I],
                     c=cmap(val),
@@ -1129,7 +1122,6 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(val)
                 )
-                # fmt:on
 
             # When no image source has been drawn, we need to use the bounding box
             # to set correctly the limits of the plot
@@ -1673,8 +1665,6 @@ class Room(object):
             raise ValueError("There are no sound sources in the room.")
         if self.mic_array is None:
             raise ValueError("There is no microphone in the room.")
-        if any([s.signal is None for s in self.sources]):
-            raise ValueError("There are unspecified source signals.")
 
         # compute RIR if necessary
         if self.rir is None or len(self.rir) == 0 or recompute_rir:
@@ -1693,7 +1683,9 @@ class Room(object):
         f = lambda i: len(self.sources[i].signal) + np.floor(
             self.sources[i].delay * self.fs
         )
-        max_sig_len = np.array([f(i) for i in range(S)]).max()
+        max_sig_len = np.array(
+            [f(i) for i in range(S) if (self.sources[i].signal is not None)]
+        ).max()
         L = int(max_len_rir) + int(max_sig_len) - 1
         if L % 2 == 1:
             L += 1
@@ -1705,6 +1697,9 @@ class Room(object):
         for m in np.arange(M):
             for s in np.arange(S):
                 sig = self.sources[s].signal
+                if sig is None:
+                    continue
+
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
                 premix_signals[s, m, d : d + len(sig) + len(h) - 1] += fftconvolve(
@@ -1878,7 +1873,6 @@ class Room(object):
         )
 
     def wall_area(self, wall):
-
         """Computes the area of a 3D planar wall.
 
         Parameters
@@ -1908,7 +1902,6 @@ class Room(object):
         return abs(np.dot(n, sum_vect)) / 2.0
 
     def get_volume(self):
-
         """
         Computes the volume of the room
 
@@ -2154,41 +2147,96 @@ class ShoeBox(Room):
 
         Room.extrude(self, np.array([0.0, 0.0, height]))
 
+        # update the shoebox dim
+        self.shoebox_dim = np.append(self.shoebox_dim, height)
+
     def get_volume(self):
 
         return np.prod(self.shoebox_dim)
 
 
 class AnechoicRoom(ShoeBox):
-    """ 
+    """
     This class provides an API for creating an Anechoic "room" in 2D or 3D.
 
     Parameters
     ----------
     dim: int
         Dimension of the room (2 or 3).
-    kwargs:
-        All other kwargs are passed on to the :py:obj:`pyroomacoustics.room.Room` initializer.
+    fs: int, optional
+        The sampling frequency in Hz. Default is 8000.
+    t0: float, optional
+        The global starting time of the simulation in seconds. Default is 0.
+    sigma2_awgn: float, optional
+        The variance of the additive white Gaussian noise added during
+        simulation. By default, none is added.
+    sources: list of SoundSource objects, optional
+        Sources to place in the room. Sources can be added after room creating
+        with the `add_source` method by providing coordinates.
+    mics: MicrophoneArray object, optional
+        The microphone array to place in the room. A single microphone or
+        microphone array can be added after room creation with the
+        `add_microphone_array` method.
+    temperature: float, optional
+        The air temperature in the room in degree Celsius. By default, set so
+        that speed of sound is 343 m/s.
+    humidity: float, optional
+        The relative humidity of the air in the room (between 0 and 100). By
+        default set to 0.
+    air_absorption: bool, optional
+        If set to True, absorption of sound energy by the air will be
+        simulated.
     """
 
-    def __init__(self, dim, **kwargs):
-        forbidden = ["max_order", "ray_tracing", "walls", "p"]
-        for kw in forbidden:
-            if kw in kwargs.keys():
-                warnings.warn(
-                    "Ignoring for Anechoic room: {}={}".format(kw, kwargs[kw])
-                )
+    def __init__(
+        self,
+        dim,
+        fs=8000,
+        t0=0.0,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        temperature=None,
+        humidity=None,
+        air_absorption=False,
+    ):
+        if not dim in [2, 3]:
+            raise ValueError("Anechoic room dimension has to be either 2 or 3.")
 
-        kwargs["max_order"] = 0
-        kwargs["ray_tracing"] = False
+        # Setting max_order to 0 emulates an anechoic room.
+        max_order = 0
+
+        # Ray tracing only makes sense in echoic rooms.
+        ray_tracing = False
 
         # Create some dummy walls
         p = np.ones((dim,))
-        materials = Material(energy_absorption=1.0, scattering=0.0)  #
 
-        ShoeBox.__init__(self, p=p, materials=materials, **kwargs)
+        # The materials are not actually used because max_order is set to 0 and ray-tracing to False.
+        # Anyways, we use the energy_absorption and scattering corresponding to an anechoic room.
+        materials = Material(energy_absorption=1.0, scattering=0.0)
+
+        # Set deprecated parameter
+        absorption = None
+
+        ShoeBox.__init__(
+            self,
+            p=p,
+            fs=fs,
+            t0=t0,
+            max_order=max_order,
+            sigma2_awgn=sigma2_awgn,
+            sources=sources,
+            mics=mics,
+            materials=materials,
+            temperature=temperature,
+            humidity=humidity,
+            air_absorption=air_absorption,
+            ray_tracing=ray_tracing,
+        )
 
     def __str__(self):
+
         return "AnechoicRoom instance in {}D.".format(self.dim)
 
     def is_inside(self, p):
@@ -2198,6 +2246,9 @@ class AnechoicRoom(ShoeBox):
 
     def get_bbox(self):
         """ Returns a bounding box for the mics and sources, for plotting. """
+
+        if (self.mic_array is None) and not self.sources:
+            raise ValueError("Nothing to plot, the Anechoic Room is empty!")
 
         lower = np.inf * np.ones((self.dim,))
         upper = -np.inf * np.ones((self.dim,))
@@ -2215,3 +2266,9 @@ class AnechoicRoom(ShoeBox):
     def plot_walls(self, ax):
         """ Overloaded function to eliminate wall plotting."""
         return 1
+
+    def plot(self, **kwargs):
+
+        if "img_order" in kwargs.keys():
+            warnings.warn("Ignoring img_order argument for AnechoicRoom.", UserWarning)
+        ShoeBox.plot(self, **kwargs)

@@ -56,7 +56,6 @@ Changed
 Bugfix
 ~~~~~~
 
-- Raise an error if Room.simulate() is run with unspecified signals
 - From Issue #150, increase max iterations to check if point is inside room
 
 Added
