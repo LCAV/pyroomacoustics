@@ -10,6 +10,14 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
 -------------
+Changed
+~~~~~~~
+
+- Added vectorised functions in MUSIC 
+- Use the vectorised functions in _process of MUSIC
+
+`0.3.1`_ - 2020-05-12
+---------------------
 
 Bugfix
 ~~~~~~
