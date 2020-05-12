@@ -58,11 +58,8 @@ class MUSIC(DOA):
         # compute spatial spectrum
         identity = np.zeros((self.num_freq,self.M,self.M))
         identity[:,list(np.arange(self.M)),list(np.arange(self.M))] = 1
-        #print(Es.shape)
-        #print(np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2]).shape)
         cross = identity - Es@np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2])
         self.Pssl = self._compute_spatial_spectrumvec(cross)
-        #print(self.Pssl.shape)
         self.grid.set_values(np.squeeze(np.sum(self.Pssl, axis=1)/self.num_freq))
 
     def plot_individual_spectrum(self):
@@ -172,24 +169,19 @@ class MUSIC(DOA):
         # Noise takes the rest
 
         eig_order = np.argsort(abs(w),axis=-1)[...,::-1]
-        #print(eig_order[0,0,:])
+
+
         sig_space = eig_order[...,:self.num_src]
         noise_space = eig_order[...,self.num_src:]
+
         # eigenvalues
         # Broadcasting for fancy indexing ... this is really nice
         b = np.asarray(np.arange(w.shape[0]))[:,None,None]
         c = np.asarray(np.arange(w.shape[1]))[None,:,None]
         d = np.asarray(np.arange(w.shape[2]))[None,None,:,None]
         ws = w[b,c,sig_space]
-        #print(sig_space[0,0,:])
-        #print(ws[0,0,:]-w[0,0,1:3])
         wn = w[b,c,noise_space]
-        #print(ws.shape)
-        #print(wn.shape)
         # eigenvectors
         Es = v[b[...,None],c[...,None],d,sig_space[...,None,:]]
         En = v[b[...,None],c[...,None],d,noise_space[...,None,:]]
-        #print(Es.shape)
-        #print(En.shape)
-        #print(Es[0,0,:,:]-v[0,0,:,1:3])
         return (Es, En, ws, wn)
