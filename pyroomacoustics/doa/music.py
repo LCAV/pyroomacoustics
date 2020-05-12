@@ -52,17 +52,17 @@ class MUSIC(DOA):
         """
         # compute steered response
         self.Pssl = np.zeros((self.num_freq,self.grid.n_points))
-        C_hat = self._compute_correlation_matrices(X)
+        C_hat = self._compute_correlation_matricesvec(X)
         # subspace decomposition
-        Es, En, ws, wn = self._subspace_decomposition(C_hat[None,...])
+        Es, En, ws, wn = self._subspace_decompositionvec(C_hat[None,...])
         # compute spatial spectrum
         identity = np.zeros((self.num_freq,self.M,self.M))
         identity[:,list(np.arange(self.M)),list(np.arange(self.M))] = 1
-        print(Es.shape)
-        print(np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2]).shape)
+        #print(Es.shape)
+        #print(np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2]).shape)
         cross = identity - Es@np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2])
-        self.Pssl = self._compute_spatial_spectrum(cross)
-        print(self.Pssl.shape)
+        self.Pssl = self._compute_spatial_spectrumvec(cross)
+        #print(self.Pssl.shape)
         self.grid.set_values(np.squeeze(np.sum(self.Pssl, axis=1)/self.num_freq))
 
     def plot_individual_spectrum(self):
@@ -100,25 +100,37 @@ class MUSIC(DOA):
             plt.title('Steering Response Spectrum - ' + str(freq) + ' Hz')
             plt.grid(True)
 
-    def _compute_spatial_spectrum(self,cross):
+    def _compute_spatial_spectrumvec(self,cross):
         mod_vec = np.transpose(np.array(self.mode_vec[self.freq_bins,:,:]),axes=[2,0,1])
         # timeframe, frequ, no idea
         denom = np.conjugate(mod_vec[...,None,:])@cross@mod_vec[...,None]
-        return 1/abs(denom)
-    '''
+        return np.squeeze(1/abs(denom))
+
+    def _compute_spatial_spectrum(self,cross,k):
+
+        P = np.zeros(self.grid.n_points)
+
+        for n in range(self.grid.n_points):
+            Dc = np.array(self.mode_vec[k,:,n],ndmin=2).T
+            Dc_H = np.conjugate(np.array(self.mode_vec[k,:,n],ndmin=2))
+            denom = np.dot(np.dot(Dc_H,cross),Dc)
+            P[n] = 1/abs(denom)
+
+        return P
+
     #    Non vectorized old Version
-        def _compute_correlation_matrices(self, X):
-            C_hat = np.zeros([self.num_freq,self.M,self.M], dtype=complex)
-            for i in range(self.num_freq):
-                k = self.freq_bins[i]
-                for s in range(self.num_snap):
-                    C_hat[i,:,:] = C_hat[i,:,:] + np.outer(X[:,k,s],
-                        np.conjugate(X[:,k,s]))
-            return C_hat/self.num_snap
-    '''
+    def _compute_correlation_matrices(self, X):
+        C_hat = np.zeros([self.num_freq,self.M,self.M], dtype=complex)
+        for i in range(self.num_freq):
+            k = self.freq_bins[i]
+            for s in range(self.num_snap):
+                C_hat[i,:,:] = C_hat[i,:,:] + np.outer(X[:,k,s],
+                    np.conjugate(X[:,k,s]))
+        return C_hat/self.num_snap
+
 
     # Replace in pyroomacoustics
-    def _compute_correlation_matrices(self, X):
+    def _compute_correlation_matricesvec(self, X):
         # change X such that time frames, frequency microphones is the result
         X = np.transpose(X,axes=[2,1,0])
         # select frequency bins
@@ -128,8 +140,8 @@ class MUSIC(DOA):
         # Average over time-frames
         C_hat = np.mean(C_hat,axis=0)
         return C_hat
-    '''
-    old version which is not vectorised
+
+    #old version which is not vectorised
     def _subspace_decomposition(self, R):
 
         # eigenvalue decomposition!
@@ -151,11 +163,10 @@ class MUSIC(DOA):
         En = v[:,noise_space]
 
         return Es, En, ws, wn
-    '''
-    def _subspace_decomposition(self,R):
+
+    def _subspace_decompositionvec(self,R):
         # eigenvalue decomposition!
         w,v = np.linalg.eig(R)
-        print(w.shape)
         # sort out signal and noise subspace
         # Signal comprises the leading eigenvalues
         # Noise takes the rest
