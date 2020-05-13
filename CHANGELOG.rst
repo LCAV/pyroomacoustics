@@ -17,6 +17,7 @@ Changed
 - added vectorised matrix operations in SRP
 
 `0.3.3`_ - 2020-05-13
+---------------------
 
 Bugfix
 ~~~~~~
