@@ -60,27 +60,23 @@ class SRP(DOA):
         absX = np.abs(X)
         absX[absX < tol] = tol
         pX = X / absX
+        pX = pX[:, list(self.freq_bins), :].transpose([1, 0, 2])
+        CC = np.squeeze(pX @ np.conjugate(pX.transpose([0, 2, 1])))
 
-        CC = []
-        for k in self.freq_bins:
-            CC.append( np.dot(pX[:,k,:], np.conj(pX[:,k,:]).T) )
-        CC = np.array(CC)
+        # get the mode vector axis: (grid_points, frequency, microphones)
+        mode_vec = self.mode_vec[self.freq_bins, :, :].transpose([2, 0, 1])
 
-        for n in range(self.grid.n_points):
+        # compute the outer product along the microphone axis
+        mode_mat = np.conjugate(mode_vec[..., None]) * mode_vec[..., None, :]
 
-            # get the mode vector axis: (frequency, microphones)
-            mode_vec = self.mode_vec[self.freq_bins,:,n]
+        # multiply covariance by mode vectors and sum over the frequencies
+        R = np.sum(CC[None, ...] * mode_mat, axis=1)
 
-            # compute the outer product along the microphone axis
-            mode_mat = np.conj(mode_vec[:,:,None]) * mode_vec[:,None,:]
+        # Now sum over all distinct microphone pairs
+        sum_val = np.inner(ones, np.dot(np.triu(R, 1), ones))
 
-            # multiply covariance by mode vectors and sum over the frequencies
-            R = np.sum(CC * mode_mat, axis=0)
-
-            # Now sum over all distince microphone pairs
-            sum_val = np.inner(ones, np.dot(np.triu(R, 1), ones))
-
-            # Finally normalize
-            srp_cost[n] = np.abs(sum_val) / self.num_snap/self.num_freq/self.num_pairs
+        # Finally normalize
+        srp_cost = np.abs(sum_val) / self.num_snap / self.num_freq / self.num_pairs
 
         self.grid.set_values(srp_cost)
+
