@@ -58,7 +58,7 @@ class MUSIC(DOA):
         # compute spatial spectrum
         identity = np.zeros((self.num_freq,self.M,self.M))
         identity[:,list(np.arange(self.M)),list(np.arange(self.M))] = 1
-        cross = identity - Es@np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2])
+        cross = identity - np.matmul(Es,np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2]))
         self.Pssl = self._compute_spatial_spectrumvec(cross)
         self.grid.set_values(np.squeeze(np.sum(self.Pssl, axis=1)/self.num_freq))
 
@@ -100,7 +100,7 @@ class MUSIC(DOA):
     def _compute_spatial_spectrumvec(self,cross):
         mod_vec = np.transpose(np.array(self.mode_vec[self.freq_bins,:,:]),axes=[2,0,1])
         # timeframe, frequ, no idea
-        denom = np.conjugate(mod_vec[...,None,:])@cross@mod_vec[...,None]
+        denom = np.matmul(np.conjugate(mod_vec[...,None,:]),np.matmul(cross,mod_vec[...,None]))
         return np.squeeze(1/abs(denom))
 
     def _compute_spatial_spectrum(self,cross,k):
@@ -115,7 +115,7 @@ class MUSIC(DOA):
 
         return P
 
-    #    Non vectorized old Version
+    # non-vectorized version
     def _compute_correlation_matrices(self, X):
         C_hat = np.zeros([self.num_freq,self.M,self.M], dtype=complex)
         for i in range(self.num_freq):
@@ -126,19 +126,19 @@ class MUSIC(DOA):
         return C_hat/self.num_snap
 
 
-    # Replace in pyroomacoustics
+    # vectorized version
     def _compute_correlation_matricesvec(self, X):
         # change X such that time frames, frequency microphones is the result
         X = np.transpose(X,axes=[2,1,0])
         # select frequency bins
         X = X[...,list(self.freq_bins),:]
         # Compute PSD and average over time frame
-        C_hat = X[...,None]@np.conjugate(X[...,None,:])
+        C_hat = np.matmul(X[...,None],np.conjugate(X[...,None,:]))
         # Average over time-frames
         C_hat = np.mean(C_hat,axis=0)
         return C_hat
 
-    #old version which is not vectorised
+    # non-vectorized version
     def _subspace_decomposition(self, R):
 
         # eigenvalue decomposition!
@@ -160,7 +160,7 @@ class MUSIC(DOA):
         En = v[:,noise_space]
 
         return Es, En, ws, wn
-
+    # vectorized versino
     def _subspace_decompositionvec(self,R):
         # eigenvalue decomposition!
         w,v = np.linalg.eig(R)
@@ -175,7 +175,7 @@ class MUSIC(DOA):
         noise_space = eig_order[...,self.num_src:]
 
         # eigenvalues
-        # Broadcasting for fancy indexing ... this is really nice
+        # broadcasting for fancy indexing 
         b = np.asarray(np.arange(w.shape[0]))[:,None,None]
         c = np.asarray(np.arange(w.shape[1]))[None,:,None]
         d = np.asarray(np.arange(w.shape[2]))[None,None,:,None]
