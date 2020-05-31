@@ -58,7 +58,7 @@ class MUSIC(DOA):
         # compute spatial spectrum
         identity = np.zeros((self.num_freq,self.M,self.M))
         identity[:,list(np.arange(self.M)),list(np.arange(self.M))] = 1
-        cross = identity - np.matmul(Es,np.transpose(np.conjugate(Es),axes=[*list(np.arange(len(Es.shape[:-2]))),-1,-2]))
+        cross = identity - np.matmul(Es,np.moveaxis(np.conjugate(Es),-1,-2))
         self.Pssl = self._compute_spatial_spectrumvec(cross)
         self.grid.set_values(np.squeeze(np.sum(self.Pssl, axis=1)/self.num_freq))
 
