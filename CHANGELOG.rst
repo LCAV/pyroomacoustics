@@ -22,6 +22,12 @@ Added
 - Acoustic properties of different materials in ``pyroomacoustics.materials``
 - Scattering from the wall is handled via ray tracing method, scattering coefficients are provided
   in ``pyroomacoustics.materials.Material`` objects
+- Function ``inverse_sabine`` allows to compute the ``absorption`` and ``max_order`` to use with
+  the image source model to achieve a given reverberation time
+- The method ``rt60_theory`` in ``pyroomacoustics.room.Room`` allows to compute the theoretical
+  RT60 of the room according to Eyring or Sabine formula
+- The method ``measure_rt60`` in ``pyroomacoustics.room.Room`` allows to measure the RT60 of
+  the simulated RIRs
 
 
 Changed

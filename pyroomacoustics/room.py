@@ -31,10 +31,14 @@ The three main classes are :py:obj:`pyroomacoustics.room.Room`,
 :py:obj:`pyroomacoustics.beamforming.MicrophoneArray`. On a high level, a
 simulation scenario is created by first defining a room to which a few sound
 sources and a microphone array are attached. The actual audio is attached to
-the source as raw audio samples. The image source method (ISM) is then used to
-find all image sources up to a maximum specified order and room impulse
-responses (RIR) are generated from their positions. Ray tracing can be used to
-complement ISM in order to better capture the later reflections.
+the source as raw audio samples.
+
+Then, a simulation method is used to create artificial room impulse responses
+(RIR) between the sources and microphones. The current default method is the
+image source which considers the walls as perfect reflectors. An experimental
+hybrid simulator based on image source method (ISM) [1]_ and ray tracing (RT) [2]_, [3]_, is also available.  Ray tracing
+better capture the later reflections and can also model effects such as
+scattering.
 
 The microphone signals are then created by convolving audio samples associated
 to sources with the appropriate RIR. Since the simulation is done on
@@ -42,11 +46,14 @@ discrete-time signals, a sampling frequency is specified for the room and the
 sources it contains. Microphones can optionally operate at a different sampling
 frequency; a rate conversion is done in this case.
 
-Simulating a Shoebox Room
--------------------------
+Simulating a Shoebox Room with the Image Source Model
+-----------------------------------------------------
 
 We will first walk through the steps to simulate a shoebox-shaped room in 3D.
+We use the ISM is to find all image sources up to a maximum specified order and
+room impulse responses (RIR) are generated from their positions.
 
+The code for the full example can be found in `examples/room_ism_from_rt60.py`.
 
 Create the room
 ~~~~~~~~~~~~~~~
@@ -54,64 +61,43 @@ Create the room
 So-called shoebox rooms are pallelepipedic rooms with 4 or 6 walls (in 2D and
 3D respectiely), all at right angles. They are defined by a single vector that
 contains the lengths of the walls. They have the advantage of being simple to
-define and very efficient to simulate. A ``9m x 7.5m x 3.5m`` room is simply
-defined like this:
+define and very efficient to simulate. In the following example, we define a
+``9m x 7.5m x 3.5m`` room. In addition, we use `Sabine's formula <https://en.wikipedia.org/wiki/Reverberation>`_
+to find the wall energy absorption and maximum order of the ISM required
+to achieve a desired reverberation time (*RT60*, i.e. the time it takes for
+the RIR to decays by 60 dB).
 
 .. code-block:: python
 
     import pyroomacoustics as pra
-    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, absorption=0.35, max_order=17)
+
+    # The desired reverberation time and dimensions of the room
+    rt60 = 0.5  # seconds
+    room_dim = [9, 7.5, 3.5]  # meters
+
+    # We invert Sabine's formula to obtain the parameters for the ISM simulator
+    e_absorption, max_order = pra.inverse_sabine(rt60, room_dim)
+
+    # Create the room
+    room = pra.ShoeBox(
+        room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=max_order
+    )
 
 The second argument is the sampling frequency at which the RIR will be
-generated. Note that the default value of ``fs`` is 8 kHz. The third argument
-is the absorption of the walls, namely reflections are multiplied by ``(1 -
-absorption)`` for every wall they hit. The fourth argument is the maximum
-number of reflections allowed in the ISM.
+generated. Note that the default value of ``fs`` is 8 kHz.
+The third argument is the material of the wall, that itself takes the absorption as a parameter.
+The fourth and last argument is the maximum number of reflections allowed in the ISM.
 
-The relationship between ``absorption``/``max_order`` and `reverberation time
-<https://en.wikipedia.org/wiki/Reverberation>`_ (the T60 or RT60 in the
-acoustics literature) is not straightforward. `Sabine's formula
-<https://en.wikipedia.org/wiki/Reverberation#Sabine_equation>`_ can be used to
-some extent to set these parameters.
+.. note::
 
-Note that the ``absorption`` parameter will be deprecated. It is recommended
-to use the ``materials`` parameters which can be used to set the same
-**energy** absorption for all walls and over all frequencies as such:
+    Note that Sabine's formula is only an approximation and that the actually
+    simulated RT60 may vary by quite a bit.
 
-.. code-block:: python
+.. warning::
 
-    import pyroomacoustics as pra
-    m = pra.Material(energy_absorption=0.03)
-    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
-
-The absorption coefficients can also be set to a particular material:
-
-.. code-block:: python
-
-    import pyroomacoustics as pra
-    m = pra.Material(energy_absorption="hard_surface")
-    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
-
-Moreover, different materials can be set for each wall.
-
-.. code-block:: python
-
-    import pyroomacoustics as pra
-    m = pra.make_materials(
-        ceiling="hard_surface",
-        floor="6mm_carpet",
-        east="brickwork",
-        west="brickwork",
-        north="brickwork",
-        south="brickwork",
-    )
-    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17,
-                       air_absorption=True, ray_tracing=True)
-
-Note that in the above example ``ray_tracing=True`` to complement the ISM
-approach with ray tracing and ``air_absorption=True`` to take into account
-the absorption due to air.
-
+    Until recently, rooms would take an ``absorption`` parameter that was
+    actually **not** the energy absorption we use now.  The ``absorption``
+    parameter is now deprecated and will be removed in the future.
 
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -121,7 +107,7 @@ mandatory argument, and a signal and start time as optional arguments.  Here we
 create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
 the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the
 simulation.  The ``signal`` keyword argument to the
-:py:func:`pyroomacoustics.room.Room.add_source` method should be a
+:py:func:`~pyroomacoustics.room.Room.add_source` method should be a
 one-dimensional ``numpy.ndarray`` containing the desired sound signal.
 
 .. code-block:: python
@@ -136,34 +122,29 @@ one-dimensional ``numpy.ndarray`` containing the desired sound signal.
 
 The locations of the microphones in the array should be provided in a numpy
 ``nd-array`` of size ``(ndim, nmics)``, that is each column contains the
-coordinates of one microphone. This array is used to construct a
-:py:obj:`pyroomacoustics.beamforming.MicrophoneArray` object, together with the
-sampling frequency for the microphone. Note that it can be different from that
+coordinates of one microphone. Note that it can be different from that
 of the room, in which case resampling will occur. Here, we create an array
 with two microphones placed at ``[6.3, 4.87, 1.2]`` and ``[6.3, 4.93, 1.2]``.
 
 .. code-block:: python
 
-    # define the location of the array
+    # define the locations of the microphones
     import numpy as np
-    R = np.c_[
+    mic_locs = np.c_[
         [6.3, 4.87, 1.2],  # mic 1
         [6.3, 4.93, 1.2],  # mic 2
-        ]
-
-    # the fs of the microphones is the same as the room
-    mic_array = pra.MicrophoneArray(R, room.fs)
+    ]
 
     # finally place the array in the room
-    room.add_microphone_array(mic_array)
+    room.add_microphone_array(mic_locs)
 
 A number of routines exist to create regular array geometries in 2D.
 
-- :py:func:`pyroomacoustics.beamforming.linear_2D_array`
-- :py:func:`pyroomacoustics.beamforming.circular_2D_array`
-- :py:func:`pyroomacoustics.beamforming.square_2D_array`
-- :py:func:`pyroomacoustics.beamforming.poisson_2D_array`
-- :py:func:`pyroomacoustics.beamforming.spiral_2D_array`
+- :py:func:`~pyroomacoustics.beamforming.linear_2D_array`
+- :py:func:`~pyroomacoustics.beamforming.circular_2D_array`
+- :py:func:`~pyroomacoustics.beamforming.square_2D_array`
+- :py:func:`~pyroomacoustics.beamforming.poisson_2D_array`
+- :py:func:`~pyroomacoustics.beamforming.spiral_2D_array`
 
 
 Create the Room Impulse Response
@@ -185,11 +166,20 @@ and the inner list over sources.
     plt.plot(room.rir[1][0])
     plt.show()
 
+.. warning::
+
+    The simulator uses a fractional delay filter that introduce a global delay
+    in the RIR. The delay can be obtained as follows.
+
+    .. code-block::
+
+        global_delay = pra.constants.get("frac_delay_length") // 2
+
 
 Simulate sound propagation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By calling :py:func:`pyroomacoustics.room.Room.simulate`, a convolution of the
+By calling :py:func:`~pyroomacoustics.room.Room.simulate`, a convolution of the
 signal of each source (if not ``None``) will be performed with the
 corresponding room impulse response. The output from the convolutions will be summed up
 at the microphones. The result is stored in the ``signals`` attribute of ``room.mic_array``
@@ -202,8 +192,102 @@ with each row corresponding to one microphone.
     # plot signal at microphone 1
     plt.plot(room.mic_array.signals[1,:])
 
+
+Hybrid ISM/Ray Tracing Simulator
+--------------------------------
+
+The hybrid ISM/RT simulator uses ISM to simulate the early reflections in the RIR
+and RT for the diffuse tail. Our implementation is based on [2]_ and [3]_.
+
+.. note::
+
+    The hybrid simulator has not been thoroughly tested yet and should be used with
+    care.  Currently, the default behavior of :py:obj:~pyroomacoustics.room.Room`
+    and :py:obj:~pyroomacoustics.room.ShoeBox` has been kept as in previous
+    versions of the package. Bugs can be reported on `github <https://github.com/LCAV/pyroomacoustics>`_.
+
+The simulator has the following features.
+
+- Scattering: Wall scattering can be defined by assigning a scattering
+  coefficient to the walls together with the energy absorption.
+- Multi-band: The simulation can be carried out with different parameters for
+  different `octave bands <https://en.wikipedia.org/wiki/Octave_band>`_. The
+  octave bands go from 125 Hz to half the sampling frequency.
+- Air absorption: The frequency dependent absorption of the air can be turned
+  by providing the keyword argument ``air_absorption=True`` to the room
+  constructor.
+
+Here is a simple example using the hybrid simulator.
+We suggest to use ``max_order=3`` with the hybrid simulator.
+
+.. code-block:: python
+
+    # Create the room
+    room = pra.ShoeBox(
+        room_dim,
+        fs=16000,
+        materials=pra.Material(e_absorption),
+        max_order=3,
+        ray_tracing=True,
+        air_absorption=True,
+    )
+
+    # Activate the ray tracing
+    room.set_ray_tracing()
+
+
+Wall Materials
+--------------
+
+The wall materials are handled by the
+:py:obj:`~pyroomacoustics.parameters.Material` objects.  A material is defined
+by at least one *absorption* coefficient that represents the ratio of sound
+energy absorbed by a wall upon reflection.
+A material may have multiple absorption coefficients corresponding to different
+abosrptions at different octave bands.
+When only one coefficient is provided, the absorption is assumed to be uniform at
+all frequencies.
+In addition, materials may have one or more scattering coefficients
+corresponding to the ratio of energy scattered upon reflection.
+
+The materials can be defined by providing the coefficients directly, or they can
+be defined by chosing a material from the :doc:`materials database<pyroomacoustics.materials.database>` [2]_.
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    m = pra.Material(energy_absorption="hard_surface")
+    room = pra.ShoeBox([9, 7.5, 3.5], fs=16000, materials=m, max_order=17)
+
+We can use different materials for different walls. In this case, the materials should be
+provided in a dictionary. For a shoebox room, this can be done as follows.
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+    m = pra.make_materials(
+        ceiling="hard_surface",
+        floor="6mm_carpet",
+        east="brickwork",
+        west="brickwork",
+        north="brickwork",
+        south="brickwork",
+    )
+    room = pra.ShoeBox(
+        [9, 7.5, 3.5], fs=16000, materials=m, max_order=17, air_absorption=True, ray_tracing=True
+    )
+
+.. note::
+
+    For shoebox rooms, the walls are labelled as follows:
+
+    - ``west``/``east`` for the walls in the y-z plane with a small/large x coordinates, respectively
+    - ``south``/``north`` for the walls in the x-z plane with a small/large y coordinates, respectively
+    - ``floor``/``ceiling`` for the walls int x-y plane with small/large z coordinates, respectively
+
+
 Controlling the signal-to-noise ratio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 It is in general necessary to scale the signals from different sources to
 obtain a specific signal-to-noise or signal-to-interference ratio (SNR and SIR,
@@ -297,6 +381,29 @@ evaluate the output from blind source separation algorithms. In this case, the
     premix = room.simulate(return_premix=True)
 
 
+Reverberation Time
+------------------
+
+The reverberation time (RT60) is defined as the time needed for the enery of
+the RIR to decrease by 60 dB. It is a useful measure of the amount of
+reverberation.  We provide a method in the
+:py:func:`~pyroomacoustics.experimental.rt60.measure_rt60` to measure the RT60
+of recorded or simulated RIR.
+
+The method is also directly integrated in the :py:obj:`~pyroomacoustics.room.Room` object as the method :py:func:`~pyroomacoustics.room.Room.measure_rt60`.
+
+.. code-block:: python
+
+    # assuming the simulation has already been carried out
+    rt60 = room.measure_rt60()
+
+    for m in room.n_mics:
+        for s in room.n_sources:
+            print(
+                "RT60 between the {}th mic and {}th source: {:.3f} s".format(m, s, rt60[m, s])
+            )
+
+
 Example
 -------
 
@@ -324,27 +431,38 @@ Example
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
 
+
+References
+----------
+
+.. [1]  J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
+
+.. [2]  M. Vorländer, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1–340.
+
+.. [3]  D. Schröder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
+
 """
 
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 import math
-import numpy as np
 import warnings
+
+import numpy as np
 import scipy.spatial as spatial
 from scipy.interpolate import interp1d
 
 from . import beamforming as bf
-from .soundsource import SoundSource
-from .beamforming import MicrophoneArray
-from .acoustics import OctaveBandsFactory
-from .parameters import constants, eps, Physics, Material, make_materials
-from .utilities import fractional_delay
-from .doa import GridCircle, GridSphere
-
 from . import libroom
+from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
+from .beamforming import MicrophoneArray
+from .doa import GridCircle, GridSphere
+from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
+from .parameters import Material, Physics, constants, eps, make_materials
+from .soundsource import SoundSource
+from .utilities import fractional_delay
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -597,6 +715,7 @@ class Room(object):
             self.physics = Physics(temperature=temperature, humidity=humidity)
 
         self.set_sound_speed(self.physics.get_sound_speed())
+        self.air_absorption = None
         if air_absorption:
             self.set_air_absorption()
 
@@ -684,13 +803,13 @@ class Room(object):
             The number of rays to shoot in the simulation
         receiver_radius: float, optional
             The radius of the sphere around the microphone in which to
-            integrate the energy
+            integrate the energy (default: 0.5 m)
         energy_thres: float, optional
-            The energy thresold at which rays are stopped
+            The energy thresold at which rays are stopped (default: 1e-7)
         time_thres: float, optional
-            The maximum time of flight of rays
+            The maximum time of flight of rays (default: 10 s)
         hist_bin_size: float
-            The time granularity of bins in the energy histogram
+            The time granularity of bins in the energy histogram (default: 4 ms)
         """
 
         self.simulator_state["rt_needed"] = True
@@ -708,14 +827,20 @@ class Room(object):
         self.rt_args["hist_bin_size"] = self.rt_args["hist_bin_size_samples"] / self.fs
 
         if n_rays is None:
-            # Try to set a sensible default based on the room volume
+            # We follow Vorlaender 2008, Eq. (11.12) to set the default number of rays
+            # It depends on the mean hit rate we want to target
+            target_mean_hit_count = 10
+
+            # This is the multiplier for a single hit in average
             k1 = self.get_volume() / (
                 np.pi
                 * (self.rt_args["receiver_radius"] ** 2)
                 * self.c
                 * self.rt_args["hist_bin_size"]
             )
-            n_rays = 20 * int(k1)
+
+            n_rays = int(target_mean_hit_count * k1)
+
         self.rt_args["n_rays"] = n_rays
 
         self._update_room_engine_params()
@@ -1352,13 +1477,13 @@ class Room(object):
 
         Parameters
         ----------
-        obj: SoundSource or Microphone object
+        obj: :py:obj:`~pyroomacoustics.soundsource.SoundSource` or :py:obj:`~pyroomacoustics.beamforming.Microphone` object
             The object to add
 
         Returns
         -------
-        room: Room
-            Returns the room object for further operations
+        :py:obj:`~pyroomacoustics.room.Room`
+            The room is returned for further tweaking.
         """
 
         if isinstance(obj, SoundSource):
@@ -1406,6 +1531,21 @@ class Room(object):
         return self
 
     def add_microphone(self, loc, fs=None):
+        """
+        Adds a single microphone in the room.
+
+        Parameters
+        ----------
+        loc: array_like or ndarray
+            The location of the microphone. The length should be the same as the room dimension.
+        fs: float, optional
+            The sampling frequency of the microphone, if different from that of the room.
+
+        Returns
+        -------
+        :py:obj:`~pyroomacoustics.room.Room`
+            The room is returned for further tweaking.
+        """
 
         # make sure this is a
         loc = np.array(loc)
@@ -1420,6 +1560,25 @@ class Room(object):
         return self.add(MicrophoneArray(loc, fs))
 
     def add_microphone_array(self, mic_array):
+        """
+        Adds a microphone array (i.e. several microphones) in the room.
+
+        Parameters
+        ----------
+        mic_array: array_like or ndarray or MicrophoneArray object
+            The array can be provided as an array of size ``(dim, n_mics)``,
+            where ``dim`` is the dimension of the room and ``n_mics`` is the
+            number of microphones in the array.
+
+            As an alternative, a
+            :py:obj:`~pyroomacoustics.beamforming.MicrophoneArray` can be
+            provided.
+
+        Returns
+        -------
+        :py:obj:`~pyroomacoustics.room.Room`
+            The room is returned for further tweaking.
+        """
 
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
@@ -1441,6 +1600,11 @@ class Room(object):
         delay: float, optional
             A time delay until the source signal starts
             in the simulation
+
+        Returns
+        -------
+        :py:obj:`~pyroomacoustics.room.Room`
+            The room is returned for further tweaking.
         """
 
         if isinstance(position, SoundSource):
@@ -1454,7 +1618,7 @@ class Room(object):
 
         Parameters
         ----------
-        sndsrc: pyroomacoustics.SoundSource object
+        sndsrc: :py:obj:`~pyroomacoustics.soundsource.SoundSource` object
             The SoundSource object to add to the room
         """
 
@@ -1968,6 +2132,94 @@ class Room(object):
     @property
     def volume(self):
         return self.get_volume()
+
+    @property
+    def n_mics(self):
+        return len(self.mic_array) if self.mic_array is not None else 0
+
+    @property
+    def n_sources(self):
+        return len(self.sources) if self.sources is not None else 0
+
+    def rt60_theory(self, formula="sabine"):
+        """
+        Compute the theoretical reverberation time (RT60) for the room.
+
+        Parameters
+        ----------
+        formula: str
+            The formula to use for the calculation, 'sabine' (default) or 'eyring'
+        """
+
+        rt60 = 0.0
+
+        if self.is_multi_band:
+            bandwidths = self.octave_bands.get_bw()
+        else:
+            bandwidths = [1.0]
+
+        V = self.volume
+        S = np.sum([w.area() for w in self.walls])
+        c = self.c
+
+        for i, bw in enumerate(bandwidths):
+
+            # average absorption coefficients
+            a = 0.0
+            for w in self.walls:
+                if len(w.absorption) == 1:
+                    a += w.area() * w.absorption[0]
+                else:
+                    a += w.area() * w.absorption[i]
+            a /= S
+
+            try:
+                m = self.air_absorption[i]
+            except:
+                m = 0.0
+
+            if formula == "eyring":
+                rt60_loc = rt60_eyring(S, V, a, m, c)
+            elif formula == "sabine":
+                rt60_loc = rt60_sabine(S, V, a, m, c)
+            else:
+                raise ValueError("Only Eyring and Sabine's formulas are supported")
+
+            rt60 += rt60_loc * bw
+
+        rt60 /= np.sum(bandwidths)
+        return rt60
+
+    def measure_rt60(self, decay_db=60, plot=False):
+        """
+        Measures the reverberation time (RT60) of the simulated RIR.
+
+        Parameters
+        ----------
+        decay_db: float
+            This is the actual decay of the RIR used for the computation. The
+            default is 60, meaning that the RT60 is exactly what we measure.
+            In some cases, the signal may be too short  to measure 60 dB decay.
+            In this case, we can specify a lower value. For example, with 30
+            dB, the RT60 is twice the time measured.
+        plot: bool
+            Displays a graph of the Schroeder curve and the estimated RT60.
+
+        Returns
+        -------
+        ndarray (n_mics, n_sources)
+            An array that contains the measured RT60 for all the RIR.
+        """
+
+        rt60 = np.zeros((self.n_mics, self.n_sources))
+
+        for m in range(self.n_mics):
+            for s in range(self.n_sources):
+                rt60[m, s] = measure_rt60(
+                    self.rir[m][s], fs=self.fs, plot=plot, decay_db=decay_db
+                )
+
+        return rt60
 
 
 class ShoeBox(Room):

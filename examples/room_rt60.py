@@ -6,6 +6,7 @@ room impulse responses of shoebox shaped rooms in 3d.
 from __future__ import print_function
 
 import itertools
+
 import matplotlib.pyplot as plt
 import numpy as np
 
