@@ -58,10 +58,6 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
     h = np.array(h)
     fs = float(fs)
 
-    from ..utilities import highpass
-
-    h = highpass(h, Fs=1, fc=150 / 8000)
-
     # The power of the impulse response in dB
     power = h ** 2
     energy = np.cumsum(power[::-1])[::-1]  # Integration according to Schroeder

@@ -574,7 +574,9 @@ def inverse_sabine(rt60, room_dim, c=None):
             "evaluation of parameters failed. room may be too large for required RT60."
         )
 
-    max_order = math.ceil(c * rt60 / np.min(R) - 1)
+    # the int cast is only needed for python 2.7
+    # math.ceil returns int for python 3.5+
+    max_order = int(math.ceil(c * rt60 / np.min(R) - 1))
 
     return e_absorption, max_order
 

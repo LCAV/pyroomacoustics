@@ -29,8 +29,9 @@ This file defines the main physical constants of the system:
     * Scattering coefficients
     * Air absorption
 """
+import io
 import json
-from pathlib import Path
+import os
 
 import numpy as np
 
@@ -226,7 +227,7 @@ Simulation, Algorithms, and Acoustic Virtual Reality, Springer, 1st Edition,
 
 """
 # the file containing the database of materials
-_materials_database_fn = Path(__file__).parent / "data/materials.json"
+_materials_database_fn = os.path.join(os.path.dirname(__file__), "data/materials.json")
 
 materials_absorption_table = {
     "anechoic": {"description": "Anechoic material", "coeffs": [1.0]},
@@ -237,7 +238,7 @@ materials_scattering_table = {
 }
 
 
-with open(_materials_database_fn, "r") as f:
+with io.open(_materials_database_fn, "r", encoding="utf8") as f:
     materials_data = json.load(f)
 
     center_freqs = materials_data["center_freqs"]

@@ -437,9 +437,9 @@ References
 
 .. [1]  J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
 
-.. [2]  M. Vorländer, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1–340.
+.. [2]  M. Vorlaender, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1-340.
 
-.. [3]  D. Schröder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
+.. [3]  D. Schroeder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
 
 """
 
