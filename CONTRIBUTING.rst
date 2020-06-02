@@ -36,6 +36,7 @@ We recommend the following steps for generating the documentation:
    ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme``
 -  Switch to the environment: ``source activate mkdocs37``
 -  Navigate to the ``docs`` folder and run: ``./make_apidoc.sh``
+-  The materials database page is generated with the script ``./make_materials_table.py``
 -  Build and view the documentation locally with: ``make html``
 -  Open in your browser: ``docs/_build/html/index.html``
 
