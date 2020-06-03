@@ -239,7 +239,10 @@ We suggest to use ``max_order=3`` with the hybrid simulator.
 
 A few example programs are provided in ``./examples``.
 
-- ``./examples/ray_tracing.py``
+- ``./examples/ray_tracing.py`` demonstrates use of ray tracing for rooms of different sizes
+  and with different amounts of reverberation
+- ``./examples/room_L_shape_3d_rt.py`` shows how to simulate a polyhedral room
+- ``./examples/room_from_stl.py`` demonstrates how to import a model from an STL file
 
 
 
