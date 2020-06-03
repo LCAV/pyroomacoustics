@@ -196,15 +196,17 @@ with each row corresponding to one microphone.
 Hybrid ISM/Ray Tracing Simulator
 --------------------------------
 
-The hybrid ISM/RT simulator uses ISM to simulate the early reflections in the RIR
-and RT for the diffuse tail. Our implementation is based on [2]_ and [3]_.
-
-.. note::
+.. warning::
 
     The hybrid simulator has not been thoroughly tested yet and should be used with
-    care.  Currently, the default behavior of :py:obj:~pyroomacoustics.room.Room`
+    care. The exact implementation and default settings may also change in the future.
+    Currently, the default behavior of :py:obj:~pyroomacoustics.room.Room`
     and :py:obj:~pyroomacoustics.room.ShoeBox` has been kept as in previous
-    versions of the package. Bugs can be reported on `github <https://github.com/LCAV/pyroomacoustics>`_.
+    versions of the package. Bugs and user experience can be reported on
+    `github <https://github.com/LCAV/pyroomacoustics>`_.
+
+The hybrid ISM/RT simulator uses ISM to simulate the early reflections in the RIR
+and RT for the diffuse tail. Our implementation is based on [2]_ and [3]_.
 
 The simulator has the following features.
 
@@ -234,6 +236,11 @@ We suggest to use ``max_order=3`` with the hybrid simulator.
 
     # Activate the ray tracing
     room.set_ray_tracing()
+
+A few example programs are provided in ``./examples``.
+
+- ``./examples/ray_tracing.py``
+
 
 
 Wall Materials
@@ -827,6 +834,8 @@ class Room(object):
         self.rt_args["hist_bin_size"] = self.rt_args["hist_bin_size_samples"] / self.fs
 
         if n_rays is None:
+            n_rays_auto_flag = True
+
             # We follow Vorlaender 2008, Eq. (11.12) to set the default number of rays
             # It depends on the mean hit rate we want to target
             target_mean_hit_count = 10
@@ -840,6 +849,23 @@ class Room(object):
             )
 
             n_rays = int(target_mean_hit_count * k1)
+
+            if n_rays > 100000:
+                import warnings
+
+                warnings.warn(
+                    "The number of rays used for ray tracing is larger than"
+                    "100000 which may result in slow simulation.  The number"
+                    "of rays was automatically chosen to provide accurate"
+                    "room impulse response based on the room volume and the"
+                    "receiver radius around the microphones.  The number of"
+                    "rays may be reduced by increasing the size of the"
+                    "receiver.  This tends to happen especially for large"
+                    "rooms with small receivers.  The receiver is a sphere"
+                    "around the microphone and its radius (in meters) may be"
+                    "specified by providing the `receiver_radius` keyword"
+                    "argument to the `set_ray_tracing` method."
+                )
 
         self.rt_args["n_rays"] = n_rays
 
@@ -1295,6 +1321,8 @@ class Room(object):
 
                 # draw images
                 if img_order is None:
+                    img_order = 0
+                elif img_order == "max":
                     img_order = self.max_order
 
                 I = source.orders <= img_order
