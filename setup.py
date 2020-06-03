@@ -178,7 +178,7 @@ setup_kwargs = dict(
     # Libroom C extension
     ext_modules=ext_modules,
     # Necessary to keep the source files
-    package_data={"pyroomacoustics": ["*.pxd", "*.pyx",],},
+    package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
     install_requires=["Cython", "numpy", "scipy>=0.18.0", "pybind11>=2.2",],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,
