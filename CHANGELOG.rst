@@ -8,11 +8,11 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`NextGeneration`_
-------------------
+`Unreleased`_
+-------------
 
-Added
-~~~~~
+Improved Simulator with Ray Tracing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
   can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
@@ -29,15 +29,13 @@ Added
 - The method ``measure_rt60`` in ``pyroomacoustics.room.Room`` allows to measure the RT60 of
   the simulated RIRs
 
-
-Changed
-~~~~~~~
+Changes in the Room Class
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Deep refactor of Room class. The constructor arguments have changed
 - No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
 - The way absorption is handled has changed. The scalar variables
-  ``absorption`` are deprecated in favor of a list of
-  ``pyroomacoustics.materials.Material``
+  ``absorption`` are deprecated in favor of ``pyroomacoustics.materials.Material``
 - Complete refactor of libroom, the compiled extension module responsible for the
   room simulation, into C++. The bindings to python are now done using pybind11.
 - Removes the pure Python room simulator as it was really slow
@@ -56,10 +54,8 @@ Changed
   argument, the new behavior is to add in addition to other microphones already
   present.
 
-`Unreleased`_
--------------
-Changed
-~~~~~~~
+Other Changes
+~~~~~~~~~~~~~
 
 - Added vectorised functions in MUSIC 
 - Use the vectorised functions in _process of MUSIC
@@ -371,8 +367,7 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _NextGeneration: https://github.com/LCAV/pyroomacoustics/compare/master...next_gen_simulator
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...next_gen_simulator
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
 .. _0.2.0: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...v0.2.0
