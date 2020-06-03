@@ -838,7 +838,7 @@ class Room(object):
 
             # We follow Vorlaender 2008, Eq. (11.12) to set the default number of rays
             # It depends on the mean hit rate we want to target
-            target_mean_hit_count = 10
+            target_mean_hit_count = 20
 
             # This is the multiplier for a single hit in average
             k1 = self.get_volume() / (
