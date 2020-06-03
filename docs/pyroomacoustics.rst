@@ -23,7 +23,6 @@ Submodules
    pyroomacoustics.acoustics
    pyroomacoustics.beamforming
    pyroomacoustics.build_rir
-   pyroomacoustics.geometry
    pyroomacoustics.metrics
    pyroomacoustics.multirate
    pyroomacoustics.parameters
@@ -33,7 +32,6 @@ Submodules
    pyroomacoustics.stft
    pyroomacoustics.sync
    pyroomacoustics.utilities
-   pyroomacoustics.wall
    pyroomacoustics.windows
 
 Module contents

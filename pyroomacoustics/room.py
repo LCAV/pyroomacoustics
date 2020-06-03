@@ -171,7 +171,7 @@ and the inner list over sources.
     The simulator uses a fractional delay filter that introduce a global delay
     in the RIR. The delay can be obtained as follows.
 
-    .. code-block::
+    .. code-block:: python
 
         global_delay = pra.constants.get("frac_delay_length") // 2
 

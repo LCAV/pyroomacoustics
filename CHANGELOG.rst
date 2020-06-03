@@ -59,20 +59,13 @@ Changes in the Room Class
   argument, the new behavior is to add in addition to other microphones already
   present.
 
-Other Changes
-~~~~~~~~~~~~~
-
-- Added vectorised functions in MUSIC 
-- Use the vectorised functions in _process of MUSIC
-
-`0.3.1`_ - 2020-05-12
----------------------
-
 Bugfix
 ~~~~~~
 
 - From Issue #150, increase max iterations to check if point is inside room
 - Issues #117 #163, adds project file `pyproject.toml` so that pip can know which dependencies are necessary for setup
+- Fixed some bugs in the documentation
+- Fixed normalization part in FastMNMF
 
 Added
 ~~~~~~~
@@ -85,20 +78,11 @@ Changed
 ~~~~~~~
 
 - Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
-
-`0.3.2`_ - 2019-02-23
----------------------
-
-Bugfix
-~~~~~~
-
-- Fixed some bugs in the documentation
-- Fixed normalization part in FastMNMF
-
-Changed
-~~~~~~~
 - Changed initialization of FastMNMF to accelerate convergence
 - Fixed bug in doa/tops (float -> integer division)
+- Added vectorised functions in MUSIC 
+- Use the vectorised functions in _process of MUSIC
+
 
 `0.3.1`_ - 2019-11-06
 ---------------------
