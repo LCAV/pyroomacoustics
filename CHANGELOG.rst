@@ -58,11 +58,20 @@ Changed
 
 `Unreleased`_
 -------------
+Changed
+~~~~~~~
+
+- Added vectorised functions in MUSIC 
+- Use the vectorised functions in _process of MUSIC
+
+`0.3.1`_ - 2020-05-12
+---------------------
 
 Bugfix
 ~~~~~~
 
 - From Issue #150, increase max iterations to check if point is inside room
+- Issues #117 #163, adds project file `pyproject.toml` so that pip can know which dependencies are necessary for setup
 
 Added
 ~~~~~~~
