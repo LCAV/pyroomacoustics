@@ -1,10 +1,20 @@
-import argparse, os
+import argparse
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
-from stl import mesh
+from mpl_toolkits import mplot3d
+
 import pyroomacoustics as pra
 
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
+try:
+    from stl import mesh
+except ImportError as err:
+    print(
+        "The stl package is required for this example. Install it with `pip install stl`"
+    )
+    raise err
+
 
 if __name__ == "__main__":
 

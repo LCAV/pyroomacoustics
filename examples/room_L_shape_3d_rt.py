@@ -5,21 +5,22 @@ is a simple way to create 3D rooms that fits most situations.  Then, we place
 one source and two microphones in the room and compute the room impulse
 responses.
 
-In this example, we also compare the speed of the C extension module to
-that of the pure python code.
+The simulation is done using the hybrid ISM/RT simulator.
 """
 from __future__ import print_function
 
-import numpy as np
-import matplotlib.pyplot as plt
 import time
-import pyroomacoustics as pra
+
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 # Create the 2D L-shaped room from the floor polygon
 pol = np.array([[0, 0], [0, 10], [10, 7.5], [7.5, 6], [5, 6], [5, 0]]).T
 r_absor = 0.1
-mat = pra.Material.make_freq_flat(0.3, 0.1)
+mat = pra.Material(0.15, 0.1)
 room = pra.Room.from_corners(
     pol,
     fs=16000,
@@ -34,24 +35,20 @@ room = pra.Room.from_corners(
 height = 10.0
 room.extrude(height, materials=mat)
 
-room.set_ray_tracing(receiver_radius=0.5, energy_thres=1e-5)
+room.set_ray_tracing(receiver_radius=0.5)
 
 # # Add a source somewhere in the room
 fs, audio_anechoic = wavfile.read("examples/input_samples/cmu_arctic_us_aew_a0001.wav")
-
 room.add_source([1.5, 1.7, 1.6], signal=audio_anechoic)
 
-R = np.array([[3.0], [2.25], [0.6]])
-
-room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
+# Add a microphone
+room.add_microphone([3.0, 2.25, 0.6])
 
 # Use the following function to compute the rir using either 'ism' method, 'rt' method, or 'hybrid' method
 chrono = time.time()
-room.image_source_model()
-room.ray_tracing()
 room.compute_rir()
 print("Done in", time.time() - chrono, "seconds.")
-
+print("RT60:", room.measure_rt60()[0, 0])
 
 room.plot_rir()
 plt.show()

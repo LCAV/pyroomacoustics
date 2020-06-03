@@ -37,7 +37,7 @@ rt60_thy, d_c = sabine(room_dim, energy_absorption, pra.constants.get("c"))
 # Create the shoebox
 room = pra.ShoeBox(
     room_dim,
-    materials=pra.Material.make_freq_flat(energy_absorption),
+    materials=pra.Material(energy_absorption),
     fs=16000,
     max_order=3,
     ray_tracing=True,
@@ -53,7 +53,7 @@ room.add_microphone([room_dim[0] / 2.0 - x, room_dim[1] / 2.0 - y, 2])
 
 room.compute_rir()
 
-rt60_exp = pra.experimental.measure_rt60(room.rir[0][0], room.fs)
+rt60_exp = pra.experimental.measure_rt60(room.rir[0][0], room.fs, plot=True)
 
 print(
     "RT60 in theory={:.3f} practice={:.3f} relative error={:.2f}%".format(
