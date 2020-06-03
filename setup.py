@@ -25,7 +25,6 @@ except ImportError:
     from distutils.command.build_ext import build_ext
 
 
-
 class get_pybind_include(object):
     """Helper class to determine the pybind11 include path
 
@@ -155,8 +154,10 @@ class BuildExt(build_ext):
 
 setup_kwargs = dict(
     name="pyroomacoustics",
+    version=__version__,
     description="A simple framework for room acoustics and audio processing in Python.",
     long_description=long_description,
+    long_description_content_type="text/x-rst",
     author="Laboratory for Audiovisual Communications, EPFL",
     author_email="fakufaku@gmail.ch",
     url="https://github.com/LCAV/pyroomacoustics",
@@ -206,6 +207,8 @@ setup_kwargs = dict(
         #'Programming Language :: Python :: 3.3',
         #'Programming Language :: Python :: 3.4',
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
     # What does your project relate to?
     keywords="room acoustics signal processing doa beamforming adaptive",
