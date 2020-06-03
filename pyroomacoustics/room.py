@@ -151,7 +151,7 @@ Create the Room Impulse Response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At this point, the RIRs are simply created by invoking the ISM via
-:py:func:`pyroomacoustics.room.Room.image_source_model`. This function will
+:py:func:`~pyroomacoustics.room.Room.image_source_model`. This function will
 generate all the images sources up to the order required and use them to
 generate the RIRs, which will be stored in the ``rir`` attribute of ``room``.
 The attribute ``rir`` is a list of lists so that the outer list is on microphones
@@ -200,8 +200,8 @@ Hybrid ISM/Ray Tracing Simulator
 
     The hybrid simulator has not been thoroughly tested yet and should be used with
     care. The exact implementation and default settings may also change in the future.
-    Currently, the default behavior of :py:obj:~pyroomacoustics.room.Room`
-    and :py:obj:~pyroomacoustics.room.ShoeBox` has been kept as in previous
+    Currently, the default behavior of :py:obj:`~pyroomacoustics.room.Room`
+    and :py:obj:`~pyroomacoustics.room.ShoeBox` has been kept as in previous
     versions of the package. Bugs and user experience can be reported on
     `github <https://github.com/LCAV/pyroomacoustics>`_.
 
