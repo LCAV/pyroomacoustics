@@ -53,7 +53,7 @@ We will first walk through the steps to simulate a shoebox-shaped room in 3D.
 We use the ISM is to find all image sources up to a maximum specified order and
 room impulse responses (RIR) are generated from their positions.
 
-The code for the full example can be found in `examples/room_ism_from_rt60.py`.
+The code for the full example can be found in `examples/room_from_rt60.py`.
 
 Create the room
 ~~~~~~~~~~~~~~~
@@ -191,6 +191,79 @@ with each row corresponding to one microphone.
 
     # plot signal at microphone 1
     plt.plot(room.mic_array.signals[1,:])
+
+Full Example
+~~~~~~~~~~~~
+
+This example is partly exctracted from `./examples/room_from_rt60.py`.
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import pyroomacoustics as pra
+    from scipy.io import wavfile
+
+    # The desired reverberation time and dimensions of the room
+    rt60_tgt = 0.3  # seconds
+    room_dim = [10, 7.5, 3.5]  # meters
+
+    # import a mono wavfile as the source signal
+    # the sampling frequency should match that of the room
+    fs, audio = wavfile.read("examples/samples/guitar_16k.wav")
+
+    # We invert Sabine's formula to obtain the parameters for the ISM simulator
+    e_absorption, max_order = pra.inverse_sabine(rt60_tgt, room_dim)
+
+    # Create the room
+    room = pra.ShoeBox(
+        room_dim, fs=fs, materials=pra.Material(e_absorption), max_order=max_order
+    )
+
+    # place the source in the room
+    room.add_source([2.5, 3.73, 1.76], signal=audio, delay=0.5)
+
+    # define the locations of the microphones
+    mic_locs = np.c_[
+        [6.3, 4.87, 1.2], [6.3, 4.93, 1.2],  # mic 1  # mic 2
+    ]
+
+    # finally place the array in the room
+    room.add_microphone_array(mic_locs)
+
+    # Run the simulation (this will also build the RIR automatically)
+    room.simulate()
+
+    room.mic_array.to_wav(
+        f"examples/samples/guitar_16k_reverb_{args.method}.wav",
+        norm=True,
+        bitdepth=np.int16,
+    )
+
+    # measure the reverberation time
+    rt60 = room.measure_rt60()
+    print("The desired RT60 was {}".format(rt60_tgt))
+    print("The measured RT60 is {}".format(rt60[1, 0]))
+
+    # Create a plot
+    plt.figure()
+
+    # plot one of the RIR. both can also be plotted using room.plot_rir()
+    rir_1_0 = room.rir[1][0]
+    plt.subplot(2, 1, 1)
+    plt.plot(np.arange(len(rir_1_0)) / room.fs, rir_1_0)
+    plt.title("The RIR from source 0 to mic 1")
+    plt.xlabel("Time [s]")
+
+    # plot signal at microphone 1
+    plt.subplot(2, 1, 2)
+    plt.plot(room.mic_array.signals[1, :])
+    plt.title("Microphone 1 signal")
+    plt.xlabel("Time [s]")
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 Hybrid ISM/Ray Tracing Simulator
@@ -414,42 +487,14 @@ The method is also directly integrated in the :py:obj:`~pyroomacoustics.room.Roo
             )
 
 
-Example
--------
-
-.. code-block:: python
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import pyroomacoustics as pra
-
-    # Create a 4 by 6 metres shoe box room
-    room = pra.ShoeBox([4,6])
-
-    # Add a source somewhere in the room
-    room.add_source([2.5, 4.5])
-
-    # Create a linear array beamformer with 4 microphones
-    # with angle 0 degrees and inter mic distance 10 cm
-    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04)
-    room.add_microphone_array(pra.Beamformer(R, room.fs))
-
-    # Now compute the delay and sum weights for the beamformer
-    room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
-
-    # plot the room and resulting beamformer
-    room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
-    plt.show()
-
-
 References
 ----------
 
-.. [1]  J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
+.. [1] J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
 
-.. [2]  M. Vorlaender, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1-340.
+.. [2] M. Vorlaender, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1-340.
 
-.. [3]  D. Schroeder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
+.. [3] D. Schroeder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
 
 """
 
