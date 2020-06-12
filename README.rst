@@ -132,10 +132,9 @@ scenarios::
 
 
 We have also provided a minimal `Dockerfile` example in order to install and
-run the package within a Docker container. Note that you should [increase the
-memory](https://docs.docker.com/docker-for-mac/#resources) of your containers
-to 4 GB. Less may also be sufficient, but this is necessary for building the
-C++ code extension. You can build the container with::
+run the package within a Docker container. Note that you should `increase the memory <https://docs.docker.com/docker-for-mac/#resources>`_
+of your containers to 4 GB. Less may also be sufficient, but this is necessary
+for building the C++ code extension. You can build the container with::
 
     docker build -t pyroom_container .
 
