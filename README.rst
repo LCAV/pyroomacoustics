@@ -130,6 +130,20 @@ scenarios::
     # run the newly created script
     python <chosen_script_name>.py
 
+
+We have also provided a minimal `Dockerfile` example in order to install and
+run the package within a Docker container. Note that you should [increase the
+memory](https://docs.docker.com/docker-for-mac/#resources) of your containers
+to 4 GB. Less may also be sufficient, but this is necessary for building the
+C++ code extension. You can build the container with::
+
+    docker build -t pyroom_container .
+
+And enter the container with::
+
+    docker run -it pyroom_container:latest /bin/bash
+
+
 Dependencies
 ------------
 
@@ -138,6 +152,7 @@ The minimal dependencies are::
     numpy 
     scipy>=0.18.0
     Cython
+    pybind11
 
 where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
 The simulator itself has a pure Python counterpart, so that this requirement could
