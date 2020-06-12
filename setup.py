@@ -7,8 +7,6 @@ import sys
 from codecs import open
 from os import path
 
-import numpy
-
 # import version from file
 with open("pyroomacoustics/version.py") as f:
     exec(f.read())
