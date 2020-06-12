@@ -16,6 +16,12 @@ Bugfix
 
 - Issue #162 (crash with max_order>31 on windows), seems fixed by the new C++ simulator
 - Test for issue #162 added
+- Fix Binder link
+
+Added
+~~~~~~~
+
+- Minimal `Dockerfile` example.
 
 `0.4.0`_ - 2020-06-03
 ---------------------
