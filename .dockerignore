@@ -1,0 +1,10 @@
+.git
+.idea
+.env
+.github
+venv*
+*egg-info
+.cache
+docs/
+logo/
+build/
