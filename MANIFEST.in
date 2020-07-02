@@ -9,6 +9,7 @@ include pyroomacoustics/libroom_src/*.cpp
 include pyroomacoustics/libroom_src/ext/eigen/COPYING.*
 graft pyroomacoustics/libroom_src/ext/eigen/Eigen
 
+include pyproject.toml
 include requirements.txt
 include LICENSE
 
