@@ -11,12 +11,18 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet.
+
+`0.4.1`_ - 2020-07-02
+---------------------
+
 Bugfix
 ~~~~~~
 
 - Issue #162 (crash with max_order>31 on windows), seems fixed by the new C++ simulator
 - Test for issue #162 added
 - Fix Binder link
+- Adds the pyproject.toml file in MANIFEST.in so that it gets picked up for packaging
 
 Added
 ~~~~~~~
@@ -366,7 +372,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...master
+.. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
 .. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...v0.4.0
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
