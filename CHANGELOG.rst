@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes the Dockerfile so that we don't have to install the build dependencies manually
 
 `0.4.1`_ - 2020-07-02
 ---------------------

@@ -8,5 +8,7 @@ FROM ubuntu:18.04
 RUN dpkg --add-architecture i386
 RUN apt-get update
 RUN apt-get install -y python3-dev python3-pip
-RUN pip3 install numpy pybind11
-RUN pip3 install pyroomacoustics==0.4.0
+# We must reinstall pip from pypi to make sure that the dependencies are installed
+# See https://github.com/pypa/pip/issues/7874
+RUN python3 -m pip install --user --ignore-installed pip
+RUN pip3 install pyroomacoustics
