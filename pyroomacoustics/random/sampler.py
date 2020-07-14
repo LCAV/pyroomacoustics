@@ -1,3 +1,5 @@
+import abc
+
 import numpy as np
 from numpy.random import default_rng
 
@@ -59,17 +61,19 @@ class RejectionSampler:
         return samples.reshape(final_shape)
 
 
-class CardioidSampler(RejectionSampler):
+class DirectionalSampler(RejectionSampler):
     def __init__(self, loc=None):
 
         if loc is None:
             self._dim = 3
-            self._loc = np.zeros(self._dim)
+            self._loc = np.zeros(self._dim, dtype=np.float)
             self._loc[0] = 1.0
         else:
-            self._loc = np.array(loc)
+            self._loc = np.array(loc, dtype=np.float)
             assert self._loc.ndim == 1
             self._dim = len(self._loc)
+
+        self._loc /= np.linalg.norm(self._loc)
 
         # proposal distribution is the unnormalized uniform spherical distribution
         unnormalized_uniform = distributions.AdHoc(
@@ -77,5 +81,24 @@ class CardioidSampler(RejectionSampler):
         )
         super().__init__(self._pattern, unnormalized_uniform)
 
+    @abc.abstractmethod
     def _pattern(self, x):
-        return 0.5 + 0.5 * np.matmul(x, self._loc)
+        pass
+
+
+class CardioidFamilySampler(DirectionalSampler):
+    """
+    This object draws sample from a cardioid shaped distribution on the sphere
+
+    Parameters
+    ----------
+    loc: array_like
+        The unit vector pointing in the main direction of the cardioid
+    """
+
+    def __init__(self, loc=None, coeff=0.5):
+        super().__init__(loc=loc)
+        self._coeff = coeff
+
+    def _pattern(self, x):
+        return np.abs(self._coeff + self._coeff * np.matmul(x, self._loc))

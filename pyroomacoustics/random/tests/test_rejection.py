@@ -15,9 +15,11 @@ if __name__ == "__main__":
     ax = fig.gca(projection="3d")
     ax.plot_wireframe(X, Y, Z, linewidth=1, alpha=0.25, color="gray")
 
-    for loc, scale in zip(np.eye(3), [10, 1, 0.1]):
+    for loc, scale in zip([[1, 1, 1]], [10, 1, 0.1]):
         print(loc, scale)
-        X, Y, Z = pra.random.sampler.CardioidSampler(loc=loc)(size=1000).T
+        X, Y, Z = pra.random.sampler.CardioidFamilySampler(loc=loc, coeff=0.5)(
+            size=1000
+        ).T
 
         ax.scatter(X, Y, Z, s=50)
         """
