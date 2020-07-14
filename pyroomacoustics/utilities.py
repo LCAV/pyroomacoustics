@@ -738,6 +738,16 @@ def goertzel(x, k):
     return y
 
 
+class Options(object):
+    @classmethod
+    def values(cls):
+        return {
+            v
+            for k, v in cls.__dict__.items()
+            if k.isupper() and not k.startswith("_")
+        }
+
+
 """
 GEOMETRY UTILITIES
 """
