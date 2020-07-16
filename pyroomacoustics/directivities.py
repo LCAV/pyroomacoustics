@@ -1,5 +1,6 @@
+import abc
 import numpy as np
-from pyroomacoustics.utilities import Options
+from pyroomacoustics.utilities import Options, requires_matplotlib
 
 
 class DirectivityPattern(Options):
@@ -10,7 +11,7 @@ class DirectivityPattern(Options):
     OMNI = "omni"
 
 
-PATTERN_TO_CONSTANT = {
+_CARDIOID_PATTERN_TO_CONSTANT = {
     DirectivityPattern.FIGURE_EIGHT: 0,
     DirectivityPattern.HYPERCARDIOID: 0.25,
     DirectivityPattern.CARDIOID: 0.5,
@@ -53,33 +54,39 @@ class DirectionVector(object):
             return self._colatitude
 
 
-class Directivity(object):
-    """
-
-    Parameters
-    ----------
-    orientation : DirectionVector
-        Indicates direction of the pattern.
-    pattern : str
-        One of directivities in `DirectivityPattern`.
-        TODO : support arbitrary directivities.
-
-    """
-    def __init__(self, orientation, pattern):
-        assert pattern in DirectivityPattern.values()
+class Directivity(abc.ABC):
+    def __init__(self, orientation):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
-        self._pattern = pattern
-        self._p = PATTERN_TO_CONSTANT[pattern]
-
-    def get_directivity_pattern(self):
-        return self._pattern
 
     def get_azimuth(self, degrees=True):
         return self._orientation.get_azimuth(degrees)
 
     def get_colatitude(self, degrees=True):
         return self._orientation.get_colatitude(degrees)
+
+
+class CardioidFamily(Directivity):
+    """
+
+    Parameters
+    ----------
+    orientation : DirectionVector
+        Indicates direction of the pattern.
+    pattern_name : str
+        One of directivities in `DirectivityPattern`.
+        TODO : support arbitrary directivities.
+
+    """
+    def __init__(self, orientation, pattern_name):
+        Directivity.__init__(self, orientation)
+        assert pattern_name in DirectivityPattern.values()
+        self._pattern_name = pattern_name
+        self._p = _CARDIOID_PATTERN_TO_CONSTANT[pattern_name]
+
+    @property
+    def directivity_pattern(self):
+        return self._pattern_name
 
     def get_response(self, direction):
         """
@@ -94,7 +101,7 @@ class Directivity(object):
 
         """
         assert isinstance(direction, DirectionVector)
-        if self._pattern == DirectivityPattern.OMNI:
+        if self._pattern_name == DirectivityPattern.OMNI:
             return 1
         else:
             # inspiration from Habets: https://github.com/ehabets/RIR-Generator/blob/5eb70f066b74ff18c2be61c97e8e666f8492c149/rir_generator.cpp#L111
@@ -109,6 +116,7 @@ class Directivity(object):
                    np.cos(direction.get_colatitude())
             return np.abs(self._p + (1 - self._p) * gain)
 
+    @requires_matplotlib
     def plot_response(self, azimuth, colatitude=None, degrees=True):
         """
         Parameters
@@ -120,13 +128,7 @@ class Directivity(object):
         degrees : bool
             Whether provided values are in degrees (True) or radians (False).
         """
-
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            import warnings
-            warnings.warn('Matplotlib is required for plotting')
-            return
+        import matplotlib.pyplot as plt
 
         fig = plt.figure()
         if colatitude is not None:
@@ -155,7 +157,7 @@ class Directivity(object):
             ax = fig.add_subplot(1, 1, 1, projection='3d')
             ax.plot_surface(X, Y, Z)
             ax.set_title("{}, azimuth={}, colatitude={}".format(
-                self.get_directivity_pattern(),
+                self.directivity_pattern,
                 self.get_azimuth(),
                 self.get_colatitude()
             ))

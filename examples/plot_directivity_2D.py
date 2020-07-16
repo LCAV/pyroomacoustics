@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from pyroomacoustics import dB
 from pyroomacoustics.directivities import DirectivityPattern, \
-    DirectionVector, Directivity
+    DirectionVector, CardioidFamily
 
 ORIENTATION = DirectionVector(azimuth=0, colatitude=90, degrees=True)
 LOWER_GAIN = -20
@@ -17,7 +17,7 @@ fig = plt.figure()
 ax = plt.subplot(111, projection="polar")
 for _dir in DirectivityPattern.values():
 
-    dir_obj = Directivity(orientation=ORIENTATION, pattern=_dir)
+    dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_name=_dir)
     gains = []
     for a in angles:
         direction = DirectionVector(azimuth=a, degrees=False)

@@ -31,6 +31,18 @@ from .parameters import constants, eps
 from .sync import correlate
 
 
+def requires_matplotlib(func):
+    def function_wrapper(*args, **kwargs):
+        try:
+            import matplotlib.pyplot as plt
+            return func(*args, **kwargs)
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+    return function_wrapper
+
+
 def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):
     """
     Create a noisy signal of a specified SNR.
@@ -739,6 +751,27 @@ def goertzel(x, k):
 
 
 class Options(object):
+    """
+    Class to list options and check available ones with the `values` method.
+
+    For example, if we want to list the possible directivity patterns:
+
+    ```python
+        class DirectivityPattern(Options):
+            FIGURE_EIGHT = "figure_eight"
+            HYPERCARDIOID = "hypercardioid"
+            CARDIOID = "cardioid"
+            SUBCARDIOID = "subcardioid"
+            OMNI = "omni"
+    ```
+
+    And then we can get all options as a list like so, to check if particular
+    option is supported:
+
+    ```python
+    assert choice in DirectivityPattern.values()
+    ```
+    """
     @classmethod
     def values(cls):
         return {
