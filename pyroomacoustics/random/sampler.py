@@ -23,6 +23,19 @@ class RejectionSampler:
         # get a random number generator
         self._rng = default_rng()
 
+        # keep track of the efficiency for analysis purpose
+        self._n_proposed = 0
+        self._n_accepted = 0
+
+    @property
+    def efficiency(self):
+        if self._n_proposed == 0:
+            # before starting to sample, efficiency is maximum for consistency
+            # i.e., we haven't rejected anything
+            return 1.0
+        else:
+            return self._n_accepted / self._n_proposed
+
     @property
     def dim(self):
         return self._dim
@@ -39,7 +52,9 @@ class RejectionSampler:
 
         while offset < flat_size:
 
-            proposal = self._proposal_dist.sample(size=flat_size - offset)
+            n_propose = flat_size - offset
+
+            proposal = self._proposal_dist.sample(size=n_propose)
             proposal_pdf_value = self._proposal_dist.pdf(proposal)
             desired_pdf_value = self._desired_func(proposal)
             u = (
@@ -53,6 +68,10 @@ class RejectionSampler:
             samples[offset : offset + n_accept, :] = proposal[accept, :]
 
             offset += n_accept
+
+            # accounting
+            self._n_proposed += n_propose
+            self._n_accepted += n_accept
 
         if isinstance(size, int):
             final_shape = [size, self.dim]
@@ -101,4 +120,4 @@ class CardioidFamilySampler(DirectionalSampler):
         self._coeff = coeff
 
     def _pattern(self, x):
-        return np.abs(self._coeff + self._coeff * np.matmul(x, self._loc))
+        return np.abs(self._coeff + (1 - self._coeff) * np.matmul(x, self._loc))

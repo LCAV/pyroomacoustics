@@ -17,9 +17,8 @@ if __name__ == "__main__":
 
     for loc, scale in zip([[1, 1, 1]], [10, 1, 0.1]):
         print(loc, scale)
-        X, Y, Z = pra.random.sampler.CardioidFamilySampler(loc=loc, coeff=0.5)(
-            size=1000
-        ).T
+        sampler = pra.random.sampler.CardioidFamilySampler(loc=loc, coeff=0.25)
+        X, Y, Z = sampler(size=1000).T
 
         ax.scatter(X, Y, Z, s=50)
         """
@@ -29,6 +28,8 @@ if __name__ == "__main__":
             label="$\kappa={}$".format(scale)
         )
         """
+
+        print("Sampler's efficiency:", sampler.efficiency)
 
     ax.view_init(30, 45)
     ax.tick_params(axis="both")
