@@ -113,6 +113,8 @@ class CardioidFamilySampler(DirectionalSampler):
     ----------
     loc: array_like
         The unit vector pointing in the main direction of the cardioid
+    coeff: float
+        The shape coefficient (default 0.5 for a regular cardioid)
     """
 
     def __init__(self, loc=None, coeff=0.5):

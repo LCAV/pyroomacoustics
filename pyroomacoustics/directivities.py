@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.spatial import SphericalVoronoi, cKDTree
+from .doa import GridSphere
 from pyroomacoustics.utilities import Options
 
 
@@ -181,3 +183,82 @@ class Directivity(object):
             else:
                 angles = azimuth
             ax.plot(angles, gains)
+
+
+class SphericalHistogram:
+
+    def __init__(self, n_bins, dim=3, enable_peak_finding=False):
+
+        self._n_dim = 3
+        self._n_bins = n_bins
+
+        if self.n_dim == 3:
+            self._grid = GridSphere(n_points=self.n_bins, enable_peak_finding=enable_peak_finding)
+        else:
+            raise NotImplementedError("Only 3D histogram has been implemented")
+
+        # we need to know the area of each bin
+        self._voronoi = SphericalVoronoi(self._grid.cartesian.T)
+        self._areas = self._voronoi.calculate_areas()
+
+        # now we also need a KD-tree to do nearest neighbor search
+        self._kd_tree = cKDTree(self._grid.cartesian.T)
+
+        # the counter variables for every bin
+        self._bins = np.zeros(self.n_bins, dtype=np.int)
+
+        # the total number of points in the histogram
+        self._total_count = 0
+
+        # we cache the histogram bins
+        self._cache_dirty = False
+        self._cache_histogram = np.zeros(self.n_bins)
+
+    @property
+    def n_dim(self):
+        return self._n_dim
+
+    @property
+    def n_bins(self):
+        return self._n_bins
+
+    @property
+    def histogram(self):
+        if self._cache_dirty:
+            # if the cache is dirty, we need to recompute
+            Z = np.sum(self._areas * self._bins)  # partitioning constant
+            self._cache_histogram[:] = self._bins / Z
+            self._cache_dirty = False
+
+        return self._cache_histogram
+
+    @property
+    def raw_counts(self):
+        return self._bins
+
+    @property
+    def total_count(self):
+        return self._total_count
+
+    def find_peak(self, *args, **kwargs):
+        return self._grid.find_peaks(self, *args, **kwargs)
+
+    def plot(self):
+        self._grid.set_values(self.histogram)
+        self._grid.plot_old()
+
+    def push(self, points):
+        """
+        Add new data into the histogram
+
+        Parameters
+        ----------
+        points: array_like, shape (n_dim, n_points)
+            The points to add to the histogram
+        """
+        self._total_count += points.shape[1]
+        self._cache_dirty = True
+
+        _, matches = self._kd_tree.query(points.T)
+        bin_indices, counts = np.unique(matches, return_counts=True)
+        self._bins[bin_indices] += counts
