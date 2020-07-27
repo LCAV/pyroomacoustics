@@ -24,6 +24,7 @@
 from __future__ import division
 
 import numpy as np
+import itertools
 from scipy import signal
 from scipy.io import wavfile
 
@@ -748,6 +749,13 @@ def goertzel(x, k):
     y = np.exp(2j * np.pi * f) * s[-1] - s[-2]
 
     return y
+
+
+def all_combinations(lst1, lst2):
+    """
+    Return all combinations between two arrays.
+    """
+    return np.array(list(itertools.product(lst1, lst2)))
 
 
 class Options(object):
