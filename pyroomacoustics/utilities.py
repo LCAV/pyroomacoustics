@@ -758,36 +758,6 @@ def all_combinations(lst1, lst2):
     return np.array(list(itertools.product(lst1, lst2)))
 
 
-class Options(object):
-    """
-    Class to list options and check available ones with the `values` method.
-
-    For example, if we want to list the possible directivity patterns:
-
-    ```python
-        class DirectivityPattern(Options):
-            FIGURE_EIGHT = "figure_eight"
-            HYPERCARDIOID = "hypercardioid"
-            CARDIOID = "cardioid"
-            SUBCARDIOID = "subcardioid"
-            OMNI = "omni"
-    ```
-
-    And then we can get all options as a list like so, to check if particular
-    option is supported:
-
-    ```python
-    assert choice in DirectivityPattern.values()
-    ```
-    """
-    @classmethod
-    def values(cls):
-        return {
-            v
-            for k, v in cls.__dict__.items()
-            if k.isupper() and not k.startswith("_")
-        }
-
 
 """
 GEOMETRY UTILITIES

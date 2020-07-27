@@ -9,7 +9,7 @@ PATTERN = DirectivityPattern.HYPERCARDIOID
 ORIENTATION = DirectionVector(azimuth=0, colatitude=45, degrees=True)
 
 # create cardioid object
-dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_name=PATTERN)
+dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
 
 # plot
 azimuth = np.linspace(start=0, stop=360, num=361, endpoint=True)

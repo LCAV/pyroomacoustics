@@ -1,26 +1,18 @@
 import abc
 import numpy as np
+from enum import Enum
 
 from pyroomacoustics.doa import spher2cart
-from pyroomacoustics.utilities import Options, requires_matplotlib, \
-    all_combinations
+from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 
 
-class DirectivityPattern(Options):
-    FIGURE_EIGHT = "figure_eight"
-    HYPERCARDIOID = "hypercardioid"
-    CARDIOID = "cardioid"
-    SUBCARDIOID = "subcardioid"
-    OMNI = "omni"
-
-
-_CARDIOID_PATTERN_TO_CONSTANT = {
-    DirectivityPattern.FIGURE_EIGHT: 0,
-    DirectivityPattern.HYPERCARDIOID: 0.25,
-    DirectivityPattern.CARDIOID: 0.5,
-    DirectivityPattern.SUBCARDIOID: 0.75,
-    DirectivityPattern.OMNI: 1.0
-}
+class DirectivityPattern(Enum):
+    """ Common Cardioid patterns and their corresponding coefficient. """
+    FIGURE_EIGHT = 0
+    HYPERCARDIOID = 0.25
+    CARDIOID = 0.5
+    SUBCARDIOID = 0.75
+    OMNI = 1.0
 
 
 class DirectionVector(object):
@@ -86,16 +78,15 @@ class CardioidFamily(Directivity):
     ----------
     orientation : DirectionVector
         Indicates direction of the pattern.
-    pattern_name : str
-        One of directivities in `DirectivityPattern`.
+    pattern_enum : DirectivityPattern
+        Desired pattern for the cardioid.
 
     """
-    def __init__(self, orientation, pattern_name, gain=1.0):
+    def __init__(self, orientation, pattern_enum, gain=1.0):
         Directivity.__init__(self, orientation)
-        assert pattern_name in DirectivityPattern.values()
-        self._pattern_name = pattern_name
-        self._p = _CARDIOID_PATTERN_TO_CONSTANT[pattern_name]
+        self._p = pattern_enum.value
         self._gain = gain
+        self._pattern_name = pattern_enum.name
 
     @property
     def directivity_pattern(self):
@@ -114,7 +105,7 @@ class CardioidFamily(Directivity):
 
         """
 
-        if self._pattern_name == DirectivityPattern.OMNI:
+        if self._p == DirectivityPattern.OMNI:
             return np.ones(coord.shape[1])
         else:
             resp = self._gain * self._p + (1 - self._p) \

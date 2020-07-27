@@ -17,12 +17,12 @@ cart = spher2cart(azimuth=angles)
 # plot each pattern
 fig = plt.figure()
 ax = plt.subplot(111, projection="polar")
-for _dir in DirectivityPattern.values():
+for pattern in DirectivityPattern:
 
-    dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_name=_dir)
+    dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_enum=pattern)
     resp = dir_obj.get_response(coord=cart, magnitude=True)
     resp_db = dB(np.array(resp))
-    ax.plot(angles, resp_db, label=_dir)
+    ax.plot(angles, resp_db, label=pattern.name)
 
 plt.legend(bbox_to_anchor=(1, 1))
 plt.ylim([LOWER_GAIN, 0])
