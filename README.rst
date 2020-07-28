@@ -1,11 +1,18 @@
-Pyroomacoustics
-===============
+.. image:: https://github.com/LCAV/pyroomacoustics/raw/master/logo/pyroomacoustics_logo_horizontal.png
+   :scale: 80 %
+   :alt: Pyroomacoustics logo
+   :align: left
+
+------------------------------------------------------------------------------
 
 .. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
     :target: https://travis-ci.org/LCAV/pyroomacoustics
 .. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=pypi-release
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
+    :alt: Test on mybinder
 
 Summary
 -------
@@ -15,12 +22,12 @@ and testing of audio array processing algorithms. The content of the package
 can be divided into three main components: 
 
 1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
-2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
-3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, and source separation.
+2. Fast C++ implementation of the image source model and ray tracing for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
+3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single channel denoising.
 
 Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
-performance evaluation step. Please refer to `this notebook <http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb>`_
+performance evaluation step. Please refer to `this notebook <https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb>`_
 for a demonstration of the different components of this package.
 
 Room Acoustics Simulation
@@ -49,8 +56,8 @@ image source model that can handle
 * Convex and non-convex rooms
 * 2D/3D rooms
 
-Both a pure Python implementation and a C accelerator are included for maximum
-speed and compatibility.
+The core image source model and ray tracing modules are written in C++ for
+better performance.
 
 The philosophy of the package is to abstract all necessary elements of
 an experiment using an object-oriented programming approach. Each of these elements
@@ -83,7 +90,8 @@ algorithms for
 * `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
 * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
-* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA, SparseAuxIVA, FastMNMF)
+* `single channel denoising <https://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.denoise.html>`_ (Spectral Subtraction, Subspace, Iterative Wiener)
 
 We use an object-oriented approach to abstract the details of
 specific algorithms, making them easy to compare. Each algorithm can be tuned through optional parameters. We have tried to
@@ -110,7 +118,7 @@ Install the package with pip::
 
     pip install pyroomacoustics
 
-A [cookiecutter](https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim)
+A `cookiecutter <https://github.com/fakufaku/cookiecutter-pyroomacoustics-sim>`_
 is available that generates a working simulation script for a few 2D/3D
 scenarios::
 
@@ -123,6 +131,19 @@ scenarios::
     # run the newly created script
     python <chosen_script_name>.py
 
+
+We have also provided a minimal `Dockerfile` example in order to install and
+run the package within a Docker container. Note that you should `increase the memory <https://docs.docker.com/docker-for-mac/#resources>`_
+of your containers to 4 GB. Less may also be sufficient, but this is necessary
+for building the C++ code extension. You can build the container with::
+
+    docker build -t pyroom_container .
+
+And enter the container with::
+
+    docker run -it pyroom_container:latest /bin/bash
+
+
 Dependencies
 ------------
 
@@ -131,6 +152,7 @@ The minimal dependencies are::
     numpy 
     scipy>=0.18.0
     Cython
+    pybind11
 
 where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
 The simulator itself has a pure Python counterpart, so that this requirement could
@@ -177,7 +199,7 @@ beamformer in a room.
 
     # Create a linear array beamformer with 4 microphones
     # with angle 0 degrees and inter mic distance 10 cm
-    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.04) 
+    R = pra.linear_2D_array([2, 1.5], 4, 0, 0.1)
     room.add_microphone_array(pra.Beamformer(R, room.fs))
 
     # Now compute the delay and sum weights for the beamformer
@@ -187,8 +209,13 @@ beamformer in a room.
     room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
     plt.show()
 
+More examples
+-------------
+
+A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomacoustics/tree/master/notebooks>`_ are available.  
+
 A comprehensive set of examples covering most of the functionalities
-of the package can be found in the ``examples`` folder of the `github
+of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
 
 Authors

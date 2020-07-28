@@ -21,7 +21,7 @@ fs = 16000
 nfft = 256
 freq_bins = np.arange(5, 60)
 
-# circular microphone array, 6 mics, radius 15 cm
+# circular microphone array, 12 mics, radius 15 cm
 R = pra.circular_2D_array([0, 0], 12, 0., 0.15)
 
 # propagation filter bank
@@ -34,9 +34,9 @@ x = np.random.randn((nfft // 2 + 1) * nfft)
 
 # convolve the source signal with the fractional delay filters
 # to get the microphone input signals
-mic_signals = [ fftconvolve(x, filter, mode='same') for filter in filter_bank ]
-X = np.array([ pra.stft(signal, nfft, nfft // 2, win=np.hanning(nfft), 
-    transform=np.fft.rfft).T for signal in mic_signals ])
+mic_signals = np.array([ fftconvolve(x, filter, mode='same') for filter in filter_bank ])
+X = pra.transform.analysis(mic_signals.T, nfft, nfft // 2, win=np.hanning(nfft))
+X = np.swapaxes(X, 2, 0)
 
 class TestDOA(TestCase):
 

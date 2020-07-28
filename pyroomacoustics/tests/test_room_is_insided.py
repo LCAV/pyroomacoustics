@@ -33,6 +33,8 @@ def test_room_is_inside():
         assert room.is_inside([0,1], include_borders=True)
         assert not room.is_inside([0,1], include_borders=False)
 
+        assert not room.is_inside([0.5,4], include_borders=False)
+
     # now test in 3D
     room.extrude(4.)
 

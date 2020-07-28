@@ -12,6 +12,7 @@ Submodules
    pyroomacoustics.experimental.measure_ir
    pyroomacoustics.experimental.physics
    pyroomacoustics.experimental.point_cloud
+   pyroomacoustics.experimental.rt60
    pyroomacoustics.experimental.signals
 
 Module contents

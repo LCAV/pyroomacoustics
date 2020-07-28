@@ -2,13 +2,13 @@
 # @author: robin.scheibler@epfl.ch, ivan.dokmanic@epfl.ch, sidney.barthe@epfl.ch
 # @copyright: EPFL-IC-LCAV 2015
 
-from unittest import TestCase
+import unittest
 import numpy as np
 
 import pyroomacoustics as pra
 
 fs = 8000
-t0 = 1./(fs*np.pi*1e-2)
+t0 = 0.
 absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
@@ -16,11 +16,11 @@ sigma2_n = 5e-7
 corners = np.array([[0,0,4,4],[0,4,4,0]])
 room = pra.Room.from_corners(
     corners,
-    absorption,
-    fs,
-    t0,
-    max_order_sim,
-    sigma2_n)
+    absorption=absorption,
+    fs=fs,
+    t0=t0,
+    max_order=max_order_sim,
+    sigma2_awgn=sigma2_n)
     
     
 room.add_source([2, 2], None, 0)
@@ -31,7 +31,7 @@ mics = pra.MicrophoneArray(np.array([[2, 5, 3, 1, 2,],
 room.add_microphone_array(mics)
 
 # run the image source model
-room.image_source_model(use_libroom=False)
+room.image_source_model()
 
 # we order the sources lexicographically
 ordering = np.lexsort(room.sources[0].images)
@@ -50,7 +50,7 @@ visible_lowerLeft = np.array([1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
 visible_lowMiddle = np.array([1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1], dtype=bool)
 
 
-class TestVisibilityShoeBox2D(TestCase):
+class TestVisibilityShoeBox2D(unittest.TestCase):
 
     def test_sources(self):
         self.assertTrue(np.allclose(images_found, sources))
@@ -69,3 +69,6 @@ class TestVisibilityShoeBox2D(TestCase):
         
     def test_visibility_lowMiddle(self):
         self.assertTrue(np.allclose(images_found[:,visibilities[4,:]], sources[:,visible_lowMiddle]))
+
+if __name__ == '__main__':
+    unittest.main()

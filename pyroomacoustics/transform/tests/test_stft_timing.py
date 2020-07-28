@@ -69,19 +69,6 @@ Multiple frame at a time (non-streaming)
 """
 print()
 print("----- MULTIPLE FRAMES AT A TIME -----")
-print("One shot function : ", end="")
-start = time.time()
-for k in range(num_times):
-
-    y_mic_stft = np.array([pra.stft(signals[:, k], block_size, hop,
-         transform=np.fft.rfft, win=win).T for k in range(num_mic)])
-    x_r = np.array([pra.istft(y_mic_stft[k,:,:].T, block_size, hop, 
-        transform=np.fft.irfft) for k in range(num_mic)])
-avg_time = (time.time()-start)/num_times
-print("%0.3f sec" % avg_time)
-err_dB = 20*np.log10(np.max(np.abs(signals[hop:x_r.shape[1]-hop,] - 
-    x_r.T[hop:x_r.shape[1]-hop,])))
-print("Error [dB] : %0.3f" % err_dB)
 
 warnings.filterwarnings("ignore") # to avoid warning of appending zeros to be printed
 print("With STFT object (not fixed) : ", end="")
