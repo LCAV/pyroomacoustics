@@ -24,11 +24,24 @@
 from __future__ import division
 
 import numpy as np
+import itertools
 from scipy import signal
 from scipy.io import wavfile
 
 from .parameters import constants, eps
 from .sync import correlate
+
+
+def requires_matplotlib(func):
+    def function_wrapper(*args, **kwargs):
+        try:
+            import matplotlib.pyplot as plt
+            return func(*args, **kwargs)
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+    return function_wrapper
 
 
 def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):
@@ -738,14 +751,12 @@ def goertzel(x, k):
     return y
 
 
-class Options(object):
-    @classmethod
-    def values(cls):
-        return {
-            v
-            for k, v in cls.__dict__.items()
-            if k.isupper() and not k.startswith("_")
-        }
+def all_combinations(lst1, lst2):
+    """
+    Return all combinations between two arrays.
+    """
+    return np.array(list(itertools.product(lst1, lst2)))
+
 
 
 """

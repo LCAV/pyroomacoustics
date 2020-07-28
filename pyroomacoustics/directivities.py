@@ -1,24 +1,20 @@
+import abc
 import numpy as np
 from scipy.spatial import SphericalVoronoi, cKDTree
 from .doa import GridSphere
-from pyroomacoustics.utilities import Options
+from enum import Enum
+
+from pyroomacoustics.doa import spher2cart
+from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 
 
-class DirectivityPattern(Options):
-    FIGURE_EIGHT = "figure_eight"
-    HYPERCARDIOID = "hypercardioid"
-    CARDIOID = "cardioid"
-    SUBCARDIOID = "subcardioid"
-    OMNI = "omni"
-
-
-PATTERN_TO_CONSTANT = {
-    DirectivityPattern.FIGURE_EIGHT: 0,
-    DirectivityPattern.HYPERCARDIOID: 0.25,
-    DirectivityPattern.CARDIOID: 0.5,
-    DirectivityPattern.SUBCARDIOID: 0.75,
-    DirectivityPattern.OMNI: 1.0
-}
+class DirectivityPattern(Enum):
+    """ Common Cardioid patterns and their corresponding coefficient. """
+    FIGURE_EIGHT = 0
+    HYPERCARDIOID = 0.25
+    CARDIOID = 0.5
+    SUBCARDIOID = 0.75
+    OMNI = 1.0
 
 
 class DirectionVector(object):
@@ -42,6 +38,12 @@ class DirectionVector(object):
         assert colatitude <= np.pi and colatitude >= 0
         self._colatitude = colatitude
 
+        self._unit_v = np.array([
+            np.cos(self._azimuth) * np.sin(self._colatitude),
+            np.sin(self._azimuth) * np.sin(self._colatitude),
+            np.cos(self._colatitude),
+        ])
+
     def get_azimuth(self, degrees=False):
         if degrees:
             return np.degrees(self._azimuth)
@@ -54,28 +56,15 @@ class DirectionVector(object):
         else:
             return self._colatitude
 
+    @property
+    def unit_vector(self):
+        return self._unit_v
 
-class Directivity(object):
-    """
 
-    Parameters
-    ----------
-    orientation : DirectionVector
-        Indicates direction of the pattern.
-    pattern : str
-        One of directivities in `DirectivityPattern`.
-        TODO : support arbitrary directivities.
-
-    """
-    def __init__(self, orientation, pattern):
-        assert pattern in DirectivityPattern.values()
+class Directivity(abc.ABC):
+    def __init__(self, orientation):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
-        self._pattern = pattern
-        self._p = PATTERN_TO_CONSTANT[pattern]
-
-    def get_directivity_pattern(self):
-        return self._pattern
 
     def get_azimuth(self, degrees=True):
         return self._orientation.get_azimuth(degrees)
@@ -83,34 +72,52 @@ class Directivity(object):
     def get_colatitude(self, degrees=True):
         return self._orientation.get_colatitude(degrees)
 
-    def get_response(self, direction):
-        """
-        Get response for a single direction.
 
-        TODO : vectorize
+class CardioidFamily(Directivity):
+    """
+
+    Parameters
+    ----------
+    orientation : DirectionVector
+        Indicates direction of the pattern.
+    pattern_enum : DirectivityPattern
+        Desired pattern for the cardioid.
+
+    """
+    def __init__(self, orientation, pattern_enum, gain=1.0):
+        Directivity.__init__(self, orientation)
+        self._p = pattern_enum.value
+        self._gain = gain
+        self._pattern_name = pattern_enum.name
+
+    @property
+    def directivity_pattern(self):
+        return self._pattern_name
+
+    def get_response(self, coord, magnitude=False):
+        """
+        Get response.
 
         Parameters
         ----------
-        direction : DirectionVector
-            Direction for which to compute gain
+        coord : array_like, shape (3, number of points)
+            Cartesian coordinates for which to compute response.
+        magnitude : bool
+            Whether to return magnitude of response.
 
         """
-        assert isinstance(direction, DirectionVector)
-        if self._pattern == DirectivityPattern.OMNI:
-            return 1
-        else:
-            # inspiration from Habets: https://github.com/ehabets/RIR-Generator/blob/5eb70f066b74ff18c2be61c97e8e666f8492c149/rir_generator.cpp#L111
-            # we use colatitude instead of elevation
-            gain = np.sin(self._orientation.get_colatitude()) * \
-                   np.sin(direction.get_colatitude()) * \
-                   np.cos(
-                       self._orientation.get_azimuth() -
-                       direction.get_azimuth()
-                   ) + \
-                   np.cos(self._orientation.get_colatitude()) * \
-                   np.cos(direction.get_colatitude())
-            return np.abs(self._p + (1 - self._p) * gain)
 
+        if self._p == DirectivityPattern.OMNI:
+            return np.ones(coord.shape[1])
+        else:
+            resp = self._gain * self._p + (1 - self._p) \
+                   * np.matmul(self._orientation.unit_vector, coord)
+            if magnitude:
+                return np.abs(resp)
+            else:
+                return resp
+
+    @requires_matplotlib
     def plot_response(self, azimuth, colatitude=None, degrees=True):
         """
         Parameters
@@ -122,42 +129,36 @@ class Directivity(object):
         degrees : bool
             Whether provided values are in degrees (True) or radians (False).
         """
+        import matplotlib.pyplot as plt
 
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            import warnings
-            warnings.warn('Matplotlib is required for plotting')
-            return
+        if degrees:
+            azimuth = np.radians(azimuth)
 
         fig = plt.figure()
         if colatitude is not None:
 
+            if degrees:
+                colatitude = np.radians(colatitude)
+
+            spher_coord = all_combinations(azimuth, colatitude)
+            azi_flat = spher_coord[:, 0]
+            col_flat = spher_coord[:, 1]
+
             # compute response
-            gains = np.zeros(shape=(len(azimuth), len(colatitude)))
-            for i, a in enumerate(azimuth):
-                for j, c in enumerate(colatitude):
-                    direction = DirectionVector(
-                        azimuth=a,
-                        colatitude=c,
-                        degrees=degrees
-                    )
-                    gains[i, j] = self.get_response(direction)
+            cart = spher2cart(azimuth=azi_flat, colatitude=col_flat)
+            resp = self.get_response(coord=cart, magnitude=True)
+            RESP = resp.reshape(len(azimuth), len(colatitude))
 
             # create surface plot, need cartesian coordinates
-            if degrees:
-                azimuth = np.radians(azimuth)
-                colatitude = np.radians(colatitude)
             AZI, COL = np.meshgrid(azimuth, colatitude)
-
-            X = gains.T * np.sin(COL) * np.cos(AZI)
-            Y = gains.T * np.sin(COL) * np.sin(AZI)
-            Z = gains.T * np.cos(COL)
+            X = RESP.T * np.sin(COL) * np.cos(AZI)
+            Y = RESP.T * np.sin(COL) * np.sin(AZI)
+            Z = RESP.T * np.cos(COL)
 
             ax = fig.add_subplot(1, 1, 1, projection='3d')
             ax.plot_surface(X, Y, Z)
             ax.set_title("{}, azimuth={}, colatitude={}".format(
-                self.get_directivity_pattern(),
+                self.directivity_pattern,
                 self.get_azimuth(),
                 self.get_colatitude()
             ))
@@ -171,10 +172,8 @@ class Directivity(object):
         else:
 
             # compute response
-            gains = np.zeros(len(azimuth))
-            for i, a in enumerate(azimuth):
-                direction = DirectionVector(azimuth=a, degrees=degrees)
-                gains[i] = self.get_response(direction)
+            cart = spher2cart(azimuth=azimuth)
+            resp = self.get_response(coord=cart, magnitude=True)
 
             # plot
             ax = plt.subplot(111, projection="polar")
@@ -183,6 +182,51 @@ class Directivity(object):
             else:
                 angles = azimuth
             ax.plot(angles, gains)
+
+
+            ax.plot(azimuth, resp)
+
+
+def cardioid_func(
+    x,
+    direction,
+    coef,
+    gain=1.0,
+    normalize=True,
+    magnitude=False
+):
+    """
+    One-shot function for computing Cardioid response.
+
+    Parameters
+    -----------
+    x: array_like, shape (..., n_dim)
+         Cartesian coordinates
+    direction: array_like, shape (n_dim)
+         Direction vector, should be normalized.
+    coef: float
+         Parameter of the cardioid
+    gain: float
+         The gain.
+    normalize : bool
+        Whether to normalize coordinates and direction vector.
+    magnitude : bool
+        Whether to return magnitude, default is False.
+    """
+    assert coef >= 0.0
+    assert coef <= 1.0
+
+    # normalize positions
+    if normalize:
+        x /= np.linalg.norm(x, axis=0)
+        direction /= np.linalg.norm(direction)
+
+    # compute response
+    resp = gain * (coef + (1 - coef) * np.matmul(direction, x))
+    if magnitude:
+        return np.abs(resp)
+    else:
+        return resp
 
 
 class SphericalHistogram:
