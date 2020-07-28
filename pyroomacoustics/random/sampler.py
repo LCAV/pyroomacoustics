@@ -3,6 +3,7 @@ import abc
 import numpy as np
 from numpy.random import default_rng
 
+from ..directivities import cardioid_func
 from . import distributions
 from .spherical import uniform_spherical
 
@@ -102,6 +103,12 @@ class DirectionalSampler(RejectionSampler):
 
     @abc.abstractmethod
     def _pattern(self, x):
+        """
+        Parameters
+        ----------
+        x: array_like, shape (..., n_dim)
+             Cartesian coordinates
+        """
         pass
 
 
@@ -122,4 +129,11 @@ class CardioidFamilySampler(DirectionalSampler):
         self._coeff = coeff
 
     def _pattern(self, x):
-        return np.abs(self._coeff + (1 - self._coeff) * np.matmul(x, self._loc))
+        return cardioid_func(
+            x.T,
+            direction=self._loc,
+            coef=self._coeff,
+            gain=1.0,
+            normalize=False,
+            magnitude=True,
+        )

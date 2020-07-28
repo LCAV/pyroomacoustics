@@ -11,17 +11,27 @@ if __name__ == "__main__":
     THETA, PHI = np.meshgrid(theta, phi)
     X, Y, Z = np.sin(PHI) * np.cos(THETA), np.sin(PHI) * np.sin(THETA), np.cos(PHI)
 
+    """
     fig = plt.figure(figsize=(8, 8))
     ax = fig.gca(projection="3d")
     ax.plot_wireframe(X, Y, Z, linewidth=1, alpha=0.25, color="gray")
+    """
 
     for loc, scale in zip([[1, 1, 1]], [10, 1, 0.1]):
         print(loc, scale)
-        sampler = pra.random.sampler.CardioidFamilySampler(loc=loc, coeff=0.25)
-        X, Y, Z = sampler(size=1000).T
+        sampler = pra.random.sampler.CardioidFamilySampler(
+            loc=loc, coeff=pra.DirectivityPattern.FIGURE_EIGHT.value
+        )
 
-        ax.scatter(X, Y, Z, s=50)
+        points = sampler(size=10000).T  # shape (n_dim, n_points)
+
+        # Create a spherical histogram
+        hist = pra.SphericalHistogram(n_bins=500)
+        hist.push(points)
+        hist.plot()
+
         """
+        ax.scatter(X, Y, Z, s=50)
         ax.plot(
             *np.stack((torch.zeros_like(loc), loc)).T,
             linewidth=4,
@@ -31,8 +41,10 @@ if __name__ == "__main__":
 
         print("Sampler's efficiency:", sampler.efficiency)
 
+    """
     ax.view_init(30, 45)
     ax.tick_params(axis="both")
     plt.legend()
+    """
 
     plt.show()
