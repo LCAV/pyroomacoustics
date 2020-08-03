@@ -39,7 +39,7 @@
 
 namespace py = pybind11;
 
-float libroom_eps = 1e-4;  // epsilon is set to 0.1 millimeter (100 um)
+float libroom_eps = 1e-5;  // epsilon is set to 0.1 millimeter (100 um)
 
 
 PYBIND11_MODULE(libroom, m) {
