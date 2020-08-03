@@ -15,6 +15,12 @@ Bugfix
 ~~~~~~
 
 - Fixes the Dockerfile so that we don't have to install the build dependencies manually
+- Change the eps for geometry computations from 1e-4 to 1e-5 in ``libroom``
+
+Added
+~~~~~
+
+- A specialized ``is_inside`` routine for ``ShoeBox`` rooms
 
 `0.4.1`_ - 2020-07-02
 ---------------------
@@ -28,7 +34,7 @@ Bugfix
 - Adds the pyproject.toml file in MANIFEST.in so that it gets picked up for packaging
 
 Added
-~~~~~~~
+~~~~~
 
 - Minimal `Dockerfile` example.
 

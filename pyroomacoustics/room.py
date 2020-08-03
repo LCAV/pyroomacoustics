@@ -970,7 +970,7 @@ class Room(object):
         sources=None,
         mics=None,
         materials=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Creates a 2D room by giving an array of corners.
@@ -1085,7 +1085,7 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs
+            **kwargs,
         )
 
     def extrude(
@@ -1247,7 +1247,7 @@ class Room(object):
         figsize=None,
         no_axis=False,
         mic_marker_size=10,
-        **kwargs
+        **kwargs,
     ):
         """ Plots the room with its walls, microphones, sources and images """
 
@@ -2155,6 +2155,8 @@ class Room(object):
                 else:
                     return False
 
+        return False
+
         # We should never reach this
         raise ValueError(
             """
@@ -2521,11 +2523,26 @@ class ShoeBox(Room):
         self.shoebox_dim = np.append(self.shoebox_dim, height)
 
     def get_volume(self):
-
         """
         Computes the volume of a room
-        :param room: the room object
-        :return: the volume in cubic unit
+
+        Returns
+        -------
+        the volume in cubic unit
         """
 
         return np.prod(self.shoebox_dim)
+
+    def is_inside(self, pos):
+        """
+        Parameters
+        ----------
+        pos: array_like
+            The position to test in an array of size 2 for a 2D room and 3 for a 3D room
+
+        Returns
+        -------
+        True if ``pos`` is a point in the room, ``False`` otherwise.
+        """
+        pos = np.array(pos)
+        return np.all(pos) >= 0 and np.all(pos <= self.shoebox_dim)
