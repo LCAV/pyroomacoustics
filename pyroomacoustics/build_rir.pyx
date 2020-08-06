@@ -64,7 +64,7 @@ def fast_rir_builder(
     cdef int lut_pos, i, f, time_ip
     cdef float x_off, x_off_frac, sample_frac
 
-    for i in range(n_times):
+       for i in range(n_times):
         if visibility[i] == 1:
             # decompose integer and fractional delay
             sample_frac = fs * time[i]
@@ -77,8 +77,21 @@ def fast_rir_builder(
             x_off = (x_off_frac - lut_gran_off)
             lut_pos = lut_gran_off
             k = 0
-            for f in range(-fdl2, fdl2+1):
-                rir[time_ip + f] += alpha[i] * hann[k] * (sinc_lut[lut_pos] 
+            for k in range(2*fdl2+1):
+                rir_tmp[k] = hann[k] * (sinc_lut[lut_pos]
                         + x_off * (sinc_lut[lut_pos+1] - sinc_lut[lut_pos]))
                 lut_pos += lut_gran
-                k += 1
+
+
+            max_tmp = 0
+            for f in range(2*fdl2+1):
+                if rir_tmp[f] > max_tmp:
+                    max_tmp = rir_tmp[f]
+
+            for f in range(2*fdl2+1):
+                rir_tmp[f] = alpha[i]*rir_tmp[f]/max_tmp
+
+            k = 0
+            for f in range(-fdl2, fdl2+1):
+                rir[time_ip + f] += rir_tmp[k]
+                k+=1
