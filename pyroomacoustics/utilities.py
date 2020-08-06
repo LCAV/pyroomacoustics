@@ -548,7 +548,7 @@ def fractional_delay(t0):
 
     N = constants.get("frac_delay_length")
     frac_del_filter = np.hanning(N)*np.sinc(np.arange(N) - (N-1)/2 - t0)
-    frac_del_filter = frac_del_filter/np.max(abs(frac_del_filter))
+    frac_del_filter = frac_del_filter/np.max(np.abs(frac_del_filter))
 
     return frac_del_filter
 

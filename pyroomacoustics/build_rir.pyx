@@ -64,7 +64,7 @@ def fast_rir_builder(
     cdef int lut_pos, i, f, time_ip
     cdef float x_off, x_off_frac, sample_frac
 
-       for i in range(n_times):
+    for i in range(n_times):
         if visibility[i] == 1:
             # decompose integer and fractional delay
             sample_frac = fs * time[i]
