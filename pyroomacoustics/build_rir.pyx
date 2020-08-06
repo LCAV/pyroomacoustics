@@ -63,6 +63,8 @@ def fast_rir_builder(
     cdef double [:] hann = np.hanning(fdl)
     cdef int lut_pos, i, f, time_ip
     cdef float x_off, x_off_frac, sample_frac
+    cdef double max_tmp
+    cdef double [:] rir_tmp = np.zeros(2*fdl2+1)
 
     for i in range(n_times):
         if visibility[i] == 1:
