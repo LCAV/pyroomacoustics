@@ -688,14 +688,14 @@ def autocorr(x, p, biased=True, method="numpy"):
         Autocorrelation for `x` up to lag `p`.
     """
     L = len(x)
-    if method is "fft":
+    if method == "fft":
         X = np.fft.rfft(np.r_[x, np.zeros_like(x)])
         r = np.fft.irfft(X * np.conj(X))[: p + 1]
-    elif method is "time":
+    elif method == "time":
         r = np.array([np.dot(x[: L - m], x[m:]) for m in range(p + 1)])
-    elif method is "numpy":
+    elif method == "numpy":
         r = np.correlate(x, x, "full")[L - 1 : L + p]
-    elif method is "pra":
+    elif method == "pra":
         r = correlate(x, x)[L - 1 : L + p]
     else:
         raise ValueError(
