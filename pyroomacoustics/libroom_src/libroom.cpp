@@ -68,11 +68,34 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_max_distance", &Room<3>::get_max_distance)
     .def("next_wall_hit", &Room<3>::next_wall_hit)
     .def("scat_ray", &Room<3>::scat_ray)
-    .def("simul_ray", &Room<3>::simul_ray)
+    .def("simul_ray",
+        (void (Room<3>::*)(
+            float phi,
+            float theta,
+            const Vectorf<3> &source_pos,
+            float energy_0
+            )
+        )
+        &Room<3>::simul_ray)
+    .def("simul_ray",
+        (void (Room<3>::*)(
+            const Vectorf<3> &ray_direction,
+            const Vectorf<3> &source_pos,
+            float energy_0
+            )
+        )
+        &Room<3>::simul_ray)
     .def("ray_tracing",
         (void (Room<3>::*)(
                              const Eigen::Matrix<float,2,Eigen::Dynamic> &angles,
-                             const Vectorf<3> source_pos
+                             const Vectorf<3> &source_pos
+                             )
+        )
+        &Room<3>::ray_tracing)
+    .def("ray_tracing",
+        (void (Room<3>::*)(
+                             const Eigen::Matrix<float,3,Eigen::Dynamic> &vectors,
+                             const Vectorf<3> &source_pos
                              )
         )
         &Room<3>::ray_tracing)
@@ -80,14 +103,14 @@ PYBIND11_MODULE(libroom, m) {
         (void (Room<3>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
-                             const Vectorf<3> source_pos
+                             const Vectorf<3> &source_pos
                              )
         )
         &Room<3>::ray_tracing)
     .def("ray_tracing",
         (void (Room<3>::*)(
                              size_t nb_rays,
-                             const Vectorf<3> source_pos
+                             const Vectorf<3> &source_pos
                              )
         )
         &Room<3>::ray_tracing)
@@ -130,11 +153,34 @@ PYBIND11_MODULE(libroom, m) {
     .def("get_max_distance", &Room<2>::get_max_distance)
     .def("next_wall_hit", &Room<2>::next_wall_hit)
     .def("scat_ray", &Room<2>::scat_ray)
-    .def("simul_ray", &Room<2>::simul_ray)
+    .def("simul_ray",
+        (void (Room<2>::*)(
+            float phi,
+            float theta,
+            const Vectorf<2> &source_pos,
+            float energy_0
+            )
+        )
+        &Room<2>::simul_ray)
+    .def("simul_ray",
+        (void (Room<2>::*)(
+            const Vectorf<2> &ray_direction,
+            const Vectorf<2> &source_pos,
+            float energy_0
+            )
+        )
+        &Room<2>::simul_ray)
     .def("ray_tracing",
         (void (Room<2>::*)(
                              const Eigen::Matrix<float,1,Eigen::Dynamic> &angles,
-                             const Vectorf<2> source_pos
+                             const Vectorf<2> &source_pos
+                            )
+        )
+        &Room<2>::ray_tracing)
+    .def("ray_tracing",
+        (void (Room<2>::*)(
+                             const Eigen::Matrix<float,2,Eigen::Dynamic> &vectors,
+                             const Vectorf<2> &source_pos
                             )
         )
         &Room<2>::ray_tracing)
@@ -142,14 +188,14 @@ PYBIND11_MODULE(libroom, m) {
         (void (Room<2>::*)(
                              size_t nb_phis,
                              size_t nb_thetas,
-                             const Vectorf<2> source_pos
+                             const Vectorf<2> &source_pos
                             )
         )
         &Room<2>::ray_tracing)
     .def("ray_tracing",
         (void (Room<2>::*)(
                              size_t n_rays,
-                             const Vectorf<2> source_pos
+                             const Vectorf<2> &source_pos
                             )
         )
         &Room<2>::ray_tracing)

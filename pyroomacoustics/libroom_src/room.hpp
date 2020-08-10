@@ -214,24 +214,35 @@ class Room
     void simul_ray(
         float phi,
         float theta,
-        const Vectorf<D> source_pos,
+        const Vectorf<D> &source_pos,
+        float energy_0
+        );
+
+    void simul_ray(
+        const Vectorf<D> &ray_direction,
+        const Vectorf<D> &source_pos,
         float energy_0
         );
 
     void ray_tracing(
         const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
+        );
+
+    void ray_tracing(
+        const Eigen::Matrix<float,D,Eigen::Dynamic> &unit_vectors,
+        const Vectorf<D> &source_pos
         );
 
     void ray_tracing(
         size_t nb_phis,
         size_t nb_thetas,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
         );
 
     void ray_tracing(
         size_t n_rays,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
         );
 
     bool contains(const Vectorf<D> point);

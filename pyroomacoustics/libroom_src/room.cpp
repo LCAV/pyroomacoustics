@@ -810,7 +810,24 @@ template<size_t D>
 void Room<D>::simul_ray(
     float phi,
     float theta,
-    const Vectorf<D> source_pos,
+    const Vectorf<D> &source_pos,
+    float energy_0
+    )
+{
+    // the direction of the ray (unit vector)
+    Vectorf<D> dir;
+    if(D == 2)
+      dir.head(2) = Eigen::Vector2f(cos(phi), sin(phi));
+    else if (D == 3)
+      dir.head(3) = Eigen::Vector3f(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+
+    simul_ray(dir, source_pos, energy_0);
+}
+
+template<size_t D>
+void Room<D>::simul_ray(
+    const Vectorf<D> &ray_direction,
+    const Vectorf<D> &source_pos,
     float energy_0
     )
 {
@@ -828,12 +845,9 @@ void Room<D>::simul_ray(
   // What we need to trace the ray
   // the origin of the ray
   Vectorf<D> start = source_pos;
+
   // the direction of the ray (unit vector)
-  Vectorf<D> dir;
-  if(D == 2)
-    dir.head(2) = Eigen::Vector2f(cos(phi), sin(phi));
-  else if (D == 3)
-    dir.head(3) = Eigen::Vector3f(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+  Vectorf<D> dir = ray_direction;
 
   // The following initializations are arbitrary and does not count since we set
   // the boolean to false
@@ -943,7 +957,7 @@ void Room<D>::simul_ray(
 template<size_t D>
 void Room<D>::ray_tracing(
   const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-  const Vectorf<D> source_pos
+  const Vectorf<D> &source_pos
   )
 {
   // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
@@ -961,12 +975,25 @@ void Room<D>::ray_tracing(
   }
 }
 
+template<size_t D>
+void Room<D>::ray_tracing(
+  const Eigen::Matrix<float,D,Eigen::Dynamic> &unit_vectors,
+  const Vectorf<D> &source_pos
+  )
+{
+  float energy_0 = 2.f / unit_vectors.cols();
+
+  for (int c = 0 ; c < unit_vectors.cols() ; c++)
+    simul_ray(unit_vectors.col(c), source_pos, energy_0);
+}
+
+
 
 template<size_t D>
 void Room<D>::ray_tracing(
     size_t nb_phis,
     size_t nb_thetas,
-    const Vectorf<D> source_pos
+    const Vectorf<D> &source_pos
     )
 {
 
@@ -1023,7 +1050,7 @@ void Room<D>::ray_tracing(
 template<size_t D>
 void Room<D>::ray_tracing(
     size_t n_rays,
-    const Vectorf<D> source_pos
+    const Vectorf<D> &source_pos
     )
 {
   /*This method produced all the time/energy entries needed to compute
