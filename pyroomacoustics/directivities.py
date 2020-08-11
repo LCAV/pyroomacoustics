@@ -2,6 +2,7 @@ import abc
 import numpy as np
 from scipy.spatial import SphericalVoronoi, cKDTree
 from .doa import GridSphere
+from . import random
 from enum import Enum
 
 from pyroomacoustics.doa import spher2cart
@@ -60,6 +61,23 @@ class DirectionVector(object):
     def unit_vector(self):
         return self._unit_v
 
+    @property
+    def azimuth(self):
+        return self.get_azimuth()
+
+    @property
+    def colatitude(self):
+        return self.get_colatitude()
+
+    @property
+    def azimuth_deg(self):
+        return self.get_azimuth(degrees=True)
+
+    @property
+    def colatitude_deg(self):
+        return self.get_colatitude(degrees=True)
+
+
 
 class Directivity(abc.ABC):
     def __init__(self, orientation):
@@ -71,6 +89,45 @@ class Directivity(abc.ABC):
 
     def get_colatitude(self, degrees=True):
         return self._orientation.get_colatitude(degrees)
+
+    @abc.abstractmethod
+    def get_response(self, directions, magnitude=False):
+        """
+        This method returns the attenuation associated to a direction for
+        this directive object.
+
+        Parameters
+        ----------
+        directions: array_like, shape (n_dim, n_directions)
+            The direction unit vectors
+        magnitude: bool, optional
+            A flag indicating if the response should be given for the
+             magnitude, instead of energy (the default)
+
+        Returns
+        -------
+        response: numpy.ndarray, shape (n_directions)
+            The attenuation corresponding to the given directions
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def sample_rays(self, n_rays):
+        """
+        This method samples unit vectors from the sphere according to
+        the distribution of the source
+
+        Parameters
+        ----------
+        n_rays: int
+            The number of rays to sample
+
+        Returns
+        -------
+        ray_directions: numpy.ndarray, shape (n_dim, n_rays)
+            An array containing the unit vectors in its columns
+        """
+        raise NotImplementedError
 
 
 class CardioidFamily(Directivity):
@@ -89,6 +146,12 @@ class CardioidFamily(Directivity):
         self._p = pattern_enum.value
         self._gain = gain
         self._pattern_name = pattern_enum.name
+
+        # this is the object that will allow to sample rays according to the
+        # distribution corresponding to the source directivity
+        self._ray_sampler = random.sampler.CardioidFamilySampler(
+            loc=self._orientation.unit_vector, coeff=self._p
+        )
 
     @property
     def directivity_pattern(self):
@@ -116,6 +179,9 @@ class CardioidFamily(Directivity):
                 return np.abs(resp)
             else:
                 return resp
+
+    def sample_rays(self, n_rays):
+        return self._ray_sampler(n_rays).T
 
     @requires_matplotlib
     def plot_response(self, azimuth, colatitude=None, degrees=True):
