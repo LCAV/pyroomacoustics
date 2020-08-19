@@ -63,7 +63,35 @@ class Microphone
       for (auto &hist : histograms)
         hist.init(n_bands, n_dist_bins_init);
     }
+    Microphone(const Microphone &obj)
+        : loc(obj.loc),
+          n_dirs(obj.n_dirs),
+          n_bands(obj.n_bands),
+          hist_resolution(obj.hist_resolution),
+          distance_bins(obj.distance_bins),
+          hits(obj.hits),
+          histograms(obj.histograms) {}
     ~Microphone() {};
+
+    // Overload the += operator to easily merge results from multiple microphones
+    Microphone& operator +=(const Microphone& obj)
+    {
+      assert(histograms.size() == obj.histograms.size());
+
+      for (size_t h = 0 ; h < histograms.size() ; h++)
+      {
+        if (histograms[h].rows < obj.histograms[h].rows)
+          histograms[h].resize_rows(obj.histograms[h].rows);
+
+        if (histograms[h].cols < obj.histograms[h].cols)
+          histograms[h].resize_cols(obj.histograms[h].cols);
+
+        histograms[h].array += obj.histograms[h].array;
+        histograms[h].counts += obj.histograms[h].counts;
+      }
+
+      return *this;
+    }
 
     void reset()
     {

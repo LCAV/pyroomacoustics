@@ -66,6 +66,7 @@ ext_modules = [
             str(get_pybind_include()),
             str(get_pybind_include(user=True)),
             os.path.join(libroom_src_dir, "ext/eigen"),
+            os.path.join(libroom_src_dir, "ext/redpoule/include"),
         ],
         language="c++",
         extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],

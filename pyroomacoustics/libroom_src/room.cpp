@@ -27,7 +27,11 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <redpoule.hpp>
+
 #include "room.hpp"
+
+namespace py = pybind11;
 
 const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
@@ -719,7 +723,8 @@ bool Room<D>::scat_ray(
     const Wall<D> &wall,
     const Vectorf<D> &prev_last_hit,
     const Vectorf<D> &hit_point,
-    float travel_dist
+    float travel_dist,
+    std::vector<Microphone<D>> &local_microphones
     )
 {
 
@@ -743,10 +748,10 @@ bool Room<D>::scat_ray(
   float distance_thres = time_thres * sound_speed;
 
   bool ret = true;  
-  for(size_t k(0); k < microphones.size(); ++k)
+  for(size_t k(0); k < local_microphones.size(); ++k)
   {
 
-    Vectorf<D> mic_pos = microphones[k].get_loc();
+    Vectorf<D> mic_pos = local_microphones[k].get_loc();
 
     /* 
      * We also need to check that both the microphone and the
@@ -787,12 +792,10 @@ bool Room<D>::scat_ray(
       // of scat_per_slot
       if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > energy_thres)
       {
-        //output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
-        //microphones[k].log_histogram(output[k].back(), hit_point);
         double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
         auto p_hit = (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
         Eigen::ArrayXf energy = scat_trans / (r_sq * p_hit) ;
-        microphones[k].log_histogram(travel_dist_at_mic, energy, hit_point);
+        local_microphones[k].log_histogram(travel_dist_at_mic, energy, hit_point);
       }
       else
         ret = false;
@@ -811,7 +814,8 @@ void Room<D>::simul_ray(
     float phi,
     float theta,
     const Vectorf<D> source_pos,
-    float energy_0
+    float energy_0,
+    std::vector<Microphone<D>> &local_microphones
     )
 {
 
@@ -876,11 +880,11 @@ void Room<D>::simul_ray(
     // Check if the specular ray hits any of the microphone
     if (!(is_hybrid_sim && specular_counter < ism_order))
     {
-      for(size_t k(0) ; k < microphones.size() ; k++)
+      for(size_t k(0) ; k < local_microphones.size() ; k++)
       {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)
-        Vectorf<D> to_mic = microphones[k].get_loc() - start;
+        Vectorf<D> to_mic = local_microphones[k].get_loc() - start;
         float impact_distance = to_mic.dot(dir);
 
         bool impacts = -libroom_eps < impact_distance && impact_distance < hit_distance + libroom_eps;
@@ -902,7 +906,7 @@ void Room<D>::simul_ray(
           auto p_hit = (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
           energy = transmitted / (r_sq * p_hit);
           // energy = transmitted / (travel_dist_at_mic - sqrtf(fmaxf(0.f, travel_dist_at_mic * travel_dist_at_mic - mic_radius_sq)));
-          microphones[k].log_histogram(travel_dist_at_mic, energy, start);
+          local_microphones[k].log_histogram(travel_dist_at_mic, energy, start);
         }
       }
     }
@@ -920,7 +924,8 @@ void Room<D>::simul_ray(
           wall,
           start,
           hit_point,
-          travel_dist
+          travel_dist,
+          local_microphones
           );
 
       // The overall ray's energy gets decreased by the total
@@ -957,7 +962,7 @@ void Room<D>::ray_tracing(
     if (D == 3)
       theta = angles.coeff(1,k);
 
-    simul_ray(phi, theta, source_pos, energy_0);
+    simul_ray(phi, theta, source_pos, energy_0, microphones);
   }
 }
 
@@ -1007,7 +1012,7 @@ void Room<D>::ray_tracing(
       }
 
       // Trace this ray
-      simul_ray(phi, theta, source_pos, energy_0);
+      simul_ray(phi, theta, source_pos, energy_0, microphones);
 
       // if we work in 2D rooms, only 1 elevation angle is needed
       // => get out of the theta loop
@@ -1033,8 +1038,6 @@ void Room<D>::ray_tracing(
       the sphere using the Fibonacci algorithm
    source_pos: (array size 2 or 3) represents the position of the sound source
    */
-
-
   // ------------------ INIT --------------------
   // initial energy of one ray
   float energy_0 = 2.f / n_rays;
@@ -1042,30 +1045,69 @@ void Room<D>::ray_tracing(
   // ------------------ RAY TRACING --------------------
   if (D == 3)
   {
+    redpoule::ThreadPool thread_pool{8};
+    std::cout << "Using " << thread_pool.get_num_threads() << " threads"
+              << std::endl;
+
+    // Create new microphones to avoid races between threads
+    std::vector<std::vector<Microphone<D>>> thread_microphones;
+    thread_microphones.resize(thread_pool.get_num_threads());
+    for (auto &mics : thread_microphones)
+      for (auto &real_mic : microphones)
+        mics.emplace_back(Microphone<D>(real_mic));
+
+    // some parmeters used to compute the direction vectors using the Fibonacci
+    // method
     auto offset = 2.f / n_rays;
     auto increment = pi * (3.f - sqrt(5.f));  // phi increment
 
-    for (size_t i(0); i < n_rays ; ++i)
-    {
-      auto z = (i * offset - 1) + offset / 2.f;
-      auto rho = sqrt(1.f - z * z);
+    size_t block_size = n_rays / thread_pool.get_num_threads();
+    if (n_rays % thread_pool.get_num_threads() != 0)
+      block_size += 1;
 
-      float phi = i * increment;
+    for (size_t t = 0; t < thread_pool.get_num_threads(); t++) {
+      size_t block_start = t * block_size;
+      size_t block_end = (t + 1) == thread_pool.get_num_threads()
+                             ? n_rays
+                             : (t + 1) * block_size;
 
-      auto x = cos(phi) * rho;
-      auto y = sin(phi) * rho;
+      auto &local_microphones = thread_microphones[t];
 
-      auto azimuth = atan2(y, x);
-      auto colatitude = atan2(sqrt(x * x + y * y), z);
+      thread_pool.push([&]() {
+        for (size_t i(block_start); i < block_end; ++i)
+        // for (size_t i(0); i < n_rays ; ++i)
+        {
+          auto z = (i * offset - 1) + offset / 2.f;
+          auto rho = sqrt(1.f - z * z);
 
-      simul_ray(azimuth, colatitude, source_pos, energy_0);
+          float phi = i * increment;
+
+          auto x = cos(phi) * rho;
+          auto y = sin(phi) * rho;
+
+          auto azimuth = atan2(y, x);
+          auto colatitude = atan2(sqrt(x * x + y * y), z);
+
+          simul_ray(azimuth, colatitude, source_pos, energy_0,
+                    local_microphones);
+        }
+      });
+    }
+
+    // wait for processing to finish
+    thread_pool.wait();
+
+    // now merge the results
+    for (size_t t = 0; t < thread_pool.get_num_threads(); t++) {
+      for (size_t b = 0; b < microphones.size(); b++)
+        microphones[b] += thread_microphones[t][b];
     }
   }
   else if (D == 2)
   {
     float offset = 2. * pi / n_rays;
     for (size_t i(0) ; i < n_rays ; ++i)
-      simul_ray(i * offset, 0.f, source_pos, energy_0);
+      simul_ray(i * offset, 0.f, source_pos, energy_0, microphones);
   }
 }
 

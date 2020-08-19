@@ -90,7 +90,9 @@ PYBIND11_MODULE(libroom, m) {
                              const Vectorf<3> source_pos
                              )
         )
-        &Room<3>::ray_tracing)
+        &Room<3>::ray_tracing,
+        py::call_guard<py::gil_scoped_release>()  // needed because we use multithreading in this function
+        )
     .def("contains", &Room<3>::contains)
     .def_property("is_hybrid_sim", &Room<3>::get_is_hybrid_sim, &Room<3>::set_is_hybrid_sim)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 3; })
@@ -152,7 +154,9 @@ PYBIND11_MODULE(libroom, m) {
                              const Vectorf<2> source_pos
                             )
         )
-        &Room<2>::ray_tracing)
+        &Room<2>::ray_tracing,
+        py::call_guard<py::gil_scoped_release>()  // needed because we use multithreading in this function
+        )
     .def("contains", &Room<2>::contains)
     .def_property_readonly_static("dim", [](py::object /* self */) { return 2; })
     .def_property("is_hybrid_sim", &Room<2>::get_is_hybrid_sim, &Room<2>::set_is_hybrid_sim)

@@ -29,6 +29,7 @@
 #define __COMMON_HPP__
 
 #include <iostream>
+#include <mutex>
 #include <Eigen/Dense>
 
 extern float libroom_eps;  // epsilon is the precision for floating point computations. It is defined in libroom.cpp
@@ -72,16 +73,23 @@ size_t get_new_size(size_t val, size_t cur_size)
 
 class Histogram2D
 {
-  size_t rows, cols;
-  Eigen::ArrayXXf array;
-  Eigen::ArrayXXi counts;
+  // use a mutex to make the histogram thread safe
+  std::mutex the_mutex;
 
   public:
+    size_t rows, cols;
+    Eigen::ArrayXXf array;
+    Eigen::ArrayXXi counts;
+
     Histogram2D() {}  // empty constructor
     Histogram2D(int _r, int _c) : rows(_r), cols(_c)
     {
       init(rows, cols);
     }
+    Histogram2D(Histogram2D && obj) : rows(obj.rows), cols(obj.cols), array(std::move(obj.array)), counts(std::move(obj.counts)) { }
+    Histogram2D(const Histogram2D & obj) : rows(obj.rows), cols(obj.cols), array(obj.array), counts(obj.counts) {}
+
+    //friend Microphone& Microphone::operator +=(const Microphone& obj);
 
     void init(int rows, int cols)
     {

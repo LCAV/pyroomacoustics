@@ -179,7 +179,7 @@ class Room
 
     void add_mic(const Vectorf<D> &loc)
     {
-      microphones.push_back(
+      microphones.emplace_back(
           Microphone<D>(loc, n_bands, mic_hist_res * sound_speed, time_thres * sound_speed)
           );
     }
@@ -208,14 +208,16 @@ class Room
         const Wall<D> &wall,
         const Vectorf<D> &prev_last_hit,
         const Vectorf<D> &hit_point,
-        float travel_dist
+        float travel_dist,
+        std::vector<Microphone<D>> &local_microphones
         );
 
     void simul_ray(
         float phi,
         float theta,
         const Vectorf<D> source_pos,
-        float energy_0
+        float energy_0,
+        std::vector<Microphone<D>> &local_microphones
         );
 
     void ray_tracing(
