@@ -1045,9 +1045,7 @@ void Room<D>::ray_tracing(
   // ------------------ RAY TRACING --------------------
   if (D == 3)
   {
-    redpoule::ThreadPool thread_pool{8};
-    std::cout << "Using " << thread_pool.get_num_threads() << " threads"
-              << std::endl;
+    redpoule::ThreadPool thread_pool{libroom_num_threads};
 
     // Create new microphones to avoid races between threads
     std::vector<std::vector<Microphone<D>>> thread_microphones;

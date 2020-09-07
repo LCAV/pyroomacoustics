@@ -65,6 +65,10 @@ def make_room(config):
         .add_microphone([2, 1.5, 2])
     )
 
+    if config["ray_tracing"]:
+        shoebox.room_engine.set_num_threads(1)
+        shoebox.set_ray_tracing(n_rays=100000)
+
     return shoebox
 
 

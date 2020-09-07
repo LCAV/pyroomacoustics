@@ -26,6 +26,7 @@
 #ifndef __ROOM_H__
 #define __ROOM_H__
 
+#include <iostream>
 #include <vector>
 #include <stack>
 #include <tuple>

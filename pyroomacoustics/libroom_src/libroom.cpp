@@ -26,6 +26,7 @@
 
 #include <string>
 #include <vector>
+#include <thread>
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
@@ -40,6 +41,7 @@
 namespace py = pybind11;
 
 float libroom_eps = 1e-5;  // epsilon is set to 0.1 millimeter (100 um)
+size_t libroom_num_threads = std::thread::hardware_concurrency();  // number of threads to use for computations
 
 
 PYBIND11_MODULE(libroom, m) {
@@ -272,6 +274,8 @@ PYBIND11_MODULE(libroom, m) {
   // getter and setter for geometric epsilon
   m.def("set_eps", [](const float &eps) { libroom_eps = eps; });
   m.def("get_eps", []() { return libroom_eps; });
+  m.def("set_num_threads", [](size_t n) { libroom_num_threads = n; });
+  m.def("get_num_threads", []() { return libroom_num_threads; });
 
   // Routines for the geometry packages
   m.def("ccw3p", &ccw3p, "Determines the orientation of three points");

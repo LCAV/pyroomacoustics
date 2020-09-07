@@ -33,6 +33,7 @@
 #include <Eigen/Dense>
 
 extern float libroom_eps;  // epsilon is the precision for floating point computations. It is defined in libroom.cpp
+extern size_t libroom_num_threads;
 
 template<size_t D>
 using Vectorf = Eigen::Matrix<float, D, 1>;
