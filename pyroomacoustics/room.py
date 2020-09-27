@@ -942,7 +942,7 @@ class Room(object):
             self.air_absorption = self.physics().get_air_absorption()
 
     def unset_air_absorption(self):
-        """ Deactivates the ray tracer """
+        """ Deactivates air absorption in the simulation """
         self.simulator_state["air_abs_needed"] = False
 
     def set_sound_speed(self, c):
