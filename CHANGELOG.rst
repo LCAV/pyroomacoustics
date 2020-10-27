@@ -16,6 +16,12 @@ Bugfix
 
 - Fixes typo in a docstring
 
+Changed
+~~~~~~~
+
+- Improve the computation of the auxiliary variables in AuxIVA and ILRMA.
+  Unnecessary division operations are reduced.
+
 `0.4.2`_ - 2020-09-24
 ---------------------
 
