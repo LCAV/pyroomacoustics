@@ -77,8 +77,13 @@ def sparseauxiva(
 
     n_frames, n_freq, n_chan = X.shape
 
+    assert (
+        n_chan == 2
+    ), "Current implementation of sparse AuxIVA is specialized for two sources."
+
     if S is None:
         k_freq = n_freq
+        S = np.arange(n_freq)
     else:
         k_freq = S.shape[0]
 
@@ -100,7 +105,7 @@ def sparseauxiva(
     else:
         W = W0.copy()
 
-    eps = 1e-15
+    eps = 1e-10
     I = np.eye(n_src, n_src)
     Y = np.zeros((n_frames, n_freq, n_src), dtype=X.dtype)
     r = np.zeros((n_frames, n_src))

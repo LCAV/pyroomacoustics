@@ -14,8 +14,6 @@
     :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
     :alt: Test on mybinder
 
-
-
 Summary
 -------
 
@@ -24,7 +22,7 @@ and testing of audio array processing algorithms. The content of the package
 can be divided into three main components: 
 
 1. Intuitive Python object-oriented interface to quickly construct different simulation scenarios involving multiple sound sources and microphones in 2D and 3D rooms;
-2. Fast C implementation of the image source model for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
+2. Fast C++ implementation of the image source model and ray tracing for general polyhedral rooms to efficiently generate room impulse responses and simulate the propagation between sources and receivers;
 3. Reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single channel denoising.
 
 Together, these components form a package with the potential to speed up the time to market
@@ -58,8 +56,8 @@ image source model that can handle
 * Convex and non-convex rooms
 * 2D/3D rooms
 
-Both a pure Python implementation and a C accelerator are included for maximum
-speed and compatibility.
+The core image source model and ray tracing modules are written in C++ for
+better performance.
 
 The philosophy of the package is to abstract all necessary elements of
 an experiment using an object-oriented programming approach. Each of these elements
@@ -132,6 +130,19 @@ scenarios::
     # run the newly created script
     python <chosen_script_name>.py
 
+
+We have also provided a minimal `Dockerfile` example in order to install and
+run the package within a Docker container. Note that you should `increase the memory <https://docs.docker.com/docker-for-mac/#resources>`_
+of your containers to 4 GB. Less may also be sufficient, but this is necessary
+for building the C++ code extension. You can build the container with::
+
+    docker build -t pyroom_container .
+
+And enter the container with::
+
+    docker run -it pyroom_container:latest /bin/bash
+
+
 Dependencies
 ------------
 
@@ -140,6 +151,7 @@ The minimal dependencies are::
     numpy 
     scipy>=0.18.0
     Cython
+    pybind11
 
 where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
 The simulator itself has a pure Python counterpart, so that this requirement could

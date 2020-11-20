@@ -8,19 +8,22 @@ import numpy as np
 import pyroomacoustics as pra
 
 fs = 8000
-t0 = 1./(fs*np.pi*1e-2)
+t0 = 0.
 absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
 
-corners = np.array([[0,5,5,3,3,2,2,0], [0,0,5,5,2,2,5,5]])
+corners = np.array([
+    [0,5,5,3,3,2,2,0],
+    [0,0,5,5,2,2,5,5],
+    ])
 room = pra.Room.from_corners(
     corners,
-    absorption,
-    fs,
-    t0,
-    max_order_sim,
-    sigma2_n)
+    absorption=absorption,
+    fs=fs,
+    t0=t0,
+    max_order=max_order_sim,
+    sigma2_awgn=sigma2_n)
     
 room.add_source([1, 4], None, 0)
 

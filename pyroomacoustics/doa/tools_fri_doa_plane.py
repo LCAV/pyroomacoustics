@@ -1684,7 +1684,7 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
                         p_mic_y_normalised[:,band_count],
                         )
                 blocks.append(amp_loop)
-            amp_mtx = linalg.block_diag(blocks)
+            amp_mtx = linalg.block_diag(*blocks)
 
 
             alphak_recon = sp.linalg.lstsq(amp_mtx, a.flatten('F'))[0]

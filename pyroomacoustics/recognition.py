@@ -13,7 +13,6 @@ try:
 except:
     have_sounddevice = False
 
-from .stft import stft
 from .acoustics import mfcc
 
 class CircularGaussianEmission:
