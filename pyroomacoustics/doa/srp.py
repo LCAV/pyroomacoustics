@@ -81,6 +81,6 @@ class SRP(DOA):
             sum_val = np.inner(ones, np.dot(np.triu(R, 1), ones))
 
             # Finally normalize
-            srp_cost[n] = np.abs(sum_val) / self.num_snap/self.num_freq/self.num_pairs
+            srp_cost[n] = np.real(sum_val) / self.num_snap/self.num_freq/self.num_pairs
 
         self.grid.set_values(srp_cost)
