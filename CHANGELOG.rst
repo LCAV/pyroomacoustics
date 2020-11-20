@@ -10,13 +10,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
 -------------
-Changed
+Bugfix
 ~~~~~~~
 
-- Added vectorised functions in MUSIC 
-- Use the vectorised functions in _process of MUSIC
+- Changed np.abs to np.real in srp.py  
 
-`0.3.1`_ - 2020-05-12
+`0.4.2`_ - 2020-11-20
 ---------------------
 
 Bugfix
