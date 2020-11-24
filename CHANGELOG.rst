@@ -21,6 +21,7 @@ Bugfix
 
 - Fixes the Dockerfile so that we don't have to install the build dependencies manually
 - Change the eps for geometry computations from 1e-4 to 1e-5 in ``libroom``
+- Fixes the computation of the cost function of SRP-PHAT doa algorithm (bug reported in #PR197)
 
 Added
 ~~~~~
