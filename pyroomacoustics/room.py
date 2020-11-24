@@ -1099,15 +1099,19 @@ class Room(object):
         ----------
         height : float
             The extrusion height
-        v_vec : array-like 1D length 3, optionnal
+        v_vec : array-like 1D length 3, optional
             A unit vector. An orientation for the extrusion direction. The
             ceiling will be placed as a translation of the floor with respect
             to this vector (The default is [0,0,1]).
-        absorption : float or array-like
+        absorption : float or array-like, optional
             Absorption coefficients for all the walls. If a scalar, then all the walls
             will have the same absorption. If an array is given, it should have as many elements
             as there will be walls, that is the number of vertices of the polygon plus two. The two
-            last elements are for the floor and the ceiling, respectively. (default 1)
+            last elements are for the floor and the ceiling, respectively.
+            It is recommended to use materials instead of absorption parameter. (Default: 1)
+        materials : dict
+            Absorption coefficients for floor and ceiling. This parameter overrides absorption.
+            (Default: {"floor": 1, "ceiling": 1})
         """
 
         if self.dim != 2:

@@ -15,6 +15,7 @@ Bugfix
 ~~~~~~
 
 - Fixes typo in a docstring
+- Update docs to better reflect actual function parameters
 
 `0.4.2`_ - 2020-09-24
 ---------------------
