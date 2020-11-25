@@ -2563,6 +2563,14 @@ class ShoeBox(Room):
         pos: array_like
             The position to test in an array of size 2 for a 2D room and 3 for a 3D room
 
+        Returns
+        -------
+        True if ``pos`` is a point in the room, ``False`` otherwise.
+        """
+        pos = np.array(pos)
+        return np.all(pos) >= 0 and np.all(pos <= self.shoebox_dim)
+
+
 class AnechoicRoom(ShoeBox):
     """
     This class provides an API for creating an Anechoic "room" in 2D or 3D.
