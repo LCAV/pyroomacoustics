@@ -25,11 +25,15 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import itertools
 import math
+
 import numpy as np
-from scipy.signal import butter, sosfiltfilt, fftconvolve
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
+from scipy.signal import butter, fftconvolve, sosfiltfilt
+
+from .parameters import constants
 from .transform import stft
 
 
@@ -93,7 +97,7 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     return filters
 
 
-def octave_bands(fc=1000, third=False, start=0., n=8):
+def octave_bands(fc=1000, third=False, start=0.0, n=8):
     """
     Create a bank of octave bands
 
@@ -190,7 +194,6 @@ class OctaveBandsFactory(object):
             The input signal filters through all the bands
         """
 
-
         if band is None:
             bands = range(self.filters.shape[1])
         else:
@@ -206,7 +209,7 @@ class OctaveBandsFactory(object):
         else:
             return output
 
-    def __call__(self, coeffs=0., center_freqs=None, interp_kind="linear", **kwargs):
+    def __call__(self, coeffs=0.0, center_freqs=None, interp_kind="linear", **kwargs):
         """
         Takes as input a list of values with optional corresponding center frequency.
         Returns a list with the correct number of octave bands. Interpolation and
@@ -302,11 +305,10 @@ class OctaveBandsFactory(object):
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
                 hi = center <= freq
-                freq_resp[hi, b] = 1.
+                freq_resp[hi, b] = 1.0
 
         filters = np.fft.fftshift(
-            np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
-            axes=[0],
+            np.fft.irfft(freq_resp, n=self.n_fft, axis=0), axes=[0],
         )
 
         # remove the first sample to make them odd-length symmetric filters
@@ -515,3 +517,117 @@ def mfcc(x, L=128, hop=64, M=14, fs=8000, fl=0.0, fh=0.5):
     C = dct(S, type=2, n=M, axis=0)
 
     return C
+
+
+def inverse_sabine(rt60, room_dim, c=None):
+    """
+    Given the desired reverberation time (RT60, i.e. the time for the energy to
+    drop by 60 dB), the dimensions of a rectangular room (shoebox), and sound
+    speed, computes the energy absorption coefficient and maximum image source
+    order needed. The speed of sound used is the package wide default (in
+    :py:data:`~pyroomacoustics.parameters.constants`).
+
+    Parameters
+    ----------
+    rt60: float
+        desired RT60 (time it takes to go from full amplitude to 60 db decay) in seconds
+    room_dim: list of floats
+        list of length 2 or 3 of the room side lengths
+    c: float
+        speed of sound
+
+    Returns
+    -------
+    absorption: float
+        the energy absorption coefficient to be passed to room constructor
+    max_order: int
+        the maximum image source order necessary to achieve the desired RT60
+    """
+
+    if c is None:
+        c = constants.get("c")
+
+    # finding image sources up to a maximum order creates a (possibly 3d) diamond
+    # like pile of (reflected) rooms. now we need to find the image source model order
+    # so that reflections at a distance of at least up to ``c * rt60`` are included.
+    # one possibility is to find the largest sphere (or circle in 2d) that fits in the
+    # diamond. this is what we are doing here.
+    R = []
+    for l1, l2 in itertools.combinations(room_dim, 2):
+        R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
+
+    V = np.prod(room_dim)  # area (2d) or volume (3d)
+    # "surface" computation is diff for 2d and 3d
+    if len(room_dim) == 2:
+        S = 2 * np.sum(room_dim)
+        sab_coef = 12  # the sabine's coefficient needs to be adjusted in 2d
+    elif len(room_dim) == 3:
+        S = 2 * np.sum([l1 * l2 for l1, l2 in itertools.combinations(room_dim, 2)])
+        sab_coef = 24
+
+    e_absorption = (
+        sab_coef * np.log(10) * V / (c * S * rt60)
+    )  # absorption in power (sabine)
+
+    if e_absorption > 1.0:
+        raise ValueError(
+            "evaluation of parameters failed. room may be too large for required RT60."
+        )
+
+    # the int cast is only needed for python 2.7
+    # math.ceil returns int for python 3.5+
+    max_order = int(math.ceil(c * rt60 / np.min(R) - 1))
+
+    return e_absorption, max_order
+
+
+def rt60_eyring(S, V, a, m, c):
+    """
+    This is the Eyring formula for estimation of the reverberation time.
+
+    Parameters
+    ----------
+    S:
+        the total surface of the room walls in m^2
+    V:
+        the volume of the room in m^3
+    a: float
+        the equivalent absorption coefficient ``sum(a_w * S_w) / S`` where ``a_w`` and ``S_w`` are the absorption and surface of wall ``w``, respectively.
+    m: float
+        attenuation constant of air
+    c: float
+        speed of sound in m/s
+
+    Returns
+    -------
+    float
+        The estimated reverberation time (RT60)
+    """
+
+    return -(24 * np.log(10) / c) * V / (S * np.log(1 - a) + 4 * m * V)
+
+
+def rt60_sabine(S, V, a, m, c):
+    """
+    This is the Eyring formula for estimation of the reverberation time.
+
+    Parameters
+    ----------
+    S:
+        the total surface of the room walls in m^2
+    V:
+        the volume of the room in m^3
+    a: float
+        the equivalent absorption coefficient ``sum(a_w * S_w) / S`` where ``a_w`` and ``S_w`` are the absorption and surface of wall ``w``, respectively.
+    m: float
+        attenuation constant of air
+    c: float
+        speed of sound in m/s
+
+    Returns
+    -------
+    float
+        The estimated reverberation time (RT60)
+    """
+
+    return (24 * np.log(10) / c) * V / (a * S + 4 * m * V)

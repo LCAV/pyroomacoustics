@@ -1,86 +1,100 @@
+"""
+This example program demonstrates the use of ray tracing
+for the simulation of rooms of different sizes.
+"""
 from __future__ import print_function
+
+import argparse
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import pyroomacoustics as pra
-from scipy.io import wavfile
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 fs, audio_anechoic = wavfile.read("notebooks/arctic_a0010.wav")
 
+reverb_opts = {
+    "medium": {"e_abs": 0.3},
+    "short": {"e_abs": 0.7,},
+    "long": {"e_abs": 0.1},
+}
 
-def get_rir(size="medium", absorption="medium"):
+size_opts = {
+    "medium": {"mult": 2.5, "receiver_radius": 0.2},
+    "large": {"mult": 5.0, "receiver_radius": 0.5},
+    "small": {"mult": 1.0, "receiver_radius": 0.1},
+}
 
-    if absorption == "high":
-        absor = 0.7
-    elif absorption == "medium":
-        absor = 0.3
-    elif absorption == "low":
-        absor = 0.1
-    else:
-        raise ValueError(
-            "The absorption parameter can only take values ['low', 'medium', 'high']"
-        )
 
-    if size == "large":
-        size_coef = 5.0
-    elif size == "medium":
-        size_coef = 2.5
-    elif size == "small":
-        size_coef = 1.0
-    else:
-        raise ValueError(
-            "The size parameter can only take values ['small', 'medium', 'large']"
-        )
+def get_rir(size, reverb):
 
-    pol = size_coef * np.array([[0, 0], [0, 4], [3, 2], [3, 0]]).T
+    # We construct a non-shoebox room
+    pol = size_opts[size]["mult"] * np.array([[0, 0], [0, 4], [3, 2], [3, 0]]).T
+    mat = pra.Material(reverb_opts[reverb]["e_abs"])
     room = pra.Room.from_corners(
-        pol, fs=32000, max_order=2, absorption=absor, ray_tracing=True
+        pol, fs=16000, max_order=2, materials=mat, ray_tracing=True
     )
 
     # Create the 3D room by extruding the 2D by a specific height
-    room.extrude(size_coef * 2.5, absorption=absor)
+    room.extrude(size_opts[size]["mult"] * 2.5, materials=mat)
+
+    # set the ray tracing parameters
+    room.set_ray_tracing(
+        receiver_radius=size_opts[size]["receiver_radius"]
+    )  # , n_rays=100000)
 
     # Adding the source
-    room.add_source(size_coef * np.array([1.8, 0.4, 1.6]), signal=audio_anechoic)
+    room.add_source(
+        size_opts[size]["mult"] * np.array([1.8, 0.4, 1.6]), signal=audio_anechoic
+    )
 
     # Adding the microphone
-    R = size_coef * np.array([[0.5], [1.2], [0.5]])
+    R = size_opts[size]["mult"] * np.array([[0.5], [1.2], [0.5]])
     room.add_microphone_array(pra.MicrophoneArray(R, room.fs))
 
     # Compute the RIR using the hybrid method
     s = time.perf_counter()
-    room.image_source_model()
-    room.ray_tracing()
     room.compute_rir()
     print("Computation time:", time.perf_counter() - s)
-
-    # Plot and apply the RIR on the audio file
-    room.plot_rir()
-    plt.show()
 
     return room.rir[0][0], room
 
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 3:
-        print("Usage: {} [small/medium/large] [low/medium/high]".format(sys.argv[0]))
+    parser = argparse.ArgumentParser(
+        description=(
+            "Demonstrates the use of ray tracing for rooms of "
+            "different size and reverberation time"
+        )
+    )
+    size_choices = list(size_opts.keys())
+    reverb_choices = list(reverb_opts.keys())
+    parser.add_argument(
+        "size", choices=size_choices, default=size_choices[0], help="room size"
+    )
+    parser.add_argument(
+        "reverb",
+        choices=reverb_choices,
+        default=reverb_choices[0],
+        help="amount of reverberation",
+    )
+    args = parser.parse_args()
 
-    else:
+    rir, room = get_rir(size=args.size, reverb=args.reverb)
 
-        size = sys.argv[1]
-        absorption = sys.argv[2]
+    room.plot(img_order=0)
+    plt.title("The room we have simulated")
 
-        new_rir, room = get_rir(size=size, absorption=absorption)
+    # Plot and apply the RIR on the audio file
+    plt.figure()
+    room.plot_rir()
+    plt.show()
 
-        fs, old_rir = wavfile.read("notebooks/rir_{}_{}.wav".format(size, absorption))
+    plt.show()
 
-        plt.figure()
-        plt.plot(old_rir, label="old")
-        plt.plot(new_rir, label="new")
-        plt.legend()
-        plt.show()
-
-        # print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
-        # print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+    # print('Max error (rel):', np.max(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))
+    # print('Mean error (rel):', np.mean(np.abs(new_rir - old_rir))/np.max(np.abs(new_rir)))

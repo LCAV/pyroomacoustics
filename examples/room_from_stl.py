@@ -1,10 +1,28 @@
-import argparse, os
+"""
+This sample program demonstrate how to import a model from an STL file.
+Currently, the materials need to be set in the program which is not very practical
+when different walls have different materials.
+
+The STL file was kindly provided by Diego Di Carlo (@Chutlhu).
+"""
+import argparse
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
-from stl import mesh
+from mpl_toolkits import mplot3d
+
 import pyroomacoustics as pra
 
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
+try:
+    from stl import mesh
+except ImportError as err:
+    print(
+        "The numpy-stl package is required for this example. "
+        "Install it with `pip install numpy-stl`"
+    )
+    raise err
+
 
 if __name__ == "__main__":
 
@@ -14,7 +32,7 @@ if __name__ == "__main__":
 
     path_to_musis_stl_file = "./data/raw/MUSIS_3D_no_mics_simple.stl"
 
-    material = pra.Material.make_freq_flat(0.2, 0.1)
+    material = pra.Material(energy_absorption=0.2, scattering=0.1)
 
     # with numpy-stl
     the_mesh = mesh.Mesh.from_file(args.file)
@@ -27,22 +45,15 @@ if __name__ == "__main__":
         walls.append(
             pra.wall_factory(
                 the_mesh.vectors[w].T / size_reduc_factor,
-                material.absorption["coeffs"],
+                material.energy_absorption["coeffs"],
                 material.scattering["coeffs"],
             )
         )
 
-    room = pra.Room(
-        walls, fs=16000, max_order=3, ray_tracing=True, air_absorption=True,
-    )
-    # Set options for the ray tracer
-    room.set_ray_tracing(n_rays=30000, receiver_radius=0.5)
-
-    room.add_source([-2.0, 2.0, 1.8])
-    room.add_microphone_array(
-        pra.MicrophoneArray(
-            np.array([[-6.5, 8.5, 3 + 0.1], [-6.5, 8.1, 3 + 0.1]]).T, room.fs
-        )
+    room = (
+        pra.Room(walls, fs=16000, max_order=3, ray_tracing=True, air_absorption=True,)
+        .add_source([-2.0, 2.0, 1.8])
+        .add_microphone_array(np.c_[[-6.5, 8.5, 3 + 0.1], [-6.5, 8.1, 3 + 0.1]])
     )
 
     # compute the rir

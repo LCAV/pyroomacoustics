@@ -11,7 +11,7 @@
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/next_gen_simulator?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
+    :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
     :alt: Test on mybinder
 
 Summary
@@ -27,7 +27,7 @@ can be divided into three main components:
 
 Together, these components form a package with the potential to speed up the time to market
 of new algorithms by significantly reducing the implementation overhead in the
-performance evaluation step. Please refer to `this notebook <https://mybinder.org/v2/gh/LCAV/pyroomacoustics/next_gen_simulator?filepath=notebooks%2Fpyroomacoustics_demo.ipynb>`_
+performance evaluation step. Please refer to `this notebook <https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb>`_
 for a demonstration of the different components of this package.
 
 Room Acoustics Simulation
@@ -130,6 +130,19 @@ scenarios::
     # run the newly created script
     python <chosen_script_name>.py
 
+
+We have also provided a minimal `Dockerfile` example in order to install and
+run the package within a Docker container. Note that you should `increase the memory <https://docs.docker.com/docker-for-mac/#resources>`_
+of your containers to 4 GB. Less may also be sufficient, but this is necessary
+for building the C++ code extension. You can build the container with::
+
+    docker build -t pyroom_container .
+
+And enter the container with::
+
+    docker run -it pyroom_container:latest /bin/bash
+
+
 Dependencies
 ------------
 
@@ -138,6 +151,7 @@ The minimal dependencies are::
     numpy 
     scipy>=0.18.0
     Cython
+    pybind11
 
 where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
 The simulator itself has a pure Python counterpart, so that this requirement could

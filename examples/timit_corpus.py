@@ -17,9 +17,11 @@ To successfully run the example, you will need to set an environment variable
     https://catalog.ldc.upenn.edu/ldc93s1
 """
 
-import pyroomacoustics as pra
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+
+import pyroomacoustics as pra
 
 # add an environment variable with the TIMIT location
 # e.g. /path/to/timit/TIMIT

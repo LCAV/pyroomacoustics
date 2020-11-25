@@ -25,15 +25,14 @@
 
 import numpy as np
 
+
 def projection_back(Y, ref, clip_up=None, clip_down=None):
-    '''
+    """
     This function computes the frequency-domain filter that minimizes
     the squared error to a reference signal. This is commonly used
     to solve the scale ambiguity in BSS.
 
-    Derivation of the projection
-    ----------------------------
-
+    Here is the derivation of the projection.
     The optimal filter `z` minimizes the squared error.
     
     .. math::
@@ -66,13 +65,13 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
         Limits the maximum value of the gain (default no limit)
     clip_down: float, optional
         Limits the minimum value of the gain (default no limit)
-    '''
+    """
 
-    num = np.sum(np.conj(ref[:,:,None]) * Y, axis=0)
-    denom = np.sum(np.abs(Y)**2, axis=0)
+    num = np.sum(np.conj(ref[:, :, None]) * Y, axis=0)
+    denom = np.sum(np.abs(Y) ** 2, axis=0)
 
     c = np.ones(num.shape, dtype=np.complex)
-    I = denom > 0.
+    I = denom > 0.0
     c[I] = num[I] / denom[I]
 
     if clip_up is not None:
@@ -85,22 +84,31 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
     return c
 
 
+def sparir(
+    G,
+    S,
+    weights=np.array([]),
+    gini=0,
+    maxiter=50,
+    tol=10,
+    alpha=10,
+    alphamax=1e5,
+    alphamin=1e-7,
+):
+    """
 
-def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alphamax=1e5, alphamin=1e-7):
-    '''
-
-   Fast proximal algorithm implementation for sparse approximation of relative impulse
-   responses from incomplete measurements of the corresponding relative transfer function
-   based on
+    Fast proximal algorithm implementation for sparse approximation of relative impulse
+    responses from incomplete measurements of the corresponding relative transfer function
+    based on
 
     Z. Koldovsky, J. Malek, and S. Gannot, "Spatial Source Subtraction based
     on Incomplete Measurements of Relative Transfer Function", IEEE/ACM
     Transactions on Audio, Speech, and Language Processing, TASLP 2015.
 
-   The original Matlab implementation can be found at
+    The original Matlab implementation can be found at
     http://itakura.ite.tul.cz/zbynek/dwnld/SpaRIR.m
 
-   and it is referred in
+    and it is referred in
 
     Z. Koldovsky, F. Nesta, P. Tichavsky, and N. Ono, *Frequency-domain blind
     speech separation using incomplete de-mixing transform*, EUSIPCO 2016.
@@ -133,7 +141,7 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
     -------
     Returns the sparse approximation of the impulse response in the
     time-domain (real-valued) as an (nfrequencies) array.
-    '''
+    """
 
     n_freq = G.shape[0]
 
@@ -148,7 +156,7 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
 
     if weights.size == 0:
         tau = np.sqrt(n_freq) / (y.conj().T.dot(y))
-        tau = tau * np.exp(0.11 * np.abs((np.arange(1., n_freq + 1.).T)) ** 0.3)
+        tau = tau * np.exp(0.11 * np.abs((np.arange(1.0, n_freq + 1.0).T)) ** 0.3)
         tau = tau.T
     elif weights.shape[0] == 1:
         tau = np.ones((n_freq, 1)) * weights
@@ -167,11 +175,11 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
     G = np.fft.fft(g.flatten())
     Ag = np.concatenate((np.real(G[S]), np.imag(G[S])), axis=0)
     r = Ag - y.flatten()  # instead of r = A * g - y
-    aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
+    aux[S] = np.expand_dims(r[0 : M // 2] + 1j * r[M // 2 :], axis=1)
     gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)  # instead of gradq = A'*r
     gradq = np.expand_dims(gradq, axis=1)
     support = g != 0
-    iter_ = 0 # initial iteration value
+    iter_ = 0  # initial iteration value
 
     # Define stopping criteria
     crit = np.zeros((maxiter, 1))
@@ -192,11 +200,13 @@ def sparir(G, S, weights=np.array([]), gini=0, maxiter=50, tol=10, alpha=10, alp
         alpha = min(alphamax, max(alphamin, dGd / (np.finfo(np.float32).eps + dd)))
         iter_ += 1
         support = g != 0
-        aux[S] = np.expand_dims(r[0:M // 2] + 1j * r[M // 2:], axis=1)
+        aux[S] = np.expand_dims(r[0 : M // 2] + 1j * r[M // 2 :], axis=1)
         gradq = n_freq * np.fft.irfft(aux.flatten(), n_freq)
         gradq = np.expand_dims(gradq, axis=1)
         # Update stopping criteria
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-        crit[iter_] = sum(criterion ** 2) + sum(abs(gradq[~support]) - tau[~support] > tol)
+        crit[iter_] = sum(criterion ** 2) + sum(
+            abs(gradq[~support]) - tau[~support] > tol
+        )
 
     return g.flatten()

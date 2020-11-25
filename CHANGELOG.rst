@@ -8,11 +8,50 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`NextGeneration`_
-------------------
+`Unreleased`_
+-------------
+
+Bugfix
+~~~~~~
+
+- Fixes typo in a docstring
+- Update docs to better reflect actual function parameters
+
+`0.4.2`_ - 2020-09-24
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixes the Dockerfile so that we don't have to install the build dependencies manually
+- Change the eps for geometry computations from 1e-4 to 1e-5 in ``libroom``
 
 Added
 ~~~~~
+
+- A specialized ``is_inside`` routine for ``ShoeBox`` rooms
+
+`0.4.1`_ - 2020-07-02
+---------------------
+
+Bugfix
+~~~~~~
+
+- Issue #162 (crash with max_order>31 on windows), seems fixed by the new C++ simulator
+- Test for issue #162 added
+- Fix Binder link
+- Adds the pyproject.toml file in MANIFEST.in so that it gets picked up for packaging
+
+Added
+~~~~~
+
+- Minimal `Dockerfile` example.
+
+`0.4.0`_ - 2020-06-03
+---------------------
+
+Improved Simulator with Ray Tracing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Ray Tracing in the libroom module. The function compute_rir() of the Room object in python
   can now be executed using a pure ray tracing approach or a hybrid (ISM + RT) approach.
@@ -22,16 +61,20 @@ Added
 - Acoustic properties of different materials in ``pyroomacoustics.materials``
 - Scattering from the wall is handled via ray tracing method, scattering coefficients are provided
   in ``pyroomacoustics.materials.Material`` objects
+- Function ``inverse_sabine`` allows to compute the ``absorption`` and ``max_order`` to use with
+  the image source model to achieve a given reverberation time
+- The method ``rt60_theory`` in ``pyroomacoustics.room.Room`` allows to compute the theoretical
+  RT60 of the room according to Eyring or Sabine formula
+- The method ``measure_rt60`` in ``pyroomacoustics.room.Room`` allows to measure the RT60 of
+  the simulated RIRs
 
-
-Changed
-~~~~~~~
+Changes in the Room Class
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Deep refactor of Room class. The constructor arguments have changed
 - No more ``sigma2_awgn``, noise is now handled in ``pyroomacoustics.Room.simulate`` method
 - The way absorption is handled has changed. The scalar variables
-  ``absorption`` are deprecated in favor of a list of
-  ``pyroomacoustics.materials.Material``
+  ``absorption`` are deprecated in favor of ``pyroomacoustics.materials.Material``
 - Complete refactor of libroom, the compiled extension module responsible for the
   room simulation, into C++. The bindings to python are now done using pybind11.
 - Removes the pure Python room simulator as it was really slow
@@ -50,13 +93,13 @@ Changed
   argument, the new behavior is to add in addition to other microphones already
   present.
 
-`Unreleased`_
--------------
-
 Bugfix
 ~~~~~~
 
 - From Issue #150, increase max iterations to check if point is inside room
+- Issues #117 #163, adds project file `pyproject.toml` so that pip can know which dependencies are necessary for setup
+- Fixed some bugs in the documentation
+- Fixed normalization part in FastMNMF
 
 Added
 ~~~~~~~
@@ -70,20 +113,11 @@ Changed
 ~~~~~~~
 
 - Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
-
-`0.3.2`_ - 2019-02-23
----------------------
-
-Bugfix
-~~~~~~
-
-- Fixed some bugs in the documentation
-- Fixed normalization part in FastMNMF
-
-Changed
-~~~~~~~
 - Changed initialization of FastMNMF to accelerate convergence
 - Fixed bug in doa/tops (float -> integer division)
+- Added vectorised functions in MUSIC 
+- Use the vectorised functions in _process of MUSIC
+
 
 `0.3.1`_ - 2019-11-06
 ---------------------
@@ -357,8 +391,10 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _NextGeneration: https://github.com/LCAV/pyroomacoustics/compare/master...next_gen_simulator
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...HEAD
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...master
+.. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
+.. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
+.. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...v0.4.0
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
 .. _0.2.0: https://github.com/LCAV/pyroomacoustics/compare/v0.1.23...v0.2.0

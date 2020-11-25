@@ -29,10 +29,15 @@ This file defines the main physical constants of the system:
     * Scattering coefficients
     * Air absorption
 """
+import io
+import json
+import os
+
 import numpy as np
 
 # tolerance for computations
 eps = 1e-10
+
 
 # We implement the constants as a dictionary so that they can
 # be modified at runtime.
@@ -44,15 +49,13 @@ _constants_default = {
     "ffdist": 10.0,  # distance to the far field
     "fc_hp": 300.0,  # cut-off frequency of standard high-pass filter
     "frac_delay_length": 81,  # Length of the fractional delay filters used for RIR gen
-    'room_isinside_max_iter': 20, # Max iterations for checking if point is inside room 
+    "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
 }
 
 
 class Constants:
     """
     A class to provide easy access package wide to user settable constants.
-
-    Be careful of not using this in tight loops since it uses exceptions.
     """
 
     def set(self, name, val):
@@ -223,67 +226,36 @@ Simulation, Algorithms, and Acoustic Virtual Reality, Springer, 1st Edition,
 2008.
 
 """
+# the file containing the database of materials
+_materials_database_fn = os.path.join(os.path.dirname(__file__), "data/materials.json")
 
 materials_absorption_table = {
     "anechoic": {"description": "Anechoic material", "coeffs": [1.0]},
-    "hard_surface": {
-        "description": "Walls, hard surfaces average (brick walls, plaster, "
-        "hard floors, etc.)",
-        "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05, 0.05],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "brickwork": {
-        "description": "Walls, rendered brickwork",
-        "coeffs": [0.01, 0.02, 0.02, 0.03, 0.03, 0.04, 0.04],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "rough_concrete": {
-        "description": "Rough concrete",
-        "coeffs": [0.02, 0.03, 0.03, 0.03, 0.04, 0.07, 0.07],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "smooth_concrete": {
-        "description": "Smooth unpainted concrete",
-        "coeffs": [0.01, 0.01, 0.02, 0.02, 0.02, 0.05, 0.05],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "6mm_carpet": {
-        "description": "(Floor covering) 6 mm pile carpet bonded to "
-        "closed-cell foam underlay",
-        "coeffs": [0.03, 0.09, 0.25, 0.31, 0.33, 0.44, 0.44],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
 }
 
 materials_scattering_table = {
     "no_scattering": {"description": "No scattering", "coeffs": [0.0]},
-    "rpg_skyline": {
-        "description": "Diffuser RPG Skyline",
-        "coeffs": [0.01, 0.08, 0.45, 0.82, 1.0],
-        "center_freqs": [125, 250, 500, 1000, 2000],
-    },
-    "rpg_qrd": {
-        "description": "Diffuser RPG QRD",
-        "coeffs": [0.06, 0.15, 0.45, 0.95, 0.88, 0.91],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000],
-    },
-    "theatre_audience": {
-        "description": "Theatre Audience",
-        "coeffs": [0.3, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "classroom_tables": {
-        "description": "Rows of classroom tables and persons on chairs",
-        "coeffs": [0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.6],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-    "amphitheatre_steps": {
-        "description": "Amphitheatre steps, length 82 cm, height 30 cm "
-        "(Farnetani 2005)",
-        "coeffs": [0.05, 0.45, 0.75, 0.9, 0.9],
-        "center_freqs": [125, 250, 500, 1000, 2000],
-    },
 }
+
+
+with io.open(_materials_database_fn, "r", encoding="utf8") as f:
+    materials_data = json.load(f)
+
+    center_freqs = materials_data["center_freqs"]
+
+    tables = {
+        "absorption": materials_absorption_table,
+        "scattering": materials_scattering_table,
+    }
+
+    for key, table in tables.items():
+        for subtitle, contents in materials_data[key].items():
+            for keyword, p in contents.items():
+                table[keyword] = {
+                    "description": p["description"],
+                    "coeffs": p["coeffs"],
+                    "center_freqs": center_freqs[: len(p["coeffs"])],
+                }
 
 
 class Material(object):
