@@ -225,8 +225,8 @@ def auxiva(
             # Compute Auxiliary Variable
             # shape: (n_freq, n_chan, n_chan)
             V[:, :, :] = np.matmul(
-                (X * r_inv[None, s, None, :]), np.conj(X.swapaxes(1, 2)) / n_frames
-            )
+                (X * r_inv[None, s, None, :]), np.conj(X.swapaxes(1, 2))
+            ) / n_frames
 
             WV = np.matmul(W_hat, V)
             W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))
