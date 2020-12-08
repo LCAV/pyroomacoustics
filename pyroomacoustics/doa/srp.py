@@ -68,15 +68,11 @@ class SRP(DOA):
 
         self.num_pairs = self.M * (self.M - 1) / 2
 
-        # self.mode_vec = np.conjugate(self.mode_vec)
-
     def _process(self, X):
         """
         Perform SRP-PHAT for given frame in order to estimate steered response 
         spectrum.
         """
-
-        ones = np.ones(self.L.shape[1])
 
         srp_cost = np.zeros(self.grid.n_points)
 
@@ -93,14 +89,30 @@ class SRP(DOA):
         M = self.L.shape[1]
         ar = np.arange(M)
         av = ar[:, None]
-        mask_diag = av == av.T
-        mask_triu = av <= av.T
 
-        mask_triu2 = (av <= av.T).flatten()
-        mask_diag2 = mask_diag.flatten()[mask_triu2]
-        CC2 = CC.reshape((-1, CC.shape[-2] * CC.shape[-2]))[:, mask_triu2]
+        # the two masks here allow to select the upper triangular part
+        # and the diagonal coefficients respectively.
+        # They can be applied on the flattened last two dimensions of a
+        # stack of matrices
+        mask_triu = (av < av.T).flatten()
+
+        # Flatten the covariance matrices and use the above mask to
+        # select the upper triangular part
+        CC_flat = CC.reshape((-1, CC.shape[-2] * CC.shape[-2]))[:, mask_triu]
+
+        # The DC offset is the sum of all the diagonal coefficients
+        # Due to the normalization in SRP-PHAT, they are all ones,
+        # and we end up with the product:
+        # <number of frames> x <number of microphones> x <number of freqs>
+        # the number of frames appears because the covariance matrix
+        # is not normalized
+        DC_offset = pX.shape[-1] * self.L.shape[1] * len(self.freq_bins)
 
         for n in range(self.grid.n_points):
+
+            # In the loop, this is just a fancy way of computing
+            # the quadratic form:
+            # mode_vec^H @ CC @ mode_vec
 
             # get the mode vector axis: (frequency, microphones)
             mode_vec = self.mode_vec[self.freq_bins, :, n]
@@ -108,11 +120,15 @@ class SRP(DOA):
             # compute the outer product along the microphone axis
             mode_mat = np.conj(mode_vec[:, :, None]) * mode_vec[:, None, :]
 
-            # method 2
-            mode_mat = mode_mat.reshape((-1, M * M))[:, mask_triu2]
-            R = CC2.real * mode_mat.real - CC2.imag * mode_mat.imag
-            R[:, mask_diag2] *= 0.5
-            sum_val = 2.0 * np.sum(R)
+            # First, we flatten the mode vector covariance and select the
+            # terms above the main diagonal
+            mode_mat_flat = mode_mat.reshape((-1, M * M))[:, mask_triu]
+            # Then we compute manually the real part of the element-wise product
+            # This is equivalent to `np.real(CC_flat * mode_mat_flat)
+            # but avoids computing the imaginary part that we end up discarding
+            R = CC_flat.real * mode_mat_flat.real - CC_flat.imag * mode_mat_flat.imag
+            # Finally, we sum up and add the DC offset to make the cost non-negative
+            sum_val = 2.0 * np.sum(R) + DC_offset
 
             # Finally normalize
             srp_cost[n] = sum_val / self.num_snap / self.num_freq / self.num_pairs
