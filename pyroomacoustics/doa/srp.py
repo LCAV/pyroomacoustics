@@ -90,10 +90,10 @@ class SRP(DOA):
         ar = np.arange(M)
         av = ar[:, None]
 
-        # the two masks here allow to select the upper triangular part
-        # and the diagonal coefficients respectively.
-        # They can be applied on the flattened last two dimensions of a
-        # stack of matrices
+        # the mask here allow to select all the coefficients above
+        # the main diagonal of the covariance matrix
+        # It can be applied on the flattened last two dimensions of the
+        # stack of cov. matrices
         mask_triu = (av < av.T).flatten()
 
         # Flatten the covariance matrices and use the above mask to
