@@ -14,6 +14,21 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Bugfix
 ~~~~~~
 
+- Fixes typo in a docstring
+- Update docs to better reflect actual function parameters
+
+Changed
+~~~~~~~
+
+- Improve the computation of the auxiliary variables in AuxIVA and ILRMA.
+  Unnecessary division operations are reduced.
+
+`0.4.2`_ - 2020-09-24
+---------------------
+
+Bugfix
+~~~~~~
+
 - Fixes the Dockerfile so that we don't have to install the build dependencies manually
 - Change the eps for geometry computations from 1e-4 to 1e-5 in ``libroom``
 
@@ -381,7 +396,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...master
+.. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
 .. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
 .. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...v0.4.0
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1

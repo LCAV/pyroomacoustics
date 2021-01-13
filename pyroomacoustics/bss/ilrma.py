@@ -155,7 +155,9 @@ def ilrma(
 
             # Compute Auxiliary Variable
             # shape: (n_freq, n_chan, n_chan)
-            C = np.matmul((X * iR[s, :, None, :]), np.conj(X.swapaxes(1, 2)) / n_frames)
+            C = np.matmul(
+                (X * iR[s, :, None, :]), np.conj(X.swapaxes(1, 2))
+            ) / n_frames
 
             WV = np.matmul(W, C)
             W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))
