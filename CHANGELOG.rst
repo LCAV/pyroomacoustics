@@ -11,7 +11,17 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes typo in a docstring
+- Update docs to better reflect actual function parameters
+
+Changed
+~~~~~~~
+
+- Improve the computation of the auxiliary variables in AuxIVA and ILRMA.
+  Unnecessary division operations are reduced.
 
 `0.4.2`_ - 2020-09-24
 ---------------------
