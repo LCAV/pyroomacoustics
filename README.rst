@@ -107,6 +107,7 @@ moment we support the following.
 * `CMU ARCTIC <http://www.festvox.org/cmu_arctic/>`_
 * `TIMIT <https://catalog.ldc.upenn.edu/ldc93s1>`_
 * `Google Speech Commands Dataset <https://research.googleblog.com/2017/08/launching-speech-commands-dataset.html>`_
+* `LOCATA <http://www.locata-challenge.com>`_
 
 For more details, see the `doc <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.datasets.html>`_.
 

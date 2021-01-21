@@ -99,7 +99,7 @@ class AudioSample(Sample):
     The sampling frequency of the samples is an extra parameter.
 
     For multichannel audio, we assume the same format used by 
-    ```scipy.io.wavfile <https://docs.scipy.org/doc/scipy-0.14.0/reference/io.html#module-scipy.io.wavfile>`_``,
+    `scipy.io.wavfile <https://docs.scipy.org/doc/scipy-0.14.0/reference/io.html#module-scipy.io.wavfile>`_,
     that is ``data`` is then a 2D array with each column being a channel.
 
     Attributes
@@ -130,7 +130,12 @@ class AudioSample(Sample):
             print('Warning: sounddevice package is required to play audiofiles.')
             return
 
-        sd.play(self.data, samplerate=self.fs, **kwargs)
+        if self.data.ndim > 1:
+            data = self.data[:,0]
+        else:
+            data = self.data
+
+        sd.play(data, samplerate=self.fs, **kwargs)
 
     def plot(self, NFFT=512, noverlap=384, **kwargs):
         '''
@@ -150,6 +155,8 @@ class AudioSample(Sample):
         # Handle single channel case
         if self.data.ndim == 1:
             data = self.data[:,None]
+        else:
+            data = self.data
 
         nchannels = data.shape[1]
 
@@ -158,10 +165,13 @@ class AudioSample(Sample):
         prows = int(np.ceil(nchannels / pcols))
 
         for c in range(nchannels):
+            plt.subplot(prows, pcols, c+1)
             plt.specgram(data[:,c], NFFT=NFFT, Fs=self.fs, noverlap=noverlap, **kwargs)
             plt.xlabel('Time [s]')
             plt.ylabel('Frequency [Hz]')
             plt.title('Channel {}'.format(c+1))
+
+        plt.tight_layout(pad=0.5)
 
 
 class Dataset(object):

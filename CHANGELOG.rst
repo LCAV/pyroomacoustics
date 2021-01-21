@@ -11,6 +11,13 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+
+Added
+~~~~~
+
+- Support for the `LOCATA <http://www.locata-challenge.org>`_ dataset in
+  ``pyroomacoustics.datasets.locata``
+
 Bugfix
 ~~~~~~
 
@@ -231,7 +238,6 @@ Added
 - Add iterative Wiener filtering approach for single channel denoising in
   ``pyroomacoustics.denoise.iterative_wiener``.
 
-
 Changed
 ~~~~~~~
 
@@ -323,6 +329,12 @@ Deprecation Notice
 - The methods ``pyroomacoustics.stft``, ``pyroomacoustics.istft``,
   ``pyroomacoustics.overlap_add``, etc, are now **deprecated**
   and will be removed in the near future
+
+Bugfix
+~~~~~~
+
+- Fixed the way multichannel signals are handled by
+  ``pyroomacoustics.datasets.AudioSample`` `plot` and `play` functions.
 
 `0.1.18`_ - 2018-04-24
 ----------------------

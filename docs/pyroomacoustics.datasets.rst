@@ -16,6 +16,7 @@ Datasets Available
 
    pyroomacoustics.datasets.cmu_arctic
    pyroomacoustics.datasets.google_speech_commands
+   pyroomacoustics.datasets.locata
    pyroomacoustics.datasets.timit
 
 Tools and Helpers
