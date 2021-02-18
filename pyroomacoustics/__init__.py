@@ -10,6 +10,8 @@ Provides
     * beamforming
     * direction of arrival
     * adaptive filtering
+    * source separation
+    * single channel denoising
     * etc
 
 How to use the documentation
@@ -99,6 +101,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.doa`
     Direction of arrival finding algorithms
 
+:py:obj:`pyroomacoustics.phase`
+    Phase-related processing
+
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 
@@ -112,13 +117,12 @@ __version__
 
 from .version import __version__
 
-from . import c_package
+from . import libroom as libroom
 
 from .room import *
 from .beamforming import *
 from .soundsource import *
 from .parameters import *
-from .stft import *
 from .utilities import *
 from .windows import *
 from .sync import *
@@ -135,6 +139,7 @@ from . import experimental
 from . import datasets
 from . import bss
 from . import denoise
+from . import phase
 
 import warnings
 warnings.warn(

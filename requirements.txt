@@ -1,6 +1,7 @@
 Cython
 numpy
 scipy>=0.18.0
+pybind11>=2.2
 matplotlib
 sounddevice
 samplerate

@@ -22,21 +22,39 @@ class SoundSource(object):
     def __init__(
             self,
             position,
-            images=None, #source position
+            images=None,  # source position
             damping=None,
-            generators=None, #parent source
-            walls=None, #generating wall
+            generators=None,  # parent source
+            walls=None,  # generating wall
             orders=None,
             signal=None,
             delay=0):
 
-        self.position = np.array(position)
-        self.dim = self.position.shape[0]
+        position = np.array(position)
+        self.dim = position.shape[0]
+
+        # Check the shape of the passed array
+        if self.dim != 2 and self.dim != 3:
+            dim_mismatch = True
+        else:
+            dim_mismatch = False
+
+        if position.ndim == 2 and position.shape[1] == 1:
+            position = position[:, 0]
+
+        if position.ndim != 1 or dim_mismatch:
+            raise ValueError(
+                "The source location of microphones should be provided as an object "
+                "that can be converted to a numpy.ndarray. The array should be of "
+                "shape `(2,)`, `(2, 1)`, `(3,)`, or `(3, 1)`."
+            )
+
+        self.position = position
 
         if (images is None):
             # set to empty list if nothing provided
             self.images = np.asfortranarray(np.array([position], dtype=np.float32).T)
-            self.damping = np.array([1.])
+            self.damping = np.array([[1.]])
             self.generators = np.array([-1], dtype=np.int32)
             self.walls = np.array([-1], dtype=np.int32)
             self.orders = np.array([0], dtype=np.int32)
@@ -45,9 +63,9 @@ class SoundSource(object):
             # we need to have damping factors for every image
             if (damping is None):
                 # set to one if not set
-                damping = np.ones(images.shape[1])
+                damping = np.ones((1, images.shape[1]))
 
-            if images.shape[1] != damping.shape[0]:
+            if images.shape[1] != damping.shape[1]:
                 raise NameError('Images and damping must have same shape')
 
             if generators is not None and generators.shape[0] != images.shape[1]:
@@ -111,7 +129,7 @@ class SoundSource(object):
             if ref_point is None:
                 raise NameError('For strongest ordering, a reference point is needed.')
 
-            strength = self.damping / (4*np.pi*self.distance(ref_point))
+            strength = np.linalg.norm(self.damping, 0) / (self.distance(ref_point))
             self.I = strength.argsort()
 
         elif ordering == 'order':
@@ -134,7 +152,7 @@ class SoundSource(object):
                 s = SoundSource(
                     self.position,
                     images=self.images[:, I],
-                    damping=self.damping[I],
+                    damping=self.damping[:, I],
                     orders=self.orders[I],
                     signal=self.signal,
                     delay=self.delay,
@@ -144,7 +162,7 @@ class SoundSource(object):
                 s = SoundSource(
                     self.position,
                     images=self.images[:, self.I[index]],
-                    damping=self.damping[self.I[index]],
+                    damping=self.damping[:, self.I[index]],
                     orders=self.orders[self.I[index]],
                     signal=self.signal,
                     delay=self.delay,
@@ -154,7 +172,7 @@ class SoundSource(object):
             s = SoundSource(
                 self.position,
                 images=self.images[:, index],
-                damping=self.damping[index],
+                damping=self.damping[:, index],
                 orders=self.orders[index],
                 signal=self.signal,
                 delay=self.delay,
@@ -196,7 +214,7 @@ class SoundSource(object):
         if (max_order is None):
             max_order = len(np.max(self.orders))
 
-        return self.damping[self.orders <= max_order]
+        return self.damping[:, self.orders <= max_order]
 
 
     def get_rir(self, mic, visibility, Fs, t0=0., t_max=None):
@@ -213,7 +231,10 @@ class SoundSource(object):
         # compute the distance
         dist = self.distance(mic)
         time = dist / constants.get('c') + t0
-        alpha = self.damping / (4.*np.pi*dist)
+        if self.damping.shape[0] == 1:
+            alpha = self.damping[0, :] / (4.*np.pi*dist)
+        else:
+            raise NotImplementedError("Not implemented for multiple frequency bands")
 
         # the number of samples needed
         if t_max is None:
@@ -230,7 +251,7 @@ class SoundSource(object):
         try:
             # Try to use the Cython extension
             from .build_rir import fast_rir_builder
-            fast_rir_builder(ir, time, alpha, visibility, Fs, fdl)
+            fast_rir_builder(ir, time, alpha, visibility.astype(np.int32), Fs, fdl)
 
         except ImportError:
             print("Cython-extension build_rir unavailable. Falling back to pure python")
@@ -298,6 +319,10 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     from .beamforming import distance
     from .utilities import low_pass_dirac, convmtx
 
+    for s in sources:
+        if s.damping.shape[0] > 1:
+            raise NotImplementedError("Multiple frequency bands not supported yet")
+
     # set the boundaries of RIR filter for given epsilon
     d_min = np.inf
     d_max = 0.
@@ -307,7 +332,7 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
         if unit_damping is True:
             dmp_max = np.maximum((1. / (4*np.pi*dist_mat)).max(), dmp_max)
         else:
-            dmp_max = np.maximum((sources[s].damping[np.newaxis, :] / (4*np.pi*dist_mat)).max(), dmp_max)
+            dmp_max = np.maximum((sources[s].damping[0, np.newaxis, :] / (4*np.pi*dist_mat)).max(), dmp_max)
         d_min = np.minimum(dist_mat.min(), d_min)
         d_max = np.maximum(dist_mat.max(), d_max)
 
@@ -331,7 +356,7 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
             if unit_damping == True:
                 dmp = 1. / (4*np.pi*dist)
             else:
-                dmp = sources[s].damping / (4*np.pi*dist)
+                dmp = sources[s].damping[0, :] / (4*np.pi*dist)
 
             h = low_pass_dirac(time[:, np.newaxis], dmp[:, np.newaxis], Fs, Lh).sum(axis=0)
             H[r*Lg:(r+1)*Lg, s*L:(s+1)*L] = convmtx(h, Lg).T

@@ -449,7 +449,7 @@ def mtx_updated_G_multiband(phi_recon, M, mtx_amp2visi_ri,
     phi_recon = np.reshape(phi_recon, (1, -1), order='F')
     mtx_amp2freq = np.exp(-1j * ms_half * phi_recon)  # size: (M + 1) x K
     mtx_amp2freq_ri = np.vstack((mtx_amp2freq.real, mtx_amp2freq.imag[:-1, :]))  # size: (2M + 1) x K
-    mtx_fri2amp_ri = linalg.lstsq(mtx_amp2freq_ri, np.eye(L))[0]
+    mtx_fri2amp_ri = linalg.lstsq(mtx_amp2freq_ri, np.eye(L), rcond=None)[0]
     # projection mtx_freq2visi to the null space of mtx_fri2amp
     mtx_null_proj = np.eye(L) - np.dot(mtx_fri2amp_ri.T,
                                        linalg.lstsq(mtx_fri2amp_ri.T, np.eye(L))[0])
@@ -1684,7 +1684,7 @@ def pt_src_recon_multiband(a, p_mic_x, p_mic_y, omega_bands, sound_speed,
                         p_mic_y_normalised[:,band_count],
                         )
                 blocks.append(amp_loop)
-            amp_mtx = linalg.block_diag(blocks)
+            amp_mtx = linalg.block_diag(*blocks)
 
 
             alphak_recon = sp.linalg.lstsq(amp_mtx, a.flatten('F'))[0]

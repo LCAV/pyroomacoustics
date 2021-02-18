@@ -79,8 +79,8 @@ class TestRoomMix(unittest.TestCase):
         print('SIR', sir)
 
         self.assertTrue(all([
-            abs(snr - mix_kwargs['snr']) < 1e-2,
-            abs(sir - mix_kwargs['sir']) < 1e-2,
+            abs(snr - mix_kwargs['snr']) < 5e-2,
+            abs(sir - mix_kwargs['sir']) < 5e-2,
             ]))
 
 
