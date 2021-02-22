@@ -2327,7 +2327,7 @@ class ShoeBox(Room):
     Parameters
     ----------
     p : array
-        Length 2 (width, length) or 3 (width, lenght, height) depending on
+        Length 2 (width (along x), length (along y)) or 3 (width, lenght, height) depending on
         the desired dimension of the room.
     fs: int, optional
         The sampling frequency in Hz. Default is 8000.
