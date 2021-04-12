@@ -11,7 +11,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+- A function to convert from spherical to cartesian coordinates in the DOA subpackage. The reverse function already existed.
+
+Changed
+~~~~~~~
+
+- Cleans up the plot_rir function in Room so that the labels are neater. It also changes the plot with the `FD` option to display spectrograms of the RIR.
 
 `0.4.3`_ - 2021-02-18
 ---------------------
