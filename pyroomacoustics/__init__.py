@@ -140,6 +140,7 @@ from . import datasets
 from . import bss
 from . import denoise
 from . import phase
+from . import io
 
 import warnings
 warnings.warn(

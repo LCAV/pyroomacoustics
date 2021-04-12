@@ -29,7 +29,7 @@ This file defines the main physical constants of the system:
     * Scattering coefficients
     * Air absorption
 """
-import io
+import io as _io
 import json
 import os
 
@@ -238,7 +238,7 @@ materials_scattering_table = {
 }
 
 
-with io.open(_materials_database_fn, "r", encoding="utf8") as f:
+with _io.open(_materials_database_fn, "r", encoding="utf8") as f:
     materials_data = json.load(f)
 
     center_freqs = materials_data["center_freqs"]
