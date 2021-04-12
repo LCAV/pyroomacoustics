@@ -523,9 +523,19 @@ from .utilities import fractional_delay
 def wall_factory(corners, absorption, scattering, name=""):
     """ Call the correct method according to wall dimension """
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -1089,7 +1099,11 @@ class Room(object):
         )
 
     def extrude(
-        self, height, v_vec=None, absorption=None, materials=None,
+        self,
+        height,
+        v_vec=None,
+        absorption=None,
+        materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1213,7 +1227,8 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0),
+                ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -1493,8 +1508,8 @@ class Room(object):
             that microphones and sources are zero-indexed. Default is to plot
             all microphone-source pairs.
         FD: bool
-            Whether to plot in the frequency domain, namely the transfer
-            function. Default is False.
+            If True, the spectrogram of the impulse response is plotted.
+            Default is False.
         """
         n_src = len(self.sources)
         n_mic = self.mic_array.M
@@ -1502,8 +1517,11 @@ class Room(object):
             pairs = [(r, s) for r in range(n_mic) for s in range(n_src)]
         elif isinstance(select, int):
             pairs = [(select, s) for s in range(n_src)]
-        elif isinstance(select, list):
-            pairs = select
+        elif isinstance(select, list) or isinstance(select, tuple):
+            if len(select) == 2 and isinstance(select[0], int) and isinstance(select[1], int):
+                pairs = [select]
+            else:
+                pairs = select
         else:
             raise ValueError('Invalid type for "select".')
 
@@ -1530,26 +1548,69 @@ class Room(object):
 
         from . import utilities as u
 
-        for k, _pair in enumerate(pairs):
-            r = _pair[0]
-            s = _pair[1]
-            h = self.rir[r][s]
-            if select is None:  # matrix plot
-                plt.subplot(n_mic, n_src, r_plot[r] * n_src + s_plot[s] + 1)
-            else:  # one column
-                plt.subplot(len(pairs), 1, k + 1)
-            if not FD:
-                plt.plot(np.arange(len(h)) / float(self.fs), h)
-            else:
-                u.real_spectrum(h)
-            plt.title("RIR: mic" + str(r) + " source" + str(s))
-            if r == n_mic - 1:
-                if not FD:
-                    plt.xlabel("Time [s]")
-                else:
-                    plt.xlabel("Normalized frequency")
+        if select is None:
+            fig, axes = plt.subplots(n_mic, n_src)
+            for r in range(n_mic):
+                for s in range(n_src):
+                    h = self.rir[r][s]
+                    if not FD:
+                        axes[r, s].plot(np.arange(len(h)) / float(self.fs / 1000), h)
+                    else:
+                        axes[r, s].specgram(h, Fs=self.fs / 1000)
 
-        plt.tight_layout()
+                    if r == 0:
+                        axes[r, s].set_title("Source {}".format(s), fontsize="medium")
+                    if s == n_src - 1:
+                        axes[r, s].annotate(
+                            "Mic {}".format(r),
+                            xy=(1.02, 0.5),
+                            xycoords="axes fraction",
+                            rotation=270,
+                            ha="left",
+                            va="center",
+                        )
+                    elif s == 0 and FD:
+                        axes[r, s].set_ylabel("Freq. [kHz]")
+
+                    if r < n_mic - 1:
+                        axes[r, s].set_xticks([])
+                    else:
+                        axes[r, s].set_xlabel("Time [ms]")
+                    if s > 0:
+                        axes[r, s].set_yticks([])
+            fig.align_ylabels(axes[:, 0])
+            fig.tight_layout()
+
+        else:
+            fig, axes = plt.subplots(len(pairs), 1, squeeze=False)
+            for k, (r, s) in enumerate(pairs):
+                h = self.rir[r][s]
+                if not FD:
+                    axes[k,0].plot(np.arange(len(h)) / float(self.fs / 1000), h)
+                else:
+                    axes[k,0].specgram(h, Fs=self.fs / 1000)
+
+                if len(pairs) == 1:
+                    axes[k, 0].set_title("Mic {}, Source {}".format(r, s))
+                else:
+                    axes[k,0].annotate(
+                        "M{}, S{}".format(r, s),
+                        xy=(1.02, 0.5),
+                        xycoords="axes fraction",
+                        rotation=270,
+                        ha="left",
+                        va="center",
+                    )
+
+                if FD:
+                    axes[k,0].set_ylabel("Freq. [kHz]")
+
+                if k < len(pairs) - 1:
+                    axes[k,0].set_xticks([])
+                else:
+                    axes[k,0].set_xlabel("Time [ms]")
+            fig.align_ylabels(axes[:, 0])
+            fig.tight_layout()
 
     def add(self, obj):
         """
@@ -2496,7 +2557,9 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim, absorption_array, scattering_array,
+            self.shoebox_dim,
+            absorption_array,
+            scattering_array,
         )
 
         self.walls = self.room_engine.walls
