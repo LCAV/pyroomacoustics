@@ -775,9 +775,8 @@ class Room(object):
             self.set_air_absorption()
 
         # default values for ray tracing parameters
-        self.set_ray_tracing()
-        if not ray_tracing:
-            self.unset_ray_tracing()
+        if ray_tracing:
+            self.set_ray_tracing()
 
         # in the beginning, nothing has been
         self.visibility = None
