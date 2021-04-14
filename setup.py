@@ -12,15 +12,14 @@ with open("pyroomacoustics/version.py") as f:
     exec(f.read())
 
 try:
-    from setuptools import setup, Extension
+    from setuptools import Extension, distutils, setup
     from setuptools.command.build_ext import build_ext
-    from setuptools import distutils
 except ImportError:
     print("Setuptools unavailable. Falling back to distutils.")
     import distutils
+    from distutils.command.build_ext import build_ext
     from distutils.core import setup
     from distutils.extension import Extension
-    from distutils.command.build_ext import build_ext
 
 
 class get_pybind_include(object):
@@ -28,7 +27,7 @@ class get_pybind_include(object):
 
     The purpose of this class is to postpone importing pybind11
     until it is actually installed, so that the ``get_include()``
-    method can be invoked. """
+    method can be invoked."""
 
     def __init__(self, user=False):
         self.user = user
@@ -172,12 +171,18 @@ setup_kwargs = dict(
         "pyroomacoustics.bss",
         "pyroomacoustics.denoise",
         "pyroomacoustics.phase",
+        "pyroomacoustics.io",
     ],
     # Libroom C extension
     ext_modules=ext_modules,
     # Necessary to keep the source files
     package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
-    install_requires=["Cython", "numpy", "scipy>=0.18.0", "pybind11>=2.2",],
+    install_requires=[
+        "Cython",
+        "numpy",
+        "scipy>=0.18.0",
+        "pybind11>=2.2",
+    ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,
     test_suite="nose.collector",
