@@ -370,7 +370,7 @@ provided in a dictionary. For a shoebox room, this can be done as follows.
 
 
 Controlling the signal-to-noise ratio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 It is in general necessary to scale the signals from different sources to
 obtain a specific signal-to-noise or signal-to-interference ratio (SNR and SIR,
@@ -779,9 +779,11 @@ class Room(object):
         if not ray_tracing:
             self.unset_ray_tracing()
 
-        # initialize the attributes for the impulse responses and visibility.
-        self.rir = None
+        # in the beginning, nothing has been
         self.visibility = None
+
+        # initialize the attribute for the impulse responses
+        self.rir = None
 
     def _init_room_engine(self, *args):
 
@@ -830,9 +832,6 @@ class Room(object):
                     and self.simulator_state["rt_needed"]
                 ),
             )
-
-    def __str__(self):
-        return "Room instance in {}D with {} walls.".format(self.dim, len(self.walls))
 
     @property
     def is_multi_band(self):
@@ -2198,7 +2197,7 @@ class Room(object):
         n = wall.normal / np.linalg.norm(wall.normal)
 
         if len(c) != 3:
-            raise ValueError("The function wall_area only supports 3d")
+            raise ValueError("The function wall_area3D only supports ")
 
         sum_vect = [0.0, 0.0, 0.0]
         num_vertices = len(c[0])
@@ -2327,7 +2326,7 @@ class ShoeBox(Room):
     Parameters
     ----------
     p : array
-        Length 2 (width (along x), length (along y)) or 3 (width, lenght, height) depending on
+        Length 2 (width, along x), length, along y) or 3 (width, lenght, height) depending on
         the desired dimension of the room.
     fs: int, optional
         The sampling frequency in Hz. Default is 8000.
@@ -2531,9 +2530,6 @@ class ShoeBox(Room):
         else:
             self.mic_array = None
 
-    def __str__(self):
-        return "ShoeBox instance in {}D.".format(self.dim)
-
     def extrude(self, height):
         """ Overload the extrude method from 3D rooms """
 
@@ -2684,7 +2680,7 @@ class AnechoicRoom(ShoeBox):
         return 1
 
     def plot(self, **kwargs):
-
+        """ Overloaded function to issue warning when img_order is given."""
         if "img_order" in kwargs.keys():
             warnings.warn("Ignoring img_order argument for AnechoicRoom.", UserWarning)
         ShoeBox.plot(self, **kwargs)

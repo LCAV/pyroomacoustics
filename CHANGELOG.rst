@@ -11,7 +11,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+- Create an anechoic room class without walls to simulate free space
 
 `0.4.3`_ - 2021-02-18
 ---------------------
@@ -121,7 +121,6 @@ Bugfix
 Added
 ~~~~~~~
 
-- Create an anechoic room class without walls to simulate free space
 - Added `room_isinside_max_iter` in `parameters.py`
 - Default set to 20 rather than 5 as it was in `pyroomacoustics.room.Room.isinside`
 - Added Binder link in the README for online interactive demo

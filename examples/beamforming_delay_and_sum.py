@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 
-# Create a 4 by 6 metres shoe box room
+# Create a 4 by 6 metres anechoic room
 room = pra.AnechoicRoom(dim=2)
 
 # Add a source somewhere in the room
