@@ -742,27 +742,43 @@ def goertzel(x, k):
 GEOMETRY UTILITIES
 """
 
-def angle_function(s1,v2):                                              #s1 is a set of points, v2 is a single point
-    
+def angle_function(s1,v2):
+
+"""
+Compute azimuth and elevation angles for a given set of points 's1' and a singular point 'v2'
+
+Parameters
+-----------
+s1 : numpy array (n*3 for a set of n 3-D points, n*2 for a set of n 2-D points)
+v2 : numpy array (1*3 for a 3-D point, 1*2 for a 2-D point)
+
+Returns
+-----------
+n*2 numpy array
+azimuth and elevation angles 
+
+"""
+
+    x_vals=s1[:,0]
+    y_vals=s1[:,1]
     x2=v2[0]
     y2=v2[1]
 
-    if (s1.shape[1]==3 and v2.shape[0]==3):                         # elevation calculation for 3-D coordinates
+    # elevation calculation for 3-D coordinates
+    if (s1.shape[1]==3 and v2.shape[0]==3):                         
 
-        z2=v2[2]
-        x_vals=np.hsplit(s1,3)[0]
-        y_vals=np.hsplit(s1,3)[1]
-        z_vals=np.hsplit(s1,3)[2]
+        z2=v2[2]        
+        z_vals=s1[:,2]
 
         elevation=np.arctan2((z_vals-z2),((x_vals-x2)**2+(y_vals-y2)**2)**1/2)
 
-    elif(s1.shape[1]==2 and v2.shape[0]==2):                        # elevation calculation for 2-D coordinates
-
-        x_vals=np.hsplit(s1,2)[0]                                                     #azimuth calculation       
-        y_vals=np.hsplit(s1,2)[1]
+    # elevation calculation for 3-D coordinates
+    elif(s1.shape[1]==2 and v2.shape[0]==2):                       
+                                                                 
         num_points=s1.shape[0]
-        elevation=np.zeros((num_points,1))
+        elevation=np.zeros(num_points, dtype=int)
 
+    # azimuth calculation (same for 2-D and 3-D)
     azimuth=np.arctan2((y_vals-y2),(x_vals-x2))
 
-    return azimuth
+    return np.vstack((azimuth,elevation)).T
