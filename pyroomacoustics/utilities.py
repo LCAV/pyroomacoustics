@@ -742,49 +742,27 @@ def goertzel(x, k):
 GEOMETRY UTILITIES
 """
 
-
-import numpy as np
-
 def angle_function(s1,v2):                                              #s1 is a set of points, v2 is a single point
+    
+    x2=v2[0]
+    y2=v2[1]
 
-    num_points=s1.shape[0]                                              #num_points is the number of points in s1
+    if (s1.shape[1]==3 and v2.shape[0]==3):                         # elevation calculation for 3-D coordinates
 
-    angles = np.zeros(shape=(num_points,2))                             
+        z2=v2[2]
+        x_vals=np.hsplit(s1,3)[0]
+        y_vals=np.hsplit(s1,3)[1]
+        z_vals=np.hsplit(s1,3)[2]
 
-    for i in range(num_points):#-----------------------------------------------
+        elevation=np.arctan2((z_vals-z2),((x_vals-x2)**2+(y_vals-y2)**2)**1/2)
 
-        v1=s1[i]
+    elif(s1.shape[1]==2 and v2.shape[0]==2):                        # elevation calculation for 2-D coordinates
 
-        x1=v1[0]                                                        #azimuth calculation       
-        y1=v1[1]
-        
-        x2=v2[0]
-        y2=v2[1]
+        x_vals=np.hsplit(s1,2)                                                      #azimuth calculation       
+        y_vals=np.hsplit(s1,2)
+        num_points=s1.shape[0]
+        elevation=np.zeros((num_points,1))
 
-        if(y2==y1 and x2==x1):                             # x and y coordinates same => None azimuth
-            azimuth=None
-        else:
-            azimuth=np.arctan2((y2-y1),(x2-x1))
+    azimuth=np.arctan2((y_vals-y2),(x_vals-x2))
 
-        if (v1.shape[0]==3 and v2.shape[0]==3):                         #elevation calculation for 3-D coordinates
-
-            z1=v1[2]
-            z2=v2[2]
-
-            if(x1==x2 and y2==y1 and z2==z1):               #identical points => None elevation
-                elevation=None
-            else:  
-                elevation=np.arctan2((z2-z1),((x2-x1)**2+(y2-y1)**2)**1/2)
-
-        elif(v1.shape[0]==2 and v2.shape[0]==2):                        #elevation calculation for 2-D coordinates
-
-            if(x1==x2 and y1==y2):                          #identical points => None elevation
-                elevation=None
-            else:
-                elevation=0
-
-        v1_angles = np.array([azimuth,elevation])
-        
-        angles[i]=v1_angles#---------------------------------------------
-
-    return angles
+    return azimuth
