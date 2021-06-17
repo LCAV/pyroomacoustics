@@ -758,8 +758,8 @@ def angle_function(s1,v2):                                              #s1 is a
 
     elif(s1.shape[1]==2 and v2.shape[0]==2):                        # elevation calculation for 2-D coordinates
 
-        x_vals=np.hsplit(s1,2)                                                      #azimuth calculation       
-        y_vals=np.hsplit(s1,2)
+        x_vals=np.hsplit(s1,2)[0]                                                     #azimuth calculation       
+        y_vals=np.hsplit(s1,2)[1]
         num_points=s1.shape[0]
         elevation=np.zeros((num_points,1))
 
