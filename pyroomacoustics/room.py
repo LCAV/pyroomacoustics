@@ -1610,7 +1610,7 @@ class Room(object):
 
         return self
 
-    def add_microphone(self, loc, fs=None):
+    def add_microphone(self, loc, fs=None, directivity=None):
         """
         Adds a single microphone in the room.
 
@@ -1639,7 +1639,7 @@ class Room(object):
 
         return self.add(MicrophoneArray(loc, fs))
 
-    def add_microphone_array(self, mic_array):
+    def add_microphone_array(self, mic_array, directivity=None):
         """
         Adds a microphone array (i.e. several microphones) in the room.
 
