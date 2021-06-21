@@ -282,7 +282,7 @@ class MicrophoneArray(object):
 
     """Microphone array class."""
 
-    def __init__(self, R, fs):
+    def __init__(self, R, fs, directivity=None):
 
         R = np.array(R)
         self.dim = R.shape[0]  # are we in 2D or in 3D
@@ -304,7 +304,11 @@ class MicrophoneArray(object):
         self.R = R  # array geometry
 
         self.fs = fs  # sampling frequency of microphones
-
+        self.directivity = None
+        
+        if directivity is not None:
+            raise NotImplementedError
+            
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
