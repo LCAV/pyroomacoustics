@@ -1790,6 +1790,10 @@ class Room(object):
                 N = fdl
 
                 if self.simulator_state["ism_needed"]:
+                    
+                    # compute azimuth and elevation angles
+                    azimuth=angle_function(src.images,mic)[:,0]
+                    elevation=angle_function(src.images,mic)[:,1]
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
