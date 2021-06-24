@@ -47,7 +47,8 @@ def great_circ_dist(r, colatitude1, azimuth1, colatitude2, azimuth2):
                           np.sin(colatitude1) * np.sin(colatitude2) * np.cos(d_azimuth))
     return dist
 
-def spher2cart(r, azimuth, colatitude):
+
+def spher2cart(azimuth, colatitude=None, r=1, degrees=False):
     """
     Convert a spherical point to cartesian coordinates.
 
@@ -63,8 +64,20 @@ def spher2cart(r, azimuth, colatitude):
     Returns
     -------
     ndarray
-        An ndarray containing the Cartesian coordinates of the points its columns
+        An ndarray containing the Cartesian coordinates of the points as its columns.
     """
+
+    if degrees:
+        azimuth = np.radians(azimuth)
+        if colatitude is not None:
+            colatitude = np.radians(colatitude)
+
+    if colatitude is None:
+        # default to XY plane
+        colatitude = np.pi / 2
+        if hasattr(azimuth, "__len__"):
+            colatitude = np.ones(len(azimuth)) * colatitude
+
     # convert to cartesian
     x = r * np.cos(azimuth) * np.sin(colatitude)
     y = r * np.sin(azimuth) * np.sin(colatitude)
