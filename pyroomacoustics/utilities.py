@@ -742,50 +742,50 @@ def goertzel(x, k):
 GEOMETRY UTILITIES
 """
 
-def angle_function(s1,v2): 
 
-"""
-Compute azimuth and elevation angles in radians around s1 and v2.
+def angle_function(s1, v2):
+    """
+    Compute azimuth and elevation angles in radians around s1 and v2.
 
-Parameters
------------
-s1 : numpy array
-    N×3 for a set of N 3-D points, N×2 for a set of N 2-D points.
-v2 : numpy array 
-    1×3 for a 3-D point, 1×2 for a 2-D point.
+    Parameters
+    -----------
+    s1 : numpy array
+        N×3 for a set of N 3-D points, N×2 for a set of N 2-D points.
+    v2 : numpy array
+        1×3 for a 3-D point, 1×2 for a 2-D point.
 
-Returns
------------
-numpy array
-    N×2 numpy array with azimuth and elevation angles in radians.
+    Returns
+    -----------
+    numpy array
+        N×2 numpy array with azimuth and elevation angles in radians.
 
-"""
+    """
 
-    if (len(s1.shape)==1):
+    if len(s1.shape) == 1:
         s1 = s1[np.newaxis, :] 
 
     assert s1.shape[1] == v2.shape[0]
                                         
-    x_vals=s1[:,0]
-    y_vals=s1[:,1]
-    x2=v2[0]
-    y2=v2[1]
+    x_vals = s1[:, 0]
+    y_vals = s1[:, 1]
+    x2 = v2[0]
+    y2 = v2[1]
 
     # elevation calculation for 3-D coordinates
-    if (s1.shape[1]==3 and v2.shape[0]==3):                         
+    if s1.shape[1] == 3 and v2.shape[0] == 3:
 
-        z2=v2[2]        
-        z_vals=s1[:,2]
+        z2 = v2[2]
+        z_vals = s1[:, 2]
 
-        elevation=np.arctan2(((x_vals-x2)**2+(y_vals-y2)**2)**1/2,(z_vals-z2))
+        elevation=np.arctan2(((x_vals-x2)**2 + (y_vals-y2)**2)**1/2, (z_vals-z2))
 
     # elevation calculation for 2-D coordinates
-    elif(s1.shape[1]==2 and v2.shape[0]==2):                       
+    elif s1.shape[1] == 2 and v2.shape[0] == 2:
                                                                  
-        num_points=s1.shape[0]
-        elevation=np.ones(num_points, dtype=int)*np.pi/2
+        num_points = s1.shape[0]
+        elevation = np.ones(num_points, dtype=int)*np.pi/2
 
     # azimuth calculation (same for 2-D and 3-D)
-    azimuth=np.arctan2((y_vals-y2),(x_vals-x2))
+    azimuth = np.arctan2((y_vals-y2), (x_vals-x2))
 
-    return np.vstack((azimuth,elevation)).T
+    return np.vstack((azimuth, elevation)).T
