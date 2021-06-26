@@ -745,7 +745,7 @@ GEOMETRY UTILITIES
 
 def angle_function(s1, v2):
     """
-    Compute azimuth and elevation angles in radians around s1 and v2.
+    Compute azimuth and elevation angles in radians for a given set of points `s1` and a singular point `v2`.
 
     Parameters
     -----------
