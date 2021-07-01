@@ -745,7 +745,7 @@ GEOMETRY UTILITIES
 
 def angle_function(s1, v2):
     """
-    Compute azimuth and elevation angles in radians for a given set of points `s1` and a singular point `v2`.
+    Compute azimuth and colatitude angles in radians for a given set of points `s1` and a singular point `v2`.
 
     Parameters
     -----------
@@ -757,7 +757,7 @@ def angle_function(s1, v2):
     Returns
     -----------
     numpy array
-        N×2 numpy array with azimuth and elevation angles in radians.
+        N×2 numpy array with azimuth and colatitude angles in radians.
 
     """
 
@@ -771,21 +771,21 @@ def angle_function(s1, v2):
     x2 = v2[0]
     y2 = v2[1]
 
-    # elevation calculation for 3-D coordinates
+    # colatitude calculation for 3-D coordinates
     if s1.shape[1] == 3 and v2.shape[0] == 3:
 
         z2 = v2[2]
         z_vals = s1[:, 2]
 
-        elevation=np.arctan2(((x_vals-x2)**2 + (y_vals-y2)**2)**1/2, (z_vals-z2))
+        colatitude = np.arctan2(((x_vals-x2)**2 + (y_vals-y2)**2)**1/2, (z_vals-z2))
 
-    # elevation calculation for 2-D coordinates
+    # colatitude calculation for 2-D coordinates
     elif s1.shape[1] == 2 and v2.shape[0] == 2:
                                                                  
         num_points = s1.shape[0]
-        elevation = np.ones(num_points, dtype=int)*np.pi/2
+        colatitude = np.ones(num_points, dtype=int)*np.pi/2
 
     # azimuth calculation (same for 2-D and 3-D)
     azimuth = np.arctan2((y_vals-y2), (x_vals-x2))
 
-    return np.vstack((azimuth, elevation)).T
+    return np.vstack((azimuth, colatitude)).T
