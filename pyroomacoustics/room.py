@@ -1637,7 +1637,7 @@ class Room(object):
         if fs is None:
             fs = self.fs
 
-        return self.add(MicrophoneArray(loc, fs))
+        return self.add(MicrophoneArray(loc, fs, directivity))
 
     def add_microphone_array(self, mic_array, directivity=None):
         """
@@ -1662,7 +1662,7 @@ class Room(object):
 
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
-            mic_array = MicrophoneArray(mic_array, self.fs)
+            mic_array = MicrophoneArray(mic_array, self.fs, self.directivity)
 
         return self.add(mic_array)
 
@@ -1792,8 +1792,10 @@ class Room(object):
                 if self.simulator_state["ism_needed"]:
                     
                     # compute azimuth and elevation angles
-                    azimuth=angle_function(src.images,mic)[:,0]
-                    elevation=angle_function(src.images,mic)[:,1]
+                    if self.mic_array.directivity is not None:
+                        angle_function_array=angle_function(src.images,mic)
+                        azimuth=angle_function_array[:,0]
+                        elevation=angle_function_array[:,1]
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
