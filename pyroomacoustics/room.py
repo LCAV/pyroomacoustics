@@ -1662,7 +1662,10 @@ class Room(object):
 
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
-            mic_array = MicrophoneArray(mic_array, self.fs, self.directivity)
+            mic_array = MicrophoneArray(mic_array, self.fs, directivity)
+        else:
+            # if the type is microphone array
+            set_directivity(directivity, n_mics)
 
         return self.add(mic_array)
 
