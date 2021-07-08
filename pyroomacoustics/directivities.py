@@ -69,7 +69,9 @@ class Directivity(abc.ABC):
 
     def get_colatitude(self, degrees=True):
         return self._orientation.get_colatitude(degrees)
-
+    
+    # @abc.abstractmethod
+    def get_response(self, coord, magnitude=False, frequency):
 
 class CardioidFamily(Directivity):
     """
@@ -92,7 +94,7 @@ class CardioidFamily(Directivity):
     def directivity_pattern(self):
         return self._pattern_name
 
-    def get_response(self, coord, magnitude=False):
+    def get_response(self, coord, magnitude=False, **kwargs):
         """
         Get response.
 
