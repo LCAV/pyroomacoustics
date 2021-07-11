@@ -11,11 +11,22 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet.
+
+`0.4.3`_ - 2021-02-18
+---------------------
+
+Added
+~~~~~
+
+- Support for Python 3.8 and 3.9
+
 Bugfix
 ~~~~~~
 
 - Fixes typo in a docstring
 - Update docs to better reflect actual function parameters
+- Fixes the computation of the cost function of SRP-PHAT doa algorithm (bug reported in #PR197)
 
 Changed
 ~~~~~~~
@@ -396,9 +407,10 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...master
-.. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
-.. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...master
+.. _0.4.3: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...v0.4.3
+.. _0.4.2: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
+.. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
 .. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...v0.4.0
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0

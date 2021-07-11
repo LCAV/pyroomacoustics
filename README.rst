@@ -181,7 +181,7 @@ slower. On Windows, we provide pre-compiled Python Wheels for Python 3.5 and
 Example
 -------
 
-Here is a quick example of how to create and visual the response of a
+Here is a quick example of how to create and visualize the response of a
 beamformer in a room.
 
 .. code-block:: python
