@@ -1665,7 +1665,7 @@ class Room(object):
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
         else:
             # if the type is microphone array
-            set_directivity(directivity, n_mics)
+            self.set_directivity(directivity)
 
         return self.add(mic_array)
 
