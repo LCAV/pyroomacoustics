@@ -307,7 +307,7 @@ class MicrophoneArray(object):
         self.directivity = None
         
         if directivity is not None:
-            set_directivity(directivity, n_mics) # need to add `n_mics` here
+            self.set_directivity(directivity)
             
         self.signals = None
 
