@@ -1850,9 +1850,9 @@ class Room(object):
 
                         alpha = src.damping[b, :] / (dist)
                         
-                        if directivity is not None:
+                        if self.mic_array.directivity is not None:
                             coordinates = spher2cart(azimuth, colatitude, distance)
-                            alpha *= get_response(coordinates)
+                            alpha *= self.mic_array.directivity[m].get_response(coordinates)
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder
