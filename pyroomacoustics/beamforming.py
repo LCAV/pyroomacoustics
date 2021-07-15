@@ -286,6 +286,7 @@ class MicrophoneArray(object):
 
         R = np.array(R)
         self.dim = R.shape[0]  # are we in 2D or in 3D
+        self.nmic = R.shape[1] # number of microphones
 
         # Check the shape of the passed array
         if self.dim != 2 and self.dim != 3:
