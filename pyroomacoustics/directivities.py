@@ -223,41 +223,41 @@ def cardioid_func(
         return resp
     
     def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, directivity_pattern): 
-    """
-    Creates an microphone array with directivities pointing outwards
+        """
+        Creates an microphone array with directivities pointing outwards
 
-    Parameters
-    ----------
-    center: array_like
-        The center of the microphone array
-    M: int
-        The number of microphones
-    phi0: float
-        The counterclockwise rotation (in degrees) of the first element in the microphone array (from
-        the x-axis)
-    radius: float
-        The radius of the microphone array
-    fs: int
-        The sampling frequency
-    Returns
-    -------
-    MicrophoneArray object
-    """
-      
-    azimuth_list = np.arange(M)*(360/M)
-    phi_array = np.ones(M)*phi0
-    azimuth_list = np.add(azimuth_list, phi_array)
-
-    PATTERN = DirectivityPattern.directivity_pattern
-
-    directivity_list = np.array([])
-
-    for i in range(M):
+        Parameters
+        ----------
+        center: array_like
+            The center of the microphone array
+        M: int
+            The number of microphones
+        phi0: float
+            The counterclockwise rotation (in degrees) of the first element in the microphone array (from
+            the x-axis)
+        radius: float
+            The radius of the microphone array
+        fs: int
+            The sampling frequency
+        Returns
+        -------
+        MicrophoneArray object
+        """
         
-        ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=np.pi/2, degrees=False)
-        dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
-        directivity_list.add(dir_obj)
+        azimuth_list = np.arange(M)*(360/M)
+        phi_array = np.ones(M)*phi0
+        azimuth_list = np.add(azimuth_list, phi_array)
+
+        PATTERN = DirectivityPattern.directivity_pattern
+
+        directivity_list = np.array([])
+
+        for i in range(M):
+            
+            ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=np.pi/2, degrees=False)
+            dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
+            directivity_list.add(dir_obj)
 
 
-    R = pra.circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
-    return pra.MicrophoneArray(R, fs, directivity_list)
+        R = pra.circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+        return pra.MicrophoneArray(R, fs, directivity_list)

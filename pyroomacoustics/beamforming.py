@@ -316,28 +316,28 @@ class MicrophoneArray(object):
         
     def set_directivity(directivities):
 
-    """
-    This functions sets self.directivity as a list of directivities with `n_mics` entries, 
-    where `n_mics` is the number of microphones
+        """
+        This functions sets self.directivity as a list of directivities with `n_mics` entries, 
+        where `n_mics` is the number of microphones
 
-    Parameters
-    -----------
+        Parameters
+        -----------
 
-    directivities:
-        single directivity for all microphones or a list of directivities for each microphone
-    
-    """
-    n_mics = self.nmic
+        directivities:
+            single directivity for all microphones or a list of directivities for each microphone
+        
+        """
+        n_mics = self.nmic
 
-    if isinstance(directivities, list):
-        # list of directivities specified
-        assert all(isinstance(x, (DirectivityObject)) for x in directivities)
-        assert len(directivities) == n_mics
-        self.directivity = directivities
-    else:
-        # only 1 directivity specified
-        assert isinstance(directivities, DirectivityObject)
-        self.directivity = [directivities]*n_mics
+        if isinstance(directivities, list):
+            # list of directivities specified
+            assert all(isinstance(x, (DirectivityObject)) for x in directivities)
+            assert len(directivities) == n_mics
+            self.directivity = directivities
+        else:
+            # only 1 directivity specified
+            assert isinstance(directivities, DirectivityObject)
+            self.directivity = [directivities]*n_mics
    
     def record(self, signals, fs):
         """
