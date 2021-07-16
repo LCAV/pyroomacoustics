@@ -119,7 +119,7 @@ class CardioidFamily(Directivity):
                 return resp
 
     @requires_matplotlib
-    def plot_response(self, azimuth, colatitude=None, degrees=True):
+    def plot_response(self, azimuth, colatitude=None, degrees=True, ax=None, offset=None):
         """
         Parameters
         ----------
@@ -129,17 +129,36 @@ class CardioidFamily(Directivity):
             Colatitude values for plotting. If not provided, 2D plot.
         degrees : bool
             Whether provided values are in degrees (True) or radians (False).
+        ax : axes object
+        offset : list
+            3-D coordinates of the point where the response needs to be plotted.
+
         """
         import matplotlib.pyplot as plt
+
+        if offset is not None:
+            x_offset = offset[0]
+            y_offset = offset[1]
+        else:
+            x_offset = 0
+            y_offset = 0
 
         if degrees:
             azimuth = np.radians(azimuth)
 
-        fig = plt.figure()
         if colatitude is not None:
 
             if degrees:
                 colatitude = np.radians(colatitude)
+
+            if ax is None:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1, projection='3d')
+
+            if offset is not None:               
+                z_offset = offset[2]
+            else:                
+                z_offset = 0
 
             spher_coord = all_combinations(azimuth, colatitude)
             azi_flat = spher_coord[:, 0]
@@ -152,23 +171,25 @@ class CardioidFamily(Directivity):
 
             # create surface plot, need cartesian coordinates
             AZI, COL = np.meshgrid(azimuth, colatitude)
-            X = RESP.T * np.sin(COL) * np.cos(AZI)
-            Y = RESP.T * np.sin(COL) * np.sin(AZI)
-            Z = RESP.T * np.cos(COL)
+            X = RESP.T * np.sin(COL) * np.cos(AZI) + x_offset
+            Y = RESP.T * np.sin(COL) * np.sin(AZI) + y_offset
+            Z = RESP.T * np.cos(COL) + z_offset
+              
+            ax.plot_surface(X, Y, Z) 
 
-            ax = fig.add_subplot(1, 1, 1, projection='3d')
-            ax.plot_surface(X, Y, Z)
-            ax.set_title("{}, azimuth={}, colatitude={}".format(
-                self.directivity_pattern,
-                self.get_azimuth(),
-                self.get_colatitude()
-            ))
+            if ax is None:
+                ax.set_title("{}, azimuth={}, colatitude={}".format(
+                    self.directivity_pattern,
+                    self.get_azimuth(),
+                    self.get_colatitude()
+                ))
+            else:
+                ax.set_title("Directivity Plot")
+
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.set_zlabel("z")
-            ax.set_xlim([-1, 1])
-            ax.set_ylim([-1, 1])
-            ax.set_zlim([-1, 1])
+            ax.set_zlim([-3 + z_offset, 3 + z_offset])
 
         else:
 
@@ -177,8 +198,12 @@ class CardioidFamily(Directivity):
             resp = self.get_response(coord=cart, magnitude=True)
 
             # plot
-            ax = plt.subplot(111, projection="polar")
+            if ax is None:
+                fig = plt.figure()
+                ax = plt.subplot(111, projection="polar")
             ax.plot(azimuth, resp)
+
+        return ax
 
 
 def cardioid_func(
