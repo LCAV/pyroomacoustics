@@ -788,4 +788,4 @@ def angle_function(s1, v2):
     # azimuth calculation (same for 2-D and 3-D)
     azimuth = np.arctan2((y_vals-y2), (x_vals-x2))
 
-    return np.hstack((azimuth, colatitude))
+    return np.vstack((azimuth, colatitude)).T
