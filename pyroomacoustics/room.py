@@ -1665,7 +1665,7 @@ class Room(object):
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
         else:
             # if the type is microphone array
-            self.set_directivity(directivity)
+            mic.set_directivity(directivity)
 
         return self.add(mic_array)
 
@@ -1851,7 +1851,7 @@ class Room(object):
                         alpha = src.damping[b, :] / (dist)
                         
                         if self.mic_array.directivity is not None:
-                            coordinates = spher2cart(azimuth, colatitude, distance)
+                            coordinates = spher2cart(azimuth, colatitude, dist)
                             alpha *= self.mic_array.directivity[m].get_response(coordinates)
 
                         # Use the Cython extension for the fractional delays
