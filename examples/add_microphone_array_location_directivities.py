@@ -15,14 +15,7 @@ room.extrude(5)
 audio_sample = wavfile.read("examples/input_samples/cmu_arctic_us_aew_a0001.wav")
 room.add_source([2,3,4])
 
-# add first microphone array with directivity
-PATTERN = DirectivityPattern.HYPERCARDIOID
-ORIENTATION = DirectionVector(azimuth=30, colatitude=60, degrees=True)
-directivity = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
-
-room.add_microphone_array(np.c_[[2,3,4],[2.5,3.5,4.5]], directivity)
-
-# add second microphone array with list of directivities
+# add microphone array with list of directivities
 PATTERN = DirectivityPattern.SUBCARDIOID
 ORIENTATION = DirectionVector(azimuth=0, colatitude=45, degrees=True)
 directivity_1 = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
@@ -32,7 +25,6 @@ ORIENTATION = DirectionVector(azimuth=30, colatitude=60, degrees=True)
 directivity_2 = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
 
 room.add_microphone_array(np.c_[[7,8,3],[8.5,9.5,4.5]], [directivity_1,directivity_2])
-
 
 # plot
 room.plot_rir()
