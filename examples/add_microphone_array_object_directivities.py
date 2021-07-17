@@ -21,7 +21,8 @@ ORIENTATION = DirectionVector(azimuth=30, colatitude=45, degrees=True)
 directivity = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
 
 R = np.array([[5], [5], [3]])
-room.add_microphone_array(pra.MicrophoneArray(R, room.fs), directivity)
+MicrophoneArray_object = pra.MicrophoneArray(R, room.fs)
+room.add_microphone_array(MicrophoneArray_object, directivity)
 
 # plot
 room.plot_rir()
