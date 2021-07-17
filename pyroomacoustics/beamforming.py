@@ -314,7 +314,7 @@ class MicrophoneArray(object):
 
         self.center = np.mean(R, axis=1, keepdims=True)
         
-    def set_directivity(directivities):
+    def set_directivity(self, directivities): 
 
         """
         This functions sets self.directivity as a list of directivities with `n_mics` entries, 
@@ -327,17 +327,16 @@ class MicrophoneArray(object):
             single directivity for all microphones or a list of directivities for each microphone
         
         """
-        n_mics = self.nmic
 
         if isinstance(directivities, list):
             # list of directivities specified
-            assert all(isinstance(x, (DirectivityObject)) for x in directivities)
-            assert len(directivities) == n_mics
+            #assert all(isinstance(x, (DirectivityObject)) for x in directivities)
+            assert len(directivities) == self.nmic
             self.directivity = directivities
         else:
             # only 1 directivity specified
-            assert isinstance(directivities, DirectivityObject)
-            self.directivity = [directivities]*n_mics
+            #assert isinstance(directivities, DirectivityObject)
+            self.directivity = [directivities]*self.nmic
    
     def record(self, signals, fs):
         """
