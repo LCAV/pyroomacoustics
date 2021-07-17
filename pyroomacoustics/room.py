@@ -512,12 +512,12 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .doa import GridCircle, GridSphere
+from .doa import GridCircle, GridSphere, spher2cart
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
-from .utilities import fractional_delay
+from .utilities import fractional_delay, angle_function
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1665,7 +1665,8 @@ class Room(object):
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
         else:
             # if the type is microphone array
-            mic.set_directivity(directivity)
+            if directivity is not None:
+                mic_array.set_directivity(directivity)
 
         return self.add(mic_array)
 
@@ -1796,7 +1797,7 @@ class Room(object):
                     
                     # compute azimuth and colatitude angles
                     if self.mic_array.directivity is not None:
-                        angle_function_array = angle_function(src.images,mic)
+                        angle_function_array = angle_function(src.images.T,mic)
                         azimuth = angle_function_array[:,0]
                         colatitude = angle_function_array[:,1]
 
