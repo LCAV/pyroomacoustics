@@ -1,7 +1,7 @@
 import abc
 import numpy as np
 from enum import Enum
-
+from pyroomacoustics.beamforming import circular_2D_array, MicrophoneArray
 from pyroomacoustics.doa import spher2cart
 from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 
@@ -247,9 +247,9 @@ def cardioid_func(
     else:
         return resp
     
-    def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, directivity_pattern): 
+    def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, directivity_pattern = None): 
         """
-        Creates an microphone array with directivities pointing outwards
+        Creates a microphone array with directivities pointing outwards
 
         Parameters
         ----------
@@ -264,6 +264,8 @@ def cardioid_func(
             The radius of the microphone array
         fs: int
             The sampling frequency
+        directivity_pattern: string
+            The directivity pattern (FIGURE_EIGHT/HYPERCARDIOID/CARDIOID/SUBCARDIOID/OMNI)
         Returns
         -------
         MicrophoneArray object
@@ -273,7 +275,16 @@ def cardioid_func(
         phi_array = np.ones(M)*phi0
         azimuth_list = np.add(azimuth_list, phi_array)
 
-        PATTERN = DirectivityPattern.directivity_pattern
+        if directivity_pattern == "FIGURE_EIGHT":
+            PATTERN = DirectivityPattern.FIGURE_EIGHT
+        elif directivity_pattern == "HYPERCARDIOID":
+            PATTERN = DirectivityPattern.HYPERCARDIOID
+        elif directivity_pattern == "CARDIOID":
+            PATTERN = DirectivityPattern.CARDIOID
+        elif directivity_pattern == "SUBCARDIOID":
+            PATTERN = DirectivityPattern.SUBCARDIOID
+        else:
+            PATTERN = DirectivityPattern.OMNI
 
         directivity_list = np.array([])
 
@@ -283,6 +294,7 @@ def cardioid_func(
             dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
             directivity_list.add(dir_obj)
 
+        R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+        return MicrophoneArray(R, fs, directivity_list)
 
-        R = pra.circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
-        return pra.MicrophoneArray(R, fs, directivity_list)
+
