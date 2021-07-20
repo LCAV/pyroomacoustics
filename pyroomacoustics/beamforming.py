@@ -26,7 +26,7 @@ from __future__ import division
 
 import numpy as np
 import scipy.linalg as la
-
+from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
 from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
@@ -48,7 +48,6 @@ def H(A, **kwargs):
 def sumcols(A):
     """
     Sums the columns of a matrix (np.array).
-
     The output is a 2D np.array
     of dimensions M x 1.
     """
@@ -71,7 +70,6 @@ def mdot(*args):
 def distance(x, y):
     """
     Computes the distance matrix E.
-
     E[i,j] = sqrt(sum((x[:,i]-y[:,j])**2)).
     x and y are DxN ndarray containing N D-dimensional vectors.
     """
@@ -93,7 +91,6 @@ def unit_vec2D(phi):
 def linear_2D_array(center, M, phi, d):
     """
     Creates an array of uniformly spaced linear points in 2D
-
     Parameters
     ----------
     center: array_like
@@ -104,7 +101,6 @@ def linear_2D_array(center, M, phi, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M)
@@ -120,7 +116,6 @@ def linear_2D_array(center, M, phi, d):
 def circular_2D_array(center, M, phi0, radius):
     """
     Creates an array of uniformly spaced circular points in 2D
-
     Parameters
     ----------
     center: array_like
@@ -132,7 +127,6 @@ def circular_2D_array(center, M, phi0, radius):
         the x-axis)
     radius: float
         The radius of the array
-
     Returns
     -------
     ndarray (2, M)
@@ -147,7 +141,6 @@ def circular_2D_array(center, M, phi0, radius):
 def poisson_2D_array(center, M, d):
     """
     Create array of 2D positions drawn from Poisson process.
-
     Parameters
     ----------
     center: array_like
@@ -160,7 +153,6 @@ def poisson_2D_array(center, M, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M * N)
@@ -180,7 +172,6 @@ def poisson_2D_array(center, M, d):
 def square_2D_array(center, M, N, phi, d):
     """
     Creates an array of uniformly spaced grid points in 2D
-
     Parameters
     ----------
     center: array_like
@@ -193,7 +184,6 @@ def square_2D_array(center, M, N, phi, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M * N)
@@ -211,10 +201,8 @@ def square_2D_array(center, M, N, phi, d):
 def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
     """
     Generate an array of points placed on a spiral
-
     Parameters
     ----------
-
     center: array_like
         location of the center of the array
     M: int
@@ -225,7 +213,6 @@ def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
         number of rotations of the spiral (default 3)
     angle: float
         the angle offset of the spiral (default random)
-
     Returns
     -------
     ndarray (2, M * N)
@@ -272,6 +259,54 @@ def fir_approximation_ls(weights, T, n1, n2):
 
     return np.linalg.pinv(F).dot(w)
 
+def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, directivity_pattern = None): 
+    """
+    Creates a microphone array with directivities pointing outwards
+    Parameters
+    ----------
+    center: array_like
+        The center of the microphone array
+    M: int
+        The number of microphones
+    phi0: float
+        The counterclockwise rotation (in degrees) of the first element in the microphone array (from
+        the x-axis)
+    radius: float
+        The radius of the microphone array
+    fs: int
+        The sampling frequency
+    directivity_pattern: string
+        The directivity pattern (FIGURE_EIGHT/HYPERCARDIOID/CARDIOID/SUBCARDIOID/OMNI)
+    Returns
+    -------
+    MicrophoneArray object
+    """
+    
+    azimuth_list = np.arange(M)*(360/M)
+    phi_array = np.ones(M)*phi0
+    azimuth_list = np.add(azimuth_list, phi_array)
+
+    if directivity_pattern == "FIGURE_EIGHT":
+        PATTERN = DirectivityPattern.FIGURE_EIGHT
+    elif directivity_pattern == "HYPERCARDIOID":
+        PATTERN = DirectivityPattern.HYPERCARDIOID
+    elif directivity_pattern == "CARDIOID":
+        PATTERN = DirectivityPattern.CARDIOID
+    elif directivity_pattern == "SUBCARDIOID":
+        PATTERN = DirectivityPattern.SUBCARDIOID
+    else:
+        PATTERN = DirectivityPattern.OMNI
+
+    directivity_list = np.array([])
+
+    for i in range(M):
+        
+        ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=np.pi/2, degrees=False)
+        dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
+        directivity_list.add(dir_obj)
+
+    R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+    return MicrophoneArray(R, fs, directivity_list)
 
 # =========================================================================
 # Classes (microphone array and beamformer related)
@@ -319,10 +354,8 @@ class MicrophoneArray(object):
         """
         This functions sets self.directivity as a list of directivities with `n_mics` entries, 
         where `n_mics` is the number of microphones
-
         Parameters
         -----------
-
         directivities:
             single directivity for all microphones or a list of directivities for each microphone
         
@@ -330,12 +363,12 @@ class MicrophoneArray(object):
 
         if isinstance(directivities, list):
             # list of directivities specified
-            #assert all(isinstance(x, (DirectivityObject)) for x in directivities)
+            assert all(isinstance(x, (CardioidFamily)) for x in directivities)
             assert len(directivities) == self.nmic
             self.directivity = directivities
         else:
             # only 1 directivity specified
-            #assert isinstance(directivities, DirectivityObject)
+            assert isinstance(directivities, CardioidFamily)
             self.directivity = [directivities]*self.nmic
    
     def record(self, signals, fs):
@@ -344,10 +377,8 @@ class MicrophoneArray(object):
         In particular, if the microphones and the room simulation
         do not use the same sampling frequency, down/up-sampling
         is done here.
-
         Parameters
         ----------
-
         signals:
             An ndarray with as many lines as there are microphones.
         fs:
@@ -388,7 +419,6 @@ class MicrophoneArray(object):
     def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
         """
         Save all the signals to wav files.
-
         Parameters
         ----------
         filename: str
@@ -437,7 +467,6 @@ class MicrophoneArray(object):
     def append(self, locs):
         """
         Add some microphones to the array
-
         Parameters
         ----------
         locs: numpy.ndarray (2 or 3, n_mics)
@@ -475,7 +504,6 @@ class Beamformer(MicrophoneArray):
     """
     At some point, in some nice way, the design methods
     should also go here. Probably with generic arguments.
-
     Parameters
     ----------
     R: numpy.ndarray
@@ -538,7 +566,6 @@ class Beamformer(MicrophoneArray):
     def filters_from_weights(self, non_causal=0.0):
         """
         Compute time-domain filters from frequency domain weights.
-
         Parameters
         ----------
         non_causal: float, optional
@@ -608,13 +635,11 @@ class Beamformer(MicrophoneArray):
 
     def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
         """ Creates a steering vector for a particular frequency and source
-
         Args:
             frequency
             source: location in cartesian coordinates
             attn: include attenuation factor if True
             ff:   uses far-field distance if true
-
         Return:
             A 2x1 ndarray containing the steering vector.
         """
@@ -984,7 +1009,6 @@ class Beamformer(MicrophoneArray):
     def far_field_weights(self, phi):
         """
         This method computes weight for a far field at infinity
-
         phi: direction of beam
         """
 
@@ -1041,7 +1065,6 @@ class Beamformer(MicrophoneArray):
         """
         This method computes a beamformer focusing on a number of specific
         sources and ignoring a number of interferers.
-
         INPUTS
           * source     : source locations
           * interferer : interferer locations
@@ -1119,11 +1142,9 @@ class Beamformer(MicrophoneArray):
         """
         Compute directly the time-domain filters maximizing the
         Useful-to-Detrimental Ratio (UDR).
-
         This beamformer is not practical. It maximizes the UDR ratio in the time
         domain directly without imposing flat response towards the source of
         interest. This results in severe distortion of the desired signal.
-
         Parameters
         ----------
         source: pyroomacoustics.SoundSource
