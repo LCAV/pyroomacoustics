@@ -11,7 +11,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+- fix wrong bracketing for negative values in is_inside (ShoeBox)
 
 `0.4.3`_ - 2021-02-18
 ---------------------
