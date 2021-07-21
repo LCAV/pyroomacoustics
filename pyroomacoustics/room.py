@@ -2549,4 +2549,4 @@ class ShoeBox(Room):
         True if ``pos`` is a point in the room, ``False`` otherwise.
         """
         pos = np.array(pos)
-        return np.all(pos) >= 0 and np.all(pos <= self.shoebox_dim)
+        return np.all(pos >= 0) and np.all(pos <= self.shoebox_dim)
