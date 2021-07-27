@@ -1797,9 +1797,9 @@ class Room(object):
                     
                     # compute azimuth and colatitude angles
                     if self.mic_array.directivity is not None:
-                        angle_function_array = angle_function(src.images.T,mic)
-                        azimuth = angle_function_array[:,0]
-                        colatitude = angle_function_array[:,1]
+                        angle_function_array = angle_function(src.images,mic)
+                        azimuth = angle_function_array[0]
+                        colatitude = angle_function_array[1]
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
@@ -1853,7 +1853,7 @@ class Room(object):
                         
                         if self.mic_array.directivity is not None:
                             coordinates = spher2cart(azimuth, colatitude, dist)
-                            alpha *= self.mic_array.directivity[m].get_response(coordinates)
+                            alpha *= self.mic_array.directivity[m].get_response(coord=coordinates, frequency=bw)
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder
