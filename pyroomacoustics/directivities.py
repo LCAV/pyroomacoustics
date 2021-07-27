@@ -183,19 +183,22 @@ class CardioidFamily(Directivity):
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.set_zlabel("z")
-            ax.set_zlim([-3 + z_offset, 3 + z_offset])
 
         else:
 
-            # compute response
-            cart = spher2cart(azimuth=azimuth)
-            resp = self.get_response(coord=cart, magnitude=True)
-
-            # plot
             if ax is None:
                 fig = plt.figure()
-                ax = plt.subplot(111, projection="polar")
-            ax.plot(azimuth, resp)
+                ax = plt.subplot(111)
+
+            # compute response   
+            cart = spher2cart(azimuth=azimuth)
+            resp = self.get_response(coord=cart, magnitude=True)
+            RESP = resp
+
+            # create surface plot, need cartesian coordinates
+            X = RESP.T * np.cos(azimuth) + x_offset
+            Y = RESP.T * np.sin(azimuth) + y_offset
+            ax.plot(X, Y)
 
         return ax
 
