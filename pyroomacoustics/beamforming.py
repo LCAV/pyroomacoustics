@@ -23,7 +23,7 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
-
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as la
 from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
@@ -259,7 +259,7 @@ def fir_approximation_ls(weights, T, n1, n2):
 
     return np.linalg.pinv(F).dot(w)
 
-def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, directivity_pattern = None): 
+def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height = 0, directivity_pattern = None, plot = False): 
     """
     Creates a microphone array with directivities pointing outwards
     Parameters
@@ -275,8 +275,12 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, direct
         The radius of the microphone array
     fs: int
         The sampling frequency
+    height: float
+        The z-coordinate at which the microphone array is located
     directivity_pattern: string
         The directivity pattern (FIGURE_EIGHT/HYPERCARDIOID/CARDIOID/SUBCARDIOID/OMNI)
+    plot: boolean
+        If the microphone array needs to be plotted
     Returns
     -------
     MicrophoneArray object
@@ -297,15 +301,27 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, direct
     else:
         PATTERN = DirectivityPattern.OMNI
 
-    directivity_list = np.array([])
+    R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+    directivity_list = []
+    ax = None
 
     for i in range(M):
         
         ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=np.pi/2, degrees=False)
+        print(azimuth_list[i])
         dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
-        directivity_list.add(dir_obj)
+        directivity_list.append(dir_obj)
 
-    R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+        if plot:
+            azimuth = np.linspace(start=0, stop=360, num=361, endpoint=True)
+            colatitude = np.linspace(start=0, stop=180, num=180, endpoint=True)
+            ax = dir_obj.plot_response(azimuth=azimuth, colatitude=colatitude, degrees=True, ax=ax, offset=[R[0][i],R[1][i],0])
+            print([R[0][i],R[1][i],0])
+
+    if plot:
+        ax.set_zlim(-3,3)
+        plt.show()
+
     return MicrophoneArray(R, fs, directivity_list)
 
 # =========================================================================
