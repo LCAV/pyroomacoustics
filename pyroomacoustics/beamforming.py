@@ -259,7 +259,7 @@ def fir_approximation_ls(weights, T, n1, n2):
 
     return np.linalg.pinv(F).dot(w)
 
-def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height = 0, directivity_pattern = None, plot = False): 
+def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height=0, directivity_pattern=None, plot=False, ax=None): 
     """
     Creates a microphone array with directivities pointing outwards
     Parameters
@@ -281,6 +281,7 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height
         The directivity pattern (FIGURE_EIGHT/HYPERCARDIOID/CARDIOID/SUBCARDIOID/OMNI)
     plot: boolean
         If the microphone array needs to be plotted
+    ax: axes object
     Returns
     -------
     MicrophoneArray object
@@ -303,23 +304,20 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height
 
     R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
     directivity_list = []
-    ax = None
 
     for i in range(M):
         
-        ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=np.pi/2, degrees=False)
-        print(azimuth_list[i])
+        ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=90, degrees=True)
         dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
         directivity_list.append(dir_obj)
 
         if plot:
             azimuth = np.linspace(start=0, stop=360, num=361, endpoint=True)
             colatitude = np.linspace(start=0, stop=180, num=180, endpoint=True)
-            ax = dir_obj.plot_response(azimuth=azimuth, colatitude=colatitude, degrees=True, ax=ax, offset=[R[0][i],R[1][i],0])
-            print([R[0][i],R[1][i],0])
+            ax = dir_obj.plot_response(azimuth=azimuth, colatitude=colatitude, degrees=True, ax=ax, offset=[R[0][i],R[1][i],height])
 
     if plot:
-        ax.set_zlim(-3,3)
+        ax.set_zlim(-3+height, 3+height)
         plt.show()
 
     return MicrophoneArray(R, fs, directivity_list)
