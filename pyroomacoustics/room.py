@@ -523,9 +523,19 @@ from .utilities import fractional_delay
 def wall_factory(corners, absorption, scattering, name=""):
     """ Call the correct method according to wall dimension """
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -1089,7 +1099,11 @@ class Room(object):
         )
 
     def extrude(
-        self, height, v_vec=None, absorption=None, materials=None,
+        self,
+        height,
+        v_vec=None,
+        absorption=None,
+        materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1213,7 +1227,8 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0),
+                ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -1257,9 +1272,9 @@ class Room(object):
 
         try:
             import matplotlib
-            from matplotlib.patches import Circle, Wedge, Polygon
-            from matplotlib.collections import PatchCollection
             import matplotlib.pyplot as plt
+            from matplotlib.collections import PatchCollection
+            from matplotlib.patches import Circle, Polygon, Wedge
         except ImportError:
             import warnings
 
@@ -1403,9 +1418,9 @@ class Room(object):
 
         if self.dim == 3:
 
-            import mpl_toolkits.mplot3d as a3
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
+            import mpl_toolkits.mplot3d as a3
             import scipy as sp
 
             fig = plt.figure(figsize=figsize)
@@ -1720,6 +1735,7 @@ class Room(object):
                 # Copy to python managed memory
                 source.images = self.room_engine.sources.copy()
                 source.orders = self.room_engine.orders.copy()
+                source.orders_xyz = self.room_engine.orders_xyz.copy()
                 source.walls = self.room_engine.gen_walls.copy()
                 source.damping = self.room_engine.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
@@ -2496,7 +2512,9 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim, absorption_array, scattering_array,
+            self.shoebox_dim,
+            absorption_array,
+            scattering_array,
         )
 
         self.walls = self.room_engine.walls

@@ -50,6 +50,14 @@ struct ImageSource
   ImageSource *parent;
   VectorXb visible_mics;
 
+  // this is a unit vector from the center of the source pointing
+  // in the direction of the path to the microphone
+  Vectorf<D> source_impact_dir;
+
+  // This contains the reflection orders with respect to x/y/z axis
+  // for the shoebox image source model
+  Vectori<D> order_xyz;
+
   ImageSource(size_t n_bands)
     : order(0), gen_wall(-1), parent(NULL)
   {
@@ -107,6 +115,7 @@ class Room
     Eigen::Matrix<float,D,Eigen::Dynamic> sources;
     Eigen::VectorXi gen_walls;
     Eigen::VectorXi orders;
+    Eigen::Matrix<int, D, Eigen::Dynamic> orders_xyz;
     Eigen::MatrixXf attenuations;
 
     // This array will get filled by visibility status
