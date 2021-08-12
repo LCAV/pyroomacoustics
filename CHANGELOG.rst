@@ -11,7 +11,17 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fix wrong bracketing for negative values in is_inside (ShoeBox)
+
+Added
+~~~~~
+
+- Adds tracking of reflection order with respect to x/y/z axis in the shoebox image
+  source model engine. The orders are available in `source.orders_xyz` after running
+  the image source model
 
 `0.4.3`_ - 2021-02-18
 ---------------------

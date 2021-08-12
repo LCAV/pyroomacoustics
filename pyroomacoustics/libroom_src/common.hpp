@@ -35,6 +35,8 @@ extern float libroom_eps;  // epsilon is the precision for floating point comput
 
 template<size_t D>
 using Vectorf = Eigen::Matrix<float, D, 1>;
+template<size_t D>
+using Vectori = Eigen::Matrix<int, D, 1>;
 
 using MatrixXf = Eigen::MatrixXf;
 typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
