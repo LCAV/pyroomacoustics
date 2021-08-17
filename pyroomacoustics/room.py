@@ -518,6 +518,7 @@ from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import fractional_delay, angle_function
+from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1685,7 +1686,7 @@ class Room(object):
 
         return self.add(mic_array)
 
-    def add_source(self, position, signal=None, delay=0):
+    def add_source(self, position, signal=None, delay=0, directivity=None):
         """
         Adds a sound source given by its position in the room. Optionally
         a source signal and a delay can be provided.
@@ -1707,11 +1708,19 @@ class Room(object):
         """
 
         if isinstance(position, SoundSource):
-            return self.add(position)
+            if directivity is not None:
+                assert isinstance(directivity, CardioidFamily)
+                return self.add(SoundSource(position, directivity=directivity))
+            else:
+                return self.add(position)
         else:
-            return self.add(SoundSource(position, signal=signal, delay=delay))
+            if directivity is not None:
+                assert isinstance(directivity, CardioidFamily)
+                return self.add(SoundSource(position, signal=signal, delay=delay, directivity=directivity))
+            else:
+                return self.add(SoundSource(position, signal=signal, delay=delay))
 
-    def add_soundsource(self, sndsrc):
+    def add_soundsource(self, sndsrc, directivity=None):
         """
         Adds a :py:obj:`pyroomacoustics.soundsource.SoundSource` object to the room.
 
@@ -1720,7 +1729,8 @@ class Room(object):
         sndsrc: :py:obj:`~pyroomacoustics.soundsource.SoundSource` object
             The SoundSource object to add to the room
         """
-
+        if directivity is not None:
+            sndsrc.set_directivity(directivity)
         return self.add(sndsrc)
 
     def image_source_model(self):
@@ -1817,6 +1827,21 @@ class Room(object):
                         azimuth = angle_function_array[0]
                         colatitude = angle_function_array[1]
 
+                    # compute azimuth_s and colatitude_s angles
+                    if self.sources[0].directivity is not None:
+                        n = len(src.images[0])
+                        image_source_array = src.images
+                        mic_array = np.array([mic,]*n).transpose()
+                        p_vector_array = image_source_array - mic_array
+                        n_array = abs(src.orders_xyz)
+                        d_array = np.sqrt(p_vector_array[0]**2 + p_vector_array[1]**2 + p_vector_array[2]**2)
+                        power_array = np.ones([3,n])*(-1)
+                        power_array = np.power(power_array,(n_array + np.ones([3,n])))
+                        p_dash_array = np.multiply(p_vector_array,power_array)
+
+                        azimuth_s = np.arctan2(p_dash_array[2], p_dash_array[1])
+                        colatitude_s = np.pi/2 - np.arcsin(np.divide(p_dash_array[2],d_array))
+
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
                     time = dist / self.c
@@ -1870,6 +1895,10 @@ class Room(object):
                         if self.mic_array.directivity is not None:
                             coordinates = spher2cart(azimuth, colatitude, dist)
                             alpha *= self.mic_array.directivity[m].get_response(coord=coordinates, frequency=bw)
+
+                        if self.sources[0].directivity is not None:
+                            coordinates_s = spher2cart(azimuth_s, colatitude_s, dist)
+                            alpha *= self.sources[0].directivity[s].get_response(coord=coordinates_s)
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder

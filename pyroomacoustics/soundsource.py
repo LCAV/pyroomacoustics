@@ -7,6 +7,7 @@ import numpy as np
 
 from .parameters import constants
 
+from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
 
 class SoundSource(object):
     '''
@@ -28,7 +29,8 @@ class SoundSource(object):
             walls=None,  # generating wall
             orders=None,
             signal=None,
-            delay=0):
+            delay=0,
+            directivity=None):
 
         position = np.array(position)
         self.dim = position.shape[0]
@@ -95,6 +97,19 @@ class SoundSource(object):
         self.delay = delay
         self.max_order = np.max(self.orders)
 
+        # The directivity of the source
+        self.directivity = None
+        if directivity is not None:
+            self.set_directivity(directivity)
+            
+            
+
+    def set_directivity(self, directivities):
+        """
+        Sets self.directivity as a list of directivities with 1 entry
+        """
+        assert isinstance(directivities, CardioidFamily)
+        self.directivity = [directivities]
 
     def add_signal(self, signal):
         ''' Sets ``SoundSource.signal`` attribute '''
