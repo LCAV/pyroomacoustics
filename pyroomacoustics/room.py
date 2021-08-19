@@ -1839,7 +1839,7 @@ class Room(object):
                         power_array = np.power(power_array,(n_array + np.ones([3,n])))
                         p_dash_array = np.multiply(p_vector_array,power_array)
 
-                        azimuth_s = np.arctan2(p_dash_array[2], p_dash_array[1])
+                        azimuth_s = np.arctan2(p_dash_array[1], p_dash_array[0])
                         colatitude_s = np.pi/2 - np.arcsin(np.divide(p_dash_array[2],d_array))
 
                     # compute the distance from image sources
