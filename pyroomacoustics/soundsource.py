@@ -104,12 +104,12 @@ class SoundSource(object):
             
             
 
-    def set_directivity(self, directivities):
+    def set_directivity(self, directivity):
         """
         Sets self.directivity as a list of directivities with 1 entry
         """
-        assert isinstance(directivities, CardioidFamily)
-        self.directivity = [directivities]
+        assert isinstance(directivity, CardioidFamily)
+        self.directivity = directivity
 
     def add_signal(self, signal):
         ''' Sets ``SoundSource.signal`` attribute '''

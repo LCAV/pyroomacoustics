@@ -521,6 +521,29 @@ from .utilities import fractional_delay, angle_function
 from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
 
 
+
+def source_angle_function(image_source_array, n_array, mic):
+    """
+    Finds azimuth_s and colatitude_s angles required for adding source directivities.
+    Implementation of the method described in the paper: https://www2.ak.tu-berlin.de/~akgroup/ak_pub/2018/000458.pdf 
+    """
+    n = len(image_source_array[0])
+    mic_array = np.array([mic,]*n).transpose()
+    p_vector_array = image_source_array - mic_array
+    d_array = np.sqrt(p_vector_array[0]**2 + p_vector_array[1]**2 + p_vector_array[2]**2)
+    power_array = np.ones([3,n])*(-1)
+    power_array = np.power(power_array,(n_array + np.ones([3,n])))
+
+    # Using (12) from the paper
+    p_dash_array = np.multiply(p_vector_array,power_array)
+
+    # Using (13) from the paper
+    azimuth_s = np.arctan2(p_dash_array[1], p_dash_array[0])
+    colatitude_s = np.pi/2 - np.arcsin(np.divide(p_dash_array[2],d_array))
+    
+    return np.vstack((azimuth_s, colatitude_s))
+
+
 def wall_factory(corners, absorption, scattering, name=""):
     """ Call the correct method according to wall dimension """
     if corners.shape[0] == 3:
@@ -1828,19 +1851,10 @@ class Room(object):
                         colatitude = angle_function_array[1]
 
                     # compute azimuth_s and colatitude_s angles
-                    if self.sources[0].directivity is not None:
-                        n = len(src.images[0])
-                        image_source_array = src.images
-                        mic_array = np.array([mic,]*n).transpose()
-                        p_vector_array = image_source_array - mic_array
-                        n_array = abs(src.orders_xyz)
-                        d_array = np.sqrt(p_vector_array[0]**2 + p_vector_array[1]**2 + p_vector_array[2]**2)
-                        power_array = np.ones([3,n])*(-1)
-                        power_array = np.power(power_array,(n_array + np.ones([3,n])))
-                        p_dash_array = np.multiply(p_vector_array,power_array)
-
-                        azimuth_s = np.arctan2(p_dash_array[1], p_dash_array[0])
-                        colatitude_s = np.pi/2 - np.arcsin(np.divide(p_dash_array[2],d_array))
+                    if self.sources[s].directivity is not None:
+                        source_angle_function_array = source_angle_function(image_source_array=src.images, n_array=abs(src.orders_xyz), mic=mic)
+                        azimuth_s = source_angle_function_array[0]
+                        colatitude_s = source_angle_function_array[1]
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
@@ -1896,9 +1910,9 @@ class Room(object):
                             coordinates = spher2cart(azimuth, colatitude, dist)
                             alpha *= self.mic_array.directivity[m].get_response(coord=coordinates, frequency=bw)
 
-                        if self.sources[0].directivity is not None:
+                        if self.sources[s].directivity is not None:
                             coordinates_s = spher2cart(azimuth_s, colatitude_s, dist)
-                            alpha *= self.sources[0].directivity[s].get_response(coord=coordinates_s)
+                            alpha *= self.sources[s].directivity.get_response(coord=coordinates_s, frequency=bw)
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder

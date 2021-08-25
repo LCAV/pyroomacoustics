@@ -9,9 +9,9 @@ from pyroomacoustics.directivities import DirectivityPattern, \
 # create room
 room  = pra.ShoeBox(
             p = [7, 7, 5],
-            materials=pra.Material(0.07),
+            materials=pra.Material(0.2),
             fs=16000,
-            max_order=17,
+            max_order=40,
         )
 
 
