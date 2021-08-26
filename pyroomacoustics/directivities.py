@@ -73,6 +73,7 @@ class Directivity(abc.ABC):
     def get_response(self, coord, magnitude=False, frequency=None):
         return
 
+
 class CardioidFamily(Directivity):
     """
     Parameters

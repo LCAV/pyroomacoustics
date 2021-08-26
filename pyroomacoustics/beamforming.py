@@ -26,7 +26,7 @@ from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as la
-from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
+from .directivities import DirectivityPattern, DirectionVector, CardioidFamily, Directivity
 from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
@@ -259,9 +259,21 @@ def fir_approximation_ls(weights, T, n1, n2):
 
     return np.linalg.pinv(F).dot(w)
 
-def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height=0, directivity_pattern=None, plot=False, ax=None): 
+
+def circular_microphone_array_helper_xyplane(
+    center,
+    M,
+    phi0,
+    radius,
+    fs,
+    height=0,
+    directivity_pattern=None,
+    plot=False,
+    ax=None
+):
     """
-    Creates a microphone array with directivities pointing outwards
+    Create a microphone array with directivities pointing outwards.
+
     Parameters
     ----------
     center: array_like
@@ -269,8 +281,8 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height
     M: int
         The number of microphones
     phi0: float
-        The counterclockwise rotation (in degrees) of the first element in the microphone array (from
-        the x-axis)
+        The counterclockwise rotation (in degrees) of the first element in the microphone array
+        (from the x-axis).
     radius: float
         The radius of the microphone array
     fs: int
@@ -282,6 +294,7 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height
     plot: boolean
         If the microphone array needs to be plotted
     ax: axes object
+
     Returns
     -------
     MicrophoneArray object
@@ -308,7 +321,7 @@ def circular_microphone_array_helper_xyplane(center, M, phi0, radius, fs, height
     for i in range(M):
         
         ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=90, degrees=True)
-        dir_obj = CardioidFamily (orientation=ORIENTATION, pattern_enum=PATTERN)
+        dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
         directivity_list.append(dir_obj)
 
         if plot:
@@ -377,12 +390,12 @@ class MicrophoneArray(object):
 
         if isinstance(directivities, list):
             # list of directivities specified
-            assert all(isinstance(x, (CardioidFamily)) for x in directivities)
+            assert all(isinstance(x, Directivity) for x in directivities)
             assert len(directivities) == self.nmic
             self.directivity = directivities
         else:
             # only 1 directivity specified
-            assert isinstance(directivities, CardioidFamily)
+            assert isinstance(directivities, Directivity)
             self.directivity = [directivities]*self.nmic
    
     def record(self, signals, fs):
