@@ -40,13 +40,12 @@ colatitude_s_2 = image_2_angles[1]
 class Test_Source_Directivity_Z(TestCase):
 
     def test_image_1(self):
-        self.assertTrue(azimuth_s_1 == 0)
-        self.assertTrue(colatitude_s_1 == 3*np.pi/4)
+        self.assertAlmostEqual(azimuth_s_1, 0)
+        self.assertAlmostEqual(colatitude_s_1, 3*np.pi/4)
 
     def test_image_2(self):
-        self.assertTrue(azimuth_s_2 == 0)
-        self.assertTrue(coltitude_s_2 == np.pi/4)
-    
+        self.assertAlmostEqual(azimuth_s_2, 0)
+        self.assertAlmostEqual(colatitude_s_2, np.pi/4)
 
 
 def get_error_image_1():

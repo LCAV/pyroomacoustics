@@ -45,7 +45,7 @@ class Test_Source_Directivity_X(TestCase):
 
     def test_image_2(self):
         self.assertTrue(azimuth_s_2 == np.pi/4)
-        self.assertTrue(coltitude_s_2 == np.pi/2)
+        self.assertTrue(colatitude_s_2 == np.pi/2)
     
 
 
