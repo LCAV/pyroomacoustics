@@ -23,10 +23,10 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
-import matplotlib.pyplot as plt
+import copy
 import numpy as np
 import scipy.linalg as la
-from .directivities import DirectivityPattern, DirectionVector, CardioidFamily, Directivity
+from .directivities import DirectionVector, Directivity, CardioidFamily, DirectivityPattern
 from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
@@ -115,7 +115,8 @@ def linear_2D_array(center, M, phi, d):
 
 def circular_2D_array(center, M, phi0, radius):
     """
-    Creates an array of uniformly spaced circular points in 2D
+    Create an array of uniformly spaced circular points in 2D.
+
     Parameters
     ----------
     center: array_like
@@ -127,6 +128,7 @@ def circular_2D_array(center, M, phi0, radius):
         the x-axis)
     radius: float
         The radius of the array
+
     Returns
     -------
     ndarray (2, M)
@@ -260,78 +262,84 @@ def fir_approximation_ls(weights, T, n1, n2):
     return np.linalg.pinv(F).dot(w)
 
 
-def circular_microphone_array_helper_xyplane(
+def circular_microphone_array_xyplane(
     center,
     M,
     phi0,
     radius,
     fs,
-    height=0,
-    directivity_pattern=None,
-    plot=False,
+    directivity=None,
+    height=None,
     ax=None
 ):
     """
-    Create a microphone array with directivities pointing outwards.
+    Create a microphone array with directivities pointing outwards (if provided).
 
     Parameters
     ----------
     center: array_like
-        The center of the microphone array
+        The center of the microphone array.
     M: int
-        The number of microphones
+        The number of microphones.
     phi0: float
         The counterclockwise rotation (in degrees) of the first element in the microphone array
         (from the x-axis).
     radius: float
-        The radius of the microphone array
+        The radius of the microphone array.
     fs: int
-        The sampling frequency
-    height: float
-        The z-coordinate at which the microphone array is located
-    directivity_pattern: string
-        The directivity pattern (FIGURE_EIGHT/HYPERCARDIOID/CARDIOID/SUBCARDIOID/OMNI)
-    plot: boolean
-        If the microphone array needs to be plotted
-    ax: axes object
+        The sampling frequency.
+    directivity: Directivity object, optional.
+        Directivity pattern for each microphone which will be re-oriented to face outward. If not
+        provided, microphones are omnidirectional.
+    height: float, optional.
+        The z-coordinate at which the microphone array is located. If not provided, we are in 2D.
+    ax: axes object, optional
+        Axes on which to plot microphone array with its directivities.
 
     Returns
     -------
     MicrophoneArray object
     """
-    
-    azimuth_list = np.arange(M)*(360/M)
-    phi_array = np.ones(M)*phi0
-    azimuth_list = np.add(azimuth_list, phi_array)
 
-    if directivity_pattern == "FIGURE_EIGHT":
-        PATTERN = DirectivityPattern.FIGURE_EIGHT
-    elif directivity_pattern == "HYPERCARDIOID":
-        PATTERN = DirectivityPattern.HYPERCARDIOID
-    elif directivity_pattern == "CARDIOID":
-        PATTERN = DirectivityPattern.CARDIOID
-    elif directivity_pattern == "SUBCARDIOID":
-        PATTERN = DirectivityPattern.SUBCARDIOID
+    if height is None:
+        colatitude = None
     else:
-        PATTERN = DirectivityPattern.OMNI
+        colatitude = 90
+    if directivity is not None:
+        assert isinstance(directivity, Directivity)
+    else:
+        orientation = DirectionVector(azimuth=0, colatitude=colatitude, degrees=True)
+        directivity = CardioidFamily(orientation=orientation, pattern_enum=DirectivityPattern.OMNI)
+
+    # for plotting
+    azimuth_plot = None
+    colatitude_plot = None
+    if ax is not None:
+        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+        if height is not None:
+            colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
 
     R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
+    azimuth_list = np.arange(M) * 360 / M + phi0
     directivity_list = []
 
     for i in range(M):
         
-        ORIENTATION = DirectionVector (azimuth=azimuth_list[i], colatitude=90, degrees=True)
-        dir_obj = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
-        directivity_list.append(dir_obj)
+        orientation = DirectionVector(azimuth=azimuth_list[i], colatitude=colatitude, degrees=True)
+        directivity.set_orientation(orientation)
+        directivity_list.append(copy.copy(directivity))
 
-        if plot:
-            azimuth = np.linspace(start=0, stop=360, num=361, endpoint=True)
-            colatitude = np.linspace(start=0, stop=180, num=180, endpoint=True)
-            ax = dir_obj.plot_response(azimuth=azimuth, colatitude=colatitude, degrees=True, ax=ax, offset=[R[0][i],R[1][i],height])
-
-    if plot:
-        ax.set_zlim(-3+height, 3+height)
-        plt.show()
+        if ax is not None:
+            offset = [R[0][i], R[1][i]]
+            if height is not None:
+                offset.append(height)
+            ax = directivity.plot_response(
+                azimuth=azimuth_plot,
+                colatitude=colatitude_plot,
+                degrees=True,
+                ax=ax,
+                offset=offset
+            )
 
     return MicrophoneArray(R, fs, directivity_list)
 

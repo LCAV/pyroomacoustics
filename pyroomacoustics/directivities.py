@@ -68,6 +68,10 @@ class Directivity(abc.ABC):
 
     def get_colatitude(self, degrees=True):
         return self._orientation.get_colatitude(degrees)
+
+    def set_orientation(self, orientation):
+        assert isinstance(orientation, DirectionVector)
+        self._orientation = orientation
     
     @abc.abstractmethod
     def get_response(self, coord, magnitude=False, frequency=None):
