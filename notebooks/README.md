@@ -5,3 +5,5 @@ to download this repository, we recommend viewing the notebooks with
 
 * [General pyroomacoustics demo](http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/pyroomacoustics_demo.ipynb)
 * [STFT tutorial and demo](http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/stft.ipynb)
+* [RIR demo](https://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/rir_demo.ipynb)
+* [Directivities demo](http://nbviewer.jupyter.org/github/LCAV/pyroomacoustics/blob/master/notebooks/rir_directivities_demo.ipynb)
