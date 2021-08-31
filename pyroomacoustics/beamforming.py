@@ -269,7 +269,6 @@ def circular_microphone_array_xyplane(
     radius,
     fs,
     directivity=None,
-    height=None,
     ax=None
 ):
     """
@@ -278,7 +277,7 @@ def circular_microphone_array_xyplane(
     Parameters
     ----------
     center: array_like
-        The center of the microphone array.
+        The center of the microphone array. 2D or 3D.
     M: int
         The number of microphones.
     phi0: float
@@ -291,8 +290,6 @@ def circular_microphone_array_xyplane(
     directivity: Directivity object, optional.
         Directivity pattern for each microphone which will be re-oriented to face outward. If not
         provided, microphones are omnidirectional.
-    height: float, optional.
-        The z-coordinate at which the microphone array is located. If not provided, we are in 2D.
     ax: axes object, optional
         Axes on which to plot microphone array with its directivities.
 
@@ -301,10 +298,13 @@ def circular_microphone_array_xyplane(
     MicrophoneArray object
     """
 
-    if height is None:
-        colatitude = None
-    else:
+    R = circular_2D_array(center=center[:1], M=M, phi0=phi0, radius=radius)
+    if len(center) == 3:
         colatitude = 90
+        R = np.concatenate((R, np.ones((1, M)) * center[2]))
+    else:
+        colatitude = None
+
     if directivity is not None:
         assert isinstance(directivity, Directivity)
     else:
@@ -316,13 +316,11 @@ def circular_microphone_array_xyplane(
     colatitude_plot = None
     if ax is not None:
         azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
-        if height is not None:
+        if colatitude is not None:
             colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
 
-    R = circular_2D_array(center=center, M=M, phi0=phi0, radius=radius)
     azimuth_list = np.arange(M) * 360 / M + phi0
     directivity_list = []
-
     for i in range(M):
         
         orientation = DirectionVector(azimuth=azimuth_list[i], colatitude=colatitude, degrees=True)
@@ -330,15 +328,12 @@ def circular_microphone_array_xyplane(
         directivity_list.append(copy.copy(directivity))
 
         if ax is not None:
-            offset = [R[0][i], R[1][i]]
-            if height is not None:
-                offset.append(height)
             ax = directivity.plot_response(
                 azimuth=azimuth_plot,
                 colatitude=colatitude_plot,
                 degrees=True,
                 ax=ax,
-                offset=offset
+                offset=R[:, i]
             )
 
     return MicrophoneArray(R, fs, directivity_list)
@@ -355,8 +350,8 @@ class MicrophoneArray(object):
     def __init__(self, R, fs, directivity=None):
 
         R = np.array(R)
-        self.dim = R.shape[0]  # are we in 2D or in 3D
-        self.nmic = R.shape[1] # number of microphones
+        self.dim = R.shape[0]    # are we in 2D or in 3D
+        self.nmic = R.shape[1]   # number of microphones
 
         # Check the shape of the passed array
         if self.dim != 2 and self.dim != 3:
@@ -404,7 +399,7 @@ class MicrophoneArray(object):
         else:
             # only 1 directivity specified
             assert isinstance(directivities, Directivity)
-            self.directivity = [directivities]*self.nmic
+            self.directivity = [directivities] * self.nmic
    
     def record(self, signals, fs):
         """

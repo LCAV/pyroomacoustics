@@ -2,14 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pyroomacoustics import dB, all_combinations
-from pyroomacoustics.directivities import DirectivityPattern, \
-    DirectionVector, CardioidFamily, cardioid_func
+from pyroomacoustics.directivities import cardioid_func
 from pyroomacoustics.doa import spher2cart
 
-ORIENTATION = DirectionVector(azimuth=0, colatitude=90, degrees=True)
+
 azimuth = np.radians(np.linspace(start=0, stop=360, num=361, endpoint=True))
 colatitude = np.radians(np.linspace(start=0, stop=180, num=180, endpoint=True))
-LOWER_GAIN = -40
+lower_gain = -40
 
 """ 2D """
 # get cartesian coordinates
@@ -23,9 +22,9 @@ resp_db = dB(np.array(resp))
 # plot
 plt.figure()
 plt.polar(azimuth, resp_db)
-plt.ylim([LOWER_GAIN, 0])
+plt.ylim([lower_gain, 0])
 ax = plt.gca()
-ax.yaxis.set_ticks(np.arange(start=LOWER_GAIN, stop=5, step=10))
+ax.yaxis.set_ticks(np.arange(start=lower_gain, stop=5, step=10))
 plt.tight_layout()
 
 """ 3D """
@@ -44,7 +43,7 @@ AZI, COL = np.meshgrid(azimuth, colatitude)
 X = RESP_2D.T * np.sin(COL) * np.cos(AZI)
 Y = RESP_2D.T * np.sin(COL) * np.sin(AZI)
 Z = RESP_2D.T * np.cos(COL)
-ax = fig.add_subplot(1, 1, 1, projection='3d')
+ax = fig.add_subplot(1, 1, 1, projection="3d")
 ax.plot_surface(X, Y, Z)
 ax.set_xlabel("x")
 ax.set_ylabel("y")

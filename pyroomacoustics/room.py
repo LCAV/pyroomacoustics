@@ -1290,6 +1290,7 @@ class Room(object):
         figsize=None,
         no_axis=False,
         mic_marker_size=10,
+        plot_directivity=True,
         **kwargs
     ):
         """ Plots the room with its walls, microphones, sources and images """
@@ -1328,17 +1329,26 @@ class Room(object):
             )
             ax.add_collection(p)
 
-            # draw the microphones
             if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
+
+                for i in range(self.mic_array.nmic):
                     ax.scatter(
-                        mic[0],
-                        mic[1],
+                        self.mic_array.R[0][i],
+                        self.mic_array.R[1][i],
                         marker="x",
                         linewidth=0.5,
                         s=mic_marker_size,
                         c="k",
                     )
+
+                    if plot_directivity and self.mic_array.directivity is not None:
+                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                        ax = self.mic_array.directivity[i].plot_response(
+                            azimuth=azimuth_plot,
+                            degrees=True,
+                            ax=ax,
+                            offset=self.mic_array.R[:, i]
+                        )
 
                 # draw the beam pattern of the beamformer if requested (and available)
                 if (
@@ -1385,7 +1395,6 @@ class Room(object):
                     ).max()
 
                     # plot all the beam patterns
-                    i = 0
                     for f, h in zip(newfreq, H):
                         x = np.cos(phis) * h * norm + self.mic_array.center[0, 0]
                         y = np.sin(phis) * h * norm + self.mic_array.center[1, 0]
@@ -1409,6 +1418,15 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(1.0),
                 )
+
+                if plot_directivity and source.directivity is not None:
+                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                    ax = source.directivity.plot_response(
+                        azimuth=azimuth_plot,
+                        degrees=True,
+                        ax=ax,
+                        offset=source.position
+                    )
 
                 # draw images
                 if img_order is None:
@@ -1477,6 +1495,17 @@ class Room(object):
                     edgecolor=cmap(1.0),
                 )
 
+                if plot_directivity and source.directivity is not None:
+                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                    colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                    ax = source.directivity.plot_response(
+                        azimuth=azimuth_plot,
+                        colatitude=colatitude_plot,
+                        degrees=True,
+                        ax=ax,
+                        offset=source.position
+                    )
+
                 # draw images
                 if img_order is None:
                     img_order = self.max_order
@@ -1507,16 +1536,28 @@ class Room(object):
 
             # draw the microphones
             if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
+
+                for i in range(self.mic_array.nmic):
                     ax.scatter(
-                        mic[0],
-                        mic[1],
-                        mic[2],
+                        self.mic_array.R[0][i],
+                        self.mic_array.R[1][i],
+                        self.mic_array.R[2][i],
                         marker="x",
                         linewidth=0.5,
                         s=mic_marker_size,
                         c="k",
                     )
+
+                    if plot_directivity and self.mic_array.directivity is not None:
+                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                        colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                        ax = self.mic_array.directivity[i].plot_response(
+                            azimuth=azimuth_plot,
+                            colatitude=colatitude_plot,
+                            degrees=True,
+                            ax=ax,
+                            offset=self.mic_array.R[:, i]
+                        )
 
             return fig, ax
 
@@ -1569,6 +1610,7 @@ class Room(object):
 
         from . import utilities as u
 
+        fig = plt.figure()
         for k, _pair in enumerate(pairs):
             r = _pair[0]
             s = _pair[1]
@@ -1627,7 +1669,7 @@ class Room(object):
                 raise ValueError(
                     (
                         "The Room and MicrophoneArray objects must be of the same "
-                        "dimensionality. The Room is {}D but the SoundSource "
+                        "dimensionality. The Room is {}D but the MicrophoneArray "
                         "is {}D"
                     ).format(self.dim, obj.dim)
                 )
@@ -1729,6 +1771,10 @@ class Room(object):
         :py:obj:`~pyroomacoustics.room.Room`
             The room is returned for further tweaking.
         """
+
+        if directivity is not None:
+            if not isinstance(self, ShoeBox):
+                raise ValueError("Source directivity only supported for ShoeBox room.")
 
         if isinstance(position, SoundSource):
             if directivity is not None:
@@ -1852,7 +1898,10 @@ class Room(object):
 
                     # compute azimuth_s and colatitude_s angles
                     if self.sources[s].directivity is not None:
-                        source_angle_function_array = source_angle_function(image_source_array=src.images, n_array=abs(src.orders_xyz), mic=mic)
+                        source_angle_function_array = source_angle_function(
+                            image_source_array=src.images,
+                            n_array=abs(src.orders_xyz), mic=mic
+                        )
                         azimuth_s = source_angle_function_array[0]
                         colatitude_s = source_angle_function_array[1]
 
