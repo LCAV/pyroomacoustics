@@ -218,6 +218,7 @@ def cardioid_func(
 ):
     """
     One-shot function for computing Cardioid response.
+
     Parameters
     -----------
     x: array_like, shape (..., n_dim)
@@ -247,4 +248,54 @@ def cardioid_func(
         return np.abs(resp)
     else:
         return resp
-    
+
+
+def source_angle_shoebox(image_source_array, n_array, mic):
+    """
+    Determine outgoing angle for each image source for a ShoeBox configuration.
+
+    Implementation of the method described in the paper:
+    https://www2.ak.tu-berlin.de/~akgroup/ak_pub/2018/000458.pdf
+
+    Parameters
+    -----------
+    image_source_array : array_like
+        Locations of image sources.
+    n_array: array_like
+        Number of x, y, z flips for each image source.
+    mic: array_like
+        Microphone location.
+
+    Returns
+    -------
+    azimuth : :py:class:`~numpy.ndarray`
+        Azimith for each image source, in radians
+    colatitude : :py:class:`~numpy.ndarray`
+        Colatitude for each image source, in radians.
+
+    """
+
+    image_source_array = np.array(image_source_array)
+    n_array = np.array(n_array)
+    mic = np.array(mic)
+
+    dim, n_sources = image_source_array.shape
+    assert n_array.shape[0] == dim
+    assert mic.shape[0] == dim
+
+    p_vector_array = image_source_array - np.array(mic)[:, np.newaxis]
+    d_array = np.linalg.norm(p_vector_array, axis=0)
+
+    # Using (12) from the paper
+    power_array = np.ones_like(image_source_array) * -1
+    power_array = np.power(power_array, (n_array + np.ones_like(image_source_array)))
+    p_dash_array = p_vector_array * power_array
+
+    # Using (13) from the paper
+    azimuth = np.arctan2(p_dash_array[1], p_dash_array[0])
+    if dim == 2:
+        colatitude = np.ones(n_sources) * np.pi / 2
+    else:
+        colatitude = np.pi/2 - np.arcsin(p_dash_array[2] / d_array)
+
+    return azimuth, colatitude

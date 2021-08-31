@@ -506,42 +506,18 @@ import warnings
 
 import numpy as np
 import scipy.spatial as spatial
-from scipy.interpolate import interp1d
 
 from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .doa import GridCircle, GridSphere, spher2cart
+from .doa import spher2cart
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
-from .utilities import fractional_delay, angle_function
-from .directivities import DirectivityPattern, DirectionVector, CardioidFamily
-
-
-
-def source_angle_function(image_source_array, n_array, mic):
-    """
-    Finds azimuth_s and colatitude_s angles required for adding source directivities.
-    Implementation of the method described in the paper: https://www2.ak.tu-berlin.de/~akgroup/ak_pub/2018/000458.pdf 
-    """
-    n = len(image_source_array[0])
-    mic_array = np.array([mic,]*n).transpose()
-    p_vector_array = image_source_array - mic_array
-    d_array = np.sqrt(p_vector_array[0]**2 + p_vector_array[1]**2 + p_vector_array[2]**2)
-    power_array = np.ones([3,n])*(-1)
-    power_array = np.power(power_array,(n_array + np.ones([3,n])))
-
-    # Using (12) from the paper
-    p_dash_array = np.multiply(p_vector_array,power_array)
-
-    # Using (13) from the paper
-    azimuth_s = np.arctan2(p_dash_array[1], p_dash_array[0])
-    colatitude_s = np.pi/2 - np.arcsin(np.divide(p_dash_array[2],d_array))
-    
-    return np.vstack((azimuth_s, colatitude_s))
+from .utilities import angle_function
+from .directivities import CardioidFamily, source_angle_shoebox
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1890,20 +1866,18 @@ class Room(object):
 
                 if self.simulator_state["ism_needed"]:
                     
-                    # compute azimuth and colatitude angles
+                    # compute azimuth and colatitude angles for receiver
                     if self.mic_array.directivity is not None:
                         angle_function_array = angle_function(src.images,mic)
                         azimuth = angle_function_array[0]
                         colatitude = angle_function_array[1]
 
-                    # compute azimuth_s and colatitude_s angles
+                    # compute azimuth and colatitude angles for source
                     if self.sources[s].directivity is not None:
-                        source_angle_function_array = source_angle_function(
+                        azimuth_s, colatitude_s = source_angle_shoebox(
                             image_source_array=src.images,
                             n_array=abs(src.orders_xyz), mic=mic
                         )
-                        azimuth_s = source_angle_function_array[0]
-                        colatitude_s = source_angle_function_array[1]
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))

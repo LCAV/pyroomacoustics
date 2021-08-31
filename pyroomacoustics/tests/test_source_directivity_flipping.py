@@ -2,6 +2,8 @@ import pyroomacoustics as pra
 import numpy as np
 from unittest import TestCase
 
+import pyroomacoustics.directivities
+
 
 class TestSourceDirectivityFlipping(TestCase):
     def test_x(self):
@@ -21,11 +23,12 @@ class TestSourceDirectivityFlipping(TestCase):
         room.image_source_model()
 
         # compute azimuth_s and colatitude_s pair for images along x-axis
-        source_angle_array = pra.room.source_angle_function(
+        source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
             image_source_array=room.sources[0].images,
             n_array=abs(room.sources[0].orders_xyz),
             mic=mic_loc,
         )
+        source_angle_array = np.array(source_angle_array)
 
         x1_idx = np.where(
             room.sources[0].images[0] == source_loc[0] - 2 * source_loc[0]
@@ -57,11 +60,12 @@ class TestSourceDirectivityFlipping(TestCase):
         room.image_source_model()
 
         # compute azimuth_s and colatitude_s pair for images along x-axis
-        source_angle_array = pra.room.source_angle_function(
+        source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
             image_source_array=room.sources[0].images,
             n_array=abs(room.sources[0].orders_xyz),
             mic=mic_loc,
         )
+        source_angle_array = np.array(source_angle_array)
 
         y1_idx = np.where(
             room.sources[0].images[1] == source_loc[1] - 2 * source_loc[1]
@@ -90,11 +94,12 @@ class TestSourceDirectivityFlipping(TestCase):
         room.image_source_model()
 
         # compute azimuth_s and colatitude_s pair for images along z-axis
-        source_angle_array = pra.room.source_angle_function(
+        source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
             image_source_array=room.sources[0].images,
             n_array=abs(room.sources[0].orders_xyz),
             mic=mic_loc,
         )
+        source_angle_array = np.array(source_angle_array)
 
         z1_idx = np.where(
             room.sources[0].images[2] == source_loc[2] - 2 * source_loc[2]
