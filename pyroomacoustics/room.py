@@ -1267,6 +1267,7 @@ class Room(object):
         no_axis=False,
         mic_marker_size=10,
         plot_directivity=True,
+        ax=None,
         **kwargs
     ):
         """ Plots the room with its walls, microphones, sources and images """
@@ -1282,17 +1283,21 @@ class Room(object):
             warnings.warn("Matplotlib is required for plotting")
             return
 
+        fig = None
+
         if self.dim == 2:
             fig = plt.figure(figsize=figsize)
 
             if no_axis is True:
-                ax = fig.add_axes([0, 0, 1, 1], aspect="equal", **kwargs)
+                if ax is None:
+                    ax = fig.add_axes([0, 0, 1, 1], aspect="equal", **kwargs)
                 ax.axis("off")
                 rect = fig.patch
                 rect.set_facecolor("gray")
                 rect.set_alpha(0.15)
             else:
-                ax = fig.add_subplot(111, aspect="equal", **kwargs)
+                if ax is None:
+                    ax = fig.add_subplot(111, aspect="equal", **kwargs)
 
             # draw room
             corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
@@ -1441,8 +1446,9 @@ class Room(object):
             import mpl_toolkits.mplot3d as a3
             import scipy as sp
 
-            fig = plt.figure(figsize=figsize)
-            ax = a3.Axes3D(fig)
+            if ax is None:
+                fig = plt.figure(figsize=figsize)
+                ax = a3.Axes3D(fig)
 
             # plot the walls
             for w in self.walls:
@@ -1586,7 +1592,7 @@ class Room(object):
 
         from . import utilities as u
 
-        fig = plt.figure()
+        plt.figure()
         for k, _pair in enumerate(pairs):
             r = _pair[0]
             s = _pair[1]
@@ -1749,6 +1755,7 @@ class Room(object):
         """
 
         if directivity is not None:
+            from pyroomacoustics import ShoeBox
             if not isinstance(self, ShoeBox):
                 raise ValueError("Source directivity only supported for ShoeBox room.")
 
@@ -1932,11 +1939,17 @@ class Room(object):
                         
                         if self.mic_array.directivity is not None:
                             coordinates = spher2cart(azimuth, colatitude, dist)
-                            alpha *= self.mic_array.directivity[m].get_response(coord=coordinates, frequency=bw)
+                            alpha *= self.mic_array.directivity[m].get_response(
+                                coord=coordinates,
+                                frequency=bw
+                            )
 
                         if self.sources[s].directivity is not None:
                             coordinates_s = spher2cart(azimuth_s, colatitude_s, dist)
-                            alpha *= self.sources[s].directivity.get_response(coord=coordinates_s, frequency=bw)
+                            alpha *= self.sources[s].directivity.get_response(
+                                coord=coordinates_s,
+                                frequency=bw
+                            )
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder

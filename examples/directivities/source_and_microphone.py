@@ -21,7 +21,7 @@ mic_dir = DirectivityPattern.HYPERCARDIOID
 # make 2-D room
 if shoebox:
     room = pra.ShoeBox(
-        p=[5, 3, 3] if three_dim else [7, 7],
+        p=[5, 3, 3] if three_dim else [5, 3],
         materials=pra.Material(energy_absorption),
         fs=16000,
         max_order=40,

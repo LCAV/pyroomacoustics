@@ -14,7 +14,6 @@ room_dim = [7, 7]
 source_loc = [5, 2.5]
 center = [3, 3]
 colatitude = None
-height = None
 if three_dim:
     room_dim.append(5)
     source_loc.append(4)
