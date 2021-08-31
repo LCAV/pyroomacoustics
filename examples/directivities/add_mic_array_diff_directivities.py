@@ -16,6 +16,11 @@ dir_2 = CardioidFamily(
     orientation=DirectionVector(azimuth=0, colatitude=30, degrees=True),
     pattern_enum=DirectivityPattern.HYPERCARDIOID,
 )
+# source_dir = None
+source_dir = CardioidFamily(
+    orientation=DirectionVector(azimuth=45, colatitude=90, degrees=True),
+    pattern_enum=DirectivityPattern.CARDIOID,
+)
 
 # create room
 room = pra.ShoeBox(
@@ -26,7 +31,7 @@ room = pra.ShoeBox(
 )
 
 # add source
-room.add_source([1, 1, 1.7])
+room.add_source([1, 1, 1.7], directivity=source_dir)
 
 # add linear microphone array
 M = 2
