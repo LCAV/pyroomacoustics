@@ -1868,15 +1868,16 @@ class Room(object):
                     
                     # compute azimuth and colatitude angles for receiver
                     if self.mic_array.directivity is not None:
-                        angle_function_array = angle_function(src.images,mic)
+                        angle_function_array = angle_function(src.images, mic)
                         azimuth = angle_function_array[0]
                         colatitude = angle_function_array[1]
 
                     # compute azimuth and colatitude angles for source
                     if self.sources[s].directivity is not None:
                         azimuth_s, colatitude_s = source_angle_shoebox(
-                            image_source_array=src.images,
-                            n_array=abs(src.orders_xyz), mic=mic
+                            image_source_loc=src.images,
+                            wall_flips=abs(src.orders_xyz),
+                            mic_loc=mic
                         )
 
                     # compute the distance from image sources

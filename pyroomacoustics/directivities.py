@@ -6,7 +6,8 @@ from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 
 
 class DirectivityPattern(Enum):
-    """ Common Cardioid patterns and their corresponding coefficient. """
+    """Common Cardioid patterns and their corresponding coefficient."""
+
     FIGURE_EIGHT = 0
     HYPERCARDIOID = 0.25
     CARDIOID = 0.5
@@ -24,6 +25,7 @@ class DirectionVector(object):
     degrees : bool
         Whether provided values are in degrees (True) or radians (False).
     """
+
     def __init__(self, azimuth, colatitude=None, degrees=True):
         if degrees is True:
             azimuth = np.radians(azimuth)
@@ -35,11 +37,13 @@ class DirectionVector(object):
         assert colatitude <= np.pi and colatitude >= 0
         self._colatitude = colatitude
 
-        self._unit_v = np.array([
-            np.cos(self._azimuth) * np.sin(self._colatitude),
-            np.sin(self._azimuth) * np.sin(self._colatitude),
-            np.cos(self._colatitude),
-        ])
+        self._unit_v = np.array(
+            [
+                np.cos(self._azimuth) * np.sin(self._colatitude),
+                np.sin(self._azimuth) * np.sin(self._colatitude),
+                np.cos(self._colatitude),
+            ]
+        )
 
     def get_azimuth(self, degrees=False):
         if degrees:
@@ -72,7 +76,7 @@ class Directivity(abc.ABC):
     def set_orientation(self, orientation):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
-    
+
     @abc.abstractmethod
     def get_response(self, coord, magnitude=False, frequency=None):
         return
@@ -87,6 +91,7 @@ class CardioidFamily(Directivity):
     pattern_enum : DirectivityPattern
         Desired pattern for the cardioid.
     """
+
     def __init__(self, orientation, pattern_enum, gain=1.0):
         Directivity.__init__(self, orientation)
         self._p = pattern_enum.value
@@ -111,15 +116,18 @@ class CardioidFamily(Directivity):
         if self._p == DirectivityPattern.OMNI:
             return np.ones(coord.shape[1])
         else:
-            resp = self._gain * self._p + (1 - self._p) \
-                   * np.matmul(self._orientation.unit_vector, coord)
+            resp = self._gain * self._p + (1 - self._p) * np.matmul(
+                self._orientation.unit_vector, coord
+            )
             if magnitude:
                 return np.abs(resp)
             else:
                 return resp
 
     @requires_matplotlib
-    def plot_response(self, azimuth, colatitude=None, degrees=True, ax=None, offset=None):
+    def plot_response(
+        self, azimuth, colatitude=None, degrees=True, ax=None, offset=None
+    ):
         """
         Parameters
         ----------
@@ -152,11 +160,11 @@ class CardioidFamily(Directivity):
 
             if ax is None:
                 fig = plt.figure()
-                ax = fig.add_subplot(1, 1, 1, projection='3d')
+                ax = fig.add_subplot(1, 1, 1, projection="3d")
 
-            if offset is not None:               
+            if offset is not None:
                 z_offset = offset[2]
-            else:                
+            else:
                 z_offset = 0
 
             spher_coord = all_combinations(azimuth, colatitude)
@@ -173,15 +181,17 @@ class CardioidFamily(Directivity):
             X = RESP.T * np.sin(COL) * np.cos(AZI) + x_offset
             Y = RESP.T * np.sin(COL) * np.sin(AZI) + y_offset
             Z = RESP.T * np.cos(COL) + z_offset
-              
-            ax.plot_surface(X, Y, Z) 
+
+            ax.plot_surface(X, Y, Z)
 
             if ax is None:
-                ax.set_title("{}, azimuth={}, colatitude={}".format(
-                    self.directivity_pattern,
-                    self.get_azimuth(),
-                    self.get_colatitude()
-                ))
+                ax.set_title(
+                    "{}, azimuth={}, colatitude={}".format(
+                        self.directivity_pattern,
+                        self.get_azimuth(),
+                        self.get_colatitude(),
+                    )
+                )
             else:
                 ax.set_title("Directivity Plot")
 
@@ -195,7 +205,7 @@ class CardioidFamily(Directivity):
                 fig = plt.figure()
                 ax = plt.subplot(111)
 
-            # compute response   
+            # compute response
             cart = spher2cart(azimuth=azimuth)
             resp = self.get_response(coord=cart, magnitude=True)
             RESP = resp
@@ -208,14 +218,7 @@ class CardioidFamily(Directivity):
         return ax
 
 
-def cardioid_func(
-    x,
-    direction,
-    coef,
-    gain=1.0,
-    normalize=True,
-    magnitude=False
-):
+def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
     """
     One-shot function for computing Cardioid response.
 
@@ -250,7 +253,7 @@ def cardioid_func(
         return resp
 
 
-def source_angle_shoebox(image_source_array, n_array, mic):
+def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
     """
     Determine outgoing angle for each image source for a ShoeBox configuration.
 
@@ -259,11 +262,11 @@ def source_angle_shoebox(image_source_array, n_array, mic):
 
     Parameters
     -----------
-    image_source_array : array_like
+    image_source_loc : array_like
         Locations of image sources.
-    n_array: array_like
+    wall_flips: array_like
         Number of x, y, z flips for each image source.
-    mic: array_like
+    mic_loc: array_like
         Microphone location.
 
     Returns
@@ -275,20 +278,20 @@ def source_angle_shoebox(image_source_array, n_array, mic):
 
     """
 
-    image_source_array = np.array(image_source_array)
-    n_array = np.array(n_array)
-    mic = np.array(mic)
+    image_source_loc = np.array(image_source_loc)
+    wall_flips = np.array(wall_flips)
+    mic_loc = np.array(mic_loc)
 
-    dim, n_sources = image_source_array.shape
-    assert n_array.shape[0] == dim
-    assert mic.shape[0] == dim
+    dim, n_sources = image_source_loc.shape
+    assert wall_flips.shape[0] == dim
+    assert mic_loc.shape[0] == dim
 
-    p_vector_array = image_source_array - np.array(mic)[:, np.newaxis]
+    p_vector_array = image_source_loc - np.array(mic_loc)[:, np.newaxis]
     d_array = np.linalg.norm(p_vector_array, axis=0)
 
     # Using (12) from the paper
-    power_array = np.ones_like(image_source_array) * -1
-    power_array = np.power(power_array, (n_array + np.ones_like(image_source_array)))
+    power_array = np.ones_like(image_source_loc) * -1
+    power_array = np.power(power_array, (wall_flips + np.ones_like(image_source_loc)))
     p_dash_array = p_vector_array * power_array
 
     # Using (13) from the paper
@@ -296,6 +299,6 @@ def source_angle_shoebox(image_source_array, n_array, mic):
     if dim == 2:
         colatitude = np.ones(n_sources) * np.pi / 2
     else:
-        colatitude = np.pi/2 - np.arcsin(p_dash_array[2] / d_array)
+        colatitude = np.pi / 2 - np.arcsin(p_dash_array[2] / d_array)
 
     return azimuth, colatitude

@@ -24,9 +24,9 @@ class TestSourceDirectivityFlipping(TestCase):
 
         # compute azimuth_s and colatitude_s pair for images along x-axis
         source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
-            image_source_array=room.sources[0].images,
-            n_array=abs(room.sources[0].orders_xyz),
-            mic=mic_loc,
+            image_source_loc=room.sources[0].images,
+            wall_flips=abs(room.sources[0].orders_xyz),
+            mic_loc=mic_loc,
         )
         source_angle_array = np.array(source_angle_array)
 
@@ -61,9 +61,9 @@ class TestSourceDirectivityFlipping(TestCase):
 
         # compute azimuth_s and colatitude_s pair for images along x-axis
         source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
-            image_source_array=room.sources[0].images,
-            n_array=abs(room.sources[0].orders_xyz),
-            mic=mic_loc,
+            image_source_loc=room.sources[0].images,
+            wall_flips=abs(room.sources[0].orders_xyz),
+            mic_loc=mic_loc,
         )
         source_angle_array = np.array(source_angle_array)
 
@@ -95,9 +95,9 @@ class TestSourceDirectivityFlipping(TestCase):
 
         # compute azimuth_s and colatitude_s pair for images along z-axis
         source_angle_array = pyroomacoustics.directivities.source_angle_shoebox(
-            image_source_array=room.sources[0].images,
-            n_array=abs(room.sources[0].orders_xyz),
-            mic=mic_loc,
+            image_source_loc=room.sources[0].images,
+            wall_flips=abs(room.sources[0].orders_xyz),
+            mic_loc=mic_loc,
         )
         source_angle_array = np.array(source_angle_array)
 
