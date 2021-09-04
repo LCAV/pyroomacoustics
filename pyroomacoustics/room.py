@@ -511,7 +511,6 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .doa import spher2cart
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
@@ -1935,20 +1934,23 @@ class Room(object):
                     # IS method
                     if self.simulator_state["ism_needed"]:
 
-                        alpha = src.damping[b, :] / (dist)
+                        alpha = src.damping[b, :] / dist
                         
                         if self.mic_array.directivity is not None:
-                            coordinates = spher2cart(azimuth, colatitude, dist)
+
                             alpha *= self.mic_array.directivity[m].get_response(
-                                coord=coordinates,
-                                frequency=bw
+                                azimuth=azimuth,
+                                colatitude=colatitude,
+                                frequency=bw,
+                                degrees=False
                             )
 
                         if self.sources[s].directivity is not None:
-                            coordinates_s = spher2cart(azimuth_s, colatitude_s, dist)
                             alpha *= self.sources[s].directivity.get_response(
-                                coord=coordinates_s,
-                                frequency=bw
+                                azimuth=azimuth_s,
+                                colatitude=colatitude_s,
+                                frequency=bw,
+                                degrees=False
                             )
 
                         # Use the Cython extension for the fractional delays

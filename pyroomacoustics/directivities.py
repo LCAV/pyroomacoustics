@@ -78,7 +78,9 @@ class Directivity(abc.ABC):
         self._orientation = orientation
 
     @abc.abstractmethod
-    def get_response(self, coord, magnitude=False, frequency=None):
+    def get_response(
+        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
+    ):
         return
 
 
@@ -102,20 +104,33 @@ class CardioidFamily(Directivity):
     def directivity_pattern(self):
         return self._pattern_name
 
-    def get_response(self, coord, magnitude=False, frequency=None):
+    def get_response(
+        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
+    ):
         """
         Get response.
+
         Parameters
         ----------
-        coord : array_like, shape (3, number of points)
-            Cartesian coordinates for which to compute response.
-        magnitude : bool
+        azimuth : array_like
+            Azimuth in degrees
+        colatitude : array_like, optional
+            Colatitude in degrees. Default is to be on XY plane.
+        magnitude : bool, optional
             Whether to return magnitude of response.
+        frequency : float, optional
+            For which frequency to compute the response. Cardioid are frequency-independent so this
+            value has no effect.
+        degrees : bool, optional
+            Whether provided angles are in degrees.
         """
 
+        if colatitude is not None:
+            assert len(azimuth) == len(colatitude)
         if self._p == DirectivityPattern.OMNI:
-            return np.ones(coord.shape[1])
+            return np.ones(len(azimuth))
         else:
+            coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
             resp = self._gain * self._p + (1 - self._p) * np.matmul(
                 self._orientation.unit_vector, coord
             )
@@ -172,8 +187,9 @@ class CardioidFamily(Directivity):
             col_flat = spher_coord[:, 1]
 
             # compute response
-            cart = spher2cart(azimuth=azi_flat, colatitude=col_flat)
-            resp = self.get_response(coord=cart, magnitude=True)
+            resp = self.get_response(
+                azimuth=azi_flat, colatitude=col_flat, magnitude=True, degrees=False
+            )
             RESP = resp.reshape(len(azimuth), len(colatitude))
 
             # create surface plot, need cartesian coordinates
@@ -206,8 +222,7 @@ class CardioidFamily(Directivity):
                 ax = plt.subplot(111)
 
             # compute response
-            cart = spher2cart(azimuth=azimuth)
-            resp = self.get_response(coord=cart, magnitude=True)
+            resp = self.get_response(azimuth=azimuth, magnitude=True, degrees=False)
             RESP = resp
 
             # create surface plot, need cartesian coordinates
