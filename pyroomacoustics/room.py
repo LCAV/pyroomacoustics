@@ -1775,7 +1775,7 @@ class Room(object):
         if directivity is not None:
             from pyroomacoustics import ShoeBox
             if not isinstance(self, ShoeBox):
-                raise ValueError("Source directivity only supported for ShoeBox room.")
+                raise NotImplementedError("Source directivity only supported for ShoeBox room.")
 
         if isinstance(position, SoundSource):
             if directivity is not None:
