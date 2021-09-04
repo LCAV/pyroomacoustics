@@ -876,6 +876,14 @@ class Room(object):
             The time granularity of bins in the energy histogram (default: 4 ms)
         """
 
+        if hasattr(self, "mic_array"):
+            if self.mic_array.directivity is not None:
+                raise NotImplementedError("Directivity not supported with ray tracing.")
+        if hasattr(self, "sources"):
+            for source in self.sources:
+                if source.directivity is not None:
+                    raise NotImplementedError("Directivity not supported with ray tracing.")
+
         self.simulator_state["rt_needed"] = True
 
         self.rt_args = {}
@@ -1689,6 +1697,9 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
+
         # make sure this is a
         loc = np.array(loc)
 
@@ -1722,6 +1733,9 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
+
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
@@ -1729,6 +1743,8 @@ class Room(object):
             # if the type is microphone array
             if directivity is not None:
                 mic_array.set_directivity(directivity)
+            if self.simulator_state["rt_needed"] and mic_array.directivity is not None:
+                raise NotImplementedError("Directivity not supported with ray tracing.")
 
         return self.add(mic_array)
 
@@ -1752,6 +1768,9 @@ class Room(object):
         :py:obj:`~pyroomacoustics.room.Room`
             The room is returned for further tweaking.
         """
+
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
 
         if directivity is not None:
             from pyroomacoustics import ShoeBox
