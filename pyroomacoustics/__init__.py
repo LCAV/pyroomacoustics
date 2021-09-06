@@ -1,4 +1,4 @@
-'''
+"""
 pyroomacoustics
 ===============
 
@@ -46,6 +46,9 @@ Available submodules
 
 :py:obj:`pyroomacoustics.beamforming`
     Microphone arrays and beamforming routines.
+
+:py:obj:`pyroomacoustics.directivities`
+    Directivity pattern objects and routines.
 
 :py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
@@ -113,7 +116,7 @@ Utilities
 __version__
     pyroomacoustics version string
 
-'''
+"""
 
 from .version import __version__
 
@@ -143,7 +146,8 @@ from . import denoise
 from . import phase
 
 import warnings
+
 warnings.warn(
-    "Do not import the 'realtime' module as it will be deprecated soon. It will be replaced by the 'transform' module."
-    , DeprecationWarning
+    "Do not import the 'realtime' module as it will be deprecated soon. It will be replaced by the 'transform' module.",
+    DeprecationWarning,
 )

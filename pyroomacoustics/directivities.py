@@ -6,7 +6,17 @@ from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 
 
 class DirectivityPattern(Enum):
-    """Common Cardioid patterns and their corresponding coefficient."""
+    """
+    Common cardioid patterns and their corresponding coefficient for the expression:
+
+    .. math::
+
+        r = a (1 + \\cos \\theta),
+
+    where :math:`a` is the coefficient that determines the cardioid pattern and :math:`r` yields
+    the gain at angle :math:`\\theta`.
+
+    """
 
     FIGURE_EIGHT = 0
     HYPERCARDIOID = 0.25
@@ -17,6 +27,9 @@ class DirectivityPattern(Enum):
 
 class DirectionVector(object):
     """
+    Object for representing direction vectors in 3D, parameterized by an azimuth and colatitude
+    angle.
+
     Parameters
     ----------
     azimuth : float
@@ -59,10 +72,16 @@ class DirectionVector(object):
 
     @property
     def unit_vector(self):
+        """Direction vector in cartesian coordinates."""
         return self._unit_v
 
 
 class Directivity(abc.ABC):
+    """
+    Abstract class for directivity patterns.
+
+    """
+
     def __init__(self, orientation):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
@@ -74,6 +93,14 @@ class Directivity(abc.ABC):
         return self._orientation.get_colatitude(degrees)
 
     def set_orientation(self, orientation):
+        """
+        Set orientation of directivity pattern.
+
+        Parameters
+        ----------
+        orientation : DirectionVector
+            New direction for the directivity pattern.
+        """
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
 
@@ -81,11 +108,17 @@ class Directivity(abc.ABC):
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
+        """
+        Get response for provided angles and frequency.
+        """
         return
 
 
 class CardioidFamily(Directivity):
     """
+    Object for directivities coming from the
+    `cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_.
+
     Parameters
     ----------
     orientation : DirectionVector
@@ -102,13 +135,14 @@ class CardioidFamily(Directivity):
 
     @property
     def directivity_pattern(self):
+        """Name of cardioid directivity pattern."""
         return self._pattern_name
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
         """
-        Get response.
+        Get response for provided angles.
 
         Parameters
         ----------
@@ -123,6 +157,12 @@ class CardioidFamily(Directivity):
             value has no effect.
         degrees : bool, optional
             Whether provided angles are in degrees.
+
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided angles.
         """
 
         if colatitude is not None:
@@ -144,6 +184,8 @@ class CardioidFamily(Directivity):
         self, azimuth, colatitude=None, degrees=True, ax=None, offset=None
     ):
         """
+        Plot directivity response at specified angles.
+
         Parameters
         ----------
         azimuth : array_like
@@ -155,6 +197,10 @@ class CardioidFamily(Directivity):
         ax : axes object
         offset : list
             3-D coordinates of the point where the response needs to be plotted.
+
+        Return
+        ------
+        ax : :py:class:`~matplotlib.axes.Axes`
         """
         import matplotlib.pyplot as plt
 
@@ -235,7 +281,7 @@ class CardioidFamily(Directivity):
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
     """
-    One-shot function for computing Cardioid response.
+    One-shot function for computing cardioid response.
 
     Parameters
     -----------
@@ -244,13 +290,18 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
     direction: array_like, shape (n_dim)
          Direction vector, should be normalized.
     coef: float
-         Parameter of the cardioid
+         Parameter for the cardioid function.
     gain: float
          The gain.
     normalize : bool
         Whether to normalize coordinates and direction vector.
     magnitude : bool
         Whether to return magnitude, default is False.
+
+    Returns
+    -------
+    resp : :py:class:`~numpy.ndarray`
+        Response at provided angles for the speficied cardioid function.
     """
     assert coef >= 0.0
     assert coef <= 1.0

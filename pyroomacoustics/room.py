@@ -102,7 +102,7 @@ The fourth and last argument is the maximum number of reflections allowed in the
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sources are fairly straighforward to create. They take their location as single
+Sources are fairly straightforward to create. They take their location as single
 mandatory argument, and a signal and start time as optional arguments.  Here we
 create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
 the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the
@@ -145,6 +145,73 @@ A number of routines exist to create regular array geometries in 2D.
 - :py:func:`~pyroomacoustics.beamforming.square_2D_array`
 - :py:func:`~pyroomacoustics.beamforming.poisson_2D_array`
 - :py:func:`~pyroomacoustics.beamforming.spiral_2D_array`
+
+
+Adding source or microphone directivity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The directivity pattern of a source or microphone can be conveniently set
+through the ``directivity`` keyword argument.
+
+First, a :py:obj:`pyroomacoustics.directivities.Directivity` object needs to be created. As of
+Sep 6, 2021, only frequency-independent directivities from the
+`cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_
+are supported, namely figure-eight, hypercardioid, cardioid, and subcardioid.
+
+Below is how a :py:obj:`pyroomacoustics.directivities.Directivity` object can be created, more
+specifically a hypercardioid pattern pointing at an azimuth angle of 90 degrees and a colatitude
+angle of 15 degrees.
+
+.. code-block:: python
+
+    # create directivity object
+    from pyroomacoustics.directivities import (
+        DirectivityPattern,
+        DirectionVector,
+        CardioidFamily,
+    )
+    dir_obj = CardioidFamily(
+        orientation=DirectionVector(azimuth=90, colatitude=15, degrees=True),
+        pattern_enum=DirectivityPattern.HYPERCARDIOID,
+    )
+
+After creating a :py:obj:`pyroomacoustics.directivities.Directivity` object, it is straightforward
+to set the directivity of a source, microphone, or microphone array, namely by using the
+``directivity`` keyword argument.
+
+For example, to set a source's directivity:
+
+.. code-block:: python
+
+    # place the source in the room
+    room.add_source(position=source_pos, directivity=dir_obj)
+
+To set a single microphone's directivity:
+.. code-block:: python
+
+    # place the microphone in the room
+    room.add_microphone(loc=mic_pos, directivity=dir_obj)
+
+The same directivity pattern can be used for all microphones in an array:
+
+.. code-block:: python
+
+    # place the microphone array in the room
+    room.add_microphone_array(R, directivity=dir_obj)
+
+Or a different directivity can be used for each microphone by passing a list of
+:py:obj:`pyroomacoustics.directivities.Directivity` objects:
+
+.. code-block:: python
+
+    # place the microphone array in the room
+    room.add_microphone_array(R, directivity=[dir_1, dir_2])
+
+.. warning::
+
+    As of Sep 6, 2021, setting directivity patterns for sources and microphone is only supported for
+    the image source method (ISM). Moreover, source direcitivities are only supported for
+    shoebox-shaped rooms.
 
 
 Create the Room Impulse Response

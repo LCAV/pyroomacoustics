@@ -449,6 +449,7 @@ class MicrophoneArray(object):
     def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
         """
         Save all the signals to wav files.
+
         Parameters
         ----------
         filename: str
@@ -496,7 +497,8 @@ class MicrophoneArray(object):
 
     def append(self, locs):
         """
-        Add some microphones to the array
+        Add some microphones to the array.
+
         Parameters
         ----------
         locs: numpy.ndarray (2 or 3, n_mics)
@@ -530,10 +532,10 @@ class MicrophoneArray(object):
 
 
 class Beamformer(MicrophoneArray):
-
     """
     At some point, in some nice way, the design methods
     should also go here. Probably with generic arguments.
+
     Parameters
     ----------
     R: numpy.ndarray
@@ -1095,9 +1097,13 @@ class Beamformer(MicrophoneArray):
         """
         This method computes a beamformer focusing on a number of specific
         sources and ignoring a number of interferers.
-        INPUTS
-          * source     : source locations
-          * interferer : interferer locations
+
+        Parameters
+        ----------
+        source : array_like
+            source locations
+        interferer : array_like
+            interferer locations
         """
 
         if R_n is None:
@@ -1175,6 +1181,7 @@ class Beamformer(MicrophoneArray):
         This beamformer is not practical. It maximizes the UDR ratio in the time
         domain directly without imposing flat response towards the source of
         interest. This results in severe distortion of the desired signal.
+
         Parameters
         ----------
         source: pyroomacoustics.SoundSource
