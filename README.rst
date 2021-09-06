@@ -168,7 +168,7 @@ The ``requirements.txt`` file lists all packages necessary to run all of the
 scripts in the ``examples`` folder.
 
 This package is mainly developed under Python 3.6. The last supported version for Python 2.7 is
-`0.4.3`.
+``0.4.3``.
 
 Under Linux and Mac OS, the compiled accelerators require a valid compiler to
 be installed, typically this is GCC. When no compiler is present, the package
@@ -255,7 +255,7 @@ License
 
 ::
 
-  Copyright (c) 2014-2018 EPFL-LCAV
+  Copyright (c) 2014-2021 EPFL-LCAV
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
