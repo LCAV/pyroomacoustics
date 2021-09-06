@@ -158,8 +158,8 @@ Sep 6, 2021, only frequency-independent directivities from the
 `cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_
 are supported, namely figure-eight, hypercardioid, cardioid, and subcardioid.
 
-Below is how a :py:obj:`pyroomacoustics.directivities.Directivity` object can be created, more
-specifically a hypercardioid pattern pointing at an azimuth angle of 90 degrees and a colatitude
+Below is how a :py:obj:`pyroomacoustics.directivities.Directivity` object can be created, for
+example a hypercardioid pattern pointing at an azimuth angle of 90 degrees and a colatitude
 angle of 15 degrees.
 
 .. code-block:: python
@@ -184,20 +184,26 @@ For example, to set a source's directivity:
 .. code-block:: python
 
     # place the source in the room
-    room.add_source(position=source_pos, directivity=dir_obj)
+    room.add_source(position=[2.5, 3.73, 1.76], directivity=dir_obj)
 
 To set a single microphone's directivity:
+
 .. code-block:: python
 
     # place the microphone in the room
-    room.add_microphone(loc=mic_pos, directivity=dir_obj)
+    room.add_microphone(loc=[2.5, 5, 1.76], directivity=dir_obj)
 
 The same directivity pattern can be used for all microphones in an array:
 
 .. code-block:: python
 
-    # place the microphone array in the room
-    room.add_microphone_array(R, directivity=dir_obj)
+    # place microphone array in the room
+    import numpy as np
+    mic_locs = np.c_[
+        [6.3, 4.87, 1.2],  # mic 1
+        [6.3, 4.93, 1.2],  # mic 2
+    ]
+    room.add_microphone_array(mic_locs, directivity=dir_obj)
 
 Or a different directivity can be used for each microphone by passing a list of
 :py:obj:`pyroomacoustics.directivities.Directivity` objects:
@@ -205,7 +211,7 @@ Or a different directivity can be used for each microphone by passing a list of
 .. code-block:: python
 
     # place the microphone array in the room
-    room.add_microphone_array(R, directivity=[dir_1, dir_2])
+    room.add_microphone_array(mic_locs, directivity=[dir_1, dir_2])
 
 .. warning::
 
