@@ -11,10 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Bugfix
-~~~~~~
+Nothing yet.
 
-- Fix wrong bracketing for negative values in is_inside (ShoeBox)
+
+`0.5.0`_ - 2021-09-06
+---------------------
 
 Added
 ~~~~~
@@ -28,6 +29,11 @@ Added
   directivities: frequency-dependent usage in `Room.compute_rir` and abstract
   `Directivity` class.
 - Examples scripts and notebook for directivities.
+
+Bugfix
+~~~~~~
+
+- Fix wrong bracketing for negative values in is_inside (ShoeBox)
 
 `0.4.3`_ - 2021-02-18
 ---------------------
@@ -423,7 +429,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.5.0...master
+.. _0.5.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...v0.5.0
 .. _0.4.3: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...v0.4.3
 .. _0.4.2: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
 .. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
