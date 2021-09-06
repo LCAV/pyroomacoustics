@@ -163,7 +163,8 @@ How to deploy a new version to pypi
    - Edit appropriately the lists of links at the bottom of the file.
 5. git commit
 6. git tag vX.Y.Z
-7. git push origin pypi-release —tags
+7. git push origin vX.Y.Z
+7. git push
 8. git checkout master
 9. git merge pypi-release
 10. git push origin master
