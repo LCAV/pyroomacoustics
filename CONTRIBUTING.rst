@@ -151,6 +151,23 @@ And last but not least: Always write your commit messages in the present
 tense. Your commit message should describe what the commit, when
 applied, does to the code – not what you did to the code.
 
+How to deploy a new version to pypi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. git checkout pypi_release
+2. git merge master
+3. Change version number in ``pyroomacoustics/version.py`` to new version number vX.Y.Z
+4. Edit ``CHANGELOG.rst`` as follows
+  
+   - Add new title ``vX.Y.Z_ - YEAR-MONTH-DAY`` under ``Unreleased``, add "Nothing yet" in the unreleased section
+   - Edit appropriately the lists of links at the bottom of the file
+5. git commit
+6. git tag vX.Y.Z
+7. git push origin pypi_release —tags
+8. git checkout master
+9. git merge pypi_release
+10. git push origin master
+
 Reference
 ---------
 
