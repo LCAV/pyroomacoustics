@@ -11,7 +11,23 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-- fix wrong bracketing for negative values in is_inside (ShoeBox)
+Bugfix
+~~~~~~
+
+- Fix wrong bracketing for negative values in is_inside (ShoeBox)
+
+Added
+~~~~~
+
+- Adds tracking of reflection order with respect to x/y/z axis in the shoebox image
+  source model engine. The orders are available in `source.orders_xyz` after running
+  the image source model
+- Support for microphone and source directivites for image source model. Source
+  directivities just for shoebox room. Available directivities are frequency-independent
+  (cardioid patterns), although the infrastructure is there for frequency-dependent
+  directivities: frequency-dependent usage in `Room.compute_rir` and abstract
+  `Directivity` class.
+- Examples scripts and notebook for directivities.
 
 `0.4.3`_ - 2021-02-18
 ---------------------

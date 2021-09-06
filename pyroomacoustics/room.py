@@ -102,7 +102,7 @@ The fourth and last argument is the maximum number of reflections allowed in the
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sources are fairly straighforward to create. They take their location as single
+Sources are fairly straightforward to create. They take their location as single
 mandatory argument, and a signal and start time as optional arguments.  Here we
 create a source located at ``[2.5, 3.73, 1.76]`` within the room, that will utter
 the content of the wav file ``speech.wav`` starting at ``1.3 s`` into the
@@ -145,6 +145,73 @@ A number of routines exist to create regular array geometries in 2D.
 - :py:func:`~pyroomacoustics.beamforming.square_2D_array`
 - :py:func:`~pyroomacoustics.beamforming.poisson_2D_array`
 - :py:func:`~pyroomacoustics.beamforming.spiral_2D_array`
+
+
+Adding source or microphone directivity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The directivity pattern of a source or microphone can be conveniently set
+through the ``directivity`` keyword argument.
+
+First, a :py:obj:`pyroomacoustics.directivities.Directivity` object needs to be created. As of
+Sep 6, 2021, only frequency-independent directivities from the
+`cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_
+are supported, namely figure-eight, hypercardioid, cardioid, and subcardioid.
+
+Below is how a :py:obj:`pyroomacoustics.directivities.Directivity` object can be created, more
+specifically a hypercardioid pattern pointing at an azimuth angle of 90 degrees and a colatitude
+angle of 15 degrees.
+
+.. code-block:: python
+
+    # create directivity object
+    from pyroomacoustics.directivities import (
+        DirectivityPattern,
+        DirectionVector,
+        CardioidFamily,
+    )
+    dir_obj = CardioidFamily(
+        orientation=DirectionVector(azimuth=90, colatitude=15, degrees=True),
+        pattern_enum=DirectivityPattern.HYPERCARDIOID,
+    )
+
+After creating a :py:obj:`pyroomacoustics.directivities.Directivity` object, it is straightforward
+to set the directivity of a source, microphone, or microphone array, namely by using the
+``directivity`` keyword argument.
+
+For example, to set a source's directivity:
+
+.. code-block:: python
+
+    # place the source in the room
+    room.add_source(position=source_pos, directivity=dir_obj)
+
+To set a single microphone's directivity:
+.. code-block:: python
+
+    # place the microphone in the room
+    room.add_microphone(loc=mic_pos, directivity=dir_obj)
+
+The same directivity pattern can be used for all microphones in an array:
+
+.. code-block:: python
+
+    # place the microphone array in the room
+    room.add_microphone_array(R, directivity=dir_obj)
+
+Or a different directivity can be used for each microphone by passing a list of
+:py:obj:`pyroomacoustics.directivities.Directivity` objects:
+
+.. code-block:: python
+
+    # place the microphone array in the room
+    room.add_microphone_array(R, directivity=[dir_1, dir_2])
+
+.. warning::
+
+    As of Sep 6, 2021, setting directivity patterns for sources and microphone is only supported for
+    the image source method (ISM). Moreover, source direcitivities are only supported for
+    shoebox-shaped rooms.
 
 
 Create the Room Impulse Response
@@ -506,26 +573,35 @@ import warnings
 
 import numpy as np
 import scipy.spatial as spatial
-from scipy.interpolate import interp1d
 
 from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .doa import GridCircle, GridSphere
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
-from .utilities import fractional_delay
+from .utilities import angle_function
+from .directivities import CardioidFamily, source_angle_shoebox
 
 
 def wall_factory(corners, absorption, scattering, name=""):
     """ Call the correct method according to wall dimension """
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -867,6 +943,14 @@ class Room(object):
             The time granularity of bins in the energy histogram (default: 4 ms)
         """
 
+        if hasattr(self, "mic_array"):
+            if self.mic_array.directivity is not None:
+                raise NotImplementedError("Directivity not supported with ray tracing.")
+        if hasattr(self, "sources"):
+            for source in self.sources:
+                if source.directivity is not None:
+                    raise NotImplementedError("Directivity not supported with ray tracing.")
+
         self.simulator_state["rt_needed"] = True
 
         self.rt_args = {}
@@ -1089,7 +1173,11 @@ class Room(object):
         )
 
     def extrude(
-        self, height, v_vec=None, absorption=None, materials=None,
+        self,
+        height,
+        v_vec=None,
+        absorption=None,
+        materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1213,7 +1301,8 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0),
+                ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -1251,32 +1340,38 @@ class Room(object):
         figsize=None,
         no_axis=False,
         mic_marker_size=10,
+        plot_directivity=True,
+        ax=None,
         **kwargs
     ):
         """ Plots the room with its walls, microphones, sources and images """
 
         try:
             import matplotlib
-            from matplotlib.patches import Circle, Wedge, Polygon
-            from matplotlib.collections import PatchCollection
             import matplotlib.pyplot as plt
+            from matplotlib.collections import PatchCollection
+            from matplotlib.patches import Circle, Polygon, Wedge
         except ImportError:
             import warnings
 
             warnings.warn("Matplotlib is required for plotting")
             return
 
+        fig = None
+
         if self.dim == 2:
             fig = plt.figure(figsize=figsize)
 
             if no_axis is True:
-                ax = fig.add_axes([0, 0, 1, 1], aspect="equal", **kwargs)
+                if ax is None:
+                    ax = fig.add_axes([0, 0, 1, 1], aspect="equal", **kwargs)
                 ax.axis("off")
                 rect = fig.patch
                 rect.set_facecolor("gray")
                 rect.set_alpha(0.15)
             else:
-                ax = fig.add_subplot(111, aspect="equal", **kwargs)
+                if ax is None:
+                    ax = fig.add_subplot(111, aspect="equal", **kwargs)
 
             # draw room
             corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
@@ -1289,17 +1384,26 @@ class Room(object):
             )
             ax.add_collection(p)
 
-            # draw the microphones
             if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
+
+                for i in range(self.mic_array.nmic):
                     ax.scatter(
-                        mic[0],
-                        mic[1],
+                        self.mic_array.R[0][i],
+                        self.mic_array.R[1][i],
                         marker="x",
                         linewidth=0.5,
                         s=mic_marker_size,
                         c="k",
                     )
+
+                    if plot_directivity and self.mic_array.directivity is not None:
+                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                        ax = self.mic_array.directivity[i].plot_response(
+                            azimuth=azimuth_plot,
+                            degrees=True,
+                            ax=ax,
+                            offset=self.mic_array.R[:, i]
+                        )
 
                 # draw the beam pattern of the beamformer if requested (and available)
                 if (
@@ -1346,7 +1450,6 @@ class Room(object):
                     ).max()
 
                     # plot all the beam patterns
-                    i = 0
                     for f, h in zip(newfreq, H):
                         x = np.cos(phis) * h * norm + self.mic_array.center[0, 0]
                         y = np.sin(phis) * h * norm + self.mic_array.center[1, 0]
@@ -1370,6 +1473,15 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(1.0),
                 )
+
+                if plot_directivity and source.directivity is not None:
+                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                    ax = source.directivity.plot_response(
+                        azimuth=azimuth_plot,
+                        degrees=True,
+                        ax=ax,
+                        offset=source.position
+                    )
 
                 # draw images
                 if img_order is None:
@@ -1403,13 +1515,14 @@ class Room(object):
 
         if self.dim == 3:
 
-            import mpl_toolkits.mplot3d as a3
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
+            import mpl_toolkits.mplot3d as a3
             import scipy as sp
 
-            fig = plt.figure(figsize=figsize)
-            ax = a3.Axes3D(fig)
+            if ax is None:
+                fig = plt.figure(figsize=figsize)
+                ax = a3.Axes3D(fig)
 
             # plot the walls
             for w in self.walls:
@@ -1437,6 +1550,17 @@ class Room(object):
                     marker=markers[i % len(markers)],
                     edgecolor=cmap(1.0),
                 )
+
+                if plot_directivity and source.directivity is not None:
+                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                    colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                    ax = source.directivity.plot_response(
+                        azimuth=azimuth_plot,
+                        colatitude=colatitude_plot,
+                        degrees=True,
+                        ax=ax,
+                        offset=source.position
+                    )
 
                 # draw images
                 if img_order is None:
@@ -1468,16 +1592,28 @@ class Room(object):
 
             # draw the microphones
             if self.mic_array is not None:
-                for mic in self.mic_array.R.T:
+
+                for i in range(self.mic_array.nmic):
                     ax.scatter(
-                        mic[0],
-                        mic[1],
-                        mic[2],
+                        self.mic_array.R[0][i],
+                        self.mic_array.R[1][i],
+                        self.mic_array.R[2][i],
                         marker="x",
                         linewidth=0.5,
                         s=mic_marker_size,
                         c="k",
                     )
+
+                    if plot_directivity and self.mic_array.directivity is not None:
+                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                        colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                        ax = self.mic_array.directivity[i].plot_response(
+                            azimuth=azimuth_plot,
+                            colatitude=colatitude_plot,
+                            degrees=True,
+                            ax=ax,
+                            offset=self.mic_array.R[:, i]
+                        )
 
             return fig, ax
 
@@ -1530,6 +1666,7 @@ class Room(object):
 
         from . import utilities as u
 
+        plt.figure()
         for k, _pair in enumerate(pairs):
             r = _pair[0]
             s = _pair[1]
@@ -1588,7 +1725,7 @@ class Room(object):
                 raise ValueError(
                     (
                         "The Room and MicrophoneArray objects must be of the same "
-                        "dimensionality. The Room is {}D but the SoundSource "
+                        "dimensionality. The Room is {}D but the MicrophoneArray "
                         "is {}D"
                     ).format(self.dim, obj.dim)
                 )
@@ -1610,7 +1747,7 @@ class Room(object):
 
         return self
 
-    def add_microphone(self, loc, fs=None):
+    def add_microphone(self, loc, fs=None, directivity=None):
         """
         Adds a single microphone in the room.
 
@@ -1627,6 +1764,9 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
+
         # make sure this is a
         loc = np.array(loc)
 
@@ -1637,9 +1777,9 @@ class Room(object):
         if fs is None:
             fs = self.fs
 
-        return self.add(MicrophoneArray(loc, fs))
+        return self.add(MicrophoneArray(loc, fs, directivity))
 
-    def add_microphone_array(self, mic_array):
+    def add_microphone_array(self, mic_array, directivity=None):
         """
         Adds a microphone array (i.e. several microphones) in the room.
 
@@ -1660,13 +1800,22 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
+
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
-            mic_array = MicrophoneArray(mic_array, self.fs)
+            mic_array = MicrophoneArray(mic_array, self.fs, directivity)
+        else:
+            # if the type is microphone array
+            if directivity is not None:
+                mic_array.set_directivity(directivity)
+            if self.simulator_state["rt_needed"] and mic_array.directivity is not None:
+                raise NotImplementedError("Directivity not supported with ray tracing.")
 
         return self.add(mic_array)
 
-    def add_source(self, position, signal=None, delay=0):
+    def add_source(self, position, signal=None, delay=0, directivity=None):
         """
         Adds a sound source given by its position in the room. Optionally
         a source signal and a delay can be provided.
@@ -1687,12 +1836,28 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
-        if isinstance(position, SoundSource):
-            return self.add(position)
-        else:
-            return self.add(SoundSource(position, signal=signal, delay=delay))
+        if self.simulator_state["rt_needed"] and directivity is not None:
+            raise NotImplementedError("Directivity not supported with ray tracing.")
 
-    def add_soundsource(self, sndsrc):
+        if directivity is not None:
+            from pyroomacoustics import ShoeBox
+            if not isinstance(self, ShoeBox):
+                raise NotImplementedError("Source directivity only supported for ShoeBox room.")
+
+        if isinstance(position, SoundSource):
+            if directivity is not None:
+                assert isinstance(directivity, CardioidFamily)
+                return self.add(SoundSource(position, directivity=directivity))
+            else:
+                return self.add(position)
+        else:
+            if directivity is not None:
+                assert isinstance(directivity, CardioidFamily)
+                return self.add(SoundSource(position, signal=signal, delay=delay, directivity=directivity))
+            else:
+                return self.add(SoundSource(position, signal=signal, delay=delay))
+
+    def add_soundsource(self, sndsrc, directivity=None):
         """
         Adds a :py:obj:`pyroomacoustics.soundsource.SoundSource` object to the room.
 
@@ -1701,7 +1866,8 @@ class Room(object):
         sndsrc: :py:obj:`~pyroomacoustics.soundsource.SoundSource` object
             The SoundSource object to add to the room
         """
-
+        if directivity is not None:
+            sndsrc.set_directivity(directivity)
         return self.add(sndsrc)
 
     def image_source_model(self):
@@ -1720,6 +1886,7 @@ class Room(object):
                 # Copy to python managed memory
                 source.images = self.room_engine.sources.copy()
                 source.orders = self.room_engine.orders.copy()
+                source.orders_xyz = self.room_engine.orders_xyz.copy()
                 source.walls = self.room_engine.gen_walls.copy()
                 source.damping = self.room_engine.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
@@ -1790,6 +1957,20 @@ class Room(object):
                 N = fdl
 
                 if self.simulator_state["ism_needed"]:
+                    
+                    # compute azimuth and colatitude angles for receiver
+                    if self.mic_array.directivity is not None:
+                        angle_function_array = angle_function(src.images, mic)
+                        azimuth = angle_function_array[0]
+                        colatitude = angle_function_array[1]
+
+                    # compute azimuth and colatitude angles for source
+                    if self.sources[s].directivity is not None:
+                        azimuth_s, colatitude_s = source_angle_shoebox(
+                            image_source_loc=src.images,
+                            wall_flips=abs(src.orders_xyz),
+                            mic_loc=mic
+                        )
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
@@ -1839,7 +2020,24 @@ class Room(object):
                     # IS method
                     if self.simulator_state["ism_needed"]:
 
-                        alpha = src.damping[b, :] / (dist)
+                        alpha = src.damping[b, :] / dist
+                        
+                        if self.mic_array.directivity is not None:
+
+                            alpha *= self.mic_array.directivity[m].get_response(
+                                azimuth=azimuth,
+                                colatitude=colatitude,
+                                frequency=bw,
+                                degrees=False
+                            )
+
+                        if self.sources[s].directivity is not None:
+                            alpha *= self.sources[s].directivity.get_response(
+                                azimuth=azimuth_s,
+                                colatitude=colatitude_s,
+                                frequency=bw,
+                                degrees=False
+                            )
 
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder
@@ -2310,8 +2508,8 @@ class ShoeBox(Room):
 
     Parameters
     ----------
-    p : array
-        Length 2 (width, length) or 3 (width, lenght, height) depending on
+    p : array_like
+        Length 2 (width, length) or 3 (width, length, height) depending on
         the desired dimension of the room.
     fs: int, optional
         The sampling frequency in Hz. Default is 8000.
@@ -2496,7 +2694,9 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim, absorption_array, scattering_array,
+            self.shoebox_dim,
+            absorption_array,
+            scattering_array,
         )
 
         self.walls = self.room_engine.walls

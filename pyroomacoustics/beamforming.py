@@ -23,10 +23,10 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
-
+import copy
 import numpy as np
 import scipy.linalg as la
-
+from .directivities import DirectionVector, Directivity, CardioidFamily, DirectivityPattern
 from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
@@ -48,7 +48,6 @@ def H(A, **kwargs):
 def sumcols(A):
     """
     Sums the columns of a matrix (np.array).
-
     The output is a 2D np.array
     of dimensions M x 1.
     """
@@ -71,7 +70,6 @@ def mdot(*args):
 def distance(x, y):
     """
     Computes the distance matrix E.
-
     E[i,j] = sqrt(sum((x[:,i]-y[:,j])**2)).
     x and y are DxN ndarray containing N D-dimensional vectors.
     """
@@ -93,7 +91,6 @@ def unit_vec2D(phi):
 def linear_2D_array(center, M, phi, d):
     """
     Creates an array of uniformly spaced linear points in 2D
-
     Parameters
     ----------
     center: array_like
@@ -104,7 +101,6 @@ def linear_2D_array(center, M, phi, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M)
@@ -119,7 +115,7 @@ def linear_2D_array(center, M, phi, d):
 
 def circular_2D_array(center, M, phi0, radius):
     """
-    Creates an array of uniformly spaced circular points in 2D
+    Create an array of uniformly spaced circular points in 2D.
 
     Parameters
     ----------
@@ -147,7 +143,6 @@ def circular_2D_array(center, M, phi0, radius):
 def poisson_2D_array(center, M, d):
     """
     Create array of 2D positions drawn from Poisson process.
-
     Parameters
     ----------
     center: array_like
@@ -160,7 +155,6 @@ def poisson_2D_array(center, M, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M * N)
@@ -180,7 +174,6 @@ def poisson_2D_array(center, M, d):
 def square_2D_array(center, M, N, phi, d):
     """
     Creates an array of uniformly spaced grid points in 2D
-
     Parameters
     ----------
     center: array_like
@@ -193,7 +186,6 @@ def square_2D_array(center, M, N, phi, d):
         The counterclockwise rotation of the array (from the x-axis)
     d: float
         The distance between neighboring points
-
     Returns
     -------
     ndarray (2, M * N)
@@ -211,10 +203,8 @@ def square_2D_array(center, M, N, phi, d):
 def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
     """
     Generate an array of points placed on a spiral
-
     Parameters
     ----------
-
     center: array_like
         location of the center of the array
     M: int
@@ -225,7 +215,6 @@ def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
         number of rotations of the spiral (default 3)
     angle: float
         the angle offset of the spiral (default random)
-
     Returns
     -------
     ndarray (2, M * N)
@@ -273,6 +262,82 @@ def fir_approximation_ls(weights, T, n1, n2):
     return np.linalg.pinv(F).dot(w)
 
 
+def circular_microphone_array_xyplane(
+    center,
+    M,
+    phi0,
+    radius,
+    fs,
+    directivity=None,
+    ax=None
+):
+    """
+    Create a microphone array with directivities pointing outwards (if provided).
+
+    Parameters
+    ----------
+    center: array_like
+        The center of the microphone array. 2D or 3D.
+    M: int
+        The number of microphones.
+    phi0: float
+        The counterclockwise rotation (in degrees) of the first element in the microphone array
+        (from the x-axis).
+    radius: float
+        The radius of the microphone array.
+    fs: int
+        The sampling frequency.
+    directivity: Directivity object, optional.
+        Directivity pattern for each microphone which will be re-oriented to face outward. If not
+        provided, microphones are omnidirectional.
+    ax: axes object, optional
+        Axes on which to plot microphone array with its directivities.
+
+    Returns
+    -------
+    MicrophoneArray object
+    """
+
+    R = circular_2D_array(center=center[:1], M=M, phi0=phi0, radius=radius)
+    if len(center) == 3:
+        colatitude = 90
+        R = np.concatenate((R, np.ones((1, M)) * center[2]))
+    else:
+        colatitude = None
+
+    if directivity is not None:
+        assert isinstance(directivity, Directivity)
+    else:
+        orientation = DirectionVector(azimuth=0, colatitude=colatitude, degrees=True)
+        directivity = CardioidFamily(orientation=orientation, pattern_enum=DirectivityPattern.OMNI)
+
+    # for plotting
+    azimuth_plot = None
+    colatitude_plot = None
+    if ax is not None:
+        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+        if colatitude is not None:
+            colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+
+    azimuth_list = np.arange(M) * 360 / M + phi0
+    directivity_list = []
+    for i in range(M):
+        
+        orientation = DirectionVector(azimuth=azimuth_list[i], colatitude=colatitude, degrees=True)
+        directivity.set_orientation(orientation)
+        directivity_list.append(copy.copy(directivity))
+
+        if ax is not None:
+            ax = directivity.plot_response(
+                azimuth=azimuth_plot,
+                colatitude=colatitude_plot,
+                degrees=True,
+                ax=ax,
+                offset=R[:, i]
+            )
+
+    return MicrophoneArray(R, fs, directivity_list)
+
 # =========================================================================
 # Classes (microphone array and beamformer related)
 # =========================================================================
@@ -282,10 +347,11 @@ class MicrophoneArray(object):
 
     """Microphone array class."""
 
-    def __init__(self, R, fs):
+    def __init__(self, R, fs, directivity=None):
 
         R = np.array(R)
-        self.dim = R.shape[0]  # are we in 2D or in 3D
+        self.dim = R.shape[0]    # are we in 2D or in 3D
+        self.nmic = R.shape[1]   # number of microphones
 
         # Check the shape of the passed array
         if self.dim != 2 and self.dim != 3:
@@ -304,21 +370,45 @@ class MicrophoneArray(object):
         self.R = R  # array geometry
 
         self.fs = fs  # sampling frequency of microphones
-
+        self.directivity = None
+        
+        if directivity is not None:
+            self.set_directivity(directivity)
+            
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
+        
+    def set_directivity(self, directivities): 
 
+        """
+        This functions sets self.directivity as a list of directivities with `n_mics` entries, 
+        where `n_mics` is the number of microphones
+        Parameters
+        -----------
+        directivities:
+            single directivity for all microphones or a list of directivities for each microphone
+        
+        """
+
+        if isinstance(directivities, list):
+            # list of directivities specified
+            assert all(isinstance(x, Directivity) for x in directivities)
+            assert len(directivities) == self.nmic
+            self.directivity = directivities
+        else:
+            # only 1 directivity specified
+            assert isinstance(directivities, Directivity)
+            self.directivity = [directivities] * self.nmic
+   
     def record(self, signals, fs):
         """
         This simulates the recording of the signals by the microphones.
         In particular, if the microphones and the room simulation
         do not use the same sampling frequency, down/up-sampling
         is done here.
-
         Parameters
         ----------
-
         signals:
             An ndarray with as many lines as there are microphones.
         fs:
@@ -407,7 +497,7 @@ class MicrophoneArray(object):
 
     def append(self, locs):
         """
-        Add some microphones to the array
+        Add some microphones to the array.
 
         Parameters
         ----------
@@ -442,7 +532,6 @@ class MicrophoneArray(object):
 
 
 class Beamformer(MicrophoneArray):
-
     """
     At some point, in some nice way, the design methods
     should also go here. Probably with generic arguments.
@@ -509,7 +598,6 @@ class Beamformer(MicrophoneArray):
     def filters_from_weights(self, non_causal=0.0):
         """
         Compute time-domain filters from frequency domain weights.
-
         Parameters
         ----------
         non_causal: float, optional
@@ -579,13 +667,11 @@ class Beamformer(MicrophoneArray):
 
     def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
         """ Creates a steering vector for a particular frequency and source
-
         Args:
             frequency
             source: location in cartesian coordinates
             attn: include attenuation factor if True
             ff:   uses far-field distance if true
-
         Return:
             A 2x1 ndarray containing the steering vector.
         """
@@ -955,7 +1041,6 @@ class Beamformer(MicrophoneArray):
     def far_field_weights(self, phi):
         """
         This method computes weight for a far field at infinity
-
         phi: direction of beam
         """
 
@@ -1013,9 +1098,12 @@ class Beamformer(MicrophoneArray):
         This method computes a beamformer focusing on a number of specific
         sources and ignoring a number of interferers.
 
-        INPUTS
-          * source     : source locations
-          * interferer : interferer locations
+        Parameters
+        ----------
+        source : array_like
+            source locations
+        interferer : array_like
+            interferer locations
         """
 
         if R_n is None:
@@ -1090,7 +1178,6 @@ class Beamformer(MicrophoneArray):
         """
         Compute directly the time-domain filters maximizing the
         Useful-to-Detrimental Ratio (UDR).
-
         This beamformer is not practical. It maximizes the UDR ratio in the time
         domain directly without imposing flat response towards the source of
         interest. This results in severe distortion of the desired signal.

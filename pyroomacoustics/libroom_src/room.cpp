@@ -32,6 +32,21 @@
 const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
 
+size_t number_image_sources_2(size_t max_order) {
+  /*
+  ¦* The number of image sources for a given maximum order in 2D
+  ¦*/
+  return 1 + 2 * max_order * (max_order + 1);
+}
+
+size_t number_image_sources_3(size_t max_order) {
+  /*
+  ¦* The number of image sources for a given maximum order in 3D
+  ¦*/
+  size_t max_order_sq = max_order * max_order;
+  return 1 + 2 * max_order * (2 * max_order_sq + 3 * max_order + 4) / 3;
+}
+
 template<size_t D>
 Room<D>::Room(
     const std::vector<Wall<D>> &_walls,
@@ -420,8 +435,12 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
     transmission_pwr[i] = transmission_pwr[i-1] * transmission_pwr[1];
 
   // make sure the list is empty
-  while (visible_sources.size() > 0)
-    visible_sources.pop();
+  int n_image_sources = number_image_sources_3(ism_order);
+  if (D == 2)
+    n_image_sources = number_image_sources_2(ism_order);
+
+  std::vector<ImageSource<D>> image_sources(n_image_sources, ImageSource<D>(n_bands));
+  int img_src_index = 0;
   
   // L1 ball of room images
   int point[3] = {0, 0, 0};
@@ -442,8 +461,7 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
 
       for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
-        visible_sources.push(ImageSource<D>(n_bands));
-        ImageSource<D> &is = visible_sources.top();
+        ImageSource<D> &is = image_sources[img_src_index++];
         is.visible_mics.resize(microphones.size());
         is.visible_mics.setOnes();  // everything is visible
 
@@ -453,6 +471,7 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
           // Compute the reflected source
           float step = abs(point[d]) % 2 == 1 ? shoebox_size.coeff(d) - source.coeff(d) : source.coeff(d);
           is.loc[d] = point[d] * shoebox_size.coeff(d) + step;
+          is.order_xyz[d] = point[d];
 
           // source order is just the sum of absolute values of reflection indices
           is.order += abs(point[d]);
@@ -476,8 +495,32 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
     }
   }
 
-  // fill linear arrays and return status
-  return fill_sources();
+  // Create linear arrays to store the image sources
+  if (n_image_sources > 0)
+  {
+    // resize all the arrays
+    sources.resize(D, n_image_sources);
+    orders.resize(n_image_sources);
+    orders_xyz.resize(D, n_image_sources);
+    gen_walls.resize(n_image_sources);
+    attenuations.resize(n_bands, n_image_sources);
+    visible_mics.resize(microphones.size(), n_image_sources);
+
+    for (std::vector<int>::size_type idx = 0; idx < image_sources.size(); ++idx) {
+      ImageSource<D> &top = image_sources[idx];  // sample top of stack
+
+      // fill the arrays
+      sources.col(idx) = top.loc;
+      gen_walls.coeffRef(idx) = top.gen_wall;
+      orders.coeffRef(idx) = top.order;
+      orders_xyz.col(idx) = top.order_xyz;
+      attenuations.col(idx) = top.attenuation;
+      visible_mics.col(idx) = top.visible_mics;
+    }
+  }
+
+  // return number images
+  return n_image_sources;
 }
 
 

@@ -4,8 +4,8 @@
 from __future__ import division, print_function
 
 import numpy as np
-
 from .parameters import constants
+from .directivities import Directivity
 
 
 class SoundSource(object):
@@ -28,7 +28,8 @@ class SoundSource(object):
             walls=None,  # generating wall
             orders=None,
             signal=None,
-            delay=0):
+            delay=0,
+            directivity=None):
 
         position = np.array(position)
         self.dim = position.shape[0]
@@ -95,6 +96,17 @@ class SoundSource(object):
         self.delay = delay
         self.max_order = np.max(self.orders)
 
+        # The directivity of the source
+        self.directivity = None
+        if directivity is not None:
+            self.set_directivity(directivity)
+
+    def set_directivity(self, directivity):
+        """
+        Sets self.directivity as a list of directivities with 1 entry
+        """
+        assert isinstance(directivity, Directivity)
+        self.directivity = directivity
 
     def add_signal(self, signal):
         ''' Sets ``SoundSource.signal`` attribute '''
@@ -138,7 +150,6 @@ class SoundSource(object):
 
         else:
             raise NameError('Ordering can be nearest, strongest, order.')
-
 
     def __getitem__(self, index):
         '''Overload the bracket operator to access a subset image sources'''

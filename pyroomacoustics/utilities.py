@@ -24,11 +24,24 @@
 from __future__ import division
 
 import numpy as np
+import itertools
 from scipy import signal
 from scipy.io import wavfile
 
 from .parameters import constants, eps
 from .sync import correlate
+
+
+def requires_matplotlib(func):
+    def function_wrapper(*args, **kwargs):
+        try:
+            import matplotlib.pyplot as plt
+            return func(*args, **kwargs)
+        except ImportError:
+            import warnings
+            warnings.warn('Matplotlib is required for plotting')
+            return
+    return function_wrapper
 
 
 def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):
@@ -738,10 +751,64 @@ def goertzel(x, k):
     return y
 
 
+def all_combinations(lst1, lst2):
+    """
+    Return all combinations between two arrays.
+    """
+    return np.array(list(itertools.product(lst1, lst2)))
+
+
+
 """
 GEOMETRY UTILITIES
 """
 
 
-def angle_from_points(x1, x2):
-    return np.angle((x1[0, 0] - x2[0, 0]) + 1j * (x1[1, 0] - x2[1, 0]))
+def angle_function(s1, v2):
+    """
+    Compute azimuth and colatitude angles in radians for a given set of points `s1` and a singular point `v2`.
+
+    Parameters
+    -----------
+    s1 : numpy array
+        3×N for a set of N 3-D points, 2×N for a set of N 2-D points.
+    v2 : numpy array
+        3×1 for a 3-D point, 2×1 for a 2-D point.
+
+    Returns
+    -----------
+    numpy array
+        2×N numpy array with azimuth and colatitude angles in radians.
+
+    """
+
+    if len(s1.shape) == 1:
+        s1 = s1[:, np.newaxis] 
+    if len(v2.shape) == 1:
+        v2 = v2[:, np.newaxis] 
+
+    assert s1.shape[0] == v2.shape[0]
+                                        
+    x_vals = s1[0]
+    y_vals = s1[1]
+    x2 = v2[0]
+    y2 = v2[1]
+
+    # colatitude calculation for 3-D coordinates
+    if s1.shape[0] == 3 and v2.shape[0] == 3:
+
+        z2 = v2[2]
+        z_vals = s1[ 2]
+
+        colatitude = np.arctan2(((x_vals-x2)**2 + (y_vals-y2)**2)**1/2, (z_vals-z2))
+
+    # colatitude calculation for 2-D coordinates
+    elif s1.shape[0] == 2 and v2.shape[0] == 2:
+                                                                 
+        num_points = s1.shape[1]
+        colatitude = np.ones(num_points)*np.pi/2
+
+    # azimuth calculation (same for 2-D and 3-D)
+    azimuth = np.arctan2((y_vals-y2), (x_vals-x2))
+
+    return np.vstack((azimuth, colatitude))
