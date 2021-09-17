@@ -110,7 +110,7 @@ def test_build_rir():
 
 
 def test_short():
-    """ Tests that an error is raised if a provided time goes below the zero index """
+    """Tests that an error is raised if a provided time goes below the zero index"""
 
     if not build_rir_available:
         return
@@ -132,7 +132,7 @@ def test_short():
 
 
 def test_long():
-    """ Tests that an error is raised if a time falls outside the rir array """
+    """Tests that an error is raised if a time falls outside the rir array"""
 
     if not build_rir_available:
         return
@@ -154,7 +154,7 @@ def test_long():
 
 
 def test_errors():
-    """ Tests that errors are raised when array lengths differ """
+    """Tests that errors are raised when array lengths differ"""
 
     if not build_rir_available:
         return

@@ -22,7 +22,7 @@ class Buffer:
         self.head = self.len
 
     def push(self, val):
-        """ Add one element at the front of the buffer """
+        """Add one element at the front of the buffer"""
 
         # Increase size if the buffer is too small
         if self.head == 0:
@@ -39,12 +39,12 @@ class Buffer:
         self.head -= 1
 
     def top(self, n):
-        """ Returns the n elements at the front of the buffer from newest to oldest """
+        """Returns the n elements at the front of the buffer from newest to oldest"""
 
         return self.buf[self.head : self.head + n]
 
     def flush(self, n):
-        """ Removes the n oldest elements in the buffer """
+        """Removes the n oldest elements in the buffer"""
 
         if n > self.len - self.head:
             n = self.len - self.head
@@ -58,11 +58,11 @@ class Buffer:
         self.head = new_head
 
     def size(self):
-        """ Returns the number of elements in the buffer """
+        """Returns the number of elements in the buffer"""
         return self.len - self.head
 
     def __getitem__(self, r):
-        """ Allows to retrieve element at a specific position """
+        """Allows to retrieve element at a specific position"""
 
         # create a view that starts at head
         ptr = self.buf[self.head :]
@@ -155,19 +155,19 @@ class CoinFlipper:
         self.dirty_coins = 0
 
     def fresh_flips(self, n):
-        """ Generates n binary random values now """
+        """Generates n binary random values now"""
 
         return np.random.random(n) < self.p
 
     def flip_all(self):
-        """ Regenerates all the used up values """
+        """Regenerates all the used up values"""
 
         remaining = self.length - self.dirty_coins
         self.buffer[: self.dirty_coins] = self.fresh_flips(self.dirty_coins)
         self.dirty_coins = 0
 
     def flip(self, n):
-        """ Get n random binary values from the buffer """
+        """Get n random binary values from the buffer"""
 
         # If more flips than computed are requested
         # increase buffer size and flip again

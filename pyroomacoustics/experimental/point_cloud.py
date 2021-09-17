@@ -78,7 +78,7 @@ class PointCloud:
         return self.X[:, index]
 
     def copy(self):
-        """ Return a deep copy of this marker set object """
+        """Return a deep copy of this marker set object"""
 
         new_marker = PointCloud(
             X=self.X.copy(), labels=self.labels, diameter=self.diameter
@@ -86,7 +86,7 @@ class PointCloud:
         return new_marker
 
     def key2ind(self, ref):
-        """ Get the index location from a label """
+        """Get the index location from a label"""
 
         if isinstance(ref, (str, unicode)):
             if self.labels is None:
@@ -181,7 +181,7 @@ class PointCloud:
             )
 
     def EDM(self):
-        """ Computes the EDM corresponding to the marker set """
+        """Computes the EDM corresponding to the marker set"""
         if self.X is None:
             raise ValueError("No marker set")
 
@@ -255,7 +255,7 @@ class PointCloud:
         self.X = Y
 
     def center(self, marker):
-        """ Translate the marker set so that the argument is the origin. """
+        """Translate the marker set so that the argument is the origin."""
 
         index = self.key2ind(marker)
         self.X -= self.X[:, index, None]
@@ -316,14 +316,14 @@ class PointCloud:
         self.X = np.dot(U.T, X_centered) + centroid
 
     def correct(self, corr_dic):
-        """ correct a marker location by a given vector """
+        """correct a marker location by a given vector"""
 
         for key, val in corr_dic.items():
             ind = self.key2ind(key)
             self.X[:, ind] += val
 
     def doa(self, receiver, source):
-        """ Computes the direction of arrival wrt a source and receiver """
+        """Computes the direction of arrival wrt a source and receiver"""
 
         s_ind = self.key2ind(source)
         r_ind = self.key2ind(receiver)

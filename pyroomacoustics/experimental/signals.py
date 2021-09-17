@@ -6,7 +6,7 @@ import numpy as np
 
 
 def window(signal, n_win):
-    """ window the signal at beginning and end with window of size n_win/2 """
+    """window the signal at beginning and end with window of size n_win/2"""
 
     win = np.hanning(2 * n_win)
 

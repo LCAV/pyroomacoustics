@@ -246,7 +246,7 @@ class GridSphere(Grid):
             self.values = func(self.x, self.y, self.z)
 
     def min_max_distance(self):
-        """ Compute some statistics on the distribution of the points """
+        """Compute some statistics on the distribution of the points"""
 
         min_dist = np.inf
         max_dist = 0
@@ -304,7 +304,7 @@ class GridSphere(Grid):
         return [candidates[x] for x in I[-k:]]
 
     def regrid(self):
-        """ Regrid the non-uniform data on a regular mesh """
+        """Regrid the non-uniform data on a regular mesh"""
 
         if self.values is None:
             warnings.warn("Cannont regrid: data missing.")
@@ -374,7 +374,7 @@ class GridSphere(Grid):
             )
 
     def plot_old(self, plot_points=False, mark_peaks=0):
-        """ Plot the points on the sphere with their values """
+        """Plot the points on the sphere with their values"""
 
         from scipy import rand
 

@@ -30,6 +30,7 @@ Price: Free
 URL: http://www.festvox.org/cmu_arctic/
 """
 import os
+
 import numpy as np
 from scipy.io import wavfile
 
@@ -40,8 +41,8 @@ try:
 except:
     have_sounddevice = False
 
+from .base import AudioSample, Dataset, Meta
 from .utils import download_uncompress
-from .base import Meta, AudioSample, Dataset
 
 # The speakers codes and attributes
 cmu_arctic_speakers = {
@@ -275,13 +276,13 @@ class CMUArcticSentence(AudioSample):
         AudioSample.__init__(self, data, fs, **kwargs)
 
     def __str__(self):
-        """ String representation """
+        """String representation"""
         template = "{speaker} ({sex}, {lang}/{accent}); {tag}: " "{text}" ""
         s = template.format(**self.meta.as_dict())
         return s
 
     def plot(self, **kwargs):
-        """ Plot the spectrogram """
+        """Plot the spectrogram"""
         try:
             import matplotlib.pyplot as plt
         except ImportError:

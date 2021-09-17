@@ -156,14 +156,14 @@ class Word:
         plt.title(self.word)
 
     def play(self):
-        """ Play the sound sample """
+        """Play the sound sample"""
         if have_sounddevice:
             sd.play(self.samples, samplerate=self.fs)
         else:
             print("Warning: sounddevice package is required to play audiofiles.")
 
     def mfcc(self, frame_length=1024, hop=512):
-        """ compute the mel-frequency cepstrum coefficients of the word samples """
+        """compute the mel-frequency cepstrum coefficients of the word samples"""
         self.features = mfcc(self.samples, L=frame_length, hop=hop)
 
 
@@ -312,7 +312,7 @@ class Sentence:
         return s
 
     def play(self):
-        """ Play the sound sample """
+        """Play the sound sample"""
         if have_sounddevice:
             sd.play(self.data, samplerate=self.fs)
         else:
@@ -379,7 +379,7 @@ class TimitCorpus:
     """
 
     def __init__(self, basedir):
-        """ Initialize basic attributes of the class """
+        """Initialize basic attributes of the class"""
 
         import warnings
 
@@ -482,5 +482,5 @@ class TimitCorpus:
                                     self.word_corpus[d][w.word].append(w)
 
     def get_word(self, d, w, index=0):
-        """ return instance index of word w from group (test or train) d """
+        """return instance index of word w from group (test or train) d"""
         return self.word_corpus[d][w][index]

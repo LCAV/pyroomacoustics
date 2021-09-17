@@ -57,7 +57,7 @@ class Meta(object):
         return True
 
     def as_dict(self):
-        """ Returns all the attribute/value pairs of the object as a dictionary """
+        """Returns all the attribute/value pairs of the object as a dictionary"""
         return self.__dict__.copy()
 
     def __str__(self):
@@ -86,7 +86,7 @@ class Sample(object):
     """
 
     def __init__(self, data, **kwargs):
-        """ Dummy init method """
+        """Dummy init method"""
         self.data = data
         self.meta = Meta(**kwargs)
 
@@ -243,7 +243,7 @@ class Dataset(object):
         return len(self.samples)
 
     def head(self, n=5):
-        """ Print n samples from the dataset """
+        """Print n samples from the dataset"""
         print("The first", n, "/", len(self.samples), "samples:")
         for sample in self.samples[:n]:
             print(sample)
