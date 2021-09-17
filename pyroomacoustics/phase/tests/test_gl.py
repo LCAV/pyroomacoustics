@@ -31,7 +31,7 @@ X_mag_norm = np.linalg.norm(X_mag) ** 2
 
 
 def compute_error(X_mag, y):
-    """ routine to compute the spectral distance """
+    """routine to compute the spectral distance"""
     Y_2 = engine.analysis(y)
     return np.linalg.norm(X_mag - np.abs(Y_2)) ** 2 / X_mag_norm
 

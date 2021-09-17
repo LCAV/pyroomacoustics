@@ -29,7 +29,7 @@ import pyroomacoustics as pra
 
 
 class SimpleHistogram(list):
-    """ A Histogram class based on list """
+    """A Histogram class based on list"""
 
     def __init__(self, bin_size):
         self.bin_size = bin_size

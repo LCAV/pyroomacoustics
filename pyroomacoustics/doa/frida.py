@@ -194,7 +194,7 @@ class FRIDA(DOA):
             raise ValueError("3D reconstruction is not yet available with FRIDA.")
 
     def _raw_average(self, X):
-        """ Correct the time rotation and average the raw microphone signal """
+        """Correct the time rotation and average the raw microphone signal"""
         phaser = np.exp(
             -1j
             * 2

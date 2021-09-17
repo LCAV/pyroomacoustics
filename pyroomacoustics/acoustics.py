@@ -176,7 +176,7 @@ class OctaveBandsFactory(object):
         self._make_filters()
 
     def get_bw(self):
-        """ Returns the bandwidth of the bands """
+        """Returns the bandwidth of the bands"""
         return np.array([b2 - b1 for b1, b2 in self.bands])
 
     def analysis(self, x, band=None):
@@ -419,12 +419,12 @@ def bands_hz2s(bands_hz, Fs, N, transform="dft"):
 
 
 def melscale(f):
-    """ Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6) """
+    """Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6)"""
     return 1125.0 * np.log(1 + f / 700.0)
 
 
 def invmelscale(b):
-    """ Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143) """
+    """Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143)"""
     return 700.0 * (np.exp(b / 1125.0) - 1)
 
 

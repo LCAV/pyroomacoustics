@@ -593,7 +593,7 @@ from .directivities import CardioidFamily, source_angle_shoebox
 
 
 def wall_factory(corners, absorption, scattering, name=""):
-    """ Call the correct method according to wall dimension """
+    """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
         return Wall(
             corners,
@@ -1012,7 +1012,7 @@ class Room(object):
         self._update_room_engine_params()
 
     def unset_ray_tracing(self):
-        """ Deactivates the ray tracer """
+        """Deactivates the ray tracer"""
         self.simulator_state["rt_needed"] = False
         self._update_room_engine_params()
 
@@ -1034,11 +1034,11 @@ class Room(object):
             self.air_absorption = self.physics().get_air_absorption()
 
     def unset_air_absorption(self):
-        """ Deactivates air absorption in the simulation """
+        """Deactivates air absorption in the simulation"""
         self.simulator_state["air_abs_needed"] = False
 
     def set_sound_speed(self, c):
-        """ Sets the speed of sound unconditionnaly """
+        """Sets the speed of sound unconditionnaly"""
         self.c = c
         self._update_room_engine_params()
 
@@ -1352,7 +1352,7 @@ class Room(object):
         ax=None,
         **kwargs
     ):
-        """ Plots the room with its walls, microphones, sources and images """
+        """Plots the room with its walls, microphones, sources and images"""
 
         try:
             import matplotlib
@@ -2260,7 +2260,7 @@ class Room(object):
             return premix_signals
 
     def direct_snr(self, x, source=0):
-        """ Computes the direct Signal-to-Noise Ratio """
+        """Computes the direct Signal-to-Noise Ratio"""
 
         if source >= len(self.sources):
             raise ValueError("No such source")
@@ -2292,7 +2292,7 @@ class Room(object):
             raise ValueError("The wall " + name + " cannot be found.")
 
     def get_bbox(self):
-        """ Returns a bounding box for the room """
+        """Returns a bounding box for the room"""
 
         lower = np.amin(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
         upper = np.amax(np.concatenate([w.corners for w in self.walls], axis=1), axis=1)
@@ -2743,7 +2743,7 @@ class ShoeBox(Room):
             self.mic_array = None
 
     def extrude(self, height):
-        """ Overload the extrude method from 3D rooms """
+        """Overload the extrude method from 3D rooms"""
 
         if height < 0.0:
             raise ValueError("Room height must be positive")

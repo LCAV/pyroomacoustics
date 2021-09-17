@@ -1,8 +1,8 @@
 from __future__ import division, print_function
-import numpy as np
-from scipy import fftpack
 
+import numpy as np
 import scipy.linalg as la
+from scipy import fftpack
 
 try:
     import mkl_fft as fft
@@ -15,7 +15,7 @@ except ImportError:
 
 
 def autocorr(x):
-    """ Fast autocorrelation computation using the FFT """
+    """Fast autocorrelation computation using the FFT"""
 
     X = fft.rfft(x, n=2 * x.shape[0])
     r = fft.irfft(np.abs(X) ** 2)

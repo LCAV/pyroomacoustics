@@ -18,7 +18,7 @@ from .acoustics import mfcc
 
 class CircularGaussianEmission:
     def __init__(self, nstates, odim=1, examples=None):
-        """ Initialize the Gaussian emission object """
+        """Initialize the Gaussian emission object"""
 
         # The emissions parameters
         self.K = nstates
@@ -52,7 +52,7 @@ class CircularGaussianEmission:
             self.Sigma[k] = np.sum(centered.T * g[:, k], axis=1) / Z[k]
 
     def get_pdfs(self):
-        """ Return the pdf of all the emission probabilities """
+        """Return the pdf of all the emission probabilities"""
         return [
             multivariate_normal(self.mu[k], np.diag(self.Sigma[k]))
             for k in range(self.K)
@@ -79,7 +79,7 @@ class CircularGaussianEmission:
 
 class GaussianEmission:
     def __init__(self, nstates, odim=1, examples=None):
-        """ Initialize the Gaussian emission object """
+        """Initialize the Gaussian emission object"""
 
         # The emissions parameters
         self.K = nstates
@@ -114,7 +114,7 @@ class GaussianEmission:
             self.Sigma[k] = np.dot(centered.T * g[:, k], centered / Z[k])
 
     def get_pdfs(self):
-        """ Return the pdf of all the emission probabilities """
+        """Return the pdf of all the emission probabilities"""
         return [multivariate_normal(self.mu[k], self.Sigma[k]) for k in range(self.K)]
 
     def prob_x_given_state(self, examples):
@@ -303,7 +303,7 @@ class HMM:
         return n_iter
 
     def update_parameters(self, examples, gamma, xhi):
-        """ Update the parameters of the Markov Chain """
+        """Update the parameters of the Markov Chain"""
 
         X = np.concatenate(examples, axis=0)
         x = np.concatenate(xhi, axis=0)
@@ -321,7 +321,7 @@ class HMM:
                 self.A[k, :] /= den
 
     def generate(self, N):
-        """ Generate a random sample of length N using the model """
+        """Generate a random sample of length N using the model"""
         X = np.zeros((N, self.emission.O))
         distributions = self.emission.get_pdfs()
 
@@ -347,7 +347,7 @@ class HMM:
         return np.sum(np.log(c))
 
     def forward(self, X, p_x_given_z):
-        """ The forward recursion for HMM as described in Bishop Ch. 13 """
+        """The forward recursion for HMM as described in Bishop Ch. 13"""
 
         # initialize the alpha vector
         alpha = np.zeros((X.shape[0], self.K))
@@ -368,7 +368,7 @@ class HMM:
         return alpha, c
 
     def backward(self, X, p_x_given_z, c):
-        """ The backward recursion for HMM as described in Bishop Ch. 13 """
+        """The backward recursion for HMM as described in Bishop Ch. 13"""
 
         # intialize the beta vectors
         beta = np.zeros((X.shape[0], self.K))

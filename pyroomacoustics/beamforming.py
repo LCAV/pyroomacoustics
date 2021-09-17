@@ -592,7 +592,7 @@ class Beamformer(MicrophoneArray):
         self.filters = None
 
     def __add__(self, y):
-        """ Concatenates two beamformers together."""
+        """Concatenates two beamformers together."""
 
         newR = np.concatenate((self.R, y.R), axis=1)
         return Beamformer(

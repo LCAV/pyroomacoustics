@@ -356,7 +356,7 @@ def Tmtx_ri(b_ri, K, D, L):
 
 
 def Tmtx_ri_half(b_ri, K, D, L, D_coef):
-    """ Split T matrix in conjugate symmetric representation """
+    """Split T matrix in conjugate symmetric representation"""
     return np.dot(Tmtx_ri(b_ri, K, D, L), D_coef)
 
 
@@ -370,7 +370,7 @@ def Tmtx_ri_half_out_half(b_ri, K, D, L, D_coef, mtx_shrink):
 
 
 def Rmtx_ri(coef_ri, K, D, L):
-    """ Split T matrix in rea/imaginary representation """
+    """Split T matrix in rea/imaginary representation"""
     coef_ri = np.squeeze(coef_ri)
     coef_r = coef_ri[: K + 1]
     coef_i = coef_ri[K + 1 :]
@@ -386,7 +386,7 @@ def Rmtx_ri(coef_ri, K, D, L):
 
 
 def Rmtx_ri_half(coef_half, K, D, L, D_coef):
-    """ Split T matrix in rea/imaginary conjugate symmetric representation """
+    """Split T matrix in rea/imaginary conjugate symmetric representation"""
     return Rmtx_ri(np.dot(D_coef, coef_half), K, D, L)
 
 
@@ -425,7 +425,7 @@ def build_mtx_amp(phi_k, p_mic_x, p_mic_y):
 
 
 def build_mtx_amp_ri(p_mic_x, p_mic_y, phi_k):
-    """ builds real/imaginary amplitude matrix """
+    """builds real/imaginary amplitude matrix"""
     mtx = build_mtx_amp(phi_k, p_mic_x, p_mic_y)
     return np.vstack((mtx.real, mtx.imag))
 
@@ -1365,7 +1365,7 @@ def dirac_recon_ri_multiband_inner(
     GtG,
     max_iter,
 ):
-    """ Inner loop of the `dirac_recon_ri_multiband` function """
+    """Inner loop of the `dirac_recon_ri_multiband` function"""
     min_error = float("inf")
     # size of various matrices / vectors
     L = 2 * M + 1  # length of the (complex-valued) b vector
@@ -1566,7 +1566,7 @@ def dirac_recon_ri_inner(
     G,
     max_iter,
 ):
-    """ inner loop of the `dirac_recon_ri_half_parallel` function """
+    """inner loop of the `dirac_recon_ri_half_parallel` function"""
 
     min_error = float("inf")
     # size of various matrices / vectors

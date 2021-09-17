@@ -20,7 +20,7 @@ noise = np.random.randn(x_len + h_len - 1)
 
 
 def generate_signals(SNR, x, h, noise):
-    """ run convolution """
+    """run convolution"""
 
     # noise standard deviation
     sigma_noise = 10 ** (-SNR / 20.0)

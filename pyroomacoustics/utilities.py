@@ -214,7 +214,7 @@ def normalize_pwr(sig1, sig2):
 
 
 def highpass(signal, Fs, fc=None, plot=False):
-    """ Filter out the really low frequencies, default is below 50Hz """
+    """Filter out the really low frequencies, default is below 50Hz"""
 
     if fc is None:
         fc = constants.get("fc_hp")
@@ -752,7 +752,7 @@ def lpc(x, p, biased=True):
 
 
 def goertzel(x, k):
-    """ Goertzel algorithm to compute DFT coefficients """
+    """Goertzel algorithm to compute DFT coefficients"""
 
     N = x.shape[0]
     f = k / float(N)
