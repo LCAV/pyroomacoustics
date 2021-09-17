@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Blind Source Separation
 =======================
 
@@ -48,7 +48,7 @@ References
 .. [5] K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
 
-'''
+"""
 
 from .trinicon import trinicon
 from .auxiva import auxiva

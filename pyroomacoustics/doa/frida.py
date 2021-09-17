@@ -5,11 +5,18 @@ from scipy import linalg as la
 # import numpy as np
 
 from .doa import *
-from .tools_fri_doa_plane import pt_src_recon_multiband, extract_off_diag, cov_mtx_est, polar2cart, make_G, \
-    make_GtG_and_inv
+from .tools_fri_doa_plane import (
+    pt_src_recon_multiband,
+    extract_off_diag,
+    cov_mtx_est,
+    polar2cart,
+    make_G,
+    make_GtG_and_inv,
+)
+
 
 class FRIDA(DOA):
-    '''
+    """
     Implements the FRI-based direction of arrival finding algorithm [FRIDA]_.
 
     .. note:: Run locate_sources() to apply the CSSM algorithm.
@@ -61,15 +68,34 @@ class FRIDA(DOA):
     .. [FRIDA] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanic, and M. Vetterli, *FRIDA:
         FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
         pp 3186-3190, 2017
-    '''
+    """
 
-    def __init__(self, L, fs, nfft, max_four=None, c=343.0, num_src=1,
-                 G_iter=None, max_ini=5, n_rot=1, max_iter=50, noise_level=1e-10,
-                 low_rank_cleaning=False, stopping='max_iter',
-                 stft_noise_floor=0., stft_noise_margin=1.5, signal_type='visibility',
-                 use_lu=True, verbose=False, symb=True, use_cache=False, **kwargs):
+    def __init__(
+        self,
+        L,
+        fs,
+        nfft,
+        max_four=None,
+        c=343.0,
+        num_src=1,
+        G_iter=None,
+        max_ini=5,
+        n_rot=1,
+        max_iter=50,
+        noise_level=1e-10,
+        low_rank_cleaning=False,
+        stopping="max_iter",
+        stft_noise_floor=0.0,
+        stft_noise_margin=1.5,
+        signal_type="visibility",
+        use_lu=True,
+        verbose=False,
+        symb=True,
+        use_cache=False,
+        **kwargs
+    ):
 
-        DOA.__init__(self, L, fs, nfft, c=c, num_src=num_src, mode='far', **kwargs)
+        DOA.__init__(self, L, fs, nfft, c=c, num_src=num_src, mode="far", **kwargs)
 
         # intialize some attributes
         self.visi_noisy_all = None
@@ -86,7 +112,9 @@ class FRIDA(DOA):
         self.noise_level = noise_level
         self.max_ini = max_ini
         self.max_iter = max_iter
-        self.low_rank_cleaning = low_rank_cleaning  # This will impose low rank on corr matrix
+        self.low_rank_cleaning = (
+            low_rank_cleaning  # This will impose low rank on corr matrix
+        )
         self.stop_cri = stopping
         self.n_rot = n_rot
         self.use_lu = use_lu
@@ -102,14 +130,14 @@ class FRIDA(DOA):
         self.signal_type = signal_type
 
     def _process(self, X):
-        '''
+        """
         Parameters
         ----------
         X: ndarray
             The STFT frames
-        '''
+        """
 
-        if self.signal_type == 'visibility':
+        if self.signal_type == "visibility":
             visi_noisy_all = self._visibilities(X)
 
             # stack as columns (NOT SUBTRACTING NOISELESS)
@@ -117,7 +145,7 @@ class FRIDA(DOA):
 
             signal = self.visi_noisy_all
 
-        elif self.signal_type == 'raw':
+        elif self.signal_type == "raw":
             signal = self._raw_average(X)
 
         else:
@@ -131,38 +159,51 @@ class FRIDA(DOA):
             # build the G matrix if necessary
             if self.G is None:
                 self.G = make_G(
-                    self.L[0, :], self.L[1, :],
-                    2 * np.pi * self.freq_hz, self.c,
+                    self.L[0, :],
+                    self.L[1, :],
+                    2 * np.pi * self.freq_hz,
+                    self.c,
                     self.max_four,
-                    signal_type=self.signal_type
+                    signal_type=self.signal_type,
                 )
                 self.GtG, self.GtG_inv = make_GtG_and_inv(self.G)
 
             # reconstruct point sources with FRI
-            self.azimuth_recon, self.alpha_recon = \
-                pt_src_recon_multiband(
-                    signal,
-                    self.L[0, :], self.L[1, :],
-                    2 * np.pi * self.freq_hz, self.c,
-                    self.num_src, self.max_four,
-                    self.noise_level, self.max_ini,
-                    max_iter=self.max_iter,
-                    update_G=self.update_G,
-                    G_iter=self.G_iter,
-                    verbose=False,
-                    signal_type=self.signal_type,
-                    G_lst=self.G,
-                    GtG_lst=self.GtG,
-                    GtG_inv_lst=self.GtG_inv
-                )
+            self.azimuth_recon, self.alpha_recon = pt_src_recon_multiband(
+                signal,
+                self.L[0, :],
+                self.L[1, :],
+                2 * np.pi * self.freq_hz,
+                self.c,
+                self.num_src,
+                self.max_four,
+                self.noise_level,
+                self.max_ini,
+                max_iter=self.max_iter,
+                update_G=self.update_G,
+                G_iter=self.G_iter,
+                verbose=False,
+                signal_type=self.signal_type,
+                G_lst=self.G,
+                GtG_lst=self.GtG,
+                GtG_inv_lst=self.GtG_inv,
+            )
 
         elif self.dim == 3:
 
-            raise ValueError('3D reconstruction is not yet available with FRIDA.')
+            raise ValueError("3D reconstruction is not yet available with FRIDA.")
 
     def _raw_average(self, X):
-        ''' Correct the time rotation and average the raw microphone signal '''
-        phaser = np.exp(-1j * 2 * np.pi * self.freq_hz[:, None] * np.arange(X.shape[2]) * self.nfft / self.fs)
+        """ Correct the time rotation and average the raw microphone signal """
+        phaser = np.exp(
+            -1j
+            * 2
+            * np.pi
+            * self.freq_hz[:, None]
+            * np.arange(X.shape[2])
+            * self.nfft
+            / self.fs
+        )
 
         return np.mean(X[:, self.freq_bins, :] * phaser, axis=2)
 
@@ -182,7 +223,9 @@ class FRIDA(DOA):
                 w = np.abs(w)
                 k = self.num_src
                 sigma = w.min()  # estimate the noise by minimum statistics
-                Rhat = np.dot(vl[:,-k:] * (w[None,-k:] - sigma), np.conj(vl[:,-k:].T))
+                Rhat = np.dot(
+                    vl[:, -k:] * (w[None, -k:] - sigma), np.conj(vl[:, -k:].T)
+                )
             else:
                 Rhat = R
 
@@ -225,15 +268,17 @@ class FRIDA(DOA):
                             p_x_qqp = p_x_outer - pos_mic_x_normalised[qp]  # a scalar
                             p_y_qqp = p_y_outer - pos_mic_y_normalised[qp]  # a scalar
                             # <= the negative sign converts DOA to propagation vector
-                            img += visi[count_visi] * \
-                                   np.exp(-1j * (p_x_qqp * x_plt + p_y_qqp * y_plt))
+                            img += visi[count_visi] * np.exp(
+                                -1j * (p_x_qqp * x_plt + p_y_qqp * y_plt)
+                            )
                             count_visi += 1
 
             return img / (num_mic * (num_mic - 1))
 
         elif self.dim == 3:
 
-            raise ValueError('3D reconstruction is not yet available with FRIDA.')
+            raise ValueError("3D reconstruction is not yet available with FRIDA.")
+
 
 # -------------MISC--------------#
 

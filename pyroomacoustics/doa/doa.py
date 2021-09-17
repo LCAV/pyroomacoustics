@@ -139,14 +139,14 @@ class ModeVector(object):
 class DOA(object):
     """
 
-    Abstract parent class for Direction of Arrival (DoA) algorithms. After 
+    Abstract parent class for Direction of Arrival (DoA) algorithms. After
     creating an object (SRP, MUSIC, CSSM, WAVES, or TOPS), run locate_source to
     apply the corresponding algorithm.
 
     Parameters
     ----------
     L: numpy array
-        Microphone array positions. Each column should correspond to the 
+        Microphone array positions. Each column should correspond to the
         cartesian coordinates of a single microphone.
     fs: float
         Sampling frequency.
@@ -157,7 +157,7 @@ class DOA(object):
     num_src: int
         Number of sources to detect. Default: 1
     mode: str
-        'far' or 'near' for far-field or near-field detection 
+        'far' or 'near' for far-field or near-field detection
         respectively. Default: 'far'
     r: numpy array
         Candidate distances from the origin. Default: np.ones(1)
@@ -308,22 +308,22 @@ class DOA(object):
         Parameters
         ----------
         X: numpy array
-            Set of signals in the frequency (RFFT) domain for current 
-            frame. Size should be M x F x S, where M should correspond to the 
-            number of microphones, F to nfft/2+1, and S to the number of snapshots 
+            Set of signals in the frequency (RFFT) domain for current
+            frame. Size should be M x F x S, where M should correspond to the
+            number of microphones, F to nfft/2+1, and S to the number of snapshots
             (user-defined). It is recommended to have S >> M.
         num_src: int
-            Number of sources to detect. Default is value given to 
+            Number of sources to detect. Default is value given to
             object constructor.
         freq_range: list of floats, length 2
             Frequency range on which to run DoA: [fmin, fmax].
         freq_bins: list of int
-            freq_bins: List of individual frequency bins on which to run 
-            DoA. 
-            If defined by user, it will **not** take into consideration freq_range 
+            freq_bins: List of individual frequency bins on which to run
+            DoA.
+            If defined by user, it will **not** take into consideration freq_range
             or freq_hz.
         freq_hz: list of floats
-            List of individual frequencies on which to run DoA. If 
+            List of individual frequencies on which to run DoA. If
             defined by user, it will **not** take into consideration freq_range.
         """
         # check validity of inputs
@@ -398,10 +398,10 @@ class DOA(object):
         save_fig: bool
             Whether or not to save figure as pdf.
         file_name: str
-            Name of file (if saved). Default is 
+            Name of file (if saved). Default is
             'polar_recon_dirac.pdf'
         plt_dirty_img: bool
-            Whether or not to plot spatial spectrum or 
+            Whether or not to plot spatial spectrum or
             'dirty image' in the case of FRI.
         """
 

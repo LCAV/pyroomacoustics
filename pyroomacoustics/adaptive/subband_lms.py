@@ -27,21 +27,21 @@ import numpy as np
 
 class SubbandLMS:
 
-    '''
+    """
     Frequency domain implementation of LMS. Adaptive filter for each
     subband.
 
     Parameters
     ----------
-    num_taps: int 
+    num_taps: int
         length of the filter
-    num_bands: int 
+    num_bands: int
         number of frequency bands, i.e. number of filters
     mu: float, optional
         step size for each subband (default 0.5)
     nlms: bool, optional
         whether or not to normalize as in NLMS (default is True)
-    '''
+    """
 
     def __init__(self, num_taps, num_bands, mu=0.5, nlms=True):
 
@@ -67,7 +67,7 @@ class SubbandLMS:
         self.E = np.zeros(self.num_bands, dtype=np.complex64)
 
     def update(self, X_n, D_n):
-        '''
+        """
         Updates the adaptive filters for each subband with the new
         block of input data.
 
@@ -77,7 +77,7 @@ class SubbandLMS:
             new input signal (to unknown system) in frequency domain
         D_n: numpy array, float
             new noisy reference signal in frequency domain
-        '''
+        """
 
         # update buffers
         self.X[1:, :] = self.X[0:-1, :]
@@ -90,17 +90,17 @@ class SubbandLMS:
         # compute update
         update = self.mu * np.tile(self.E.conj(), (self.num_taps, 1)) * self.X
         if self.nlms:
-            update /= np.tile(np.diag(np.dot(hermitian(self.X), self.X)),
-                              (self.num_taps, 1)) + 1e-6
+            update /= (
+                np.tile(np.diag(np.dot(hermitian(self.X), self.X)), (self.num_taps, 1))
+                + 1e-6
+            )
 
         # update filter coefficients
         self.W += update
 
 
 def hermitian(X):
-        '''
-        Compute and return Hermitian transpose
-        '''
-        return X.conj().T
-
-
+    """
+    Compute and return Hermitian transpose
+    """
+    return X.conj().T

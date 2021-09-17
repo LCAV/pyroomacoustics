@@ -955,7 +955,9 @@ class Room(object):
         if hasattr(self, "sources"):
             for source in self.sources:
                 if source.directivity is not None:
-                    raise NotImplementedError("Directivity not supported with ray tracing.")
+                    raise NotImplementedError(
+                        "Directivity not supported with ray tracing."
+                    )
 
         self.simulator_state["rt_needed"] = True
 
@@ -1403,12 +1405,14 @@ class Room(object):
                     )
 
                     if plot_directivity and self.mic_array.directivity is not None:
-                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                        azimuth_plot = np.linspace(
+                            start=0, stop=360, num=361, endpoint=True
+                        )
                         ax = self.mic_array.directivity[i].plot_response(
                             azimuth=azimuth_plot,
                             degrees=True,
                             ax=ax,
-                            offset=self.mic_array.R[:, i]
+                            offset=self.mic_array.R[:, i],
                         )
 
                 # draw the beam pattern of the beamformer if requested (and available)
@@ -1481,12 +1485,14 @@ class Room(object):
                 )
 
                 if plot_directivity and source.directivity is not None:
-                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
+                    azimuth_plot = np.linspace(
+                        start=0, stop=360, num=361, endpoint=True
+                    )
                     ax = source.directivity.plot_response(
                         azimuth=azimuth_plot,
                         degrees=True,
                         ax=ax,
-                        offset=source.position
+                        offset=source.position,
                     )
 
                 # draw images
@@ -1558,14 +1564,18 @@ class Room(object):
                 )
 
                 if plot_directivity and source.directivity is not None:
-                    azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
-                    colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                    azimuth_plot = np.linspace(
+                        start=0, stop=360, num=361, endpoint=True
+                    )
+                    colatitude_plot = np.linspace(
+                        start=0, stop=180, num=180, endpoint=True
+                    )
                     ax = source.directivity.plot_response(
                         azimuth=azimuth_plot,
                         colatitude=colatitude_plot,
                         degrees=True,
                         ax=ax,
-                        offset=source.position
+                        offset=source.position,
                     )
 
                 # draw images
@@ -1611,14 +1621,18 @@ class Room(object):
                     )
 
                     if plot_directivity and self.mic_array.directivity is not None:
-                        azimuth_plot = np.linspace(start=0, stop=360, num=361, endpoint=True)
-                        colatitude_plot = np.linspace(start=0, stop=180, num=180, endpoint=True)
+                        azimuth_plot = np.linspace(
+                            start=0, stop=360, num=361, endpoint=True
+                        )
+                        colatitude_plot = np.linspace(
+                            start=0, stop=180, num=180, endpoint=True
+                        )
                         ax = self.mic_array.directivity[i].plot_response(
                             azimuth=azimuth_plot,
                             colatitude=colatitude_plot,
                             degrees=True,
                             ax=ax,
-                            offset=self.mic_array.R[:, i]
+                            offset=self.mic_array.R[:, i],
                         )
 
             return fig, ax
@@ -1847,8 +1861,11 @@ class Room(object):
 
         if directivity is not None:
             from pyroomacoustics import ShoeBox
+
             if not isinstance(self, ShoeBox):
-                raise NotImplementedError("Source directivity only supported for ShoeBox room.")
+                raise NotImplementedError(
+                    "Source directivity only supported for ShoeBox room."
+                )
 
         if isinstance(position, SoundSource):
             if directivity is not None:
@@ -1859,7 +1876,11 @@ class Room(object):
         else:
             if directivity is not None:
                 assert isinstance(directivity, CardioidFamily)
-                return self.add(SoundSource(position, signal=signal, delay=delay, directivity=directivity))
+                return self.add(
+                    SoundSource(
+                        position, signal=signal, delay=delay, directivity=directivity
+                    )
+                )
             else:
                 return self.add(SoundSource(position, signal=signal, delay=delay))
 
@@ -1963,7 +1984,7 @@ class Room(object):
                 N = fdl
 
                 if self.simulator_state["ism_needed"]:
-                    
+
                     # compute azimuth and colatitude angles for receiver
                     if self.mic_array.directivity is not None:
                         angle_function_array = angle_function(src.images, mic)
@@ -1975,7 +1996,7 @@ class Room(object):
                         azimuth_s, colatitude_s = source_angle_shoebox(
                             image_source_loc=src.images,
                             wall_flips=abs(src.orders_xyz),
-                            mic_loc=mic
+                            mic_loc=mic,
                         )
 
                     # compute the distance from image sources
@@ -2027,14 +2048,14 @@ class Room(object):
                     if self.simulator_state["ism_needed"]:
 
                         alpha = src.damping[b, :] / dist
-                        
+
                         if self.mic_array.directivity is not None:
 
                             alpha *= self.mic_array.directivity[m].get_response(
                                 azimuth=azimuth,
                                 colatitude=colatitude,
                                 frequency=bw,
-                                degrees=False
+                                degrees=False,
                             )
 
                         if self.sources[s].directivity is not None:
@@ -2042,7 +2063,7 @@ class Room(object):
                                 azimuth=azimuth_s,
                                 colatitude=colatitude_s,
                                 frequency=bw,
-                                degrees=False
+                                degrees=False,
                             )
 
                         # Use the Cython extension for the fractional delays

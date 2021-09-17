@@ -115,15 +115,22 @@ class Subspace(object):
         Data type to use in the enhancement procedure. Default is 'float32'.
     """
 
-
-    def __init__(self, frame_len=256, mu=10, lookback=10, skip=2, thresh=0.01,
-                 data_type='float32'):
+    def __init__(
+        self,
+        frame_len=256,
+        mu=10,
+        lookback=10,
+        skip=2,
+        thresh=0.01,
+        data_type="float32",
+    ):
 
         if frame_len % 2:
-            raise ValueError("Frame length should be even as this method "
-                             "performs 50% overlap.")
+            raise ValueError(
+                "Frame length should be even as this method " "performs 50% overlap."
+            )
 
-        if data_type is 'float64':
+        if data_type is "float64":
             data_type = np.float64
         else:
             data_type = np.float32
@@ -146,14 +153,12 @@ class Subspace(object):
         self.n_samples = self.hop * lookback + frame_len
         self.input_samples = np.zeros(self.n_samples, dtype=data_type)
         self.skip = skip
-        self.n_frames = lookback * (self.hop//skip)
+        self.n_frames = lookback * (self.hop // skip)
         self.n_noise_frames = np.ones(lookback) * (self.hop // skip)
         self.cov_sn = np.zeros((frame_len, frame_len), dtype=data_type)
-        self._cov_sn = np.zeros((lookback, frame_len, frame_len),
-                                dtype=data_type)
+        self._cov_sn = np.zeros((lookback, frame_len, frame_len), dtype=data_type)
         self.cov_n = np.zeros((frame_len, frame_len), dtype=data_type)
-        self._cov_n = np.zeros((lookback, frame_len, frame_len),
-                               dtype=data_type)
+        self._cov_n = np.zeros((lookback, frame_len, frame_len), dtype=data_type)
 
     def apply(self, new_samples):
         """
@@ -169,8 +174,9 @@ class Subspace(object):
         """
 
         if len(new_samples) != self.hop:
-            raise ValueError("Expected {} samples, got {}."
-                             .format(self.hop, len(new_samples)))
+            raise ValueError(
+                "Expected {} samples, got {}.".format(self.hop, len(new_samples))
+            )
         new_samples = new_samples.astype(self.dtype)
 
         # form input frame, 50% overlap
@@ -187,15 +193,16 @@ class Subspace(object):
 
         # update
         self.prev_samples[:] = new_samples
-        self.current_out[:] = self.prev_output + denoised_out[:self.hop]
-        self.prev_output[:] = denoised_out[self.hop:]
+        self.current_out[:] = self.prev_output + denoised_out[: self.hop]
+        self.prev_output[:] = denoised_out[self.hop :]
 
         return self.current_out
 
     def compute_signal_projection(self):
 
-        sigma = np.linalg.lstsq(self.cov_n, self.cov_sn, rcond=None)[0] \
-                - np.eye(self.frame_len)
+        sigma = np.linalg.lstsq(self.cov_n, self.cov_sn, rcond=None)[0] - np.eye(
+            self.frame_len
+        )
         eigenvals, eigenvecs = np.linalg.eig(sigma)
 
         n_pos = sum(eigenvals > 0)
@@ -221,10 +228,10 @@ class Subspace(object):
 
         # update samples
         self.input_samples = np.roll(self.input_samples, -self.hop)
-        self.input_samples[-self.hop:] = new_samples
+        self.input_samples[-self.hop :] = new_samples
 
         # update cov matrices
-        self._cov_sn = np.roll(self._cov_sn,  -1, axis=0)
+        self._cov_sn = np.roll(self._cov_sn, -1, axis=0)
         self._cov_sn[-1, :, :] = np.zeros((self.frame_len, self.frame_len))
         self._cov_n = np.roll(self._cov_n, -1, axis=0)
         self._cov_n[-1, :, :] = np.zeros((self.frame_len, self.frame_len))
@@ -256,8 +263,15 @@ class Subspace(object):
         self.cov_n = (self.cov_n + self._cov_n[-1]) / sum(self.n_noise_frames)
 
 
-def apply_subspace(noisy_signal, frame_len=256, mu=10, lookback=10, skip=2,
-                   thresh=0.01, data_type=np.float32):
+def apply_subspace(
+    noisy_signal,
+    frame_len=256,
+    mu=10,
+    lookback=10,
+    skip=2,
+    thresh=0.01,
+    data_type=np.float32,
+):
     """
     One-shot function to apply subspace denoising approach.
 
@@ -296,11 +310,11 @@ def apply_subspace(noisy_signal, frame_len=256, mu=10, lookback=10, skip=2,
     hop = frame_len // 2
     while noisy_signal.shape[0] - n >= hop:
 
-        processed_audio[n:n + hop, ] = scnr.apply(noisy_signal[n:n + hop])
+        processed_audio[
+            n : n + hop,
+        ] = scnr.apply(noisy_signal[n : n + hop])
 
         # update step
         n += hop
 
     return processed_audio
-
-

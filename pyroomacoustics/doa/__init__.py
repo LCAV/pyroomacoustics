@@ -1,4 +1,4 @@
-'''
+"""
 Direction of Arrival Finding
 ============================
 
@@ -95,7 +95,7 @@ References
     FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
     pp 3186-3190, 2017
 
-'''
+"""
 
 from .doa import *
 from .srp import *
@@ -109,11 +109,10 @@ from .utils import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {
-        'SRP' : SRP,
-        'MUSIC' : MUSIC,
-        'CSSM' : CSSM,
-        'WAVES' : WAVES,
-        'TOPS' : TOPS,
-        'FRIDA' : FRIDA,
-        }
-
+    "SRP": SRP,
+    "MUSIC": MUSIC,
+    "CSSM": CSSM,
+    "WAVES": WAVES,
+    "TOPS": TOPS,
+    "FRIDA": FRIDA,
+}
