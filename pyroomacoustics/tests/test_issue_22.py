@@ -1,4 +1,4 @@
-'''
+"""
 This test attempts to check that the C module
 runs fine. It was created to test Issue #22 on github
 whereas the program would crash with
@@ -13,9 +13,10 @@ Room.image_source_model() 25000 times.
 
 If the C module is not installed (pure python
 fallback version), then nothing is done.
-'''
+"""
 import pyroomacoustics
 import numpy as np
+
 
 def test_issue_22():
 
@@ -33,12 +34,10 @@ def test_issue_22():
     room_dim = np.random.rand(dim) * wall_max_len
 
     shoebox = pyroomacoustics.ShoeBox(
-            room_dim,
-            absorption=abs_coeff,
-            fs=fs,
-            max_order=0)
+        room_dim, absorption=abs_coeff, fs=fs, max_order=0
+    )
 
-    src_pos = np.random.rand(dim, n_src) * room_dim[:,None]
+    src_pos = np.random.rand(dim, n_src) * room_dim[:, None]
     for src in src_pos.T:
         shoebox.add_source(src)
 
@@ -51,6 +50,7 @@ def test_issue_22():
         if i != 0 and i % 1000 == 0:
             print(i)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     test_issue_22()

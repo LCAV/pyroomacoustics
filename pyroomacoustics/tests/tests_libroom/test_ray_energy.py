@@ -86,8 +86,20 @@ class TestRayEnergy(unittest.TestCase):
             np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # right
             np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # front`
             np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # back
-            np.array([[0, 2, 2, 0], [0, 0, 2, 2], [0, 0, 0, 0],]),  # floor
-            np.array([[0, 0, 2, 2], [0, 2, 2, 0], [2, 2, 2, 2],]),  # ceiling
+            np.array(
+                [
+                    [0, 2, 2, 0],
+                    [0, 0, 2, 2],
+                    [0, 0, 0, 0],
+                ]
+            ),  # floor
+            np.array(
+                [
+                    [0, 0, 2, 2],
+                    [0, 2, 2, 0],
+                    [2, 2, 2, 2],
+                ]
+            ),  # ceiling
         ]
         walls = [pra.wall_factory(c, [energy_absorption], [0.0]) for c in walls_corners]
         room_poly = pra.Room(walls, fs=16000)

@@ -22,12 +22,14 @@ import warnings
 
 try:
     import pyfftw
+
     pyfftw_available = True
 except ImportError:
     pyfftw_available = False
 
 try:
-    import mkl_fft    # https://github.com/IntelPython/mkl_fft
+    import mkl_fft  # https://github.com/IntelPython/mkl_fft
+
     mkl_available = True
 except ImportError:
     mkl_available = False
@@ -70,7 +72,7 @@ class DFT(object):
     synthesis_window: numpy array, optional
         Window to be applied after inverse DFT. Default is no window.
     transform: str, optional
-        which FFT package to use: ``numpy``, ``pyfftw``, or ``mkl``. Default is 
+        which FFT package to use: ``numpy``, ``pyfftw``, or ``mkl``. Default is
         ``numpy``.
     axis : int, optional
         Axis over which to compute the FFT. Default is first axis.
@@ -81,98 +83,121 @@ class DFT(object):
 
     """
 
-    def __init__(self, nfft, D=1, analysis_window=None, synthesis_window=None, 
-        transform='numpy', axis=0, precision='double', bits=None):
+    def __init__(
+        self,
+        nfft,
+        D=1,
+        analysis_window=None,
+        synthesis_window=None,
+        transform="numpy",
+        axis=0,
+        precision="double",
+        bits=None,
+    ):
 
         self.nfft = nfft
         self.D = D
-        self.axis=axis
+        self.axis = axis
 
         if bits is not None and precision is not None:
-            warnings.warn('Deprecated keyword "bits" ignored in favor of new keyword "precision"', DeprecationWarning)
+            warnings.warn(
+                'Deprecated keyword "bits" ignored in favor of new keyword "precision"',
+                DeprecationWarning,
+            )
         elif bits is not None and precision is None:
-            warnings.warn('Keyword "bits" is deprecated and has been replaced by "precision"')
+            warnings.warn(
+                'Keyword "bits" is deprecated and has been replaced by "precision"'
+            )
             if bits == 32:
-                precision = 'single'
+                precision = "single"
             elif bits == 64:
-                precision = 'double'
+                precision = "double"
 
-        if precision == np.float32 or precision == np.complex64 or precision == 'single':
+        if (
+            precision == np.float32
+            or precision == np.complex64
+            or precision == "single"
+        ):
             time_dtype = np.float32
             freq_dtype = np.complex64
         else:
             time_dtype = np.float64
             freq_dtype = np.complex128
 
-        if axis==0:
-            self.x = np.squeeze(np.zeros((self.nfft, self.D), 
-                dtype=time_dtype))
-            self.X = np.squeeze(np.zeros((self.nfft//2+1, self.D),
-                dtype=freq_dtype))
-        elif axis==1:
-            self.x = np.squeeze(np.zeros((self.D, self.nfft),
-                dtype=time_dtype))
-            self.X = np.squeeze(np.zeros((self.D, self.nfft//2+1),
-                dtype=freq_dtype))
+        if axis == 0:
+            self.x = np.squeeze(np.zeros((self.nfft, self.D), dtype=time_dtype))
+            self.X = np.squeeze(
+                np.zeros((self.nfft // 2 + 1, self.D), dtype=freq_dtype)
+            )
+        elif axis == 1:
+            self.x = np.squeeze(np.zeros((self.D, self.nfft), dtype=time_dtype))
+            self.X = np.squeeze(
+                np.zeros((self.D, self.nfft // 2 + 1), dtype=freq_dtype)
+            )
         else:
             raise ValueError("Invalid 'axis' option. Must be 0 or 1.")
 
         if analysis_window is not None:
-            if axis==0 and D>1:
-                self.analysis_window = analysis_window[:,np.newaxis].astype(time_dtype)
+            if axis == 0 and D > 1:
+                self.analysis_window = analysis_window[:, np.newaxis].astype(time_dtype)
             else:
                 self.analysis_window = analysis_window.astype(time_dtype)
         else:
             self.analysis_window = None
 
         if synthesis_window is not None:
-            if axis==0 and D>1:
-                self.synthesis_window = synthesis_window[:,np.newaxis].astype(time_dtype)
+            if axis == 0 and D > 1:
+                self.synthesis_window = synthesis_window[:, np.newaxis].astype(
+                    time_dtype
+                )
             else:
                 self.synthesis_window = synthesis_window.astype(time_dtype)
         else:
-            self.synthesis_window=None
+            self.synthesis_window = None
 
-
-        if transform == 'fftw':
+        if transform == "fftw":
             if pyfftw_available:
                 from pyfftw import empty_aligned, FFTW
+
                 self.transform = transform
                 # allocate input (real) and output for pyfftw
-                if self.D==1:
+                if self.D == 1:
                     self.a = empty_aligned(self.nfft, dtype=time_dtype)
-                    self.b = empty_aligned(self.nfft//2+1, dtype=freq_dtype)
+                    self.b = empty_aligned(self.nfft // 2 + 1, dtype=freq_dtype)
                     self._forward = FFTW(self.a, self.b)
-                    self._backward = FFTW(self.b, self.a, 
-                        direction='FFTW_BACKWARD')
+                    self._backward = FFTW(self.b, self.a, direction="FFTW_BACKWARD")
                 else:
-                    if axis==0:
-                        self.a = empty_aligned([self.nfft, self.D], 
-                            dtype=time_dtype)
-                        self.b = empty_aligned([self.nfft//2+1, self.D], 
-                            dtype=freq_dtype)
-                    elif axis==1:
-                        self.a = empty_aligned([self.D, self.nfft], 
-                            dtype=time_dtype)
-                        self.b = empty_aligned([self.D, self.nfft//2+1], 
-                            dtype=freq_dtype)
-                    self._forward = FFTW(self.a, self.b, 
-                        axes=(self.axis, ))
-                    self._backward = FFTW(self.b, self.a, axes=(self.axis, ), 
-                        direction='FFTW_BACKWARD')
-            else: 
-                warnings.warn("Could not import pyfftw wrapper for fftw functions. Using numpy's rfft instead.")
-                self.transform = 'numpy'
-        elif transform == 'mkl':
+                    if axis == 0:
+                        self.a = empty_aligned([self.nfft, self.D], dtype=time_dtype)
+                        self.b = empty_aligned(
+                            [self.nfft // 2 + 1, self.D], dtype=freq_dtype
+                        )
+                    elif axis == 1:
+                        self.a = empty_aligned([self.D, self.nfft], dtype=time_dtype)
+                        self.b = empty_aligned(
+                            [self.D, self.nfft // 2 + 1], dtype=freq_dtype
+                        )
+                    self._forward = FFTW(self.a, self.b, axes=(self.axis,))
+                    self._backward = FFTW(
+                        self.b, self.a, axes=(self.axis,), direction="FFTW_BACKWARD"
+                    )
+            else:
+                warnings.warn(
+                    "Could not import pyfftw wrapper for fftw functions. Using numpy's rfft instead."
+                )
+                self.transform = "numpy"
+        elif transform == "mkl":
             if mkl_available:
                 import mkl_fft
-                self.transform = 'mkl'
-            else:
-                warnings.warn("Could not import mkl wrapper. Using numpy's rfft instead.")
-                self.transform = 'numpy'
-        else:
-            self.transform = 'numpy'
 
+                self.transform = "mkl"
+            else:
+                warnings.warn(
+                    "Could not import mkl wrapper. Using numpy's rfft instead."
+                )
+                self.transform = "numpy"
+        else:
+            self.transform = "numpy"
 
     def analysis(self, x):
         """
@@ -191,29 +216,37 @@ class DFT(object):
 
         # check for valid input
         if x.shape != self.x.shape:
-            raise ValueError('Invalid input dimensions! Got (%d, %d), expecting (%d, %d).' 
-                % (x.shape[0], x.shape[1],
-                self.x.shape[0], self.x.shape[1]))
+            raise ValueError(
+                "Invalid input dimensions! Got (%d, %d), expecting (%d, %d)."
+                % (x.shape[0], x.shape[1], self.x.shape[0], self.x.shape[1])
+            )
 
         # apply window if needed
         if self.analysis_window is not None:
             np.multiply(self.analysis_window, x, x)
 
         # apply DFT
-        if self.transform == 'fftw':
-            self.a[:,] = x
-            self.X[:,] = self._forward()
-        elif self.transform == 'mkl':
-            self.X[:,] = mkl_fft.rfft_numpy(x, self.nfft, axis=self.axis)
+        if self.transform == "fftw":
+            self.a[
+                :,
+            ] = x
+            self.X[
+                :,
+            ] = self._forward()
+        elif self.transform == "mkl":
+            self.X[
+                :,
+            ] = mkl_fft.rfft_numpy(x, self.nfft, axis=self.axis)
         else:
-            self.X[:,] = rfft(x, self.nfft, axis=self.axis)
+            self.X[
+                :,
+            ] = rfft(x, self.nfft, axis=self.axis)
 
         return self.X
 
-
     def synthesis(self, X=None):
         """
-        Perform time synthesis of frequency domain to real signal using the 
+        Perform time synthesis of frequency domain to real signal using the
         inverse DFT.
 
         Parameters
@@ -231,20 +264,29 @@ class DFT(object):
         # check for valid input
         if X is not None:
             if X.shape != self.X.shape:
-                raise ValueError('Invalid input dimensions! Got (%d, %d), expecting (%d, %d).' 
-                    % (X.shape[0], X.shape[1],
-                    self.X.shape[0], self.X.shape[1]))
+                raise ValueError(
+                    "Invalid input dimensions! Got (%d, %d), expecting (%d, %d)."
+                    % (X.shape[0], X.shape[1], self.X.shape[0], self.X.shape[1])
+                )
 
-            self.X[:,] = X
+            self.X[
+                :,
+            ] = X
 
         # inverse DFT
-        if self.transform == 'fftw':
+        if self.transform == "fftw":
             self.b[:] = self.X
-            self.x[:,] = self._backward()
-        elif self.transform == 'mkl':
-            self.x[:,] = mkl_fft.irfft_numpy(self.X, self.nfft, axis=self.axis)
+            self.x[
+                :,
+            ] = self._backward()
+        elif self.transform == "mkl":
+            self.x[
+                :,
+            ] = mkl_fft.irfft_numpy(self.X, self.nfft, axis=self.axis)
         else:
-            self.x[:,] = irfft(self.X, self.nfft, axis=self.axis)
+            self.x[
+                :,
+            ] = irfft(self.X, self.nfft, axis=self.axis)
 
         # apply window if needed
         if self.synthesis_window is not None:

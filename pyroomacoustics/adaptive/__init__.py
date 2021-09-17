@@ -1,4 +1,4 @@
-'''
+"""
 Adaptive Filter Algorithms
 ==========================
 
@@ -100,7 +100,7 @@ Utilities
     a dictionary containing all the adaptive filter object subclasses availables indexed by
     keys ``['RLS', 'BlockRLS', 'BlockLMS', 'NLMS', 'SubbandLMS']``
 
-'''
+"""
 
 from .adaptive_filter import *
 from .lms import *
@@ -111,10 +111,9 @@ from .data_structures import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {
-        'RLS' : RLS,
-        'BlockRLS' : BlockRLS,
-        'NLMS' : NLMS,
-        'BlockLMS' : BlockLMS,
-        'SubbandLMS' : SubbandLMS
-        }
-
+    "RLS": RLS,
+    "BlockRLS": BlockRLS,
+    "NLMS": NLMS,
+    "BlockLMS": BlockLMS,
+    "SubbandLMS": SubbandLMS,
+}

@@ -26,7 +26,12 @@ from __future__ import division
 import copy
 import numpy as np
 import scipy.linalg as la
-from .directivities import DirectionVector, Directivity, CardioidFamily, DirectivityPattern
+from .directivities import (
+    DirectionVector,
+    Directivity,
+    CardioidFamily,
+    DirectivityPattern,
+)
 from .parameters import constants
 from . import utilities as u
 from .soundsource import build_rir_matrix
@@ -263,13 +268,7 @@ def fir_approximation_ls(weights, T, n1, n2):
 
 
 def circular_microphone_array_xyplane(
-    center,
-    M,
-    phi0,
-    radius,
-    fs,
-    directivity=None,
-    ax=None
+    center, M, phi0, radius, fs, directivity=None, ax=None
 ):
     """
     Create a microphone array with directivities pointing outwards (if provided).
@@ -309,7 +308,9 @@ def circular_microphone_array_xyplane(
         assert isinstance(directivity, Directivity)
     else:
         orientation = DirectionVector(azimuth=0, colatitude=colatitude, degrees=True)
-        directivity = CardioidFamily(orientation=orientation, pattern_enum=DirectivityPattern.OMNI)
+        directivity = CardioidFamily(
+            orientation=orientation, pattern_enum=DirectivityPattern.OMNI
+        )
 
     # for plotting
     azimuth_plot = None
@@ -322,8 +323,10 @@ def circular_microphone_array_xyplane(
     azimuth_list = np.arange(M) * 360 / M + phi0
     directivity_list = []
     for i in range(M):
-        
-        orientation = DirectionVector(azimuth=azimuth_list[i], colatitude=colatitude, degrees=True)
+
+        orientation = DirectionVector(
+            azimuth=azimuth_list[i], colatitude=colatitude, degrees=True
+        )
         directivity.set_orientation(orientation)
         directivity_list.append(copy.copy(directivity))
 
@@ -333,10 +336,11 @@ def circular_microphone_array_xyplane(
                 colatitude=colatitude_plot,
                 degrees=True,
                 ax=ax,
-                offset=R[:, i]
+                offset=R[:, i],
             )
 
     return MicrophoneArray(R, fs, directivity_list)
+
 
 # =========================================================================
 # Classes (microphone array and beamformer related)
@@ -350,8 +354,8 @@ class MicrophoneArray(object):
     def __init__(self, R, fs, directivity=None):
 
         R = np.array(R)
-        self.dim = R.shape[0]    # are we in 2D or in 3D
-        self.nmic = R.shape[1]   # number of microphones
+        self.dim = R.shape[0]  # are we in 2D or in 3D
+        self.nmic = R.shape[1]  # number of microphones
 
         # Check the shape of the passed array
         if self.dim != 2 and self.dim != 3:
@@ -371,24 +375,24 @@ class MicrophoneArray(object):
 
         self.fs = fs  # sampling frequency of microphones
         self.directivity = None
-        
+
         if directivity is not None:
             self.set_directivity(directivity)
-            
+
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
-        
-    def set_directivity(self, directivities): 
+
+    def set_directivity(self, directivities):
 
         """
-        This functions sets self.directivity as a list of directivities with `n_mics` entries, 
+        This functions sets self.directivity as a list of directivities with `n_mics` entries,
         where `n_mics` is the number of microphones
         Parameters
         -----------
         directivities:
             single directivity for all microphones or a list of directivities for each microphone
-        
+
         """
 
         if isinstance(directivities, list):
@@ -400,7 +404,7 @@ class MicrophoneArray(object):
             # only 1 directivity specified
             assert isinstance(directivities, Directivity)
             self.directivity = [directivities] * self.nmic
-   
+
     def record(self, signals, fs):
         """
         This simulates the recording of the signals by the microphones.
@@ -666,7 +670,7 @@ class Beamformer(MicrophoneArray):
             return np.exp(-1j * omega * D / constants.get("c"))
 
     def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
-        """ Creates a steering vector for a particular frequency and source
+        """Creates a steering vector for a particular frequency and source
         Args:
             frequency
             source: location in cartesian coordinates

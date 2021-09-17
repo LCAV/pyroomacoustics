@@ -58,7 +58,8 @@ def test_rt60_plot():
     """
 
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
 
     pra.experimental.measure_rt60(ir, plot=True)
     pra.experimental.measure_rt60(ir, plot=True, rt60_tgt=0.3)

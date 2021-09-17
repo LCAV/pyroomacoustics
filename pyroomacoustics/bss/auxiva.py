@@ -141,7 +141,7 @@ def auxiva(
     ), "The number of sources cannot be more than the number of channels."
 
     if model not in ["laplace", "gauss"]:
-        raise ValueError("Model should be either ""laplace"" or ""gauss"".")
+        raise ValueError("Model should be either " "laplace" " or " "gauss" ".")
 
     # covariance matrix of input signal (n_freq, n_chan, n_chan)
     Cx = np.mean(X[:, :, :, None] * np.conj(X[:, :, None, :]), axis=0)
@@ -224,9 +224,10 @@ def auxiva(
         for s in range(n_src):
             # Compute Auxiliary Variable
             # shape: (n_freq, n_chan, n_chan)
-            V[:, :, :] = np.matmul(
-                (X * r_inv[None, s, None, :]), np.conj(X.swapaxes(1, 2))
-            ) / n_frames
+            V[:, :, :] = (
+                np.matmul((X * r_inv[None, s, None, :]), np.conj(X.swapaxes(1, 2)))
+                / n_frames
+            )
 
             WV = np.matmul(W_hat, V)
             W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))

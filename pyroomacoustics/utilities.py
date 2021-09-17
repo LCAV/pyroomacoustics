@@ -36,11 +36,14 @@ def requires_matplotlib(func):
     def function_wrapper(*args, **kwargs):
         try:
             import matplotlib.pyplot as plt
+
             return func(*args, **kwargs)
         except ImportError:
             import warnings
-            warnings.warn('Matplotlib is required for plotting')
+
+            warnings.warn("Matplotlib is required for plotting")
             return
+
     return function_wrapper
 
 
@@ -450,19 +453,19 @@ def prony(x, p, q):
     Parameters
     ----------
 
-    x: 
+    x:
         signal to model
-    p: 
+    p:
         order of denominator
-    q: 
+    q:
         order of numerator
 
     Returns
     -------
 
-    a: 
+    a:
         numerator coefficients
-    b: 
+    b:
         denominator coefficients
     err: the squared error of approximation
     """
@@ -492,20 +495,20 @@ def shanks(x, p, q):
 
     Parameters
     ----------
-    x: 
+    x:
         signal to model
-    p: 
+    p:
         order of denominator
-    q: 
+    q:
         order of numerator
 
     Returns
     -------
-    a: 
+    a:
         numerator coefficients
-    b: 
+    b:
         denominator coefficients
-    err: 
+    err:
         the squared error of approximation
     """
 
@@ -572,7 +575,7 @@ def fractional_delay_filter_bank(delays):
     ----------
     delays: 1d narray
         The delays corresponding to each filter in fractional samples
-        
+
     Returns
     -------
     numpy array
@@ -622,9 +625,9 @@ def levinson(r, b):
 
     Parameters
     ----------
-    r: 
+    r:
         First column of R, toeplitz hermitian matrix.
-    b: 
+    b:
         The right-hand argument. If b is a matrix, the system is solved
         for every column vector in b.
 
@@ -637,7 +640,13 @@ def levinson(r, b):
     p = b.shape[0]
 
     a = np.array([1])
-    x = b[np.newaxis, 0,] / r[0]
+    x = (
+        b[
+            np.newaxis,
+            0,
+        ]
+        / r[0]
+    )
     epsilon = r[0]
 
     for j in np.arange(1, p):
@@ -649,7 +658,12 @@ def levinson(r, b):
         )
         epsilon = epsilon * (1 - np.abs(gamma) ** 2)
         delta = np.dot(np.conj(r[1 : j + 1]), np.flipud(x))
-        q = (b[j,] - delta) / epsilon
+        q = (
+            b[
+                j,
+            ]
+            - delta
+        ) / epsilon
         if len(b.shape) == 1:
             x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
         else:
@@ -758,7 +772,6 @@ def all_combinations(lst1, lst2):
     return np.array(list(itertools.product(lst1, lst2)))
 
 
-
 """
 GEOMETRY UTILITIES
 """
@@ -783,12 +796,12 @@ def angle_function(s1, v2):
     """
 
     if len(s1.shape) == 1:
-        s1 = s1[:, np.newaxis] 
+        s1 = s1[:, np.newaxis]
     if len(v2.shape) == 1:
-        v2 = v2[:, np.newaxis] 
+        v2 = v2[:, np.newaxis]
 
     assert s1.shape[0] == v2.shape[0]
-                                        
+
     x_vals = s1[0]
     y_vals = s1[1]
     x2 = v2[0]
@@ -798,17 +811,19 @@ def angle_function(s1, v2):
     if s1.shape[0] == 3 and v2.shape[0] == 3:
 
         z2 = v2[2]
-        z_vals = s1[ 2]
+        z_vals = s1[2]
 
-        colatitude = np.arctan2(((x_vals-x2)**2 + (y_vals-y2)**2)**1/2, (z_vals-z2))
+        colatitude = np.arctan2(
+            ((x_vals - x2) ** 2 + (y_vals - y2) ** 2) ** 1 / 2, (z_vals - z2)
+        )
 
     # colatitude calculation for 2-D coordinates
     elif s1.shape[0] == 2 and v2.shape[0] == 2:
-                                                                 
+
         num_points = s1.shape[1]
-        colatitude = np.ones(num_points)*np.pi/2
+        colatitude = np.ones(num_points) * np.pi / 2
 
     # azimuth calculation (same for 2-D and 3-D)
-    azimuth = np.arctan2((y_vals-y2), (x_vals-x2))
+    azimuth = np.arctan2((y_vals - y2), (x_vals - x2))
 
     return np.vstack((azimuth, colatitude))

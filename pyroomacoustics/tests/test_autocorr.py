@@ -11,10 +11,10 @@ tol = 1e-12
 
 def consistent_results(p, biased=True):
 
-    r_time = autocorr(x, p, method='time', biased=biased)
-    r_fft = autocorr(x, p, method='fft', biased=biased)
-    r_np = autocorr(x, p, method='numpy', biased=biased)
-    r_pra = autocorr(x, p, method='pra', biased=biased)
+    r_time = autocorr(x, p, method="time", biased=biased)
+    r_fft = autocorr(x, p, method="fft", biased=biased)
+    r_np = autocorr(x, p, method="numpy", biased=biased)
+    r_pra = autocorr(x, p, method="pra", biased=biased)
 
     err_fft = np.linalg.norm(r_time - r_fft)
     err_np = np.linalg.norm(r_time - r_np)
@@ -23,7 +23,6 @@ def consistent_results(p, biased=True):
 
 
 class TestAutoCorr(TestCase):
-
     def test_consistent_low_p_biased(self):
         res = consistent_results(p=3)
         self.assertTrue(res[0] < tol)
@@ -98,10 +97,6 @@ def timing_and_error(p):
     print("pra   error wrt time : {}".format(res[2]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     timing_and_error(p=3)
     timing_and_error(p=35)
-
-
-
-

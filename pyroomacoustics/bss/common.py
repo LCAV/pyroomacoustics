@@ -34,7 +34,7 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
 
     Here is the derivation of the projection.
     The optimal filter `z` minimizes the squared error.
-    
+
     .. math::
 
         \min E[|z^* y - x|^2]

@@ -41,16 +41,16 @@ def fastmnmf(
     """
     Implementation of FastMNMF algorithm presented in
 
-    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
+    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019. [`arXiv <https://arxiv.org/abs/1903.03237>`_]
 
     The code of FastMNMF with GPU support and FastMNMF-DP which integrates DNN-based source model
-    into FastMNMF is available on https://github.com/sekiguchi92/SpeechEnhancement 
+    into FastMNMF is available on https://github.com/sekiguchi92/SpeechEnhancement
 
     Parameters
     ----------
     X: ndarray (nframes, nfrequencies, nchannels)
-        STFT representation of the observed signal 
+        STFT representation of the observed signal
     n_src: int, optional
         The number of sound sources (if n_src = None, n_src is set to the number of microphone)
     n_iter: int, optional
@@ -74,7 +74,7 @@ def fastmnmf(
     Returns
     -------
     separated spectrogram: numpy.ndarray
-        An (nframes, nfrequencies, nsources) array. 
+        An (nframes, nfrequencies, nsources) array.
     """
 
     eps = 1e-7
