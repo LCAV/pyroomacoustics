@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Misc
+~~~~
+
+- Unify code format by using Black
+- Add code linting in continuous integration
 
 
 `0.5.0`_ - 2021-09-06
