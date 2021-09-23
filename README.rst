@@ -13,6 +13,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
     :alt: Test on mybinder
+.. image:: https://img.shields.io/discord/829534160812245012?color=%237289DA&label=pyroomacoustics%20Discord&logo=discord&logoColor=white
+    :target: https://discord.gg/HQ3evGYk2s
+    :alt: Pyroomacoustics discord server
 
 Summary
 -------
