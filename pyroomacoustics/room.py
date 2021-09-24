@@ -949,8 +949,8 @@ class Room(object):
             The time granularity of bins in the energy histogram (default: 4 ms)
         """
 
-        if hasattr(self, "mic_array"):
-            if self.mic_array.directivity is not None:
+        if hasattr(self, "mic_array"):#this 'if' will proceed even the room's mic_array attribute is none
+            if self.mic_array.directivity is not None:# this code would report error if you don't set the room's mic_array,because none type doesn't have attribute directivity
                 raise NotImplementedError("Directivity not supported with ray tracing.")
         if hasattr(self, "sources"):
             for source in self.sources:
