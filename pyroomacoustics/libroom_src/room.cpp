@@ -305,7 +305,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
       continue;
 
     // The reflection is valid, fill in the image source attributes
-    new_is.attenuation *= walls[wi].get_transmission();
+    new_is.attenuation = is.attenuation * walls[wi].get_transmission();
     if (walls[wi].scatter.maxCoeff() > 0.f && is_hybrid_sim)
     {
       new_is.attenuation *= (1 - walls[wi].scatter).sqrt();
