@@ -23,6 +23,7 @@ Misc
 
 - Unify code format by using Black
 - Add code linting in continuous integration
+- Drop CI support for python 3.5
 
 
 `0.5.0`_ - 2021-09-06
