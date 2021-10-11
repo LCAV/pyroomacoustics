@@ -584,12 +584,12 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
+from .directivities import CardioidFamily, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import angle_function
-from .directivities import CardioidFamily, source_angle_shoebox
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -857,9 +857,7 @@ class Room(object):
             self.set_air_absorption()
 
         # default values for ray tracing parameters
-        self.set_ray_tracing()
-        if not ray_tracing:
-            self.unset_ray_tracing()
+        self._set_ray_tracing_options(use_ray_tracing=ray_tracing)
 
         # in the beginning, nothing has been
         self.visibility = None
@@ -948,6 +946,28 @@ class Room(object):
         hist_bin_size: float
             The time granularity of bins in the energy histogram (default: 4 ms)
         """
+        self._set_ray_tracing_options(
+            use_ray_tracing=True,
+            n_rays=n_rays,
+            receiver_radius=receiver_radius,
+            energy_thres=energy_thres,
+            time_thres=time_thres,
+            hist_bin_size=hist_bin_size,
+        )
+
+    def _set_ray_tracing_options(
+        self,
+        use_ray_tracing,
+        n_rays=None,
+        receiver_radius=0.5,
+        energy_thres=1e-7,
+        time_thres=10.0,
+        hist_bin_size=0.004,
+        is_init=False,
+    ):
+        """
+        Base method to set all ray tracing related options
+        """
 
         if hasattr(self, "mic_array"):
             if self.mic_array.directivity is not None:
@@ -959,7 +979,7 @@ class Room(object):
                         "Directivity not supported with ray tracing."
                     )
 
-        self.simulator_state["rt_needed"] = True
+        self.simulator_state["rt_needed"] = use_ray_tracing
 
         self.rt_args = {}
         self.rt_args["energy_thres"] = energy_thres
@@ -990,7 +1010,7 @@ class Room(object):
 
             n_rays = int(target_mean_hit_count * k1)
 
-            if n_rays > 100000:
+            if self.simulator_state["rt_needed"] and n_rays > 100000:
                 import warnings
 
                 warnings.warn(
