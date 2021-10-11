@@ -969,15 +969,18 @@ class Room(object):
         Base method to set all ray tracing related options
         """
 
-        if hasattr(self, "mic_array"):
-            if self.mic_array.directivity is not None:
-                raise NotImplementedError("Directivity not supported with ray tracing.")
-        if hasattr(self, "sources"):
-            for source in self.sources:
-                if source.directivity is not None:
+        if use_ray_tracing:
+            if hasattr(self, "mic_array") and self.mic_array is not None:
+                if self.mic_array.directivity is not None:
                     raise NotImplementedError(
                         "Directivity not supported with ray tracing."
                     )
+            if hasattr(self, "sources"):
+                for source in self.sources:
+                    if source.directivity is not None:
+                        raise NotImplementedError(
+                            "Directivity not supported with ray tracing."
+                        )
 
         self.simulator_state["rt_needed"] = use_ray_tracing
 
