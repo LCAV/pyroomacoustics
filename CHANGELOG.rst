@@ -11,6 +11,13 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Bugfix
+~~~~~~
+
+- Issue 235: fails when set_ray_tracing is called, but no mic_array is set
+- Issue 236: general ISM produces the wrong transmission coefficients
+- Removes an unncessery warning for some rooms when ray tracing is not needed
+
 Misc
 ~~~~
 
