@@ -38,7 +38,7 @@ class MUSIC(DOA):
         Candidate elevation angles (in radians) with respect to z-axis.
         Default is x-y plane search: np.pi/2*np.ones(1)
     frequency_normalization: bool
-        If True, the MUSIC pseudo-spectra are normalized before averaging across the frequency axis
+        If True, the MUSIC pseudo-spectra are normalized before averaging across the frequency axis, default:False
     """
 
     def __init__(
@@ -52,7 +52,7 @@ class MUSIC(DOA):
         r=None,
         azimuth=None,
         colatitude=None,
-        frequency_normalization=True,
+        frequency_normalization=False,
         **kwargs
     ):
 
@@ -97,7 +97,7 @@ class MUSIC(DOA):
         """
         Normalize the MUSIC pseudo-spectrum per frequency bin
         """
-        self.Pssl = self.Pssl / np.max(self.Pssl, axis=0)[None,...]
+        self.Pssl = self.Pssl / np.max(self.Pssl, axis=0, keepdims=True)
 
     def plot_individual_spectrum(self):
         """
