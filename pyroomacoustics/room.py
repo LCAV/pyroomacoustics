@@ -595,19 +595,9 @@ from .utilities import angle_function
 def wall_factory(corners, absorption, scattering, name=""):
     """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
-        return Wall(
-            corners,
-            absorption,
-            scattering,
-            name,
-        )
+        return Wall(corners, absorption, scattering, name,)
     elif corners.shape[0] == 2:
-        return Wall2D(
-            corners,
-            absorption,
-            scattering,
-            name,
-        )
+        return Wall2D(corners, absorption, scattering, name,)
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -1204,11 +1194,7 @@ class Room(object):
         )
 
     def extrude(
-        self,
-        height,
-        v_vec=None,
-        absorption=None,
-        materials=None,
+        self, height, v_vec=None, absorption=None, materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1332,8 +1318,7 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0),
-                ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -2744,9 +2729,7 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim,
-            absorption_array,
-            scattering_array,
+            self.shoebox_dim, absorption_array, scattering_array,
         )
 
         self.walls = self.room_engine.walls

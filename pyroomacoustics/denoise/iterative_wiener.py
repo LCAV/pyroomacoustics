@@ -412,18 +412,14 @@ def apply_iterative_wiener(
     while noisy_signal.shape[0] - n >= hop:
         # SCNR in frequency domain
         stft.analysis(
-            noisy_signal[
-                n : (n + hop),
-            ]
+            noisy_signal[n : (n + hop),]
         )
         X = scnr.compute_filtered_output(
             current_frame=stft.fft_in_buffer, frame_dft=stft.X
         )
 
         # back to time domain
-        processed_audio[
-            n : n + hop,
-        ] = stft.synthesis(X)
+        processed_audio[n : n + hop,] = stft.synthesis(X)
 
         # update step
         n += hop

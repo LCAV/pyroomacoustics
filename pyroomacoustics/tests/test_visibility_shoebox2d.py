@@ -27,27 +27,7 @@ room = pra.Room.from_corners(
 room.add_source([2, 2], None, 0)
 
 # place 3 microphones in the room
-mics = pra.MicrophoneArray(
-    np.array(
-        [
-            [
-                2,
-                5,
-                3,
-                1,
-                2,
-            ],
-            [
-                2,
-                5,
-                3,
-                1,
-                1,
-            ],
-        ]
-    ),
-    fs,
-)
+mics = pra.MicrophoneArray(np.array([[2, 5, 3, 1, 2,], [2, 5, 3, 1, 1,],]), fs,)
 room.add_microphone_array(mics)
 
 # run the image source model

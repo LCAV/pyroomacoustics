@@ -42,24 +42,11 @@ def median(x, alpha=None, axis=-1, keepdims=False):
         ]
     else:
         # if n is even, average the two central elements
-        m = 0.5 * (
-            xsw[
-                n // 2 - 1,
-            ]
-            + xsw[
-                n // 2,
-            ]
-        )
+        m = 0.5 * (xsw[n // 2 - 1,] + xsw[n // 2,])
 
     if alpha is None:
         if keepdims:
-            m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
-                0,
-                axis,
-            )
+            m = np.moveaxis(m[np.newaxis,], 0, axis,)
         return m
 
     else:
@@ -82,18 +69,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
                     "Warning: Sample size is too small. No confidence interval found."
                 )
             else:
-                ci = np.array(
-                    [
-                        xsw[
-                            j,
-                        ]
-                        - m,
-                        xsw[
-                            k,
-                        ]
-                        - m,
-                    ]
-                )
+                ci = np.array([xsw[j,] - m, xsw[k,] - m,])
 
         else:
             # we use the Normal approximation for large sets
@@ -101,45 +77,14 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             eta = norm.ppf(1 - alpha / 2)
             j = int(np.floor(0.5 * n - 0.5 * eta * np.sqrt(n))) - 1
             k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
-            ci = np.array(
-                [
-                    xsw[
-                        j,
-                    ]
-                    - m,
-                    xsw[
-                        k,
-                    ]
-                    - m,
-                ]
-            )
+            ci = np.array([xsw[j,] - m, xsw[k,] - m,])
 
         if keepdims:
-            m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
-                0,
-                axis,
-            )
+            m = np.moveaxis(m[np.newaxis,], 0, axis,)
             if axis < 0:
-                ci = np.moveaxis(
-                    ci[
-                        :,
-                        np.newaxis,
-                    ],
-                    1,
-                    axis,
-                )
+                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis,)
             else:
-                ci = np.moveaxis(
-                    ci[
-                        :,
-                        np.newaxis,
-                    ],
-                    1,
-                    axis + 1,
-                )
+                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis + 1,)
 
         return m, ci
 

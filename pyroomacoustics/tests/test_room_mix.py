@@ -10,12 +10,7 @@ room = pra.ShoeBox([9, 5, 4], fs=16000, absorption=0.25, max_order=15)
 # three microphones
 room.add_microphone_array(
     pra.MicrophoneArray(
-        np.c_[
-            [4.3, 2.1, 1.8],
-            [2.5, 1.7, 1.2],
-            [6.5, 3.9, 0.9],
-        ],
-        room.fs,
+        np.c_[[4.3, 2.1, 1.8], [2.5, 1.7, 1.2], [6.5, 3.9, 0.9],], room.fs,
     )
 )
 

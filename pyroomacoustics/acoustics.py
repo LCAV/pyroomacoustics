@@ -308,8 +308,7 @@ class OctaveBandsFactory(object):
                 freq_resp[hi, b] = 1.0
 
         filters = np.fft.fftshift(
-            np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
-            axes=[0],
+            np.fft.irfft(freq_resp, n=self.n_fft, axis=0), axes=[0],
         )
 
         # remove the first sample to make them odd-length symmetric filters

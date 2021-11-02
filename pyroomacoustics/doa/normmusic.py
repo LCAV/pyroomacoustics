@@ -1,5 +1,5 @@
-
 from .music import *
+
 
 class NormMUSIC(MUSIC):
     """
@@ -35,6 +35,7 @@ class NormMUSIC(MUSIC):
     frequency_normalization: bool
         If True, the MUSIC pseudo-spectra are normalized before averaging across the frequency axis, default:True
     """
+
     def __init__(
         self,
         L,
@@ -61,5 +62,4 @@ class NormMUSIC(MUSIC):
             colatitude,
             frequency_normalization,
             **kwargs
-            )
-        
+        )

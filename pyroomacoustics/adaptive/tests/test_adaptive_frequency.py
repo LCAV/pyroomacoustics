@@ -33,9 +33,7 @@ X_concat = np.zeros((num_bands, n_samples // hop), dtype=np.complex64)
 while n_samples - n > hop:
 
     stft_in.analysis(
-        x[
-            n : n + hop,
-        ]
+        x[n : n + hop,]
     )
     X_concat[:, num_blocks] = stft_in.X
 

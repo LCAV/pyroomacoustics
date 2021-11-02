@@ -451,9 +451,7 @@ class STFT(object):
         self.fresh_samples[:,] = x_n[
             :,
         ]  # introduce new samples
-        self.x_p[
-            :,
-        ] = self.old_samples  # save next state
+        self.x_p[:,] = self.old_samples  # save next state
 
         # apply DFT to current frame
         self.X[:] = self.dft.analysis(self.fft_in_buffer)
@@ -479,14 +477,10 @@ class STFT(object):
                     n : n + self.hop,
                 ]
                 # save next state
-                self.x_p[
-                    :,
-                ] = self.old_samples
+                self.x_p[:,] = self.old_samples
 
                 # apply DFT to current frame
-                self.X[
-                    k,
-                ] = self.dft.analysis(self.fft_in_buffer)
+                self.X[k,] = self.dft.analysis(self.fft_in_buffer)
 
                 # shift backwards in the buffer the state
                 self.fft_in_state[:,] = self.x_p[
@@ -703,9 +697,9 @@ class STFT(object):
             for f in range(self.num_frames):
 
                 # apply IDFT to current frame and reconstruct output
-                x_r[
-                    n : n + self.hop,
-                ] = self._overlap_and_add(self.dft.synthesis(self.X[f, :, :]))
+                x_r[n : n + self.hop,] = self._overlap_and_add(
+                    self.dft.synthesis(self.X[f, :, :])
+                )
                 n += self.hop
 
         else:
@@ -728,9 +722,7 @@ class STFT(object):
             # overlap and add
             n = 0
             for f in range(self.num_frames):
-                x_r[
-                    n : n + self.hop,
-                ] = self._overlap_and_add(mx[:, f])
+                x_r[n : n + self.hop,] = self._overlap_and_add(mx[:, f])
                 n += self.hop
 
         return x_r
@@ -754,9 +746,7 @@ class STFT(object):
             self.y_p[: -self.hop,] = self.y_p[
                 self.hop :,
             ]  # shift out left
-            self.y_p[
-                -self.hop :,
-            ] = 0.0
+            self.y_p[-self.hop :,] = 0.0
             self.y_p[:,] += x[
                 -self.n_state_out :,
             ]

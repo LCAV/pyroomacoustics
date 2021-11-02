@@ -211,16 +211,12 @@ def apply_spectral_sub(
     while noisy_signal.shape[0] - n >= hop:
         # SCNR in frequency domain
         stft.analysis(
-            noisy_signal[
-                n : (n + hop),
-            ]
+            noisy_signal[n : (n + hop),]
         )
         gain_filt = scnr.compute_gain_filter(stft.X)
 
         # back to time domain
-        processed_audio[
-            n : n + hop,
-        ] = stft.synthesis(gain_filt * stft.X)
+        processed_audio[n : n + hop,] = stft.synthesis(gain_filt * stft.X)
 
         # update step
         n += hop

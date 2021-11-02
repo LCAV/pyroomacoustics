@@ -13,12 +13,7 @@ absorption = 0.90
 max_order_sim = 2
 sigma2_n = 5e-7
 
-corners = np.array(
-    [
-        [0, 5, 5, 3, 3, 2, 2, 0],
-        [0, 0, 5, 5, 2, 2, 5, 5],
-    ]
-)
+corners = np.array([[0, 5, 5, 3, 3, 2, 2, 0], [0, 0, 5, 5, 2, 2, 5, 5],])
 room = pra.Room.from_corners(
     corners,
     absorption=absorption,
@@ -31,19 +26,7 @@ room = pra.Room.from_corners(
 room.add_source([1, 4], None, 0)
 
 # place 3 microphones in the room
-mics = pra.MicrophoneArray(
-    np.array(
-        [
-            [
-                4,
-                2.5,
-                2.5,
-            ],
-            [4, 1, 4],
-        ]
-    ),
-    fs,
-)
+mics = pra.MicrophoneArray(np.array([[4, 2.5, 2.5,], [4, 1, 4],]), fs,)
 room.add_microphone_array(mics)
 
 # run the image source model

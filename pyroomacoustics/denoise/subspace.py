@@ -310,9 +310,7 @@ def apply_subspace(
     hop = frame_len // 2
     while noisy_signal.shape[0] - n >= hop:
 
-        processed_audio[
-            n : n + hop,
-        ] = scnr.apply(noisy_signal[n : n + hop])
+        processed_audio[n : n + hop,] = scnr.apply(noisy_signal[n : n + hop])
 
         # update step
         n += hop

@@ -29,108 +29,12 @@ import numpy as np
 import pyroomacoustics as pra
 
 
-c0 = np.array(
-    [
-        [0, 3, 3, 0],
-        [0, 0, 0, 0],
-        [0, 0, 2, 2],
-    ]
-)  # left
-c1 = np.array(
-    [
-        [0, 0, 6, 6],
-        [8, 8, 8, 8],
-        [0, 4, 4, 0],
-    ]
-)  # right
-c2 = np.array(
-    [
-        [
-            0,
-            0,
-            6,
-            3,
-        ],
-        [
-            0,
-            8,
-            8,
-            0,
-        ],
-        [
-            0,
-            0,
-            0,
-            0,
-        ],
-    ]
-)  # floor
-c3 = np.array(
-    [
-        [
-            0,
-            3,
-            6,
-            0,
-        ],
-        [
-            0,
-            0,
-            8,
-            8,
-        ],
-        [
-            2,
-            2,
-            4,
-            4,
-        ],
-    ]
-)  # ceiling
-c4 = np.array(
-    [
-        [
-            0,
-            0,
-            0,
-            0,
-        ],
-        [
-            0,
-            0,
-            8,
-            8,
-        ],
-        [
-            0,
-            2,
-            4,
-            0,
-        ],
-    ]
-)  # back
-c5 = np.array(
-    [
-        [
-            3,
-            6,
-            6,
-            3,
-        ],
-        [
-            0,
-            8,
-            8,
-            0,
-        ],
-        [
-            0,
-            0,
-            4,
-            2,
-        ],
-    ]
-)  # front
+c0 = np.array([[0, 3, 3, 0], [0, 0, 0, 0], [0, 0, 2, 2],])  # left
+c1 = np.array([[0, 0, 6, 6], [8, 8, 8, 8], [0, 4, 4, 0],])  # right
+c2 = np.array([[0, 0, 6, 3,], [0, 8, 8, 0,], [0, 0, 0, 0,],])  # floor
+c3 = np.array([[0, 3, 6, 0,], [0, 0, 8, 8,], [2, 2, 4, 4,],])  # ceiling
+c4 = np.array([[0, 0, 0, 0,], [0, 0, 8, 8,], [0, 2, 4, 0,],])  # back
+c5 = np.array([[3, 6, 6, 3,], [0, 8, 8, 0,], [0, 0, 4, 2,],])  # front
 
 # Strange room (not square and inclined roof)
 wall_corners_3D = [c0, c1, c2, c3, c4, c5]
@@ -141,101 +45,31 @@ scatterings_3D = [0.5, 0.1, 0.4, 0.2, 0.3, 0.5]
 
 # Let's describe a pentagonal room with corners :
 # (-1,0) (-1,2) (0,3) (2,2) (2,-1)
-d0 = np.array(
-    [
-        [-1, -1],
-        [0, 2],
-    ]
-)  # side1
-d1 = np.array(
-    [
-        [-1, 0],
-        [2, 3],
-    ]
-)  # side2
-d2 = np.array(
-    [
-        [0, 2],
-        [3, 2],
-    ]
-)  # side3
-d3 = np.array(
-    [
-        [2, 2],
-        [2, -1],
-    ]
-)  # side4
-d4 = np.array(
-    [
-        [2, -1],
-        [-1, 0],
-    ]
-)  # side5
+d0 = np.array([[-1, -1], [0, 2],])  # side1
+d1 = np.array([[-1, 0], [2, 3],])  # side2
+d2 = np.array([[0, 2], [3, 2],])  # side3
+d3 = np.array([[2, 2], [2, -1],])  # side4
+d4 = np.array([[2, -1], [-1, 0],])  # side5
 wall_corners_2D = [d0, d1, d2, d3, d4]
 
 
 # Let's describe a simple non_convex room with corners :
 # (0,0) (0,2) (1,1) (2,2) (2,0)
-e0 = np.array(
-    [
-        [0, 0],
-        [0, 2],
-    ]
-)  # side1
-e1 = np.array(
-    [
-        [0, 1],
-        [2, 1],
-    ]
-)  # side2
-e2 = np.array(
-    [
-        [1, 2],
-        [1, 2],
-    ]
-)  # side3
-e3 = np.array(
-    [
-        [2, 2],
-        [2, 0],
-    ]
-)  # side4
-e4 = np.array(
-    [
-        [2, 0],
-        [0, 0],
-    ]
-)  # side5
+e0 = np.array([[0, 0], [0, 2],])  # side1
+e1 = np.array([[0, 1], [2, 1],])  # side2
+e2 = np.array([[1, 2], [1, 2],])  # side3
+e3 = np.array([[2, 2], [2, 0],])  # side4
+e4 = np.array([[2, 0], [0, 0],])  # side5
 
 wall_corners_2D_non_convex = [e0, e1, e2, e3, e4]
 absorptions_2D = [0.1, 0.1, 0.1, 0.1, 0.1]
 scatterings_2D = [0.1, 0.2, 0.3, 0.4, 0.5]
 
 
-f0 = np.array(
-    [
-        [0, 0],
-        [0, 3],
-    ]
-)  # side1
-f1 = np.array(
-    [
-        [0, 4],
-        [3, 3],
-    ]
-)  # side2
-f2 = np.array(
-    [
-        [4, 4],
-        [3, 0],
-    ]
-)  # side3
-f3 = np.array(
-    [
-        [4, 0],
-        [0, 0],
-    ]
-)  # side4
+f0 = np.array([[0, 0], [0, 3],])  # side1
+f1 = np.array([[0, 4], [3, 3],])  # side2
+f2 = np.array([[4, 4], [3, 0],])  # side3
+f3 = np.array([[4, 0], [0, 0],])  # side4
 
 wall_corners_2D_shoebox = [f0, f1, f2, f3]
 absorptions_shoebox = [0.1, 0.1, 0.1, 0.1]
@@ -275,19 +109,7 @@ class TestRoomWalls(unittest.TestCase):
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_2D)
         ]
         obstructing_walls = []
-        microphones = np.array(
-            [
-                [
-                    1,
-                ],
-                [
-                    1,
-                ],
-                [
-                    1,
-                ],
-            ]
-        )
+        microphones = np.array([[1,], [1,], [1,],])
 
         room = room_factory(walls, obstructing_walls, microphones)
 
@@ -303,16 +125,7 @@ class TestRoomWalls(unittest.TestCase):
             for c, a, s in zip(wall_corners_2D, absorptions_2D, scatterings_2D)
         ]
         obstructing_walls = []
-        microphones = np.array(
-            [
-                [
-                    1,
-                ],
-                [
-                    1,
-                ],
-            ]
-        )
+        microphones = np.array([[1,], [1,],])
 
         room = room_factory(walls, obstructing_walls, microphones)
 
@@ -365,19 +178,7 @@ class TestRoomWalls(unittest.TestCase):
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)
         ]
         obstructing_walls = []
-        microphones = np.array(
-            [
-                [
-                    1.0,
-                ],
-                [
-                    1.0,
-                ],
-                [
-                    1.0,
-                ],
-            ]
-        )
+        microphones = np.array([[1.0,], [1.0,], [1.0,],])
 
         room = room_factory(walls, obstructing_walls, microphones)
 
@@ -407,19 +208,7 @@ class TestRoomWalls(unittest.TestCase):
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)
         ]
         obstructing_walls = []
-        microphones = np.array(
-            [
-                [
-                    1,
-                ],
-                [
-                    1,
-                ],
-                [
-                    1,
-                ],
-            ]
-        )
+        microphones = np.array([[1,], [1,], [1,],])
 
         room = room_factory(walls, obstructing_walls, microphones)
 
@@ -442,16 +231,7 @@ class TestRoomWalls(unittest.TestCase):
             for c, a, s in zip(wall_corners_2D, absorptions_2D, scatterings_2D)
         ]
         obstructing_walls = []
-        microphones = np.array(
-            [
-                [
-                    1.0,
-                ],
-                [
-                    1.0,
-                ],
-            ]
-        )
+        microphones = np.array([[1.0,], [1.0,],])
 
         room = room_factory(walls, obstructing_walls, microphones)
 

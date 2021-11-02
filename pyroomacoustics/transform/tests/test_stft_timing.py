@@ -39,28 +39,13 @@ for k in range(num_times):
     n = 0
     while signals.shape[0] - n > hop:
         stft.analysis(
-            signals[
-                n : n + hop,
-            ]
+            signals[n : n + hop,]
         )
-        x_r[
-            n : n + hop,
-        ] = stft.synthesis()
+        x_r[n : n + hop,] = stft.synthesis()
         n += hop
 avg_time = (time.time() - start) / num_times
 print("%0.3f sec" % avg_time)
-err_dB = 20 * np.log10(
-    np.max(
-        np.abs(
-            signals[
-                : n - hop,
-            ]
-            - x_r[
-                hop:n,
-            ]
-        )
-    )
-)
+err_dB = 20 * np.log10(np.max(np.abs(signals[: n - hop,] - x_r[hop:n,])))
 print("Error [dB] : %0.3f" % err_dB)
 
 
@@ -80,28 +65,13 @@ for k in range(num_times):
     n = 0
     while signals.shape[0] - n > hop:
         stft.analysis(
-            signals[
-                n : n + hop,
-            ]
+            signals[n : n + hop,]
         )
-        x_r[
-            n : n + hop,
-        ] = stft.synthesis()
+        x_r[n : n + hop,] = stft.synthesis()
         n += hop
 avg_time = (time.time() - start) / num_times
 print("%0.3f sec" % avg_time)
-err_dB = 20 * np.log10(
-    np.max(
-        np.abs(
-            signals[
-                : n - hop,
-            ]
-            - x_r[
-                hop:n,
-            ]
-        )
-    )
-)
+err_dB = 20 * np.log10(np.max(np.abs(signals[: n - hop,] - x_r[hop:n,])))
 print("Error [dB] : %0.3f" % err_dB)
 
 

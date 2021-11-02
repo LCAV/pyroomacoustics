@@ -30,19 +30,8 @@ import pyroomacoustics as pra
 eps = 1e-6
 
 corners = {
-    "3d": np.array(
-        [
-            [-1, 1, 1],
-            [1, -1, 1],
-            [1, 1, -1],
-        ]
-    ),
-    "2d": np.array(
-        [
-            [-1, 1],
-            [-2, 2],
-        ]
-    ),
+    "3d": np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1],]),
+    "2d": np.array([[-1, 1], [-2, 2],]),
 }
 
 points = {
@@ -64,24 +53,9 @@ points = {
         "expect": 0,
         "reflect": [1 / 3, 1 / 3, 1 / 3],
     },
-    "2d_down": {
-        "d": "2d",
-        "p": [-2, 1],
-        "expect": -1,
-        "reflect": [2, -1],
-    },
-    "2d_up": {
-        "d": "2d",
-        "p": [2, -1],
-        "expect": 1,
-        "reflect": [-2, 1],
-    },
-    "2d_on": {
-        "d": "2d",
-        "p": [0.5, 1],
-        "expect": 0,
-        "reflect": [0.5, 1],
-    },
+    "2d_down": {"d": "2d", "p": [-2, 1], "expect": -1, "reflect": [2, -1],},
+    "2d_up": {"d": "2d", "p": [2, -1], "expect": 1, "reflect": [-2, 1],},
+    "2d_on": {"d": "2d", "p": [0.5, 1], "expect": 0, "reflect": [0.5, 1],},
 }
 
 
@@ -171,12 +145,7 @@ class TestUtilityRoutines(unittest.TestCase):
 
         hit = [5, 3]
         # normal = [-1, -1]
-        corners = np.array(
-            [
-                [6, 4],
-                [4, 6],
-            ]
-        )
+        corners = np.array([[6, 4], [4, 6],])
         wall = pra.wall_factory(corners, [0.1], [0.1])
         length = 4
 
@@ -189,28 +158,7 @@ class TestUtilityRoutines(unittest.TestCase):
         start = [1, 1, 1]
         hit = [-1, 1, 3]
         # normal = [1, 0, 0]
-        corners = np.array(
-            [
-                [
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                ],
-                [
-                    0,
-                    2,
-                    2,
-                    0,
-                ],
-                [
-                    2,
-                    2,
-                    4,
-                    4,
-                ],
-            ]
-        )
+        corners = np.array([[-1, -1, -1, -1,], [0, 2, 2, 0,], [2, 2, 4, 4,],])
         wall = pra.wall_factory(corners, [0.1], [0.1])
 
         length = 2 * np.sqrt(2)

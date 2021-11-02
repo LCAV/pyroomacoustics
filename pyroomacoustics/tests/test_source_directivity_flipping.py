@@ -11,10 +11,7 @@ class TestSourceDirectivityFlipping(TestCase):
         mic_loc = [5, 12, 5]
         source_loc = [5, 2, 5]
         room = (
-            pra.ShoeBox(
-                p=[10, 14, 10],
-                max_order=1,
-            )
+            pra.ShoeBox(p=[10, 14, 10], max_order=1,)
             .add_source(source_loc)
             .add_microphone(mic_loc)
         )
@@ -48,10 +45,7 @@ class TestSourceDirectivityFlipping(TestCase):
         mic_loc = [12, 5, 5]
         source_loc = [2, 5, 5]
         room = (
-            pra.ShoeBox(
-                p=[14, 10, 10],
-                max_order=1,
-            )
+            pra.ShoeBox(p=[14, 10, 10], max_order=1,)
             .add_source(source_loc)
             .add_microphone(mic_loc)
         )

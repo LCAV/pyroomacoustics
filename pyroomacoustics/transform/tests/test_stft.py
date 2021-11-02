@@ -106,13 +106,9 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=True):
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
             stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
+                x_local[n : n + hop_frames,]
             )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
     else:
@@ -121,16 +117,7 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=True):
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
-    error = np.max(
-        np.abs(
-            x_local[
-                :n,
-            ]
-            - processed_x[
-                :n,
-            ]
-        )
-    )
+    error = np.max(np.abs(x_local[:n,] - processed_x[:n,]))
 
     return error
 
@@ -196,23 +183,14 @@ def with_arbitrary_overlap_synthesis_window(
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
             stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
+                x_local[n : n + hop_frames,]
             )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
         error = np.max(
             np.abs(
-                x_local[
-                    : n - block_size + hop,
-                ]
-                - processed_x[
-                    block_size - hop : n,
-                ]
+                x_local[: n - block_size + hop,] - processed_x[block_size - hop : n,]
             )
         )
 
@@ -234,16 +212,7 @@ def with_arbitrary_overlap_synthesis_window(
         n = processed_x.shape[0]
 
         L = block_size - hop
-        error = np.max(
-            np.abs(
-                x_local[
-                    L:-L,
-                ]
-                - processed_x[
-                    L:,
-                ]
-            )
-        )
+        error = np.max(np.abs(x_local[L:-L,] - processed_x[L:,]))
 
         if 20 * np.log10(error) > -10:
             import matplotlib.pyplot as plt
@@ -321,26 +290,13 @@ def no_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming=True):
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
             stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
+                x_local[n : n + hop_frames,]
             )
             stft.process()  # apply the filter
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-    error = np.max(
-        np.abs(
-            y_local[
-                :n,
-            ]
-            - processed_x[
-                :n,
-            ]
-        )
-    )
+    error = np.max(np.abs(y_local[:n,] - processed_x[:n,]))
 
     return error
 
@@ -401,12 +357,8 @@ def with_half_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=T
 
         error = np.max(
             np.abs(
-                x_local[
-                    block_size - hop : n - hop,
-                ]
-                - processed_x[
-                    block_size - hop : n - hop,
-                ]
+                x_local[block_size - hop : n - hop,]
+                - processed_x[block_size - hop : n - hop,]
             )
         )
 
@@ -417,25 +369,12 @@ def with_half_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=T
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
             stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
+                x_local[n : n + hop_frames,]
             )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-        error = np.max(
-            np.abs(
-                x_local[
-                    : n - hop,
-                ]
-                - processed_x[
-                    hop:n,
-                ]
-            )
-        )
+        error = np.max(np.abs(x_local[: n - hop,] - processed_x[hop:n,]))
 
     return error
 
@@ -504,12 +443,8 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
 
         error = np.max(
             np.abs(
-                y_local[
-                    block_size : n - block_size,
-                ]
-                - processed_x[
-                    block_size : n - block_size,
-                ]
+                y_local[block_size : n - block_size,]
+                - processed_x[block_size : n - block_size,]
             )
         )
 
@@ -520,26 +455,13 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
             stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
+                x_local[n : n + hop_frames,]
             )
             stft.process()  # apply the filter
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-        error = np.max(
-            np.abs(
-                y_local[
-                    : n - hop,
-                ]
-                - processed_x[
-                    hop:n,
-                ]
-            )
-        )
+        error = np.max(np.abs(y_local[: n - hop,] - processed_x[hop:n,]))
 
         # if D==1:
         #     import matplotlib.pyplot as plt

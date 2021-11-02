@@ -35,24 +35,14 @@ eps = 1e-6
 walls = [
     {
         "corners": np.array(
-            [
-                [0.0, 1.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 0.0],
-            ]
+            [[0.0, 1.0, 1.0, 0.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0],]
         ),
         "area": 1,
         "absorption": [0.2],
         "scattering": [0.1],
     },
     {
-        "corners": np.array(
-            [
-                [-1, 1, 1],
-                [1, -1, 1],
-                [1, 1, -1],
-            ]
-        ),
+        "corners": np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1],]),
         "area": 3.4641016151377557,  # this is an equilateral triangle with side sqrt(8)
         "absorption": [0.2],
         "scattering": [0.1],

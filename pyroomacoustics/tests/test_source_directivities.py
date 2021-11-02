@@ -9,12 +9,7 @@ from unittest import TestCase
 
 
 # create room
-room = pra.ShoeBox(
-    p=[7, 5, 5],
-    materials=pra.Material(0.07),
-    fs=16000,
-    max_order=1,
-)
+room = pra.ShoeBox(p=[7, 5, 5], materials=pra.Material(0.07), fs=16000, max_order=1,)
 
 # define source with figure_eight directivity
 PATTERN = DirectivityPattern.FIGURE_EIGHT

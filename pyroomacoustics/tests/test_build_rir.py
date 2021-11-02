@@ -23,51 +23,10 @@ t3 = (5 * fdl + 0.001) / fs
 t4 = (6 * fdl + 0.999) / fs
 
 times = np.array(
-    [
-        [
-            t0,
-            t1 + (1 / 40 / 16000),
-            t2,
-        ],
-        [
-            t0,
-            t1 + (10 / fs),
-            3 * t3,
-        ],
-        [
-            t0,
-            t3,
-            t4,
-        ],
-    ],
+    [[t0, t1 + (1 / 40 / 16000), t2,], [t0, t1 + (10 / fs), 3 * t3,], [t0, t3, t4,],],
 )
-alphas = np.array(
-    [
-        [1.0, 0.5, -0.1],
-        [0.5, 0.3, 0.1],
-        [0.3, 2.0, 0.1],
-    ],
-)
-visibilities = np.array(
-    [
-        [
-            1,
-            1,
-            1,
-        ],
-        [
-            1,
-            1,
-            1,
-        ],
-        [
-            0,
-            1,
-            1,
-        ],
-    ],
-    dtype=np.int32,
-)
+alphas = np.array([[1.0, 0.5, -0.1], [0.5, 0.3, 0.1], [0.3, 2.0, 0.1],],)
+visibilities = np.array([[1, 1, 1,], [1, 1, 1,], [0, 1, 1,],], dtype=np.int32,)
 
 
 def build_rir_wrap(time, alpha, visibility, fs, fdl):

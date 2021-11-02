@@ -27,75 +27,22 @@ import numpy as np
 import pyroomacoustics as pra
 
 polygons = [
-    np.array(
-        [  # this one is clockwise
-            [
-                0,
-                4,
-                4,
-                0,
-            ],
-            [
-                0,
-                0,
-                4,
-                4,
-            ],
-        ]
-    ),
-    np.array(
-        [  # this one is clockwise!
-            [0, 0, 1, 1, 3, 3],
-            [0, 1, 1, 2, 2, 0],
-        ]
-    ),
-    np.array(
-        [  # this one is clockwise!
-            [0, 1, 1, 3, 3],
-            [0, 1, 2, 2, 0],
-        ]
-    ),
+    np.array([[0, 4, 4, 0,], [0, 0, 4, 4,],]),  # this one is clockwise
+    np.array([[0, 0, 1, 1, 3, 3], [0, 1, 1, 2, 2, 0],]),  # this one is clockwise!
+    np.array([[0, 1, 1, 3, 3], [0, 1, 2, 2, 0],]),  # this one is clockwise!
 ]
 
 cases = {
-    "inside": {
-        "pol": 0,
-        "p": [2, 2],
-        "ret": 0,
-    },
-    "on_border": {
-        "pol": 0,
-        "p": [0, 2],
-        "ret": 1,
-    },
-    "on_corner": {
-        "pol": 0,
-        "p": [4, 4],
-        "ret": 1,
-    },
-    "outside": {
-        "pol": 0,
-        "p": [5, 5],
-        "ret": -1,
-    },
+    "inside": {"pol": 0, "p": [2, 2], "ret": 0,},
+    "on_border": {"pol": 0, "p": [0, 2], "ret": 1,},
+    "on_corner": {"pol": 0, "p": [4, 4], "ret": 1,},
+    "outside": {"pol": 0, "p": [5, 5], "ret": -1,},
     # horizontal wall aligned with point
-    "horiz_wall_align": {
-        "pol": 1,
-        "p": [2, 1],
-        "ret": 0,
-    },
+    "horiz_wall_align": {"pol": 1, "p": [2, 1], "ret": 0,},
     # ray is going through vertex
-    "ray_through_vertex": {
-        "pol": 2,
-        "p": [2, 1],
-        "ret": 0,
-    },
+    "ray_through_vertex": {"pol": 2, "p": [2, 1], "ret": 0,},
     # point is at the same height as top of polygon, but outside
-    "top_outside": {
-        "pol": 2,
-        "p": [4, 2],
-        "ret": -1,
-    },
+    "top_outside": {"pol": 2, "p": [4, 2], "ret": -1,},
 }
 
 

@@ -50,16 +50,7 @@ def half_overlap(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop :,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
     )
 
 
@@ -82,16 +73,7 @@ def append_one_sample(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop : -1,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop : -1,]))
     )
 
 
@@ -113,16 +95,7 @@ def hop_one_sample(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop, win=synthesis_win)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop :,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
     )
 
 

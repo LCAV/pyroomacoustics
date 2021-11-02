@@ -155,22 +155,7 @@ class TestGeometryRoutines(unittest.TestCase):
 
     def test_isInside2DPolygon_inside1(self):
         p = np.r_[0, -2]
-        corners = np.array(
-            [
-                [
-                    0,
-                    -2,
-                    0,
-                    2,
-                ],
-                [
-                    -0,
-                    -2,
-                    -np.sqrt(8),
-                    -2,
-                ],
-            ]
-        )
+        corners = np.array([[0, -2, 0, 2,], [-0, -2, -np.sqrt(8), -2,],])
         ret = pra.libroom.is_inside_2d_polygon(p, corners)
         self.assertTrue(ret == 0)
 
