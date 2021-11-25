@@ -121,11 +121,11 @@ from .utils import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {
-        "SRP" : SRP,
-        "MUSIC" : MUSIC,
-        "NormMUSIC": NormMUSIC,
-        "CSSM" : CSSM,
-        "WAVES" : WAVES,
-        "TOPS" : TOPS,
-        "FRIDA" : FRIDA,
-        }
+    "SRP": SRP,
+    "MUSIC": MUSIC,
+    "NormMUSIC": NormMUSIC,
+    "CSSM": CSSM,
+    "WAVES": WAVES,
+    "TOPS": TOPS,
+    "FRIDA": FRIDA,
+}

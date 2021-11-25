@@ -73,7 +73,6 @@ class MUSIC(DOA):
         self.Pssl = None
         self.frequency_normalization = frequency_normalization
 
-
     def _process(self, X):
         """
         Perform MUSIC for given frame in order to estimate steered response
@@ -92,7 +91,7 @@ class MUSIC(DOA):
         if self.frequency_normalization:
             self._apply_frequency_normalization()
         self.grid.set_values(np.squeeze(np.sum(self.Pssl, axis=1) / self.num_freq))
-        
+
     def _apply_frequency_normalization(self):
         """
         Normalize the MUSIC pseudo-spectrum per frequency bin
