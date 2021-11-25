@@ -9,11 +9,13 @@ Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
-
-Changed
-
-- Improve MUSIC implementation (normalize MUSIC pseudo spectra before averaging across frequency axis)
 -------------
+
+Added
+~~~~~
+
+- New DOA method: MUSIC with pseudo-spectra normalization. Thanks @4bian!
+  Normalizes MUSIC pseudo spectra before averaging across frequency axis.
 
 Bugfix
 ~~~~~~
