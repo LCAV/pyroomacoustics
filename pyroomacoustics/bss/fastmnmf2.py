@@ -39,9 +39,9 @@ def fastmnmf2(
     """
     Implementation of FastMNMF2 algorithm presented in
 
-    K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel Nonnegative 
-    Matrix Factorization With Directivity-Aware Jointly-Diagonalizable Spatial 
-    Covariance Matrices for Blind Source Separation*, IEEE/ACM TASLP, 2020. 
+    K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel Nonnegative
+    Matrix Factorization With Directivity-Aware Jointly-Diagonalizable Spatial
+    Covariance Matrices for Blind Source Separation*, IEEE/ACM TASLP, 2020.
     [`IEEE <https://ieeexplore.ieee.org/abstract/document/9177266>`_]
 
     The code of FastMNMF2 with GPU support and more sophisticated initialization
@@ -132,7 +132,7 @@ def fastmnmf2(
             callback(separate())
 
         # update W and H (basis and activation of NMF)
-        tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM ** 2))
+        tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM**2))
         tmp2_NFT = np.einsum("nm, ftm -> nft", g_NM, 1 / Y_FTM)
 
         numerator = np.einsum("nkt, nft -> nfk", H_NKT, tmp1_NFT)
@@ -140,7 +140,7 @@ def fastmnmf2(
         W_NFK *= np.sqrt(numerator / denominator)
 
         if not accelerate:
-            tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM ** 2))
+            tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM**2))
             tmp2_NFT = np.einsum("nm, ftm -> nft", g_NM, 1 / Y_FTM)
             lambda_NFT = W_NFK @ H_NKT + eps
             Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
@@ -153,7 +153,7 @@ def fastmnmf2(
         Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
 
         # update g_NM (diagonal element of spatial covariance matrices)
-        numerator = np.einsum("nft, ftm -> nm", lambda_NFT, Qx_power_FTM / (Y_FTM ** 2))
+        numerator = np.einsum("nft, ftm -> nm", lambda_NFT, Qx_power_FTM / (Y_FTM**2))
         denominator = np.einsum("nft, ftm -> nm", lambda_NFT, 1 / Y_FTM)
         g_NM *= np.sqrt(numerator / denominator)
         Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
