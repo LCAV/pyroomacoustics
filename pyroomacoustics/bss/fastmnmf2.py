@@ -18,15 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 """
-FastMNMF
-========
+FastMNMF2
+=========
 
-Blind Source Separation using Fast Multichannel Nonnegative Matrix Factorization (FastMNMF)
+Blind Source Separation using Fast Multichannel Nonnegative Matrix Factorization 2 (FastMNMF2)
 """
 import numpy as np
 
 
-def fastmnmf(
+def fastmnmf2(
     X,
     n_src=None,
     n_iter=30,
@@ -37,13 +37,15 @@ def fastmnmf(
     callback=None,
 ):
     """
-    Implementation of FastMNMF algorithm presented in
+    Implementation of FastMNMF2 algorithm presented in
 
-    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source
-    Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019. [`arXiv <https://arxiv.org/abs/1903.03237>`_] [`IEEE <https://ieeexplore.ieee.org/abstract/document/8902557>`_]
+    K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel Nonnegative
+    Matrix Factorization With Directivity-Aware Jointly-Diagonalizable Spatial
+    Covariance Matrices for Blind Source Separation*, IEEE/ACM TASLP, 2020.
+    [`IEEE <https://ieeexplore.ieee.org/abstract/document/9177266>`_]
 
-    The code of FastMNMF with GPU support and FastMNMF-DP which integrates DNN-based source model
-    into FastMNMF is available on https://github.com/sekiguchi92/SoundSourceSeparation
+    The code of FastMNMF2 with GPU support and more sophisticated initialization
+    is available on  https://github.com/sekiguchi92/SoundSourceSeparation
 
     Parameters
     ----------
@@ -72,7 +74,7 @@ def fastmnmf(
     If mic_index is int, returns an (nframes, nfrequencies, nsources) array.
     If mic_index is 'all', returns an (nchannels, nframes, nfrequencies, nsources) array.
     """
-    eps = 1e-7
+    eps = 1e-10
     g_eps = 5e-2
     interval_update_Q = 1  # 2 may work as well and is faster
     interval_normalize = 10
@@ -91,9 +93,9 @@ def fastmnmf(
     else:
         Q_FMM = np.tile(np.eye(n_chan).astype(TYPE_COMPLEX), [n_freq, 1, 1])
 
-    G_NFM = np.ones([n_src, n_freq, n_chan], dtype=TYPE_FLOAT) * g_eps
+    g_NM = np.ones([n_src, n_chan], dtype=TYPE_FLOAT) * g_eps
     for m in range(n_chan):
-        G_NFM[m % n_src, :, m] = 1
+        g_NM[m % n_src, m] = 1
 
     for m in range(n_chan):
         mu_F = (Q_FMM[:, m] * Q_FMM[:, m].conj()).sum(axis=1).real
@@ -101,14 +103,14 @@ def fastmnmf(
 
     H_NKT = np.random.rand(n_src, n_components, n_frames).astype(TYPE_FLOAT)
     W_NFK = np.random.rand(n_src, n_freq, n_components).astype(TYPE_FLOAT)
-    lambda_NFT = W_NFK @ H_NKT + eps
+    lambda_NFT = W_NFK @ H_NKT
     Qx_power_FTM = np.abs(np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)) ** 2
-    Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
+    Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM)
 
     def separate():
         Qx_FTM = np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)
         Qinv_FMM = np.linalg.inv(Q_FMM)
-        Y_NFTM = np.einsum("nft, nfm -> nftm", lambda_NFT, G_NFM)
+        Y_NFTM = np.einsum("nft, nm -> nftm", lambda_NFT, g_NM)
 
         if mic_index == "all":
             return np.einsum(
@@ -130,35 +132,33 @@ def fastmnmf(
             callback(separate())
 
         # update W and H (basis and activation of NMF)
-        tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM**2))
-        tmp2_NFT = np.einsum("nfm, ftm -> nft", G_NFM, 1 / Y_FTM)
+        tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM**2))
+        tmp2_NFT = np.einsum("nm, ftm -> nft", g_NM, 1 / Y_FTM)
 
         numerator = np.einsum("nkt, nft -> nfk", H_NKT, tmp1_NFT)
-        denominator = np.einsum("nkt, nft -> nfk", H_NKT, tmp2_NFT) + eps
+        denominator = np.einsum("nkt, nft -> nfk", H_NKT, tmp2_NFT)
         W_NFK *= np.sqrt(numerator / denominator)
 
         if not accelerate:
+            tmp1_NFT = np.einsum("nm, ftm -> nft", g_NM, Qx_power_FTM / (Y_FTM**2))
+            tmp2_NFT = np.einsum("nm, ftm -> nft", g_NM, 1 / Y_FTM)
             lambda_NFT = W_NFK @ H_NKT + eps
-            Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
-            tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM**2))
-            tmp2_NFT = np.einsum("nfm, ftm -> nft", G_NFM, 1 / Y_FTM)
+            Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
 
         numerator = np.einsum("nfk, nft -> nkt", W_NFK, tmp1_NFT)
-        denominator = np.einsum("nfk, nft -> nkt", W_NFK, tmp2_NFT) + eps
+        denominator = np.einsum("nfk, nft -> nkt", W_NFK, tmp2_NFT)
         H_NKT *= np.sqrt(numerator / denominator)
 
         lambda_NFT = W_NFK @ H_NKT + eps
-        Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
+        Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
 
-        # update G_NFM (diagonal element of spatial covariance matrices)
-        numerator = np.einsum(
-            "nft, ftm -> nfm", lambda_NFT, Qx_power_FTM / (Y_FTM**2)
-        )
-        denominator = np.einsum("nft, ftm -> nfm", lambda_NFT, 1 / Y_FTM) + eps
-        G_NFM *= np.sqrt(numerator / denominator)
-        Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
+        # update g_NM (diagonal element of spatial covariance matrices)
+        numerator = np.einsum("nft, ftm -> nm", lambda_NFT, Qx_power_FTM / (Y_FTM**2))
+        denominator = np.einsum("nft, ftm -> nm", lambda_NFT, 1 / Y_FTM)
+        g_NM *= np.sqrt(numerator / denominator)
+        Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
 
-        # udpate Q (matrix for joint diagonalization)
+        # udpate Q (joint diagonalizer)
         if (interval_update_Q <= 0) or (epoch % interval_update_Q == 0):
             for m in range(n_chan):
                 V_FMM = (
@@ -179,11 +179,11 @@ def fastmnmf(
         if (interval_normalize <= 0) or (epoch % interval_normalize == 0):
             phi_F = np.einsum("fij, fij -> f", Q_FMM, Q_FMM.conj()).real / n_chan
             Q_FMM /= np.sqrt(phi_F)[:, None, None]
-            G_NFM /= phi_F[None, :, None]
+            W_NFK /= phi_F[None, :, None]
 
-            mu_NF = G_NFM.sum(axis=2)
-            G_NFM /= mu_NF[..., None]
-            W_NFK *= mu_NF[..., None]
+            mu_N = g_NM.sum(axis=1)
+            g_NM /= mu_N[:, None]
+            W_NFK *= mu_N[:, None, None]
 
             nu_NK = W_NFK.sum(axis=1)
             W_NFK /= nu_NK[:, None]
@@ -191,6 +191,6 @@ def fastmnmf(
 
             lambda_NFT = W_NFK @ H_NKT + eps
             Qx_power_FTM = np.abs(np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)) ** 2
-            Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
+            Y_FTM = np.einsum("nft, nm -> ftm", lambda_NFT, g_NM) + eps
 
     return separate()

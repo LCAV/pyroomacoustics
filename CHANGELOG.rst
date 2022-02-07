@@ -11,7 +11,16 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Added
+~~~~~
+
+- Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
+
+Changed
+~~~~~~~
+
+- Refactored the implementation of FastMNMF.
+- Modified the document of __init__.py in ``doa`` subpackage.
 
 `0.6.0`_ - 2021-11-29
 ---------------------

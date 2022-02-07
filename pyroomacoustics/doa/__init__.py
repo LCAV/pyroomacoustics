@@ -9,7 +9,7 @@ MUSIC
     | :py:obj:`pyroomacoustics.doa.music`
 NormMUSIC
     | MUSIC with frequency normalization [2]_
-    | :py:obj:`pyroomacoustics.doa.normmusic
+    | :py:obj:`pyroomacoustics.doa.normmusic`
 SRP-PHAT
     | Steered Response Power -- Phase Transform [3]_
     | :py:obj:`pyroomacoustics.doa.srp`
