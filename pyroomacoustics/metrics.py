@@ -4,6 +4,7 @@ import platform
 
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
+from scipy.signal import hann
 
 from .transform import stft
 
@@ -260,3 +261,105 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
                     pesq_vals[:, i] = np.array(map(float, last_line.split()[-2:]))
 
     return pesq_vals
+
+
+
+def sweeping_echo_measure(rir, fs, t_min = 0, t_max = 0.5, fb = 400):
+    """
+    Measure of sweeping echo in RIR obtained from image-source method.
+    A higher value indicates less sweeping echoes
+    
+    For details see : De Sena et al. "On the modeling of rectangular geometries in
+    room acoustic simulations", IEEE TASLP, 2015
+    
+    
+
+    Parameters
+    ----------
+    rir : RIR signal from ISM.
+    fs : sampling frequency.
+    fmin : TYPE, optional
+        DESCRIPTION. The default is 50.
+    fmax : TYPE, optional
+        DESCRIPTION. The default is 0.9*fs/2.
+    t_min : TYPE, optional
+        DESCRIPTION. The default is 0.
+    t_max : TYPE, optional
+        DESCRIPTION. The default is 0.5.
+    fb : TYPE, optional
+        DESCRIPTION. The default is 400.
+
+    Returns
+    -------
+    sweeping spectrum flatness (ssf)
+
+    """
+    
+    # some default values
+    fmin = 50
+    fmax = 0.9*fs/2
+    
+    fft_size = 512           # fft size for analysis
+    fft_hop = 256            # hop between analysis frame
+    fft_zp = 2**12 - fft_size # zero padding
+    analysis_window = hann(fft_size)
+    
+    #calculate stft
+    S = stft.analysis(rir, fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
+
+    (nFrames, nFreqs) = np.shape(S)
+    nFreqs = int(nFreqs/2)
+    
+    #ignore negative frequencies
+    S = S[:,:nFreqs]
+           
+    timeSlice = np.arange(0, nFrames) * fft_hop/fs
+    assert(nFrames == len(timeSlice))
+    freqSlice = np.linspace(0, fs/2, nFreqs)
+    assert(nFreqs == len(freqSlice))
+    
+    # get time-frequency grid
+    (t_mesh,f_mesh) = np.meshgrid(timeSlice, freqSlice)
+    
+  
+    bmin = int(np.floor(nFreqs/fs * fmin))
+    bmax = int(np.ceil(nFreqs/fs * fmax))
+    
+    Phi = np.zeros(np.shape(S))
+    
+    #normalize spectrogram to make energy identical in each bin
+    for k in range(nFrames):
+        norm_factor = np.sum(np.power(np.abs(S[k,bmin:bmax]),2))
+        Phi[k,:] = np.abs(S[k,:])/np.sqrt(norm_factor)
+        
+        
+    #slope values
+    nCoeffs = 500
+    coeffs = np.linspace(5000, 150000, nCoeffs)
+    ss = np.zeros(nCoeffs)
+    
+    # loop through different slope values
+    for k in range(nCoeffs):
+        
+        # get masks
+        a = coeffs[k]
+        
+        maskTime = np.logical_and(t_mesh > t_min, t_mesh < t_max)
+        
+        maskFreq = np.logical_and(f_mesh > t_mesh*a - fb/2, f_mesh <  t_mesh*a + fb/2)
+        
+        boolMask = np.logical_and(maskTime, maskFreq)
+        
+        ss[k] = np.mean(Phi[boolMask.T])
+        
+        
+    
+    # calculate spectral flatness
+    ssf = np.exp(np.mean(np.log(np.abs(ss))))/np.mean(np.abs(ss))
+    
+    
+    return ssf
+    
+    
+
+    

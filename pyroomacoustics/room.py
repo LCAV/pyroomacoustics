@@ -769,6 +769,7 @@ class Room(object):
         humidity=None,
         air_absorption=False,
         ray_tracing=False,
+        use_rand_ism=False,
     ):
 
         self.walls = walls
@@ -789,6 +790,7 @@ class Room(object):
             humidity,
             air_absorption,
             ray_tracing,
+            use_rand_ism,
         )
 
         # initialize the C++ room engine
@@ -816,6 +818,7 @@ class Room(object):
         humidity,
         air_absorption,
         ray_tracing,
+        use_rand_ism,
     ):
 
         self.fs = fs
@@ -834,6 +837,7 @@ class Room(object):
         # Keep track of the state of the simulator
         self.simulator_state = {
             "ism_needed": (self.max_order >= 0),
+            "random_ism_needed": use_rand_ism,
             "rt_needed": ray_tracing,
             "air_abs_needed": air_absorption,
             "ism_done": False,
@@ -1941,6 +1945,25 @@ class Room(object):
                 source.damping = self.room_engine.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
 
+
+                #if randomized image method is selected, add a small random 
+                #displacement to the image sources
+                if self.simulator_state["random_ism_needed"]:
+                    
+                    nImages = np.shape(source.images)[1]
+                    
+                    # maximum allowed displacement is 8cm
+                    max_disp = 0.08
+                    #add a random displacement to each cartesian coordinate
+                    disp_x = np.random.uniform(-max_disp, max_disp, nImages)
+                    disp_y = np.random.uniform(-max_disp, max_disp, nImages)
+                    disp_z = np.random.uniform(-max_disp, max_disp, nImages)
+                    
+                    source.images[0,:] += disp_x
+                    source.images[1,:] += disp_y
+                    source.images[2,:] += disp_z
+                
+                
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
                 # We need to check that microphones are indeed in the room
@@ -2614,6 +2637,7 @@ class ShoeBox(Room):
         humidity=None,
         air_absorption=False,
         ray_tracing=False,
+        use_rand_ism=False,
     ):
 
         p = np.array(p, dtype=np.float32)
@@ -2636,6 +2660,7 @@ class ShoeBox(Room):
             humidity,
             air_absorption,
             ray_tracing,
+            use_rand_ism,
         )
 
         # Keep the correctly ordered naming of walls
