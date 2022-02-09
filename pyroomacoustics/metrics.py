@@ -276,18 +276,14 @@ def sweeping_echo_measure(rir, fs, t_min = 0, t_max = 0.5, fb = 400):
 
     Parameters
     ----------
-    rir : RIR signal from ISM.
+    rir : RIR signal from ISM (mono).
     fs : sampling frequency.
-    fmin : TYPE, optional
-        DESCRIPTION. The default is 50.
-    fmax : TYPE, optional
-        DESCRIPTION. The default is 0.9*fs/2.
     t_min : TYPE, optional
-        DESCRIPTION. The default is 0.
+        Minimum time window. The default is 0.
     t_max : TYPE, optional
-        DESCRIPTION. The default is 0.5.
+        Maximum time window. The default is 0.5.
     fb : TYPE, optional
-        DESCRIPTION. The default is 400.
+        Mask bandwidth. The default is 400.
 
     Returns
     -------
@@ -295,13 +291,15 @@ def sweeping_echo_measure(rir, fs, t_min = 0, t_max = 0.5, fb = 400):
 
     """
     
+    
     # some default values
     fmin = 50
     fmax = 0.9*fs/2
     
-    fft_size = 512           # fft size for analysis
-    fft_hop = 256            # hop between analysis frame
-    fft_zp = 2**12 - fft_size # zero padding
+    # STFT parameters
+    fft_size = 512             # fft size for analysis
+    fft_hop = 256              # hop between analysis frame
+    fft_zp = 2**12 - fft_size  # zero padding
     analysis_window = hann(fft_size)
     
     #calculate stft
