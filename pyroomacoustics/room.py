@@ -98,6 +98,37 @@ The fourth and last argument is the maximum number of reflections allowed in the
     Until recently, rooms would take an ``absorption`` parameter that was
     actually **not** the energy absorption we use now.  The ``absorption``
     parameter is now deprecated and will be removed in the future.
+    
+    
+Randomized Image Method
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In highly symmetric shoebox rooms, the regularity of image sources’ positions 
+leads to a monotonic convergence in the time arrival of far-field image pairs.
+This causessweeping echoes. The randomized image method adds a small random 
+displacement to the image source positions, so that they are no longer 
+time-aligned, thus reducing sweeping echoes considerably.
+
+To use the randomized method, set the flag ``use_rand_ism`` to True while creating
+a room. Additionally, the maximum displacement of the image sources can be 
+chosen by setting the parameter ``max_rand_disp``. The default value is 8cm.
+
+.. code-block:: python
+
+    import pyroomacoustics as pra
+
+    # The desired reverberation time and dimensions of the room
+    rt60 = 0.5  # seconds
+    room_dim = [5, 5, 5]  # meters
+
+    # We invert Sabine's formula to obtain the parameters for the ISM simulator
+    e_absorption, max_order = pra.inverse_sabine(rt60, room_dim)
+
+    # Create the room
+    room = pra.ShoeBox(
+        room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=max_order,
+        use_rand_ism = True, max_rand_disp = 0.05
+        )
 
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -336,6 +367,7 @@ This example is partly exctracted from `./examples/room_from_rt60.py`.
 
     plt.tight_layout()
     plt.show()
+
 
 
 
@@ -754,6 +786,12 @@ class Room(object):
     ray_tracing: bool, optional
         If set to True, the ray tracing simulator will be used along with
         image source model.
+    use_rand_ism: bool, optional
+        If set to True, image source positions will have a small random 
+        displacement to prevent sweeping echoes
+    max_rand_disp: float, optional;
+        If using randomized image source method, what is the maximum 
+        displacement of the image sources?
     """
 
     def __init__(
@@ -770,6 +808,7 @@ class Room(object):
         air_absorption=False,
         ray_tracing=False,
         use_rand_ism=False,
+        max_rand_disp = 0.08,
     ):
 
         self.walls = walls
@@ -791,6 +830,7 @@ class Room(object):
             air_absorption,
             ray_tracing,
             use_rand_ism,
+            max_rand_disp,
         )
 
         # initialize the C++ room engine
@@ -819,6 +859,7 @@ class Room(object):
         air_absorption,
         ray_tracing,
         use_rand_ism,
+        max_rand_disp,
     ):
 
         self.fs = fs
@@ -833,6 +874,7 @@ class Room(object):
         self.sigma2_awgn = sigma2_awgn
 
         self.octave_bands = OctaveBandsFactory(fs=self.fs)
+        self.max_rand_disp = max_rand_disp
 
         # Keep track of the state of the simulator
         self.simulator_state = {
@@ -1953,7 +1995,7 @@ class Room(object):
                     nImages = np.shape(source.images)[1]
                     
                     # maximum allowed displacement is 8cm
-                    max_disp = 0.08
+                    max_disp = self.max_rand_disp
                     #add a random displacement to each cartesian coordinate
                     disp_x = np.random.uniform(-max_disp, max_disp, nImages)
                     disp_y = np.random.uniform(-max_disp, max_disp, nImages)
@@ -2620,6 +2662,12 @@ class ShoeBox(Room):
     ray_tracing: bool, optional
         If set to True, the ray tracing simulator will be used along with
         image source model.
+    use_rand_ism: bool,optional
+        If set to True, image source positions will have a small random 
+        displacement to prevent sweeping echoes
+    max_rand_disp: float, optional;
+        If using randomized image source method, what is the maximum 
+        displacement of the image sources?
     """
 
     def __init__(
@@ -2638,6 +2686,7 @@ class ShoeBox(Room):
         air_absorption=False,
         ray_tracing=False,
         use_rand_ism=False,
+        max_rand_disp=0.08
     ):
 
         p = np.array(p, dtype=np.float32)
@@ -2661,6 +2710,7 @@ class ShoeBox(Room):
             air_absorption,
             ray_tracing,
             use_rand_ism,
+            max_rand_disp,
         )
 
         # Keep the correctly ordered naming of walls
