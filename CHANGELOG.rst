@@ -21,6 +21,7 @@ Changed
 
 - Refactored the implementation of FastMNMF.
 - Modified the document of __init__.py in ``doa`` subpackage.
+- `End of Python 3.6 support <https://endoflife.date/python>`__
 
 `0.6.0`_ - 2021-11-29
 ---------------------
