@@ -24,10 +24,9 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
-
 import pyroomacoustics as pra
-
 
 c0 = np.array(
     [
@@ -392,7 +391,7 @@ class TestRoomWalls(unittest.TestCase):
         # correct intersection
         result = np.array([0, 2, 1])
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         correct_result = np.allclose(ttuple[0], result, atol=eps)
         correct_next_wall = ttuple[1] == 4
@@ -431,7 +430,7 @@ class TestRoomWalls(unittest.TestCase):
         # end outside the room
         end = [-2, -3, -1]
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         self.assertTrue(ttuple[1] == -1)
 
@@ -466,7 +465,7 @@ class TestRoomWalls(unittest.TestCase):
         # the intersection expected result
         result = np.array([0, -1.0 / 3])
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         correct_result = np.allclose(ttuple[0], result, atol=eps)
         correct_next_wall = ttuple[1] == 4

@@ -23,8 +23,9 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
-import numpy as np
 import itertools
+
+import numpy as np
 from scipy import signal
 from scipy.io import wavfile
 
@@ -229,7 +230,7 @@ def highpass(signal, Fs, fc=None, plot=False):
     wc = 2.0 * fc / Fs
 
     # design the filter
-    from scipy.signal import iirfilter, lfilter, freqz
+    from scipy.signal import freqz, iirfilter, lfilter
 
     b, a = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type)
 
@@ -310,7 +311,7 @@ def time_dB(signal, Fs, bits=16):
 
 def spectrum(signal, Fs, N):
 
-    from .stft import stft, spectroplot
+    from .stft import spectroplot, stft
     from .windows import hann
 
     F = stft(signal, N, N / 2, win=hann(N))
@@ -368,7 +369,7 @@ def compare_plot(
     if title2 is not None:
         plt.title(title2)
 
-    from .stft import stft, spectroplot
+    from .stft import spectroplot, stft
     from .windows import hann
 
     F1 = stft.stft(signal1, fft_size, fft_size / 2, win=windows.hann(fft_size))
@@ -598,7 +599,7 @@ def fractional_delay_filter_bank(delays):
     bank_flat = np.zeros(N * filter_length)
 
     # separate delays in integer and fractional parts
-    di = np.floor(delays).astype(np.int)
+    di = np.floor(delays).astype(np.int64)
     df = delays - di
 
     # broadcasting tricks to compute at once all the locations

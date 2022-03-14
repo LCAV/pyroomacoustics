@@ -14,8 +14,8 @@ Room.image_source_model() 25000 times.
 If the C module is not installed (pure python
 fallback version), then nothing is done.
 """
-import pyroomacoustics
 import numpy as np
+import pyroomacoustics
 
 
 def test_issue_22():
@@ -28,13 +28,17 @@ def test_issue_22():
     dim = 3
     mic_pos = np.random.rand(dim, n_mics)
     abs_coeff = 0.1
+    e_abs = 1.0 - (1.0 - abs_coeff) ** 2
     fs = 16000
     wall_max_len = 15
 
     room_dim = np.random.rand(dim) * wall_max_len
 
     shoebox = pyroomacoustics.ShoeBox(
-        room_dim, absorption=abs_coeff, fs=fs, max_order=0
+        room_dim,
+        materials=pyroomacoustics.Material(e_abs),
+        fs=fs,
+        max_order=0,
     )
 
     src_pos = np.random.rand(dim, n_src) * room_dim[:, None]

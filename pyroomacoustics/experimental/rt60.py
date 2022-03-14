@@ -112,6 +112,4 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
 
         plt.legend()
 
-        plt.show()
-
     return est_rt60

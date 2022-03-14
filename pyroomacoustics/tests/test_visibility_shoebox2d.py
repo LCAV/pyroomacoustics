@@ -3,20 +3,21 @@
 # @copyright: EPFL-IC-LCAV 2015
 
 import unittest
-import numpy as np
 
+import numpy as np
 import pyroomacoustics as pra
 
 fs = 8000
 t0 = 0.0
 absorption = 0.90
+e_abs = 1.0 - (1.0 - absorption) ** 2
 max_order_sim = 2
 sigma2_n = 5e-7
 
 corners = np.array([[0, 0, 4, 4], [0, 4, 4, 0]])
 room = pra.Room.from_corners(
     corners,
-    absorption=absorption,
+    materials=pra.Material(e_abs),
     fs=fs,
     t0=t0,
     max_order=max_order_sim,

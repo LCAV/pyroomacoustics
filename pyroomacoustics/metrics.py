@@ -1,7 +1,7 @@
-import numpy as np
 import os
 import platform
 
+import numpy as np
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 
@@ -146,7 +146,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
 # Simple mean squared error function
 def mse(x1, x2):
-    """
+    r"""
     A short hand to compute the mean-squared error of two signals.
 
     .. math::

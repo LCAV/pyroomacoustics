@@ -633,7 +633,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
         times.append(times[-1] + dt)
 
     # convert from continuous to discrete time
-    indices = (np.array(times) * fs).astype(np.int)
+    indices = (np.array(times) * fs).astype(np.int64)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
