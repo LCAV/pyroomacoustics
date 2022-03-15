@@ -24,11 +24,12 @@
 
 import numpy as np
 from scipy import integrate
-from pyroomacoustics import lpc
+
+from ..utilities import lpc
 
 
 class IterativeWiener(object):
-    """
+    r"""
     A class for performing **single channel** noise reduction in the frequency
     domain with a Wiener filter that is iteratively computed. This
     implementation is based off of the approach presented in:
@@ -248,7 +249,7 @@ class IterativeWiener(object):
 
 
 def compute_speech_psd(a, g2, nfft):
-    """
+    r"""
     Compute power spectral density of speech as specified in equation (41b) of
 
         J. Lim and A. Oppenheim, *All-Pole Modeling of Degraded Speech,*
@@ -286,7 +287,7 @@ def compute_speech_psd(a, g2, nfft):
 
 
 def compute_squared_gain(a, noise_psd, y):
-    """
+    r"""
     Estimate the squared gain of the speech power spectral density as done on
     p. 204 of
 
@@ -331,9 +332,9 @@ def compute_squared_gain(a, noise_psd, y):
 
     # right hand side of expression
     if np.isscalar(noise_psd):  # white noise, i.e. flat spectrum
-        rhs = np.sum(y ** 2) - N * noise_psd
+        rhs = np.sum(y**2) - N * noise_psd
     else:
-        rhs = np.sum(y ** 2) - np.sum(noise_psd)
+        rhs = np.sum(y**2) - np.sum(noise_psd)
 
     # estimate integral
     d_omega = 2 * np.pi / 1000

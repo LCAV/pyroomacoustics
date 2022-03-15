@@ -615,7 +615,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # repeated constant
-    fpcv = 4 * np.pi * c ** 3 / volume
+    fpcv = 4 * np.pi * c**3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -633,7 +633,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
         times.append(times[-1] + dt)
 
     # convert from continuous to discrete time
-    indices = (np.array(times) * fs).astype(np.int)
+    indices = (np.array(times) * fs).astype(np.int64)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
@@ -2298,7 +2298,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
 
     def get_wall_by_name(self, name):
         """

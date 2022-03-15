@@ -1,7 +1,7 @@
-import numpy as np
 import os
 import platform
 
+import numpy as np
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 
@@ -146,7 +146,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
 # Simple mean squared error function
 def mse(x1, x2):
-    """
+    r"""
     A short hand to compute the mean-squared error of two signals.
 
     .. math::
@@ -167,8 +167,8 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
     P1 = np.abs(stft.analysis(x1, stft_L, stft_hop)) ** 2
     P2 = np.abs(stft(x2, stft_L, stft_hop)) ** 2
 
-    VAD1 = P1.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
-    VAD2 = P2.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
+    VAD1 = P1.mean(axis=1) > 2 * stft_L**2 * sigma2_n
+    VAD2 = P2.mean(axis=1) > 2 * stft_L**2 * sigma2_n
     VAD = np.logical_or(VAD1, VAD2)
 
     if P1.shape[0] != P2.shape[0] or P1.shape[1] != P2.shape[1]:
@@ -183,7 +183,7 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
 def snr(ref, deg):
 
-    return np.sum(ref ** 2) / np.sum((ref - deg) ** 2)
+    return np.sum(ref**2) / np.sum((ref - deg) ** 2)
 
 
 # Perceptual Evaluation of Speech Quality for multiple files using multiple threads

@@ -1,5 +1,7 @@
 from __future__ import division, print_function
+
 from unittest import TestCase
+
 import numpy as np
 from pyroomacoustics.denoise import Subspace
 
@@ -36,7 +38,7 @@ def test_cov_computation(skip=1):
         covs.append((scnr._cov_sn[-1]))
 
     # compute covariance with all samples instead of update
-    if data_type is "float64":
+    if data_type == "float64":
         data_type = np.float64
     else:
         data_type = np.float32

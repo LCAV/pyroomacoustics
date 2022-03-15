@@ -169,9 +169,12 @@ def fastmnmf(
                 )
                 Q_FMM[:, m] = (
                     tmp_FM
-                    / np.sqrt(
-                        np.einsum("fi, fij, fj -> f", tmp_FM.conj(), V_FMM, tmp_FM)
-                    )[:, None]
+                    / (
+                        np.sqrt(
+                            np.einsum("fi, fij, fj -> f", tmp_FM.conj(), V_FMM, tmp_FM)
+                        )[:, None]
+                        + eps
+                    )
                 ).conj()
                 Qx_power_FTM = np.abs(np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)) ** 2
 

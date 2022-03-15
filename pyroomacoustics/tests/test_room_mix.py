@@ -1,11 +1,13 @@
 """
 Tests the mixing function of ``Room.simulate``
 """
-import numpy as np
-import pyroomacoustics as pra
 import unittest
 
-room = pra.ShoeBox([9, 5, 4], fs=16000, absorption=0.25, max_order=15)
+import numpy as np
+import pyroomacoustics as pra
+
+e_abs = 1.0 - (1.0 - 0.25) ** 2
+room = pra.ShoeBox([9, 5, 4], fs=16000, materials=pra.Material(e_abs), max_order=15)
 
 # three microphones
 room.add_microphone_array(

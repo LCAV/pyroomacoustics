@@ -311,7 +311,7 @@ def sph_plot_diracs_plotly(
         text_str2 = []
         for count, colatitude0 in enumerate(colatitude_ref):
             text_str2.append(
-                u"({0:.2f}\N{DEGREE SIGN}, {1:.2f}\N{DEGREE SIGN})".format(
+                "({0:.2f}\N{DEGREE SIGN}, {1:.2f}\N{DEGREE SIGN})".format(
                     np.degrees(colatitude0), np.degrees(azimuth_ref[count])
                 )
             )
@@ -350,7 +350,7 @@ def sph_plot_diracs_plotly(
         text_str3 = []
         for count, colatitude0 in enumerate(colatitude):
             text_str3.append(
-                u"({0:.2f}\N{DEGREE SIGN}, {1:.2f}\N{DEGREE SIGN})".format(
+                "({0:.2f}\N{DEGREE SIGN}, {1:.2f}\N{DEGREE SIGN})".format(
                     np.degrees(colatitude0), np.degrees(azimuth[count])
                 )
             )
@@ -532,17 +532,17 @@ def sph_plot_diracs(
 
     ax.set_xticklabels(
         [
-            u"210\N{DEGREE SIGN}",
-            u"240\N{DEGREE SIGN}",
-            u"270\N{DEGREE SIGN}",
-            u"300\N{DEGREE SIGN}",
-            u"330\N{DEGREE SIGN}",
-            u"0\N{DEGREE SIGN}",
-            u"30\N{DEGREE SIGN}",
-            u"60\N{DEGREE SIGN}",
-            u"90\N{DEGREE SIGN}",
-            u"120\N{DEGREE SIGN}",
-            u"150\N{DEGREE SIGN}",
+            "210\N{DEGREE SIGN}",
+            "240\N{DEGREE SIGN}",
+            "270\N{DEGREE SIGN}",
+            "300\N{DEGREE SIGN}",
+            "330\N{DEGREE SIGN}",
+            "0\N{DEGREE SIGN}",
+            "30\N{DEGREE SIGN}",
+            "60\N{DEGREE SIGN}",
+            "90\N{DEGREE SIGN}",
+            "120\N{DEGREE SIGN}",
+            "150\N{DEGREE SIGN}",
         ]
     )
 

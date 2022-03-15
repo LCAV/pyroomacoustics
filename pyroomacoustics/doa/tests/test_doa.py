@@ -35,7 +35,7 @@ x = np.random.randn((nfft // 2 + 1) * nfft)
 # convolve the source signal with the fractional delay filters
 # to get the microphone input signals
 mic_signals = np.array([fftconvolve(x, filter, mode="same") for filter in filter_bank])
-X = pra.transform.analysis(mic_signals.T, nfft, nfft // 2, win=np.hanning(nfft))
+X = pra.transform.stft.analysis(mic_signals.T, nfft, nfft // 2, win=np.hanning(nfft))
 X = np.swapaxes(X, 2, 0)
 
 

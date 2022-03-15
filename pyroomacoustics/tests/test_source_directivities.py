@@ -34,7 +34,7 @@ room.compute_rir()
 class TestSourceDirectivity(TestCase):
     def test_zero_gain(self):
         gain = np.amax(room.rir[0][0])
-        self.assertTrue(gain < (10 ** -10))
+        self.assertTrue(gain < (10**-10))
 
 
 def get_error():

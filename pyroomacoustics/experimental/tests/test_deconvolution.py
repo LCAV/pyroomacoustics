@@ -58,7 +58,7 @@ class TestDeconvolution(TestCase):
         y, sigma_noise = generate_signals(SNR, x, h, noise)
 
         h_hat = pra.experimental.wiener_deconvolve(
-            y, x, length=h_len, noise_variance=sigma_noise ** 2
+            y, x, length=h_len, noise_variance=sigma_noise**2
         )
         rmse = np.sqrt(np.linalg.norm(h_hat - h) ** 2 / h_len)
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     mse1 = np.linalg.norm(h_hat1 - h) ** 2 / h_len
 
     h_hat2 = pra.experimental.wiener_deconvolve(
-        y, x, length=h_len, noise_variance=sigma_noise ** 2, let_n_points=15
+        y, x, length=h_len, noise_variance=sigma_noise**2, let_n_points=15
     )
     res2 = np.linalg.norm(y - fftconvolve(x, h_hat2)) ** 2 / y.shape[0]
     mse2 = np.linalg.norm(h_hat2 - h) ** 2 / h_len

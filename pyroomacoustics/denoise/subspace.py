@@ -27,7 +27,7 @@ import numpy as np
 
 
 class Subspace(object):
-    """
+    r"""
     A class for performing **single channel** noise reduction in the time domain
     via the subspace approach. This implementation is based off of the approach
     presented in:
@@ -130,7 +130,7 @@ class Subspace(object):
                 "Frame length should be even as this method " "performs 50% overlap."
             )
 
-        if data_type is "float64":
+        if data_type == "float64":
             data_type = np.float64
         else:
             data_type = np.float32

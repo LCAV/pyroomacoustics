@@ -6,10 +6,11 @@ Part of the pyroomacoustics package
 MIT License
 """
 
-import numpy as np
-from scipy.io import wavfile
 import unittest
+
+import numpy as np
 import pyroomacoustics as pra
+from scipy.io import wavfile
 
 test_tol = 1e-2
 
@@ -19,7 +20,7 @@ fs, audio = wavfile.read(filename)
 fft_size = 512
 hop = fft_size // 4
 win_a = np.hamming(fft_size)
-win_s = pra.transform.compute_synthesis_window(win_a, hop)
+win_s = pra.transform.stft.compute_synthesis_window(win_a, hop)
 n_iter = 200
 
 engine = pra.transform.STFT(

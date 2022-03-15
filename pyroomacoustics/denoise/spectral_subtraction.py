@@ -27,7 +27,7 @@ import numpy as np
 
 
 class SpectralSub(object):
-    """
+    r"""
     Here we have a class for performing **single channel** noise reduction via
     spectral subtraction. The instantaneous signal energy and noise floor is
     estimated at each time instance (for each frequency bin) and this is used

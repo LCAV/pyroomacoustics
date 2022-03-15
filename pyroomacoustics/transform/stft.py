@@ -887,7 +887,7 @@ def compute_synthesis_window(analysis_window, hop):
     # now move the window and sum all the contributions
     while n < L:
         if n == 0:
-            norm += analysis_window ** 2
+            norm += analysis_window**2
         elif n < 0:
             norm[: n + L] += analysis_window[-n - L :] ** 2
         else:

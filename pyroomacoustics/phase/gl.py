@@ -57,7 +57,7 @@ Example
     fft_size = 512
     hop = fft_size // 4
     win_a = np.hamming(fft_size)
-    win_s = pra.transform.compute_synthesis_window(win_a, hop)
+    win_s = pra.transform.stft.compute_synthesis_window(win_a, hop)
     n_iter = 200
 
     engine = pra.transform.STFT(
@@ -100,7 +100,8 @@ except NameError:
     basestring = str
 
 import numpy as np
-from ..transform import STFT, compute_synthesis_window
+
+from ..transform.stft import STFT, compute_synthesis_window
 
 
 def griffin_lim(
