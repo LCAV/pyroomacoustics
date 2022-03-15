@@ -512,8 +512,8 @@ def gaussian(N, std, flag="asymmetric", length="full"):
         t = t / float(N)
 
     n = np.arange(0, N) - (N - 1.0) / 2.0
-    sig2 = 2 * std ** 2
-    w = np.exp(-(n ** 2) / sig2)
+    sig2 = 2 * std**2
+    w = np.exp(-(n**2) / sig2)
 
     return w
 

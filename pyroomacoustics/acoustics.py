@@ -555,7 +555,7 @@ def inverse_sabine(rt60, room_dim, c=None):
     # diamond. this is what we are doing here.
     R = []
     for l1, l2 in itertools.combinations(room_dim, 2):
-        R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
+        R.append(l1 * l2 / np.sqrt(l1**2 + l2**2))
 
     V = np.prod(room_dim)  # area (2d) or volume (3d)
     # "surface" computation is diff for 2d and 3d

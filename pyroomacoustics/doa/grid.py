@@ -198,7 +198,7 @@ class GridSphere(Grid):
             increment = np.pi * (3.0 - np.sqrt(5.0))
 
             self.z[:] = (np.arange(n_points) * offset - 1) + offset / 2
-            rho = np.sqrt(1.0 - self.z ** 2)
+            rho = np.sqrt(1.0 - self.z**2)
 
             phi = np.arange(n_points) * increment
 
@@ -208,7 +208,7 @@ class GridSphere(Grid):
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
             self.azimuth[:] = np.arctan2(self.y, self.x)
-            self.colatitude[:] = np.arctan2(np.sqrt(self.x ** 2 + self.y ** 2), self.z)
+            self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
 
         # To perform the peak detection in 2D on a non-squared grid it is
         # necessary to know the neighboring points of each grid point.  The

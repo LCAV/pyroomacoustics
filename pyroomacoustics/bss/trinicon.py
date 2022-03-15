@@ -134,7 +134,7 @@ def trinicon(
                     y_blocks[q, i, :] = y_c[q, i * L : i * L + N]
 
             # blocks energy
-            sigma2 = np.sum(y_blocks ** 2, axis=2)
+            sigma2 = np.sum(y_blocks**2, axis=2)
 
             # cross-correlations
             # XXX This is the part hard coded for two channels XXX

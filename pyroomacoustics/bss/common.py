@@ -184,7 +184,7 @@ def sparir(
     # Define stopping criteria
     crit = np.zeros((maxiter, 1))
     criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-    crit[iter_] = np.sum(criterion ** 2)
+    crit[iter_] = np.sum(criterion**2)
 
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
         # Update gradient
@@ -205,7 +205,7 @@ def sparir(
         gradq = np.expand_dims(gradq, axis=1)
         # Update stopping criteria
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-        crit[iter_] = sum(criterion ** 2) + sum(
+        crit[iter_] = sum(criterion**2) + sum(
             abs(gradq[~support]) - tau[~support] > tol
         )
 

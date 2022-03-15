@@ -74,8 +74,8 @@ class TestRayEnergy(unittest.TestCase):
         distance = round_trip / 2.0
 
         while transmitted / distance > energy_thresh:
-            r_sq = distance ** 2
-            p_hit = 1.0 - np.sqrt(1.0 - detector_radius ** 2 / r_sq)
+            r_sq = distance**2
+            p_hit = 1.0 - np.sqrt(1.0 - detector_radius**2 / r_sq)
             histogram_gt.add(distance, transmitted / (r_sq * p_hit))
             transmitted *= (1.0 - energy_absorption) ** 4  # 4 wall hits
             distance += round_trip

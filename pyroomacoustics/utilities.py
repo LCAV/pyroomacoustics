@@ -171,7 +171,7 @@ def to_16b(signal):
     No clipping in performed, you are responsible to ensure signal is within
     the correct interval.
     """
-    return ((2 ** 15 - 1) * signal).astype(np.int16)
+    return ((2**15 - 1) * signal).astype(np.int16)
 
 
 def clip(signal, high, low):
@@ -207,8 +207,8 @@ def normalize_pwr(sig1, sig2):
     """Normalize sig1 to have the same power as sig2."""
 
     # average power per sample
-    p1 = np.mean(sig1 ** 2)
-    p2 = np.mean(sig2 ** 2)
+    p1 = np.mean(sig1**2)
+    p2 = np.mean(sig2**2)
 
     # normalize
     return sig1.copy() * np.sqrt(p2 / p1)

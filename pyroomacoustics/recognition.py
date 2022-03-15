@@ -38,7 +38,7 @@ class CircularGaussianEmission:
 
             self.mu = np.array([np.mean(X, axis=0)] * self.K)
             centered = X - self.mu[0]
-            self.Sigma = np.array([np.mean(centered ** 2, axis=0)] * self.K)
+            self.Sigma = np.array([np.mean(centered**2, axis=0)] * self.K)
 
     def update_parameters(self, examples, gamma):
 
@@ -100,7 +100,7 @@ class GaussianEmission:
 
             self.mu = np.array([np.mean(X, axis=0)] * self.K)
             centered = X - self.mu[0]
-            self.Sigma = np.array([np.diag(np.mean(centered ** 2, axis=0))] * self.K)
+            self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))] * self.K)
 
     def update_parameters(self, examples, gamma):
 

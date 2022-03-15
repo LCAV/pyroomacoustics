@@ -154,8 +154,8 @@ class PointCloud:
         at unknown location Dx, Dy to x, y, respectively, finds the position of the point.
         """
 
-        z = (c ** 2 - (Dy ** 2 - Dx ** 2)) / (2 * c)
-        t = np.sqrt(Dx ** 2 - z ** 2)
+        z = (c**2 - (Dy**2 - Dx**2)) / (2 * c)
+        t = np.sqrt(Dx**2 - z**2)
 
         return np.array([t, z])
 
@@ -410,11 +410,11 @@ if __name__ == "__main__":
     """
 
     M1 = MarkerSet(m=m, dim=dim, diameter=marker_diameter)
-    M1.fromEDM(D ** 2)
+    M1.fromEDM(D**2)
     M1.normalize()
 
     M2 = MarkerSet(m=m, dim=dim, diameter=marker_diameter)
-    M2.fromEDM(D ** 2, method="tri")
+    M2.fromEDM(D**2, method="tri")
     M2.normalize()
 
     M2.plot(marker="ko", labels=True)

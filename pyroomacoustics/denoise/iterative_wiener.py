@@ -332,9 +332,9 @@ def compute_squared_gain(a, noise_psd, y):
 
     # right hand side of expression
     if np.isscalar(noise_psd):  # white noise, i.e. flat spectrum
-        rhs = np.sum(y ** 2) - N * noise_psd
+        rhs = np.sum(y**2) - N * noise_psd
     else:
-        rhs = np.sum(y ** 2) - np.sum(noise_psd)
+        rhs = np.sum(y**2) - np.sum(noise_psd)
 
     # estimate integral
     d_omega = 2 * np.pi / 1000

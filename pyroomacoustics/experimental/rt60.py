@@ -59,7 +59,7 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
     fs = float(fs)
 
     # The power of the impulse response in dB
-    power = h ** 2
+    power = h**2
     energy = np.cumsum(power[::-1])[::-1]  # Integration according to Schroeder
 
     # remove the possibly all zero tail
