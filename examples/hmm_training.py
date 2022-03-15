@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # Initialize the emission parameters to mean and variance of dataset
     emission2.mu[:, :] = np.array([np.mean(X, axis=0)] * K)
     centered = X - emission2.mu[0]
-    emission2.Sigma[:, :] = np.array([np.mean(centered ** 2, axis=0)] * K)
+    emission2.Sigma[:, :] = np.array([np.mean(centered**2, axis=0)] * K)
 
     # Now try to fit the model
     niter = hmm2.fit(examples, tol=1e-8, max_iter=1000, verbose=True)
