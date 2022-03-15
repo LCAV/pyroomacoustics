@@ -130,7 +130,7 @@ def fastmnmf(
             callback(separate())
 
         # update W and H (basis and activation of NMF)
-        tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM**2))
+        tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM ** 2))
         tmp2_NFT = np.einsum("nfm, ftm -> nft", G_NFM, 1 / Y_FTM)
 
         numerator = np.einsum("nkt, nft -> nfk", H_NKT, tmp1_NFT)
@@ -140,7 +140,7 @@ def fastmnmf(
         if not accelerate:
             lambda_NFT = W_NFK @ H_NKT + eps
             Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
-            tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM**2))
+            tmp1_NFT = np.einsum("nfm, ftm -> nft", G_NFM, Qx_power_FTM / (Y_FTM ** 2))
             tmp2_NFT = np.einsum("nfm, ftm -> nft", G_NFM, 1 / Y_FTM)
 
         numerator = np.einsum("nfk, nft -> nkt", W_NFK, tmp1_NFT)
@@ -152,7 +152,7 @@ def fastmnmf(
 
         # update G_NFM (diagonal element of spatial covariance matrices)
         numerator = np.einsum(
-            "nft, ftm -> nfm", lambda_NFT, Qx_power_FTM / (Y_FTM**2)
+            "nft, ftm -> nfm", lambda_NFT, Qx_power_FTM / (Y_FTM ** 2)
         )
         denominator = np.einsum("nft, ftm -> nfm", lambda_NFT, 1 / Y_FTM) + eps
         G_NFM *= np.sqrt(numerator / denominator)

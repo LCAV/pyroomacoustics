@@ -32,8 +32,12 @@ import scipy.linalg as la
 from . import transform
 from . import utilities as u
 from . import windows
-from .directivities import (CardioidFamily, DirectionVector, Directivity,
-                            DirectivityPattern)
+from .directivities import (
+    CardioidFamily,
+    DirectionVector,
+    Directivity,
+    DirectivityPattern,
+)
 from .parameters import constants
 from .soundsource import build_rir_matrix
 
