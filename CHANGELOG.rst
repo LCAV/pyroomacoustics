@@ -25,6 +25,11 @@ Changed
 - Removed the deprecated ``realtime`` sub-module.
 - Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
 
+Bugfix
+~~~~~~
+
+- Fixed most warnings in the tests
+
 `0.6.0`_ - 2021-11-29
 ---------------------
 
