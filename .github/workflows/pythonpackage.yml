@@ -40,8 +40,8 @@ jobs:
         python setup.py build_ext --inplace
     - name: Test with pytest
       run: |
-        pip install nose
-        nosetests
+        pip install pytest
+        pytest
     - name: Publish sdist to pypi
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && matrix.os == 'ubuntu-latest'
       env:
