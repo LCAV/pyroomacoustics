@@ -37,7 +37,7 @@ jobs:
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Build package
       run: |
-        python setup.py build_ext --inplace
+        python -m pip install -e .
     - name: Test with pytest
       run: |
         pip install pytest
