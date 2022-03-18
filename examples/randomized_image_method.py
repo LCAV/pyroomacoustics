@@ -43,14 +43,17 @@ for n in range(-Nmic_each_axis, Nmic_each_axis+1):
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
+ax.scatter(source_loc[0], source_loc[1], source_loc[2], marker='+', c = 'k', s=40)
 ax.scatter(mic_loc[0,:],mic_loc[1,:], mic_loc[2,:])
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
+ax.set_title('Speaker and mic array configuration') 
+
 
 plt.xlim([0,4])
-plt.ylim([0,4])  
+plt.ylim([0,4]) 
 
 
 ###############################################################
@@ -82,6 +85,7 @@ for n in range(M):
         S = stft.analysis(room.rir[n][0],  fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
         
         plt.figure()
+        ax = plt.gca()
         
         plt.imshow(
         pra.dB(S.T),
@@ -91,7 +95,7 @@ for n in range(M):
         origin="lower",
         cmap="jet"
         )
-        ax.set_title("Mic location " + str(n))
+        ax.set_title("RIR for Mic location " + str(n) + " without random ISM")
         ax.set_ylabel("Frequency")
         ax.set_xlabel("Time")
         ax.set_aspect("auto")
@@ -131,6 +135,7 @@ for n in range(M):
         S = stft.analysis(room.rir[n][0],  fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
         
         plt.figure()
+        ax =plt.gca()
         
         plt.imshow(
         pra.dB(S.T),
@@ -140,7 +145,7 @@ for n in range(M):
         origin="lower",
         cmap="jet"
         )
-        ax.set_title("Mic location " + str(n))
+        ax.set_title("RIR for Mic location " + str(n) + " with random ISM")
         ax.set_ylabel("Frequency")
         ax.set_xlabel("Time")
         ax.set_aspect("auto")
@@ -150,7 +155,8 @@ for n in range(M):
         #plot RIR
         plt.figure()
         plt.plot(room.rir[n][0])
-        plt.show()
+        ax.set_title("RIR for Mic location " + str(n) + " with random ISM")
+   
         
         
     # measure of spectral flatness of sweeping echos
@@ -158,3 +164,5 @@ for n in range(M):
     ssf = met.sweeping_echo_measure(room.rir[n][0],fs)
     print(ssf) 
             
+    #show plots
+    plt.show()
