@@ -43,11 +43,24 @@ def median(x, alpha=None, axis=-1, keepdims=False):
         ]
     else:
         # if n is even, average the two central elements
-        m = 0.5 * (xsw[n // 2 - 1,] + xsw[n // 2,])
+        m = 0.5 * (
+            xsw[
+                n // 2 - 1,
+            ]
+            + xsw[
+                n // 2,
+            ]
+        )
 
     if alpha is None:
         if keepdims:
-            m = np.moveaxis(m[np.newaxis,], 0, axis,)
+            m = np.moveaxis(
+                m[
+                    np.newaxis,
+                ],
+                0,
+                axis,
+            )
         return m
 
     else:
@@ -70,7 +83,18 @@ def median(x, alpha=None, axis=-1, keepdims=False):
                     "Warning: Sample size is too small. No confidence interval found."
                 )
             else:
-                ci = np.array([xsw[j,] - m, xsw[k,] - m,])
+                ci = np.array(
+                    [
+                        xsw[
+                            j,
+                        ]
+                        - m,
+                        xsw[
+                            k,
+                        ]
+                        - m,
+                    ]
+                )
 
         else:
             # we use the Normal approximation for large sets
@@ -78,14 +102,45 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             eta = norm.ppf(1 - alpha / 2)
             j = int(np.floor(0.5 * n - 0.5 * eta * np.sqrt(n))) - 1
             k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
-            ci = np.array([xsw[j,] - m, xsw[k,] - m,])
+            ci = np.array(
+                [
+                    xsw[
+                        j,
+                    ]
+                    - m,
+                    xsw[
+                        k,
+                    ]
+                    - m,
+                ]
+            )
 
         if keepdims:
-            m = np.moveaxis(m[np.newaxis,], 0, axis,)
+            m = np.moveaxis(
+                m[
+                    np.newaxis,
+                ],
+                0,
+                axis,
+            )
             if axis < 0:
-                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis,)
+                ci = np.moveaxis(
+                    ci[
+                        :,
+                        np.newaxis,
+                    ],
+                    1,
+                    axis,
+                )
             else:
-                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis + 1,)
+                ci = np.moveaxis(
+                    ci[
+                        :,
+                        np.newaxis,
+                    ],
+                    1,
+                    axis + 1,
+                )
 
         return m, ci
 
@@ -113,8 +168,8 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
     P1 = np.abs(stft.analysis(x1, stft_L, stft_hop)) ** 2
     P2 = np.abs(stft(x2, stft_L, stft_hop)) ** 2
 
-    VAD1 = P1.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
-    VAD2 = P2.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
+    VAD1 = P1.mean(axis=1) > 2 * stft_L**2 * sigma2_n
+    VAD2 = P2.mean(axis=1) > 2 * stft_L**2 * sigma2_n
     VAD = np.logical_or(VAD1, VAD2)
 
     if P1.shape[0] != P2.shape[0] or P1.shape[1] != P2.shape[1]:
@@ -129,7 +184,7 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
 def snr(ref, deg):
 
-    return np.sum(ref ** 2) / np.sum((ref - deg) ** 2)
+    return np.sum(ref**2) / np.sum((ref - deg) ** 2)
 
 
 # Perceptual Evaluation of Speech Quality for multiple files using multiple threads
@@ -212,11 +267,11 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     """
     Measure of sweeping echo in RIR obtained from image-source method.
     A higher value indicates less sweeping echoes
-    
+
     For details see : De Sena et al. "On the modeling of rectangular geometries in
     room acoustic simulations", IEEE TASLP, 2015
-    
-    
+
+
 
     Parameters
     ----------
@@ -242,7 +297,7 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     # STFT parameters
     fft_size = 512  # fft size for analysis
     fft_hop = 256  # hop between analysis frame
-    fft_zp = 2 ** 12 - fft_size  # zero padding
+    fft_zp = 2**12 - fft_size  # zero padding
     analysis_window = hann(fft_size)
 
     # calculate stft

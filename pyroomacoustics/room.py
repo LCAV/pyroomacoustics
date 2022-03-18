@@ -627,9 +627,19 @@ from .utilities import angle_function
 def wall_factory(corners, absorption, scattering, name=""):
     """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(
+            corners,
+            absorption,
+            scattering,
+            name,
+        )
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -637,7 +647,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # repeated constant
-    fpcv = 4 * np.pi * c ** 3 / volume
+    fpcv = 4 * np.pi * c**3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -777,10 +787,10 @@ class Room(object):
         If set to True, the ray tracing simulator will be used along with
         image source model.
     use_rand_ism: bool, optional
-        If set to True, image source positions will have a small random 
+        If set to True, image source positions will have a small random
         displacement to prevent sweeping echoes
     max_rand_disp: float, optional;
-        If using randomized image source method, what is the maximum 
+        If using randomized image source method, what is the maximum
         displacement of the image sources?
     """
 
@@ -1240,7 +1250,11 @@ class Room(object):
         )
 
     def extrude(
-        self, height, v_vec=None, absorption=None, materials=None,
+        self,
+        height,
+        v_vec=None,
+        absorption=None,
+        materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1364,7 +1378,8 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0),
+                ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -2346,7 +2361,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
 
     def get_wall_by_name(self, name):
         """
@@ -2646,10 +2661,10 @@ class ShoeBox(Room):
         If set to True, the ray tracing simulator will be used along with
         image source model.
     use_rand_ism: bool,optional
-        If set to True, image source positions will have a small random 
+        If set to True, image source positions will have a small random
         displacement to prevent sweeping echoes
     max_rand_disp: float, optional;
-        If using randomized image source method, what is the maximum 
+        If using randomized image source method, what is the maximum
         displacement of the image sources?
     """
 
@@ -2802,7 +2817,9 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim, absorption_array, scattering_array,
+            self.shoebox_dim,
+            absorption_array,
+            scattering_array,
         )
 
         self.walls = self.room_engine.walls
