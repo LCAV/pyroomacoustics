@@ -43,24 +43,11 @@ def median(x, alpha=None, axis=-1, keepdims=False):
         ]
     else:
         # if n is even, average the two central elements
-        m = 0.5 * (
-            xsw[
-                n // 2 - 1,
-            ]
-            + xsw[
-                n // 2,
-            ]
-        )
+        m = 0.5 * (xsw[n // 2 - 1,] + xsw[n // 2,])
 
     if alpha is None:
         if keepdims:
-            m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
-                0,
-                axis,
-            )
+            m = np.moveaxis(m[np.newaxis,], 0, axis,)
         return m
 
     else:
@@ -83,18 +70,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
                     "Warning: Sample size is too small. No confidence interval found."
                 )
             else:
-                ci = np.array(
-                    [
-                        xsw[
-                            j,
-                        ]
-                        - m,
-                        xsw[
-                            k,
-                        ]
-                        - m,
-                    ]
-                )
+                ci = np.array([xsw[j,] - m, xsw[k,] - m,])
 
         else:
             # we use the Normal approximation for large sets
@@ -102,45 +78,14 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             eta = norm.ppf(1 - alpha / 2)
             j = int(np.floor(0.5 * n - 0.5 * eta * np.sqrt(n))) - 1
             k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
-            ci = np.array(
-                [
-                    xsw[
-                        j,
-                    ]
-                    - m,
-                    xsw[
-                        k,
-                    ]
-                    - m,
-                ]
-            )
+            ci = np.array([xsw[j,] - m, xsw[k,] - m,])
 
         if keepdims:
-            m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
-                0,
-                axis,
-            )
+            m = np.moveaxis(m[np.newaxis,], 0, axis,)
             if axis < 0:
-                ci = np.moveaxis(
-                    ci[
-                        :,
-                        np.newaxis,
-                    ],
-                    1,
-                    axis,
-                )
+                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis,)
             else:
-                ci = np.moveaxis(
-                    ci[
-                        :,
-                        np.newaxis,
-                    ],
-                    1,
-                    axis + 1,
-                )
+                ci = np.moveaxis(ci[:, np.newaxis,], 1, axis + 1,)
 
         return m, ci
 
@@ -263,8 +208,7 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
     return pesq_vals
 
 
-
-def sweeping_echo_measure(rir, fs, t_min = 0, t_max = 0.5, fb = 400):
+def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     """
     Measure of sweeping echo in RIR obtained from image-source method.
     A higher value indicates less sweeping echoes
@@ -290,74 +234,66 @@ def sweeping_echo_measure(rir, fs, t_min = 0, t_max = 0.5, fb = 400):
     sweeping spectrum flatness (ssf)
 
     """
-    
-    
+
     # some default values
     fmin = 50
-    fmax = 0.9*fs/2
-    
+    fmax = 0.9 * fs / 2
+
     # STFT parameters
-    fft_size = 512             # fft size for analysis
-    fft_hop = 256              # hop between analysis frame
-    fft_zp = 2**12 - fft_size  # zero padding
+    fft_size = 512  # fft size for analysis
+    fft_hop = 256  # hop between analysis frame
+    fft_zp = 2 ** 12 - fft_size  # zero padding
     analysis_window = hann(fft_size)
-    
-    #calculate stft
+
+    # calculate stft
     S = stft.analysis(rir, fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
 
     (nFrames, nFreqs) = np.shape(S)
-    nFreqs = int(nFreqs/2)
-    
-    #ignore negative frequencies
-    S = S[:,:nFreqs]
-           
-    timeSlice = np.arange(0, nFrames) * fft_hop/fs
-    assert(nFrames == len(timeSlice))
-    freqSlice = np.linspace(0, fs/2, nFreqs)
-    assert(nFreqs == len(freqSlice))
-    
+    nFreqs = int(nFreqs / 2)
+
+    # ignore negative frequencies
+    S = S[:, :nFreqs]
+
+    timeSlice = np.arange(0, nFrames) * fft_hop / fs
+    assert nFrames == len(timeSlice)
+    freqSlice = np.linspace(0, fs / 2, nFreqs)
+    assert nFreqs == len(freqSlice)
+
     # get time-frequency grid
-    (t_mesh,f_mesh) = np.meshgrid(timeSlice, freqSlice)
-    
-  
-    bmin = int(np.floor(nFreqs/fs * fmin))
-    bmax = int(np.ceil(nFreqs/fs * fmax))
-    
+    (t_mesh, f_mesh) = np.meshgrid(timeSlice, freqSlice)
+
+    bmin = int(np.floor(nFreqs / fs * fmin))
+    bmax = int(np.ceil(nFreqs / fs * fmax))
+
     Phi = np.zeros(np.shape(S))
-    
-    #normalize spectrogram to make energy identical in each bin
+
+    # normalize spectrogram to make energy identical in each bin
     for k in range(nFrames):
-        norm_factor = np.sum(np.power(np.abs(S[k,bmin:bmax]),2))
-        Phi[k,:] = np.abs(S[k,:])/np.sqrt(norm_factor)
-        
-        
-    #slope values
+        norm_factor = np.sum(np.power(np.abs(S[k, bmin:bmax]), 2))
+        Phi[k, :] = np.abs(S[k, :]) / np.sqrt(norm_factor)
+
+    # slope values
     nCoeffs = 500
     coeffs = np.linspace(5000, 150000, nCoeffs)
     ss = np.zeros(nCoeffs)
-    
+
     # loop through different slope values
     for k in range(nCoeffs):
-        
+
         # get masks
         a = coeffs[k]
-        
-        maskTime = np.logical_and(t_mesh > t_min, t_mesh < t_max)
-        
-        maskFreq = np.logical_and(f_mesh > t_mesh*a - fb/2, f_mesh <  t_mesh*a + fb/2)
-        
-        boolMask = np.logical_and(maskTime, maskFreq)
-        
-        ss[k] = np.mean(Phi[boolMask.T])
-        
-        
-    
-    # calculate spectral flatness
-    ssf = np.exp(np.mean(np.log(np.abs(ss))))/np.mean(np.abs(ss))
-    
-    
-    return ssf
-    
-    
 
-    
+        maskTime = np.logical_and(t_mesh > t_min, t_mesh < t_max)
+
+        maskFreq = np.logical_and(
+            f_mesh > t_mesh * a - fb / 2, f_mesh < t_mesh * a + fb / 2
+        )
+
+        boolMask = np.logical_and(maskTime, maskFreq)
+
+        ss[k] = np.mean(Phi[boolMask.T])
+
+    # calculate spectral flatness
+    ssf = np.exp(np.mean(np.log(np.abs(ss)))) / np.mean(np.abs(ss))
+
+    return ssf

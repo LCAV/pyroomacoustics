@@ -50,8 +50,7 @@ ax.set_ylabel('Y')
 ax.set_zlabel('Z')
 
 plt.xlim([0,4])
-plt.ylim([0,4])
-plt.show()    
+plt.ylim([0,4])  
 
 
 ###############################################################
@@ -102,7 +101,6 @@ for n in range(M):
         #plot RIR
         plt.figure()
         plt.plot(room.rir[n][0])
-        plt.show()
         
         
     # measure of spectral flatness of sweeping echos

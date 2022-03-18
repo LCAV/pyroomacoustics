@@ -627,19 +627,9 @@ from .utilities import angle_function
 def wall_factory(corners, absorption, scattering, name=""):
     """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
-        return Wall(
-            corners,
-            absorption,
-            scattering,
-            name,
-        )
+        return Wall(corners, absorption, scattering, name,)
     elif corners.shape[0] == 2:
-        return Wall2D(
-            corners,
-            absorption,
-            scattering,
-            name,
-        )
+        return Wall2D(corners, absorption, scattering, name,)
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -808,7 +798,7 @@ class Room(object):
         air_absorption=False,
         ray_tracing=False,
         use_rand_ism=False,
-        max_rand_disp = 0.08,
+        max_rand_disp=0.08,
     ):
 
         self.walls = walls
@@ -1250,11 +1240,7 @@ class Room(object):
         )
 
     def extrude(
-        self,
-        height,
-        v_vec=None,
-        absorption=None,
-        materials=None,
+        self, height, v_vec=None, absorption=None, materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1378,8 +1364,7 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0),
-                ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0),
             )
 
         else:
@@ -1987,25 +1972,23 @@ class Room(object):
                 source.damping = self.room_engine.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
 
-
-                #if randomized image method is selected, add a small random 
-                #displacement to the image sources
+                # if randomized image method is selected, add a small random
+                # displacement to the image sources
                 if self.simulator_state["random_ism_needed"]:
-                    
+
                     nImages = np.shape(source.images)[1]
-                    
+
                     # maximum allowed displacement is 8cm
                     max_disp = self.max_rand_disp
-                    #add a random displacement to each cartesian coordinate
+                    # add a random displacement to each cartesian coordinate
                     disp_x = np.random.uniform(-max_disp, max_disp, nImages)
                     disp_y = np.random.uniform(-max_disp, max_disp, nImages)
                     disp_z = np.random.uniform(-max_disp, max_disp, nImages)
-                    
-                    source.images[0,:] += disp_x
-                    source.images[1,:] += disp_y
-                    source.images[2,:] += disp_z
-                
-                
+
+                    source.images[0, :] += disp_x
+                    source.images[1, :] += disp_y
+                    source.images[2, :] += disp_z
+
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
                 # We need to check that microphones are indeed in the room
@@ -2686,7 +2669,7 @@ class ShoeBox(Room):
         air_absorption=False,
         ray_tracing=False,
         use_rand_ism=False,
-        max_rand_disp=0.08
+        max_rand_disp=0.08,
     ):
 
         p = np.array(p, dtype=np.float32)
@@ -2819,9 +2802,7 @@ class ShoeBox(Room):
 
         # Create the real room object
         self._init_room_engine(
-            self.shoebox_dim,
-            absorption_array,
-            scattering_array,
+            self.shoebox_dim, absorption_array, scattering_array,
         )
 
         self.walls = self.room_engine.walls
