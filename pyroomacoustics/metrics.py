@@ -272,17 +272,17 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     room acoustic simulations", IEEE TASLP, 2015
 
 
-
     Parameters
     ----------
-    rir : RIR signal from ISM (mono).
-    fs : sampling frequency.
-    t_min : TYPE, optional
-        Minimum time window. The default is 0.
-    t_max : TYPE, optional
-        Maximum time window. The default is 0.5.
-    fb : TYPE, optional
-        Mask bandwidth. The default is 400.
+    
+    rir:    RIR signal from ISM (mono).
+    fs:     sampling frequency.
+    t_min:  TYPE, optional
+            Minimum time window. The default is 0.
+    t_max:  TYPE, optional
+            Maximum time window. The default is 0.5.
+    fb:     TYPE, optional
+            Mask bandwidth. The default is 400.
 
     Returns
     -------

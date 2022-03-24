@@ -88,7 +88,7 @@ for n in range(M):
         
         ax1.imshow(
         pra.dB(S.T),
-        extent=[0, 0.3*fs, 0, fs / 2],
+        extent=[0, len(room.rir[n][0]), 0, fs / 2],
         vmin=-100,
         vmax=0,
         origin="lower",
@@ -96,9 +96,7 @@ for n in range(M):
         )
         ax1.set_title("RIR for Mic location " + str(n) + " without random ISM")
         ax1.set_ylabel("Frequency")
-        ax1.set_xlabel("Time")
         ax1.set_aspect("auto")
-        ax1.axis("off")
 
         
         #plot RIR
@@ -140,7 +138,7 @@ for n in range(M):
         
         ax1.imshow(
         pra.dB(S.T),
-        extent=[0, 0.3*fs, 0, fs / 2],
+        extent=[0, len(room.rir[n][0]), 0, fs / 2],
         vmin=-100,
         vmax=0,
         origin="lower",
@@ -148,9 +146,7 @@ for n in range(M):
         )
         ax1.set_title("RIR for Mic location " + str(n) + " with random ISM")
         ax1.set_ylabel("Frequency")
-        ax1.set_xlabel("Time")
         ax1.set_aspect("auto")
-        ax1.axis("off")
      
         
         #plot RIR

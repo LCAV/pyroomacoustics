@@ -105,13 +105,14 @@ Randomized Image Method
 
 In highly symmetric shoebox rooms, the regularity of image sources’ positions 
 leads to a monotonic convergence in the time arrival of far-field image pairs.
-This causessweeping echoes. The randomized image method adds a small random 
+This causes sweeping echoes. The randomized image method adds a small random 
 displacement to the image source positions, so that they are no longer 
 time-aligned, thus reducing sweeping echoes considerably.
 
 To use the randomized method, set the flag ``use_rand_ism`` to True while creating
 a room. Additionally, the maximum displacement of the image sources can be 
 chosen by setting the parameter ``max_rand_disp``. The default value is 8cm.
+For a full example see examples/randomized_image_method.py
 
 .. code-block:: python
 
@@ -128,7 +129,7 @@ chosen by setting the parameter ``max_rand_disp``. The default value is 8cm.
     room = pra.ShoeBox(
         room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=max_order,
         use_rand_ism = True, max_rand_disp = 0.05
-        )
+    )
 
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1991,19 +1992,16 @@ class Room(object):
                 # displacement to the image sources
                 if self.simulator_state["random_ism_needed"]:
 
-                    nImages = np.shape(source.images)[1]
+                    n_images = np.shape(source.images)[1]
 
                     # maximum allowed displacement is 8cm
                     max_disp = self.max_rand_disp
+                   
                     # add a random displacement to each cartesian coordinate
-                    disp_x = np.random.uniform(-max_disp, max_disp, nImages)
-                    disp_y = np.random.uniform(-max_disp, max_disp, nImages)
-                    disp_z = np.random.uniform(-max_disp, max_disp, nImages)
-
-                    source.images[0, :] += disp_x
-                    source.images[1, :] += disp_y
-                    source.images[2, :] += disp_z
-
+                    disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
+                    source.images += disp
+                                             
+  
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
                 # We need to check that microphones are indeed in the room
@@ -2660,7 +2658,7 @@ class ShoeBox(Room):
     ray_tracing: bool, optional
         If set to True, the ray tracing simulator will be used along with
         image source model.
-    use_rand_ism: bool,optional
+    use_rand_ism: bool, optional
         If set to True, image source positions will have a small random
         displacement to prevent sweeping echoes
     max_rand_disp: float, optional;
