@@ -84,10 +84,9 @@ for n in range(M):
     if n == 0:
         S = stft.analysis(room.rir[n][0],  fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
         
-        plt.figure()
-        ax = plt.gca()
+        f, (ax1, ax2) = plt.subplots(2,1)
         
-        plt.imshow(
+        ax1.imshow(
         pra.dB(S.T),
         extent=[0, 0.3*fs, 0, fs / 2],
         vmin=-100,
@@ -95,16 +94,18 @@ for n in range(M):
         origin="lower",
         cmap="jet"
         )
-        ax.set_title("RIR for Mic location " + str(n) + " without random ISM")
-        ax.set_ylabel("Frequency")
-        ax.set_xlabel("Time")
-        ax.set_aspect("auto")
-        ax.axis("off")
+        ax1.set_title("RIR for Mic location " + str(n) + " without random ISM")
+        ax1.set_ylabel("Frequency")
+        ax1.set_xlabel("Time")
+        ax1.set_aspect("auto")
+        ax1.axis("off")
 
         
         #plot RIR
-        plt.figure()
-        plt.plot(room.rir[n][0])
+        ax2.plot(room.rir[n][0])
+        ax2.set_xlabel("Num samples")
+        ax2.set_ylabel("Amplitude")
+        
         
         
     # measure of spectral flatness of sweeping echos
@@ -134,10 +135,10 @@ for n in range(M):
     if n == 0:
         S = stft.analysis(room.rir[n][0],  fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
         
-        plt.figure()
-        ax =plt.gca()
+        f, (ax1, ax2) = plt.subplots(2,1)
+
         
-        plt.imshow(
+        ax1.imshow(
         pra.dB(S.T),
         extent=[0, 0.3*fs, 0, fs / 2],
         vmin=-100,
@@ -145,17 +146,17 @@ for n in range(M):
         origin="lower",
         cmap="jet"
         )
-        ax.set_title("RIR for Mic location " + str(n) + " with random ISM")
-        ax.set_ylabel("Frequency")
-        ax.set_xlabel("Time")
-        ax.set_aspect("auto")
-        ax.axis("off")
+        ax1.set_title("RIR for Mic location " + str(n) + " with random ISM")
+        ax1.set_ylabel("Frequency")
+        ax1.set_xlabel("Time")
+        ax1.set_aspect("auto")
+        ax1.axis("off")
      
         
         #plot RIR
-        plt.figure()
-        plt.plot(room.rir[n][0])
-        ax.set_title("RIR for Mic location " + str(n) + " with random ISM")
+        ax2.plot(room.rir[n][0])
+        ax2.set_xlabel("Num samples")
+        ax2.set_ylabel("Amplitude")
    
         
         
