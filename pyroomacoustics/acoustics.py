@@ -176,7 +176,7 @@ class OctaveBandsFactory(object):
         self._make_filters()
 
     def get_bw(self):
-        """ Returns the bandwidth of the bands """
+        """Returns the bandwidth of the bands"""
         return np.array([b2 - b1 for b1, b2 in self.bands])
 
     def analysis(self, x, band=None):
@@ -308,7 +308,8 @@ class OctaveBandsFactory(object):
                 freq_resp[hi, b] = 1.0
 
         filters = np.fft.fftshift(
-            np.fft.irfft(freq_resp, n=self.n_fft, axis=0), axes=[0],
+            np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
+            axes=[0],
         )
 
         # remove the first sample to make them odd-length symmetric filters
@@ -418,12 +419,12 @@ def bands_hz2s(bands_hz, Fs, N, transform="dft"):
 
 
 def melscale(f):
-    """ Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6) """
+    """Converts f (in Hertz) to the melscale defined according to Huang-Acero-Hon (2.6)"""
     return 1125.0 * np.log(1 + f / 700.0)
 
 
 def invmelscale(b):
-    """ Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143) """
+    """Converts from melscale to frequency in Hertz according to Huang-Acero-Hon (6.143)"""
     return 700.0 * (np.exp(b / 1125.0) - 1)
 
 
@@ -554,7 +555,7 @@ def inverse_sabine(rt60, room_dim, c=None):
     # diamond. this is what we are doing here.
     R = []
     for l1, l2 in itertools.combinations(room_dim, 2):
-        R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
+        R.append(l1 * l2 / np.sqrt(l1**2 + l2**2))
 
     V = np.prod(room_dim)  # area (2d) or volume (3d)
     # "surface" computation is diff for 2d and 3d

@@ -59,7 +59,8 @@ if __name__ == "__main__":
 
     # define the locations of the microphones
     mic_locs = np.c_[
-        [6.3, 4.87, 1.2], [6.3, 4.93, 1.2],  # mic 1  # mic 2
+        [6.3, 4.87, 1.2],
+        [6.3, 4.93, 1.2],  # mic 1  # mic 2
     ]
 
     # finally place the array in the room

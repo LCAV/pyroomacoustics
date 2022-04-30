@@ -105,7 +105,7 @@ def calculate_speed_of_sound(t, h, p):
 
 
 def _calculate_temperature(c, h):
-    """ Compute the temperature give a speed of sound ``c`` and humidity ``h`` """
+    """Compute the temperature give a speed of sound ``c`` and humidity ``h``"""
 
     return (c - 331.4 - 0.0124 * h) / 0.6
 
@@ -203,7 +203,7 @@ class Physics(object):
 
     @classmethod
     def from_speed(cls, c):
-        """ Choose a temperature and humidity matching a desired speed of sound """
+        """Choose a temperature and humidity matching a desired speed of sound"""
 
         H = 0.3
         T = _calculate_temperature(c, H)
@@ -386,16 +386,16 @@ class Material(object):
 
     @property
     def absorption_coeffs(self):
-        """ shorthand to the energy absorption coefficients """
+        """shorthand to the energy absorption coefficients"""
         return self.energy_absorption["coeffs"]
 
     @property
     def scattering_coeffs(self):
-        """ shorthand to the scattering coefficients """
+        """shorthand to the scattering coefficients"""
         return self.scattering["coeffs"]
 
     def resample(self, octave_bands):
-        """ resample at given octave bands """
+        """resample at given octave bands"""
         self.energy_absorption = {
             "coeffs": octave_bands(**self.energy_absorption),
             "center_freqs": octave_bands.centers,

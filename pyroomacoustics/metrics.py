@@ -1,15 +1,15 @@
-
-import numpy as np
 import os
 import platform
 
+import numpy as np
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 
 from .transform import stft
 
+
 def median(x, alpha=None, axis=-1, keepdims=False):
-    '''
+    """
     Computes 95% confidence interval for the median.
 
     Parameters
@@ -26,7 +26,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
     -------
     :tuple ``(float, [float, float])``
         This function returns ``(m, [le, ue])`` and the confidence interval is ``[m-le, m+ue]``.
-    '''
+    """
 
     # place the axis on which to compute median in first position
     xsw = np.moveaxis(x, axis, 0)
@@ -37,14 +37,29 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
     if n % 2 == 1:
         # if n is odd, take central element
-        m = xsw[n//2,];
+        m = xsw[
+            n // 2,
+        ]
     else:
         # if n is even, average the two central elements
-        m = 0.5*(xsw[n//2-1,] + xsw[n//2,]);
+        m = 0.5 * (
+            xsw[
+                n // 2 - 1,
+            ]
+            + xsw[
+                n // 2,
+            ]
+        )
 
     if alpha is None:
         if keepdims:
-            m = np.moveaxis(m[np.newaxis,], 0, axis)
+            m = np.moveaxis(
+                m[
+                    np.newaxis,
+                ],
+                0,
+                axis,
+            )
         return m
 
     else:
@@ -54,7 +69,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
         if n < clt_bound:
             # Get the bounds of the CI from the binomial distribution
             b = _binom(n, 0.5)
-            j,k = int(b.ppf(alpha/2)-1), int(b.ppf(1 - alpha/2)-1)
+            j, k = int(b.ppf(alpha / 2) - 1), int(b.ppf(1 - alpha / 2) - 1)
 
             if b.cdf(k) - b.cdf(j) < 1 - alpha:
                 k += 1
@@ -63,32 +78,75 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             assert b.cdf(k) - b.cdf(j) >= 1 - alpha
 
             if j < 0:
-                raise ValueError('Warning: Sample size is too small. No confidence interval found.')
+                raise ValueError(
+                    "Warning: Sample size is too small. No confidence interval found."
+                )
             else:
-                ci = np.array([xsw[j,]-m, xsw[k,]-m])
+                ci = np.array(
+                    [
+                        xsw[
+                            j,
+                        ]
+                        - m,
+                        xsw[
+                            k,
+                        ]
+                        - m,
+                    ]
+                )
 
         else:
             # we use the Normal approximation for large sets
             norm = _norm()
             eta = norm.ppf(1 - alpha / 2)
-            j = int(np.floor(0.5*n - 0.5 * eta * np.sqrt(n))) - 1
-            k = int(np.ceil(0.5*n + 0.5 * eta * np.sqrt(n)))
-            ci = np.array([xsw[j,]-m,xsw[k,]-m])
+            j = int(np.floor(0.5 * n - 0.5 * eta * np.sqrt(n))) - 1
+            k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
+            ci = np.array(
+                [
+                    xsw[
+                        j,
+                    ]
+                    - m,
+                    xsw[
+                        k,
+                    ]
+                    - m,
+                ]
+            )
 
         if keepdims:
-            m = np.moveaxis(m[np.newaxis,], 0, axis)
+            m = np.moveaxis(
+                m[
+                    np.newaxis,
+                ],
+                0,
+                axis,
+            )
             if axis < 0:
-                ci = np.moveaxis(ci[:,np.newaxis,], 1, axis)
+                ci = np.moveaxis(
+                    ci[
+                        :,
+                        np.newaxis,
+                    ],
+                    1,
+                    axis,
+                )
             else:
-                ci = np.moveaxis(ci[:,np.newaxis,], 1, axis+1)
-
+                ci = np.moveaxis(
+                    ci[
+                        :,
+                        np.newaxis,
+                    ],
+                    1,
+                    axis + 1,
+                )
 
         return m, ci
 
 
 # Simple mean squared error function
 def mse(x1, x2):
-    '''
+    r"""
     A short hand to compute the mean-squared error of two signals.
 
     .. math::
@@ -99,36 +157,38 @@ def mse(x1, x2):
     :arg x1: (ndarray)
     :arg x2: (ndarray)
     :returns: (float) The mean of the squared differences of x1 and x2.
-    '''
-    return (np.abs(x1-x2)**2).sum()/len(x1)
+    """
+    return (np.abs(x1 - x2) ** 2).sum() / len(x1)
 
 
 # Itakura-Saito distance function
 def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
-  P1 = np.abs(stft.analysis(x1, stft_L, stft_hop))**2
-  P2 = np.abs(stft(x2, stft_L, stft_hop))**2
+    P1 = np.abs(stft.analysis(x1, stft_L, stft_hop)) ** 2
+    P2 = np.abs(stft(x2, stft_L, stft_hop)) ** 2
 
-  VAD1 = P1.mean(axis=1) > 2*stft_L**2*sigma2_n
-  VAD2 = P2.mean(axis=1) > 2*stft_L**2*sigma2_n
-  VAD = np.logical_or(VAD1, VAD2)
+    VAD1 = P1.mean(axis=1) > 2 * stft_L**2 * sigma2_n
+    VAD2 = P2.mean(axis=1) > 2 * stft_L**2 * sigma2_n
+    VAD = np.logical_or(VAD1, VAD2)
 
-  if P1.shape[0] != P2.shape[0] or P1.shape[1] != P2.shape[1]:
-    raise ValueError("Error: Itakura-Saito requires both array to have same length")
+    if P1.shape[0] != P2.shape[0] or P1.shape[1] != P2.shape[1]:
+        raise ValueError("Error: Itakura-Saito requires both array to have same length")
 
-  R = P1[VAD,:]/P2[VAD,:]
+    R = P1[VAD, :] / P2[VAD, :]
 
-  IS = (R - np.log(R) - 1.).mean(axis=1)
+    IS = (R - np.log(R) - 1.0).mean(axis=1)
 
-  return np.median(IS)
+    return np.median(IS)
+
 
 def snr(ref, deg):
 
-    return np.sum(ref**2)/np.sum((ref-deg)**2)
+    return np.sum(ref**2) / np.sum((ref - deg) ** 2)
+
 
 # Perceptual Evaluation of Speech Quality for multiple files using multiple threads
-def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin='./bin/pesq'):
-    '''
+def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
+    """
     pesq_vals = pesq(ref_file, deg_files, sample_rate=None, bin='./bin/pesq'):
     Computes the perceptual evaluation of speech quality (PESQ) metric of a degraded
     file with respect to a reference file.  Uses the utility obtained from ITU
@@ -141,59 +201,62 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin='./bin/pesq'):
     :arg wb:          Use wideband algorithm [default: False].
     :arg bin:         Location of pesq executable [default: ./bin/pesq].
 
-    :returns: (ndarray size 2xN) ndarray containing Raw MOS and MOS LQO in rows 0 and 1, 
+    :returns: (ndarray size 2xN) ndarray containing Raw MOS and MOS LQO in rows 0 and 1,
         respectively, and has one column per degraded file name in deg_files.
-    '''
+    """
 
     if isinstance(deg_files, str):
         deg_files = [deg_files]
 
-    if platform.system() == 'Windows':
-        bin = bin + '.exe'
+    if platform.system() == "Windows":
+        bin = bin + ".exe"
 
     if not os.path.isfile(ref_file):
-        raise ValueError('Some file did not exist')
+        raise ValueError("Some file did not exist")
     for f in deg_files:
         if not os.path.isfile(f):
-            raise ValueError('Some file did not exist')
+            raise ValueError("Some file did not exist")
 
     if Fs not in (8000, 16000):
-        raise ValueError('sample rate must be 8000 or 16000')
+        raise ValueError("sample rate must be 8000 or 16000")
 
-    args = [ bin, '+%d' % int(Fs) ]
+    args = [bin, "+%d" % int(Fs)]
 
     if swap is True:
-        args.append('+swap')
+        args.append("+swap")
 
     if wb is True:
-        args.append('+wb')
+        args.append("+wb")
 
     args.append(ref_file)
 
     # array to receive all output values
-    pesq_vals = np.zeros((2,len(deg_files)))
+    pesq_vals = np.zeros((2, len(deg_files)))
 
     # launch pesq for each degraded file in a different process
     import subprocess
-    pipes = [ subprocess.Popen(args+[deg], stdout=subprocess.PIPE) for deg in deg_files ]
+
+    pipes = [
+        subprocess.Popen(args + [deg], stdout=subprocess.PIPE) for deg in deg_files
+    ]
     states = np.ones(len(pipes), dtype=np.bool)
 
     # Recover output as the processes finish
     while states.any():
 
-        for i,p in enumerate(pipes):
+        for i, p in enumerate(pipes):
             if states[i] == True and p.poll() is not None:
                 states[i] = False
                 out = p.stdout.readlines()
                 last_line = out[-1][:-2]
 
                 if wb is True:
-                    if not last_line.startswith('P.862.2 Prediction'):
+                    if not last_line.startswith("P.862.2 Prediction"):
                         raise ValueError(last_line)
-                    pesq_vals[:,i] =  np.array([0, float(last_line.split()[-1])])
+                    pesq_vals[:, i] = np.array([0, float(last_line.split()[-1])])
                 else:
-                    if not last_line.startswith('P.862 Prediction'):
+                    if not last_line.startswith("P.862 Prediction"):
                         raise ValueError(last_line)
-                    pesq_vals[:,i] = np.array(map(float, last_line.split()[-2:]))
+                    pesq_vals[:, i] = np.array(map(float, last_line.split()[-2:]))
 
     return pesq_vals

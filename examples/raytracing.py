@@ -18,7 +18,9 @@ fs, audio_anechoic = wavfile.read("notebooks/arctic_a0010.wav")
 
 reverb_opts = {
     "medium": {"e_abs": 0.3},
-    "short": {"e_abs": 0.7,},
+    "short": {
+        "e_abs": 0.7,
+    },
     "long": {"e_abs": 0.1},
 }
 

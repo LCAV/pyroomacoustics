@@ -95,7 +95,7 @@ def test_dict_list_mix():
         abs_test,
         "brickwork",
         ("brickwork", scat_test),
-        1.,
+        1.0,
         ceilling=(abs_test, scat_test),
         floor=(abs_test, "rpg_skyline"),
         one=(0.10, 0.15),
@@ -111,7 +111,7 @@ def test_empty():
     assert mat_list == []
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     test_material_e_float()
     test_material_es_float()
