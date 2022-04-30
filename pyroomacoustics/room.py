@@ -586,6 +586,7 @@ from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .doa import GridCircle, GridSphere
+from .directivities import CardioidFamily, source_angle_shoebox, angle_function
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
