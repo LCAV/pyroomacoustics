@@ -2,3 +2,4 @@ sphinx>=1.6.2
 mock>=2.0
 sphinx_rtd_theme
 sphinxcontrib-napoleon
+tabulate

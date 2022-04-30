@@ -37,7 +37,7 @@ style <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__
 We recommend the following steps for generating the documentation:
 
 -  Create a separate environment, e.g. with Anaconda, as such:
-   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme``
+   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme sphinxcontrib-napoleon tabulate`` 
 -  Switch to the environment: ``source activate mkdocs37``
 -  Navigate to the ``docs`` folder and run: ``./make_apidoc.sh``
 -  The materials database page is generated with the script ``./make_materials_table.py``
