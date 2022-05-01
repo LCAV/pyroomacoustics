@@ -15,6 +15,7 @@ Added
 ~~~~~
 
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
+- Randomized image source method for removing sweeping echoes in shoebox rooms.
 
 Changed
 ~~~~~~~
@@ -38,7 +39,6 @@ Added
 
 - New DOA method: MUSIC with pseudo-spectra normalization. Thanks @4bian!
   Normalizes MUSIC pseudo spectra before averaging across frequency axis.
-- Randomized image source method for removing sweeping echoes in shoebox rooms.
 
 Bugfix
 ~~~~~~
