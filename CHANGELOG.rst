@@ -14,6 +14,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
+- Added the AnechoicRoom class.
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
 - Randomized image source method for removing sweeping echoes in shoebox rooms.
 

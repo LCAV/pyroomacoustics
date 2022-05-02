@@ -597,6 +597,52 @@ Free-field simulation
 
 You can also use this package to simulate free-field sound propagation between a set of sound sources and a set of microphones, without considering room effects. To this end, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class, which simply corresponds to setting the maximum image image order of the room simulation to zero. This allows for early development and testing of various audio-based algorithms, without worrying about room acoustics at first. Thanks to the modular framework of pyroomacoustics, room acoustics can easily be added, after this first testing stage, for more realistic simulations. 
 
+Simulating Direction-of-Arrival Estimation in Free Field
+--------------------------------------------------------
+
+As a simple usage example, assume you want to localize a sound source emitting white noise, using a square microphone array. If you can neglect room effects (e.g. you operate in an anechoic room or outdoors), or if you simply want to test your algorithm in the best-case scenario, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class. The below code shows an example using the popular MUSIC algorithm for DOA estimation. The example is exctracted from `./examples/doa_anechoic_room.py`.
+
+.. code-block:: python
+
+    # we use a white noise signal for the source
+    nfft = 256
+    fs = 16000
+    x = np.random.randn((nfft // 2 + 1) * nfft)
+
+    # create anechoic room
+    room = pra.AnechoicRoom(fs=fs)
+
+    # place the source at a 90 degree angle and 5 meters distance from origin
+    azimuth_true = np.pi / 2
+    room.add_source([5 * np.cos(azimuth_true), 5 * np.sin(azimuth_true), 0], signal=x)
+
+    # place the microphone array 
+    mic_locs = np.c_[
+        [0.1, 0.1, 0],
+        [-0.1, 0.1, 0],
+        [-0.1, -0.1, 0],
+        [0.1, -0.1, 0],
+    ]
+    room.add_microphone_array(mic_locs)
+
+    # run the simulation
+    room.simulate()
+
+    # create frequency-domain input for DOA algorithms
+    X = pra.transform.stft.analysis(
+        room.mic_array.signals.T, nfft, nfft // 2, win=np.hanning(nfft)
+    )
+    X = np.swapaxes(X, 2, 0)
+
+    # perform DOA estimation
+    doa = pra.doa.algorithms["MUSIC"](mic_locs, fs, nfft)
+    doa.locate_sources(X)
+
+    # evaluate result
+    print("Source is estimated at:", doa.azimuth_recon)
+    print("Real source is at:", azimuth_true)
+    print("Error:", pra.doa.circ_dist(azimuth_true, doa.azimuth_recon))
+
 
 References
 ----------
@@ -1985,12 +2031,11 @@ class Room(object):
 
                     # maximum allowed displacement is 8cm
                     max_disp = self.max_rand_disp
-                   
+
                     # add a random displacement to each cartesian coordinate
                     disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
                     source.images += disp
-                                             
-  
+
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
                 # We need to check that microphones are indeed in the room
@@ -2906,7 +2951,7 @@ class AnechoicRoom(ShoeBox):
 
     def __init__(
         self,
-        dim,
+        dim=3,
         fs=8000,
         t0=0.0,
         sigma2_awgn=None,
@@ -2956,7 +3001,7 @@ class AnechoicRoom(ShoeBox):
         return "AnechoicRoom instance in {}D.".format(self.dim)
 
     def is_inside(self, p):
-        """Overloaded function to eliminate testing if objects are inside ``room''."""
+        """Overloaded function to eliminate testing if objects are inside "room"."""
         # always return True because we want the walls to have no effect.
         return True
 
