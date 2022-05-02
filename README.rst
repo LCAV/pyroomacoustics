@@ -158,7 +158,7 @@ The minimal dependencies are::
 
 where ``Cython`` is only needed to benefit from the compiled accelerated simulator.
 The simulator itself has a pure Python counterpart, so that this requirement could
-be ignored, but is much slower. For the Cython implementation to work, the user should have Eigen installed. 
+be ignored, but is much slower.
 
 On top of that, some functionalities of the package depend on extra packages::
 
