@@ -15,6 +15,7 @@ Added
 ~~~~~
 
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
+- Randomized image source method for removing sweeping echoes in shoebox rooms.
 
 Changed
 ~~~~~~~
