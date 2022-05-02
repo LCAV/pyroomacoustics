@@ -559,6 +559,11 @@ The method is also directly integrated in the :py:obj:`~pyroomacoustics.room.Roo
                 "RT60 between the {}th mic and {}th source: {:.3f} s".format(m, s, rt60[m, s])
             )
 
+Free-field simulation
+=====================
+
+You can also use this package to simulate free-field sound propagation between a set of sound sources and a set of microphones, without considering room effects. To this end, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class, which simply corresponds to setting the maximum image image order of the room simulation to zero. This allows for early development and testing of various audio-based algorithms, without worrying about room acoustics at first. Thanks to the modular framework of pyroomacoustics, room acoustics can easily be added, after this first testing stage, for more realistic simulations. 
+
 
 References
 ----------
@@ -586,20 +591,20 @@ from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .doa import GridCircle, GridSphere
-from .directivities import CardioidFamily, source_angle_shoebox, angle_function
+from .directivities import CardioidFamily, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
-from .utilities import fractional_delay
+from .utilities import fractional_delay, angle_function
 
 
 def wall_factory(corners, absorption, scattering, name=""):
-    """ Call the correct method according to wall dimension """
+    """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
-        return Wall(corners, absorption, scattering, name,)
+        return Wall(corners, absorption, scattering, name)
     elif corners.shape[0] == 2:
-        return Wall2D(corners, absorption, scattering, name,)
+        return Wall2D(corners, absorption, scattering, name)
     else:
         raise ValueError("Rooms can only be 2D or 3D")
 
@@ -1195,13 +1200,7 @@ class Room(object):
             **kwargs
         )
 
-    def extrude(
-        self,
-        height,
-        v_vec=None,
-        absorption=None,
-        materials=None,
-    ):
+    def extrude(self, height, v_vec=None, absorption=None, materials=None):
         """
         Creates a 3D room by extruding a 2D polygon.
         The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
@@ -1324,8 +1323,7 @@ class Room(object):
                 )
 
             materials = make_materials(
-                floor=(absorption[0], 0.0),
-                ceiling=(absorption[0], 0.0),
+                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0)
             )
 
         else:
@@ -2420,9 +2418,9 @@ class Room(object):
 
         Parameters
         ----------
-        wall: Wall instance 
+        wall: Wall instance
             the wall object that is defined in 3D space
-            
+
         """
 
         # Algo : http://geomalgorithms.com/a01-_area.
@@ -2747,11 +2745,7 @@ class ShoeBox(Room):
         ).T
 
         # Create the real room object
-        self._init_room_engine(
-            self.shoebox_dim,
-            absorption_array,
-            scattering_array,
-        )
+        self._init_room_engine(self.shoebox_dim, absorption_array, scattering_array)
 
         self.walls = self.room_engine.walls
 
@@ -2804,3 +2798,122 @@ class ShoeBox(Room):
         """
         pos = np.array(pos)
         return np.all(pos >= 0) and np.all(pos <= self.shoebox_dim)
+
+
+class AnechoicRoom(ShoeBox):
+    """
+    This class provides an API for creating an Anechoic "room" in 2D or 3D.
+
+    Parameters
+    ----------
+    dim: int
+        Dimension of the room (2 or 3).
+    fs: int, optional
+        The sampling frequency in Hz. Default is 8000.
+    t0: float, optional
+        The global starting time of the simulation in seconds. Default is 0.
+    sigma2_awgn: float, optional
+        The variance of the additive white Gaussian noise added during
+        simulation. By default, none is added.
+    sources: list of SoundSource objects, optional
+        Sources to place in the room. Sources can be added after room creating
+        with the `add_source` method by providing coordinates.
+    mics: MicrophoneArray object, optional
+        The microphone array to place in the room. A single microphone or
+        microphone array can be added after room creation with the
+        `add_microphone_array` method.
+    temperature: float, optional
+        The air temperature in the room in degree Celsius. By default, set so
+        that speed of sound is 343 m/s.
+    humidity: float, optional
+        The relative humidity of the air in the room (between 0 and 100). By
+        default set to 0.
+    air_absorption: bool, optional
+        If set to True, absorption of sound energy by the air will be
+        simulated.
+    """
+
+    def __init__(
+        self,
+        dim,
+        fs=8000,
+        t0=0.0,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        temperature=None,
+        humidity=None,
+        air_absorption=False,
+    ):
+        if not dim in [2, 3]:
+            raise ValueError("Anechoic room dimension has to be either 2 or 3.")
+
+        # Setting max_order to 0 emulates an anechoic room.
+        max_order = 0
+
+        # Ray tracing only makes sense in echoic rooms.
+        ray_tracing = False
+
+        # Create some dummy walls
+        p = np.ones((dim,))
+
+        # The materials are not actually used because max_order is set to 0 and ray-tracing to False.
+        # Anyways, we use the energy_absorption and scattering corresponding to an anechoic room.
+        materials = Material(energy_absorption=1.0, scattering=0.0)
+
+        # Set deprecated parameter
+        absorption = None
+
+        ShoeBox.__init__(
+            self,
+            p=p,
+            fs=fs,
+            t0=t0,
+            max_order=max_order,
+            sigma2_awgn=sigma2_awgn,
+            sources=sources,
+            mics=mics,
+            materials=materials,
+            temperature=temperature,
+            humidity=humidity,
+            air_absorption=air_absorption,
+            ray_tracing=ray_tracing,
+        )
+
+    def __str__(self):
+
+        return "AnechoicRoom instance in {}D.".format(self.dim)
+
+    def is_inside(self, p):
+        """Overloaded function to eliminate testing if objects are inside ``room''."""
+        # always return True because we want the walls to have no effect.
+        return True
+
+    def get_bbox(self):
+        """Returns a bounding box for the mics and sources, for plotting."""
+
+        if (self.mic_array is None) and not self.sources:
+            raise ValueError("Nothing to plot, the Anechoic Room is empty!")
+
+        lower = np.inf * np.ones((self.dim,))
+        upper = -np.inf * np.ones((self.dim,))
+
+        if self.mic_array is not None:
+            lower = np.min(np.r_[lower[None, :], self.mic_array.R], axis=0)
+            upper = np.max(np.r_[upper[None, :], self.mic_array.R], axis=0)
+
+        for i, source in enumerate(self.sources):
+            lower = np.min(np.r_[lower[None, :], source.position[None, :]], axis=0)
+            upper = np.max(np.c_[upper[None, :], source.position[None, :]], axis=0)
+
+        return np.c_[lower, upper]
+
+    def plot_walls(self, ax):
+        """Overloaded function to eliminate wall plotting."""
+        return 1
+
+    def plot(self, **kwargs):
+        """Overloaded function to issue warning when img_order is given."""
+        if "img_order" in kwargs.keys():
+            warnings.warn("Ignoring img_order argument for AnechoicRoom.", UserWarning)
+        ShoeBox.plot(self, **kwargs)
