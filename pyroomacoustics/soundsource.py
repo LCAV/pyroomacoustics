@@ -232,7 +232,7 @@ class SoundSource(object):
 
         return self.damping[:, self.orders <= max_order]
 
-    def get_rir(self, mic, visibility, Fs, t0=0.0, t_max=None):
+    def get_rir(self, mic, visibility, Fs, t0=0.0, t_max=None): #Make this function obsolete
         """
         Compute the room impulse response between the source
         and the microphone whose position is given as an

@@ -1,9 +1,18 @@
 # cython: infer_types=True
 
 import numpy as np
+import matplotlib.pyplot as plt
 cimport cython
 
+from scipy.fft import fft , ifft
 from libc.math cimport floor, ceil
+from .directivities import DIRPATRir
+from scipy.signal import hilbert
+from timeit import default_timer as timer
+
+
+
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -56,29 +65,117 @@ def fast_rir_builder(
     # create a look-up table of the sinc function and
     # then use linear interpolation
     cdef float delta = 1. / lut_gran
-    cdef int lut_size = (fdl + 1) * lut_gran + 1
-    n = np.linspace(-fdl2-1, fdl2 + 1, lut_size)
+    cdef int lut_size = (fdl + 1) * lut_gran + 1  #Total number of points in 81 fractional delay
+    n = np.linspace(-fdl2-1, fdl2 + 1, lut_size)  #equal space between -41 to +41 for 1641 length as each point between -40 to +40 represents 20 samples in the sinc signal
 
-    cdef double [:] sinc_lut = np.sinc(n)
-    cdef double [:] hann = np.hanning(fdl)
+
+    cdef double [:] sinc_lut = np.sinc(n) #Sinc over linspace n
+    cdef double [:] hann = np.hanning(fdl) #Hanning window of size 81
     cdef int lut_pos, i, f, time_ip
     cdef float x_off, x_off_frac, sample_frac
+    g =[]
+    print_filter=0
+    pf=[]
 
+    #Loop through each image source
     for i in range(n_times):
         if visibility[i] == 1:
             # decompose integer and fractional delay
-            sample_frac = fs * time[i]
-            time_ip = int(floor(sample_frac))
-            time_fp = sample_frac - time_ip
+            sample_frac = fs * time[i] #Samples in fraction eg 250.567 sample , actual time of arrival of the image source to the microphone
+            time_ip = int(floor(sample_frac)) #Get the integer value of the sample eg 250th sample as int(250.567) = 250
+            time_fp = sample_frac - time_ip #Get the fractional sample 250.567-250= 0.567 samples
 
             # do the linear interpolation
-            x_off_frac = (1. - time_fp) * lut_gran
-            lut_gran_off = int(floor(x_off_frac))
-            x_off = (x_off_frac - lut_gran_off)
-            lut_pos = lut_gran_off
+            x_off_frac = (1. - time_fp) * lut_gran #(1-0.567) *20 = 8.66 , as each point represents 20 samples in the sinc table
+            lut_gran_off = int(floor(x_off_frac)) #int(8.66) = 8 sample in the sinc table
+            x_off = (x_off_frac - lut_gran_off) #fractional in the sinc table 8.66-8=0.66
+            lut_pos = lut_gran_off #lut_pos=8
             k = 0
+
+            #Loop through -40 to 41 , which accounts for 81 , as it is the amount of fractional delay every dirac goes through, the sinc table helps spread the energy to -40 to +40 samples in the RIR.
             for f in range(-fdl2, fdl2+1):
-                rir[time_ip + f] += alpha[i] * hann[k] * (sinc_lut[lut_pos] 
+                rir[time_ip + f] += alpha[i] * hann[k] * (sinc_lut[lut_pos]
                         + x_off * (sinc_lut[lut_pos+1] - sinc_lut[lut_pos]))
+                pf.append(rir[time_ip+f])
                 lut_pos += lut_gran
                 k += 1
+            if print_filter==0:
+                np.save("/home/psrivast/PycharmProjects/axis_2_phd/filter_non_dir.npy",np.array(pf))
+                print_filter+=1
+
+
+
+
+cdef int window_length=81
+cdef double [:] hann_wd = np.hanning(window_length)
+cdef int fdl2 = (window_length - 1) // 2
+cdef int lut_gran=20
+cdef int lut_size = (window_length + 1) * lut_gran + 1
+n_ = np.linspace(-fdl2 - 1, fdl2 + 1, lut_size)
+cdef double [:] sinc_lut=np.sinc(n_)
+
+
+
+def fast_window_sinc_interpolater(double time_fp): #Takes fractional part of the delay of IS k
+
+    cdef double x_off_frac = (1 - time_fp) * lut_gran
+    cdef int lut_gran_off = int(np.floor(x_off_frac))
+    cdef double x_off = x_off_frac - lut_gran_off
+    cdef int lut_pos = lut_gran_off
+    cdef double [:] sinc_filter = np.empty(window_length)
+    cdef int filter_sample = 0
+
+    for f in range(-fdl2, fdl2 + 1):
+        sinc_filter[filter_sample] = hann_wd[filter_sample]*(sinc_lut[lut_pos] + x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]))
+        lut_pos += lut_gran
+        filter_sample += 1
+    return sinc_filter
+
+cdef int val_i
+import multiprocessing
+nthread = multiprocessing.cpu_count()
+
+def fast_multiplication (
+        double complex [:] a,
+        double complex [:] b,
+        double complex [:] c,
+        double complex [:] d,
+        int final_fir_IS_len,):
+
+    cdef double complex [:] out = np.zeros(final_fir_IS_len,dtype=np.complex_)
+
+    a=np.fft.fft(a)
+    b=np.fft.fft(b)
+    c=np.fft.fft(c)
+    d=np.fft.fft(d)
+
+    for val_i in range(final_fir_IS_len):
+        out[val_i]=a[val_i]*b[val_i]*c[val_i]*d[val_i]
+
+    out=np.fft.ifft(out)
+    return out
+
+
+def fast_multiplication_1 (
+        double complex [:] a,
+        double complex [:] b,
+        double complex [:] c,
+        int final_fir_IS_len,):
+
+    cdef double complex [:] out = np.zeros(final_fir_IS_len,dtype=np.complex_)
+
+    a=np.fft.fft(a)
+    b=np.fft.fft(b)
+    c=np.fft.fft(c)
+
+    for val_i in range(final_fir_IS_len):
+        out[val_i]=a[val_i]*b[val_i]*c[val_i]
+
+    out=np.fft.ifft(out)
+    return out
+
+
+
+
+
+

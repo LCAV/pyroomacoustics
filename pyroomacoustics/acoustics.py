@@ -29,13 +29,16 @@ import itertools
 import math
 
 import numpy as np
+from scipy import signal
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
 from scipy.signal import butter, fftconvolve, sosfiltfilt
 
 from .parameters import constants
 from .transform import stft
-
+import matplotlib.pyplot as plt
+from scipy.fft import fft,fftfreq,fftshift,ifft
+from scipy.signal import hilbert
 
 def binning(S, bands):
     """
@@ -97,7 +100,7 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     return filters
 
 
-def octave_bands(fc=1000, third=False, start=0.0, n=8):
+def octave_bands(fc=1000, third=False, start=0.0, n=6):
     """
     Create a bank of octave bands
 
@@ -160,18 +163,19 @@ class OctaveBandsFactory(object):
         Use third octave bands if True (default: False)
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
+    def __init__(self, base_frequency=125.0, fs=16000, n_fft=128):
 
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
 
         # compute the number of bands
-        self.n_bands = math.floor(np.log2(fs / base_frequency))
+        self.n_bands = math.floor(np.log2(fs / base_frequency)) - 1
 
         self.bands, self.centers = octave_bands(
             fc=self.base_freq, n=self.n_bands, third=False
         )
+        print("Old Bands And Centers",self.bands,self.centers)
 
         self._make_filters()
 
@@ -179,7 +183,7 @@ class OctaveBandsFactory(object):
         """Returns the bandwidth of the bands"""
         return np.array([b2 - b1 for b1, b2 in self.bands])
 
-    def analysis(self, x, band=None):
+    def analysis(self, x, band=None,a=False):
         """
         Process a signal x through the filter bank
 
@@ -201,8 +205,12 @@ class OctaveBandsFactory(object):
 
         output = np.zeros((x.shape[0], len(bands)), dtype=x.dtype)
 
+
         for i, b in enumerate(bands):
             output[:, i] = fftconvolve(x, self.filters[:, b], mode="same")
+            if a == True:
+                return x*fft(self.filters_2[:,b])
+
 
         if output.shape[1] == 1:
             return output[:, 0]
@@ -255,6 +263,8 @@ class OctaveBandsFactory(object):
             # now clip between 0. and 1.
             ret[ret < 0.0] = 0.0
             ret[ret > 1.0] = 1.0
+            print(ret)
+
 
         return ret
 
@@ -288,32 +298,79 @@ class OctaveBandsFactory(object):
         n = len(self.centers)
 
         new_bands = [[centers[0] / 2, centers[1]]]
+
         for i in range(1, n - 1):
             new_bands.append([centers[i - 1], centers[i + 1]])
         new_bands.append([centers[-2], self.fs / 2])
 
         n_freq = self.n_fft // 2 + 1
         freq_resp = np.zeros((n_freq, n))
-        freq = np.arange(n_freq) / self.n_fft * self.fs
+
+
+
+        freq = np.arange(n_freq) / self.n_fft * self.fs #This only contains positive newfrequencies
+
+        print("New Bands And Centers ",new_bands,centers)
 
         for b, (band, center) in enumerate(zip(new_bands, centers)):
+
+            if b == 0: #Converting Octave bands so that the minimum phase filters do not have ripples.
+                make_one = freq < center
+                freq_resp[make_one,b] = 1.0
+
             lo = np.logical_and(band[0] <= freq, freq < center)
+
             freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
 
             if b != n - 1:
                 hi = np.logical_and(center <= freq, freq < band[1])
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
+
                 hi = center <= freq
                 freq_resp[hi, b] = 1.0
+
+
+        # Display octave bands.
+        #for i in range(n):
+        #    plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)], np.abs(freq_resp[:(n_freq-1),i]))
+        #    plt.show()
+            #plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:64], freq_resp[:64, i])
+
+        #plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)], np.abs(np.sum(freq_resp[:(n_freq-1),:], axis=1)),label="Sum Of All The Bands")
+        print(len(np.abs(np.sum(freq_resp[:(n_freq - 1), :], axis=1))))
+        print(len(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)]))
+
+        #plt.show()
+
 
         filters = np.fft.fftshift(
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
             axes=[0],
         )
 
+
+
+        self.filters_2=fft(filters,axis=0)
+
         # remove the first sample to make them odd-length symmetric filters
+
         self.filters = filters[1:, :]
+
+
+
+
+    def octave_band_dft_interpolation(self, att_in_octave_band, air_abs_band, distance_is , att_in_dft_scale, bws,min_phase):
+
+        u_= [att_in_octave_band[i] * np.exp(-0.5*air_abs_band[i]*distance_is) for i in range(len(bws))]
+
+        for b in range(len(bws)):
+            att_in_dft_scale += u_[b] * self.filters_2[:, b]
+
+        if min_phase:
+            m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale))))
+            att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
+        return att_in_dft_scale
 
 
 def critical_bands():
@@ -555,7 +612,7 @@ def inverse_sabine(rt60, room_dim, c=None):
     # diamond. this is what we are doing here.
     R = []
     for l1, l2 in itertools.combinations(room_dim, 2):
-        R.append(l1 * l2 / np.sqrt(l1**2 + l2**2))
+        R.append(l1 * l2 / np.sqrt(l1 ** 2 + l2 ** 2))
 
     V = np.prod(room_dim)  # area (2d) or volume (3d)
     # "surface" computation is diff for 2d and 3d
