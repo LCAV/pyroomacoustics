@@ -28,6 +28,7 @@ Changed
 - `End of Python 3.6 support <https://endoflife.date/python>`__.
 - Removed the deprecated ``realtime`` sub-module.
 - Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
+- Removed the broken ``get_rir`` function of the class ``SoundSource``
 
 Bugfix
 ~~~~~~
