@@ -16,6 +16,9 @@ Added
 
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
 - Randomized image source method for removing sweeping echoes in shoebox rooms.
+- New implementation of fast RIR builder function in the ``libroom`` C++
+  extentsion to replace the current cython code. Advantages are: 1) only one
+  compiled extension, 2) multithreading support
 
 Changed
 ~~~~~~~
