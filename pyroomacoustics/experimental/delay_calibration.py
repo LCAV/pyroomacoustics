@@ -5,11 +5,19 @@ from scipy import signal
 
 from .physics import calculate_speed_of_sound
 
-class DelayCalibration:
 
-    def __init__(self, fs, pad_time=0., mls_bits=16, repeat=1, 
-                 temperature=25., humidity=50., pressure=1000.):
-        '''
+class DelayCalibration:
+    def __init__(
+        self,
+        fs,
+        pad_time=0.0,
+        mls_bits=16,
+        repeat=1,
+        temperature=25.0,
+        humidity=50.0,
+        pressure=1000.0,
+    ):
+        """
         Initialize the delay calibration object
 
         Parameters
@@ -28,8 +36,7 @@ class DelayCalibration:
             Ambient humidity
         pressure : float
             Atmospheric pressure
-        '''
-            
+        """
 
         self.fs = fs
         self.mls_bits = mls_bits
@@ -41,8 +48,8 @@ class DelayCalibration:
         self.pressure = pressure
         self.c = calculate_speed_of_sound(temperature, humidity, pressure)
 
-    def run(self, distance=0., ch_in=None, ch_out=None, oversampling=1):
-        '''
+    def run(self, distance=0.0, ch_in=None, ch_out=None, oversampling=1):
+        """
         Run the calibration. Plays a maximum length sequence and cross correlate
         the signals to find the time delay.
 
@@ -54,16 +61,21 @@ class DelayCalibration:
             The input channel to use. If not specified, all channels are calibrated
         ch_out : int, optional
             The output channel to use. If not specified, all channels are calibrated
-        '''
+        """
 
         if ch_out is None:
             ch_out = [0]
 
         # create the maximum length sequence
-        mls = 0.95*np.array(2*signal.max_len_seq(self.mls_bits)[0] - 1, dtype=np.float32)
+        mls = 0.95 * np.array(
+            2 * signal.max_len_seq(self.mls_bits)[0] - 1, dtype=np.float32
+        )
 
         # output signal
-        s = np.zeros((mls.shape[0] + int(self.pad_time*self.fs), sd.default.channels[1]), dtype=np.float32)
+        s = np.zeros(
+            (mls.shape[0] + int(self.pad_time * self.fs), sd.default.channels[1]),
+            dtype=np.float32,
+        )
 
         # placeholder for delays
         delays = np.zeros((sd.default.channels[0], len(ch_out)))
@@ -72,18 +84,21 @@ class DelayCalibration:
             import matplotlib.pyplot as plt
         except ImportError:
             import warnings
-            warnings.warn('Matplotlib is required for plotting')
+
+            warnings.warn("Matplotlib is required for plotting")
             return
 
         for och in ch_out:
             # play and record the signal simultaneously
-            s[:mls.shape[0], och] = 0.1 * mls
-            rec_sig = sd.playrec(s, self.fs, channels=sd.default.channels[0], blocking=True)
-            s[:,och] = 0
+            s[: mls.shape[0], och] = 0.1 * mls
+            rec_sig = sd.playrec(
+                s, self.fs, channels=sd.default.channels[0], blocking=True
+            )
+            s[:, och] = 0
 
             for ich in range(rec_sig.shape[1]):
-                xcorr = signal.correlate(rec_sig[:,ich], mls, mode='valid')
-                delays[ich,och] = np.argmax(xcorr)
+                xcorr = signal.correlate(rec_sig[:, ich], mls, mode="valid")
+                delays[ich, och] = np.argmax(xcorr)
                 plt.plot(xcorr)
                 plt.show()
 
@@ -98,13 +113,14 @@ if __name__ == "__main__":
     try:
         import sounddevice as sd
 
-        sd.default.device = (2,2)
-        sd.default.channels = (1,2)
-        dc = DelayCalibration(48000, mls_bits=16, pad_time=0.5, repeat=1, temperature=25.6, humidity=30.)
+        sd.default.device = (2, 2)
+        sd.default.channels = (1, 2)
+        dc = DelayCalibration(
+            48000, mls_bits=16, pad_time=0.5, repeat=1, temperature=25.6, humidity=30.0
+        )
 
-        delays = dc.run(ch_out=[0,1])
+        delays = dc.run(ch_out=[0, 1])
 
         print(delays)
     except:
-        raise ImportError('Sounddevice package must be installed to run that script.')
-
+        raise ImportError("Sounddevice package must be installed to run that script.")

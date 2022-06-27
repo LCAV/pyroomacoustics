@@ -2,8 +2,8 @@ import shutil
 from pyroomacoustics.datasets.utils import download_uncompress
 import ssl
 
-test_url = 'https://github.com/LCAV/pyroomacoustics/archive/master.tar.gz'
-extracted_name = 'pyroomacoustics-master'
+test_url = "https://github.com/LCAV/pyroomacoustics/archive/master.tar.gz"
+extracted_name = "pyroomacoustics-master"
 
 
 def test_download_uncompress():
@@ -12,5 +12,5 @@ def test_download_uncompress():
     shutil.rmtree(extracted_name, ignore_errors=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_download_uncompress()

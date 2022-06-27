@@ -53,9 +53,7 @@ n = 0
 while audio.shape[0] - n > hop:
 
     # go to frequency domain
-    stft.analysis(
-        audio[n : n + hop]
-    )
+    stft.analysis(audio[n : n + hop])
 
     stft.process()  # apply the filter
 

@@ -14,6 +14,6 @@ def test_set_humidity_wo_temperature():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_set_temperature_wo_humidity()
     test_set_humidity_wo_temperature()

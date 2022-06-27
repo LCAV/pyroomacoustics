@@ -206,7 +206,7 @@ class GridSphere(Grid):
             increment = np.pi * (3.0 - np.sqrt(5.0))
 
             self.z[:] = (np.arange(n_points) * offset - 1) + offset / 2
-            rho = np.sqrt(1.0 - self.z ** 2)
+            rho = np.sqrt(1.0 - self.z**2)
 
             phi = np.arange(n_points) * increment
 
@@ -216,7 +216,7 @@ class GridSphere(Grid):
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
             self.azimuth[:] = np.arctan2(self.y, self.x)
-            self.colatitude[:] = np.arctan2(np.sqrt(self.x ** 2 + self.y ** 2), self.z)
+            self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
 
         # To perform the peak detection in 2D on a non-squared grid it is
         # necessary to know the neighboring points of each grid point.  The
@@ -257,11 +257,10 @@ class GridSphere(Grid):
             self.values = func(self.x, self.y, self.z)
 
     def min_max_distance(self):
-        """ Compute some statistics on the distribution of the points """
+        """Compute some statistics on the distribution of the points"""
 
-        assert (
-            self._enable_peak_finding
-        ), "This method requires that peak finding is enabled."
+        if not self._enable_peak_finding:
+            raise ValueError("This method requires that peak finding is enabled.")
 
         min_dist = np.inf
         max_dist = 0
@@ -297,9 +296,8 @@ class GridSphere(Grid):
         Find the largest peaks on the grid
         """
 
-        assert (
-            self._enable_peak_finding
-        ), "This method requires that peak finding is enabled."
+        if not self._enable_peak_finding:
+            raise ValueError("This method requires that peak finding is enabled.")
 
         candidates = []
 
@@ -323,10 +321,10 @@ class GridSphere(Grid):
         return [candidates[x] for x in I[-k:]]
 
     def regrid(self):
-        """ Regrid the non-uniform data on a regular mesh """
+        """Regrid the non-uniform data on a regular mesh"""
 
         if self.values is None:
-            warnings.warn("Cannont regrid: data missing.")
+            warnings.warn("Cannot regrid: data missing.")
             return
 
         # First we need to interpolate the non-uniformly sampled data
@@ -393,16 +391,15 @@ class GridSphere(Grid):
             )
 
     def plot_old(self, plot_points=False, mark_peaks=0):
-        """ Plot the points on the sphere with their values """
+        """Plot the points on the sphere with their values"""
 
         from scipy import rand
 
         try:
             import matplotlib.colors as colors
-
+            import matplotlib.pyplot as plt
             # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
-            import matplotlib.pyplot as plt
         except ImportError:
             import warnings
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Blind Source Separation
 =======================
 
@@ -20,6 +20,9 @@ SparseAuxIVA
 FastMNMF
     | Fast Multichannel Nonnegative Matrix Factorization [5]_
     | :py:mod:`pyroomacoustics.bss.fastmnmf`
+FastMNMF2
+    | Fast Multichannel Nonnegative Matrix Factorization 2 [6]_
+    | :py:mod:`pyroomacoustics.bss.fastmnmf2`
 
 
 A few commonly used functions, such as projection back, can be found in
@@ -48,11 +51,16 @@ References
 .. [5] K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
 
-'''
+.. [6] K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel
+    Nonnegative Matrix Factorization with Directivity-Aware Jointly-Diagonalizable Spatial
+    Covariance Matrices for Blind Source Separation*, IEEE/ACM Trans. ASLP, vol. 28, pp. 2610-2625, 2020.
+
+"""
 
 from .trinicon import trinicon
 from .auxiva import auxiva
 from .ilrma import ilrma
 from .sparseauxiva import sparseauxiva
 from .fastmnmf import fastmnmf
+from .fastmnmf2 import fastmnmf2
 from .common import projection_back, sparir

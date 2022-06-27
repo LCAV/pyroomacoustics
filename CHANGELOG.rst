@@ -11,6 +11,95 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
+- Randomized image source method for removing sweeping echoes in shoebox rooms.
+
+Changed
+~~~~~~~
+
+- Refactored the implementation of FastMNMF.
+- Modified the document of __init__.py in ``doa`` subpackage.
+- `End of Python 3.6 support <https://endoflife.date/python>`__.
+- Removed the deprecated ``realtime`` sub-module.
+- Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
+
+Bugfix
+~~~~~~
+
+- Fixed most warnings in the tests
+
+`0.6.0`_ - 2021-11-29
+---------------------
+
+Added
+~~~~~
+
+- New DOA method: MUSIC with pseudo-spectra normalization. Thanks @4bian!
+  Normalizes MUSIC pseudo spectra before averaging across frequency axis.
+
+Bugfix
+~~~~~~
+
+- Issue 235: fails when set_ray_tracing is called, but no mic_array is set
+- Issue 236: general ISM produces the wrong transmission coefficients
+- Removes an unncessery warning for some rooms when ray tracing is not needed
+
+Misc
+~~~~
+
+- Unify code format by using Black
+- Add code linting in continuous integration
+- Drop CI support for python 3.5
+
+
+`0.5.0`_ - 2021-09-06
+---------------------
+
+Added
+~~~~~
+
+- Adds tracking of reflection order with respect to x/y/z axis in the shoebox image
+  source model engine. The orders are available in `source.orders_xyz` after running
+  the image source model
+- Support for microphone and source directivites for image source model. Source
+  directivities just for shoebox room. Available directivities are frequency-independent
+  (cardioid patterns), although the infrastructure is there for frequency-dependent
+  directivities: frequency-dependent usage in `Room.compute_rir` and abstract
+  `Directivity` class.
+- Examples scripts and notebook for directivities.
+
+Bugfix
+~~~~~~
+
+- Fix wrong bracketing for negative values in is_inside (ShoeBox)
+
+`0.4.3`_ - 2021-02-18
+---------------------
+
+Added
+~~~~~
+
+- Support for Python 3.8 and 3.9
+
+Bugfix
+~~~~~~
+
+- Fixes typo in a docstring
+- Update docs to better reflect actual function parameters
+- Fixes the computation of the cost function of SRP-PHAT doa algorithm (bug reported in #PR197)
+
+Changed
+~~~~~~~
+
+- Improve the computation of the auxiliary variables in AuxIVA and ILRMA.
+  Unnecessary division operations are reduced.
+
+`0.4.2`_ - 2020-09-24
+---------------------
+
 Bugfix
 ~~~~~~
 
@@ -381,8 +470,12 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...master
-.. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.6.0...master
+.. _0.6.0: https://github.com/LCAV/pyroomacoustics/compare/v0.5.0...v0.6.0
+.. _0.5.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...v0.5.0
+.. _0.4.3: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...v0.4.3
+.. _0.4.2: https://github.com/LCAV/pyroomacoustics/compare/v0.4.1...v0.4.2
+.. _0.4.1: https://github.com/LCAV/pyroomacoustics/compare/v0.4.0...v0.4.1
 .. _0.4.0: https://github.com/LCAV/pyroomacoustics/compare/v0.3.1...v0.4.0
 .. _0.3.1: https://github.com/LCAV/pyroomacoustics/compare/v0.3.0...v0.3.1
 .. _0.3.0: https://github.com/LCAV/pyroomacoustics/compare/v0.2.0...v0.3.0
