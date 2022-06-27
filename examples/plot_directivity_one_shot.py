@@ -2,8 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pyroomacoustics import dB, all_combinations
-from pyroomacoustics.directivities import DirectivityPattern, \
-    DirectionVector, CardioidFamily, cardioid_func
+from pyroomacoustics.directivities import (
+    DirectivityPattern,
+    DirectionVector,
+    CardioidFamily,
+    cardioid_func,
+)
 from pyroomacoustics.doa import spher2cart
 
 ORIENTATION = DirectionVector(azimuth=0, colatitude=90, degrees=True)
@@ -44,7 +48,7 @@ AZI, COL = np.meshgrid(azimuth, colatitude)
 X = RESP_2D.T * np.sin(COL) * np.cos(AZI)
 Y = RESP_2D.T * np.sin(COL) * np.sin(AZI)
 Z = RESP_2D.T * np.cos(COL)
-ax = fig.add_subplot(1, 1, 1, projection='3d')
+ax = fig.add_subplot(1, 1, 1, projection="3d")
 ax.plot_surface(X, Y, Z)
 ax.set_xlabel("x")
 ax.set_ylabel("y")

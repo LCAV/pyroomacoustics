@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pyroomacoustics.directivities import DirectivityPattern, \
-    DirectionVector, CardioidFamily
+from pyroomacoustics.directivities import (
+    DirectivityPattern,
+    DirectionVector,
+    CardioidFamily,
+)
 
 
 PATTERN = DirectivityPattern.HYPERCARDIOID

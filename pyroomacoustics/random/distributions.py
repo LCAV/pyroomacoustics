@@ -96,7 +96,7 @@ class PowerSpherical(Distribution):
         b = (self.dim - 1) / 2
         self._Z_inv = 1.0 / (
             2 ** (a + b)
-            * np.pi ** b
+            * np.pi**b
             * scipy.special.gamma(a)
             / scipy.special.gamma(a + b)
         )

@@ -41,7 +41,7 @@ def power_spherical(loc=None, scale=None, dim=3, size=None):
 
     Nicola De Cao, Wilker Aziz, "The Power Spherical distribution", arXiv, 2020.
     http://arxiv.org/abs/2006.04437v1
-    
+
     Parameters
     ----------
     loc: float or array_like of floats, optional
@@ -81,7 +81,7 @@ def power_spherical(loc=None, scale=None, dim=3, size=None):
     v = uniform_spherical(size=size[:-1], dim=dim - 1)
 
     t = 2 * z[..., None] - 1
-    y = np.concatenate((t, np.sqrt(1 - t ** 2) * v), axis=-1)  # shape (*size, dim)
+    y = np.concatenate((t, np.sqrt(1 - t**2) * v), axis=-1)  # shape (*size, dim)
 
     u_hat = e1 - loc
     # here the _eps is to avoid division by zero so that it is fine that when

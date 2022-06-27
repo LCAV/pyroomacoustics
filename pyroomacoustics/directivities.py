@@ -98,7 +98,6 @@ class DirectionVector(object):
         return self.get_colatitude(degrees=True)
 
 
-
 class Directivity(abc.ABC):
     """Abstract class for directivity patterns."""
 
@@ -408,14 +407,15 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
 
 
 class SphericalHistogram:
-
     def __init__(self, n_bins, dim=3, enable_peak_finding=False):
 
         self._n_dim = 3
         self._n_bins = n_bins
 
         if self.n_dim == 3:
-            self._grid = GridSphere(n_points=self.n_bins, enable_peak_finding=enable_peak_finding)
+            self._grid = GridSphere(
+                n_points=self.n_bins, enable_peak_finding=enable_peak_finding
+            )
         else:
             raise NotImplementedError("Only 3D histogram has been implemented")
 
@@ -485,6 +485,7 @@ class SphericalHistogram:
         bin_indices, counts = np.unique(matches, return_counts=True)
         self._bins[bin_indices] += counts
 
+
 def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
     """
     Determine outgoing angle for each image source for a ShoeBox configuration.
@@ -534,4 +535,3 @@ def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
         colatitude = np.pi / 2 - np.arcsin(p_dash_array[2] / d_array)
 
     return azimuth, colatitude
-
