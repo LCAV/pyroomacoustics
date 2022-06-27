@@ -78,7 +78,6 @@ Bugfix
 ~~~~~~
 
 - Fix wrong bracketing for negative values in is_inside (ShoeBox)
->>>>>>> master
 
 `0.4.3`_ - 2021-02-18
 ---------------------
