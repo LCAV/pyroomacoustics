@@ -5,8 +5,7 @@ import time
 
 import numpy as np
 import pyroomacoustics as pra
-from pyroomacoustics.rir_builder_ext import (threaded_rir_builder_double,
-                                             threaded_rir_builder_float)
+from pyroomacoustics.libroom import threaded_rir_builder
 
 try:
     from pyroomacoustics import build_rir
@@ -92,7 +91,7 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
 
     # Try to use the Cython extension
     # build_rir.fast_rir_builder(ir_cython, time, alpha, visibility, fs, fdl)
-    threaded_rir_builder_float(
+    threaded_rir_builder(
         ir_cpp_f,
         time.astype(np.float32),
         alpha.astype(np.float32),
@@ -143,7 +142,7 @@ def test_short():
     visibility = np.array([1], dtype=np.int32)
 
     try:
-        threaded_rir_builder_float(
+        threaded_rir_builder(
             rir,
             time,
             alpha,
@@ -174,7 +173,7 @@ def test_long():
     visibility = np.array([1], dtype=np.int32)
 
     try:
-        threaded_rir_builder_float(rir, time, alpha, visibility, fs, fdl, 20, 2)
+        threaded_rir_builder(rir, time, alpha, visibility, fs, fdl, 20, 2)
         assert False
     except RuntimeError:
         print("Ok, long times are caught")
@@ -196,21 +195,21 @@ def test_errors():
     visibility = np.array([1, 1], dtype=np.int32)
 
     try:
-        threaded_rir_builder_float(rir, time, alpha[:1], visibility, fs, fdl, 20, 2)
+        threaded_rir_builder(rir, time, alpha[:1], visibility, fs, fdl, 20, 2)
         assert False
     except RuntimeError:
         print("Ok, alpha error occured")
         pass
 
     try:
-        threaded_rir_builder_float(rir, time, alpha, visibility[:1], fs, fdl, 20, 2)
+        threaded_rir_builder(rir, time, alpha, visibility[:1], fs, fdl, 20, 2)
         assert False
     except RuntimeError:
         print("Ok, visibility error occured")
         pass
 
     try:
-        threaded_rir_builder_float(rir, time, alpha, visibility, fs, 80, 20, 2)
+        threaded_rir_builder(rir, time, alpha, visibility, fs, 80, 20, 2)
         assert False
     except RuntimeError:
         print("Ok, fdl error occured")
@@ -230,23 +229,16 @@ def measure_runtime(dtype=np.float32, num_threads=4):
     rir = np.zeros(rir_len, dtype=dtype)
     visibility = np.ones(n_img, dtype=np.int32)
 
-    if dtype == np.float32:
-        func = threaded_rir_builder_float
-    elif dtype == np.float64:
-        func = threaded_rir_builder_double
-    else:
-        raise NotImplementedError()
-
     tick = time.perf_counter()
     rir[:] = 0.0
     for i in range(n_repeat):
-        func(rir, time_arr, alpha, visibility, fs, fdl, 20, 1)
+        threaded_rir_builder(rir, time_arr, alpha, visibility, fs, fdl, 20, 1)
     tock_1 = (time.perf_counter() - tick) / n_repeat
 
     tick = time.perf_counter()
     rir[:] = 0.0
     for i in range(n_repeat):
-        func(rir, time_arr, alpha, visibility, fs, fdl, 20, num_threads)
+        threaded_rir_builder(rir, time_arr, alpha, visibility, fs, fdl, 20, num_threads)
     tock_8 = (time.perf_counter() - tick) / n_repeat
 
     if dtype == np.float64:

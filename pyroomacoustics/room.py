@@ -608,6 +608,8 @@ References
 from __future__ import division, print_function
 
 import math
+import os
+import sys
 import warnings
 
 import numpy as np
@@ -648,7 +650,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # repeated constant
-    fpcv = 4 * np.pi * c**3 / volume
+    fpcv = 4 * np.pi * c ** 3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -1996,12 +1998,11 @@ class Room(object):
 
                     # maximum allowed displacement is 8cm
                     max_disp = self.max_rand_disp
-                   
+
                     # add a random displacement to each cartesian coordinate
                     disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
                     source.images += disp
-                                             
-  
+
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
                 # We need to check that microphones are indeed in the room
@@ -2126,7 +2127,7 @@ class Room(object):
 
                 for b, bw in enumerate(bws):
 
-                    ir_loc = np.zeros_like(ir)
+                    ir_loc = np.zeros_like(ir, dtype=np.float32)
 
                     # IS method
                     if self.simulator_state["ism_needed"]:
@@ -2151,7 +2152,7 @@ class Room(object):
                             )
 
                         # Use the Cython extension for the fractional delays
-                        from .build_rir import fast_rir_builder
+                        # from .build_rir import fast_rir_builder
 
                         vis = self.visibility[s][m, :].astype(np.int32)
                         # we add the delay due to the factional delay filter to
@@ -2159,7 +2160,16 @@ class Room(object):
                         # is shorter than the delay to to the filter
                         # hence: time + fdl2
                         time_adjust = time + fdl2 / self.fs
-                        fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
+                        libroom.threaded_rir_builder(
+                            ir_loc,
+                            time_adjust.astype(np.float32),
+                            alpha.astype(np.float32),
+                            vis,
+                            self.fs,
+                            fdl,
+                            20,
+                            os.cpu_count(),
+                        )
 
                         if is_multi_band:
                             ir_loc = self.octave_bands.analysis(ir_loc, band=b)
@@ -2359,7 +2369,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
 
     def get_wall_by_name(self, name):
         """

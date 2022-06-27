@@ -24,9 +24,7 @@
  * If not, see <https://opensource.org/licenses/MIT>.
  */
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "rir_builder.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -37,23 +35,20 @@
 
 #include "threadpool.h"
 
-namespace py = pybind11;
-using std::vector;
-
+// A constexpr function to give PI as float or double
 template <class T>
 constexpr T get_pi() {
   return T(3.14159265358979323846);
 } /* pi */
 
 template <class T>
-void threaded_rir_builder(
+void threaded_rir_builder_impl(
     py::array_t<T, py::array::c_style | py::array::forcecast> rir,
     const py::array_t<T, py::array::c_style | py::array::forcecast> time,
     const py::array_t<T, py::array::c_style | py::array::forcecast> alpha,
     const py::array_t<int, py::array::c_style | py::array::forcecast>
         visibility,
     int fs, size_t fdl, size_t lut_gran, size_t num_threads) {
-
   auto pi = get_pi<T>();
 
   // accessors for the arrays
@@ -97,7 +92,7 @@ void threaded_rir_builder(
   auto lut_gran_f = T(lut_gran);
 
   // sinc values table
-  vector<T> sinc_lut(lut_size);
+  std::vector<T> sinc_lut(lut_size);
   T n = -T(fdl2) - 1;
   for (size_t idx = 0; idx < lut_size; n += lut_delta, idx++) {
     if (n == 0.0)
@@ -107,17 +102,17 @@ void threaded_rir_builder(
   }
 
   // hann window
-  vector<T> hann(fdl);
+  std::vector<T> hann(fdl);
   for (size_t idx = 0; idx < fdl; idx++)
     hann[idx] = T(0.5) - T(0.5) * std::cos((T(2.0) * pi * idx) / T(fdl - 1));
 
   // divide into equal size blocks for thread processing
-  vector<T> rir_out(num_threads * rir_len);
+  std::vector<T> rir_out(num_threads * rir_len);
   size_t block_size = size_t(std::ceil(double(n_times) / double(num_threads)));
 
   // build the RIR
   ThreadPool pool(num_threads);
-  std::vector<std::future<void> > results;
+  std::vector<std::future<void>> results;
   for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
     size_t t_start = t_idx * block_size;
     size_t t_end = std::min(t_start + block_size, n_times);
@@ -157,12 +152,19 @@ void threaded_rir_builder(
       rir_acc(idx) += rir_out[t_idx * rir_len + idx];
 }
 
-PYBIND11_MODULE(rir_builder_ext, m) {
-  m.doc() =
-      "Compiled routing to build RIR from ISM";  // optional module docstring
-
-  m.def("threaded_rir_builder_float", &threaded_rir_builder<float>,
-        "RIR builder (float)", py::call_guard<py::gil_scoped_release>());
-  m.def("threaded_rir_builder_double", &threaded_rir_builder<double>,
-        "RIR builder (double)", py::call_guard<py::gil_scoped_release>());
+void threaded_rir_builder(py::buffer rir, const py::buffer time,
+                          const py::buffer alpha, const py::buffer visibility,
+                          int fs, size_t fdl, size_t lut_gran,
+                          size_t num_threads) {
+  // dispatch to correct implementation depending on input type
+  auto buf = pybind11::array::ensure(rir);
+  if (py::isinstance<py::array_t<float>>(buf)) {
+    threaded_rir_builder_impl<float>(rir, time, alpha, visibility, fs, fdl,
+                                     lut_gran, num_threads);
+  } else if (py::isinstance<py::array_t<double>>(buf)) {
+    threaded_rir_builder_impl<double>(rir, time, alpha, visibility, fs, fdl,
+                                      lut_gran, num_threads);
+  } else {
+    std::runtime_error("wrong type array for rir builder");
+  }
 }

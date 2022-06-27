@@ -4,8 +4,9 @@
 from __future__ import division, print_function
 
 import numpy as np
-from .parameters import constants
+
 from .directivities import Directivity
+from .parameters import constants
 
 
 class SoundSource(object):
@@ -232,58 +233,6 @@ class SoundSource(object):
 
         return self.damping[:, self.orders <= max_order]
 
-    def get_rir(self, mic, visibility, Fs, t0=0.0, t_max=None):
-        """
-        Compute the room impulse response between the source
-        and the microphone whose position is given as an
-        argument.
-        """
-
-        # fractional delay length
-        fdl = constants.get("frac_delay_length")
-        fdl2 = (fdl - 1) // 2
-
-        # compute the distance
-        dist = self.distance(mic)
-        time = dist / constants.get("c") + t0
-        if self.damping.shape[0] == 1:
-            alpha = self.damping[0, :] / (4.0 * np.pi * dist)
-        else:
-            raise NotImplementedError("Not implemented for multiple frequency bands")
-
-        # the number of samples needed
-        if t_max is None:
-            # we give a little bit of time to the sinc to decay anyway
-            N = np.ceil((1.05 * time.max() - t0) * Fs)
-        else:
-            N = np.ceil((t_max - t0) * Fs)
-
-        N += fdl
-
-        t = np.arange(N) / float(Fs)
-        ir = np.zeros(t.shape)
-
-        try:
-            # Try to use the Cython extension
-            from .build_rir import fast_rir_builder
-
-            fast_rir_builder(ir, time, alpha, visibility.astype(np.int32), Fs, fdl)
-
-        except ImportError:
-            print("Cython-extension build_rir unavailable. Falling back to pure python")
-            # fallback to pure Python implemenation
-            from .utilities import fractional_delay
-
-            for i in range(time.shape[0]):
-                if visibility[i] == 1:
-                    time_ip = int(np.round(Fs * time[i]))
-                    time_fp = (Fs * time[i]) - time_ip
-                    ir[time_ip - fdl2 : time_ip + fdl2 + 1] += alpha[
-                        i
-                    ] * fractional_delay(time_fp)
-
-        return ir
-
     def wall_sequence(self, i):
         """
         Print the wall sequence for the image source indexed by i
@@ -335,7 +284,7 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     """
 
     from .beamforming import distance
-    from .utilities import low_pass_dirac, convmtx
+    from .utilities import convmtx, low_pass_dirac
 
     for s in sources:
         if s.damping.shape[0] > 1:

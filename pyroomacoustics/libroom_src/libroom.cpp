@@ -36,6 +36,7 @@
 #include "microphone.hpp"
 #include "wall.hpp"
 #include "room.hpp"
+#include "rir_builder.hpp"
 
 namespace py = pybind11;
 
@@ -300,5 +301,6 @@ PYBIND11_MODULE(libroom, m) {
   m.def("dist_line_point", &dist_line_point,
       "Computes the distance between a point and an infinite line");
 
+  m.def("threaded_rir_builder", &threaded_rir_builder,
+        "RIR builder", py::call_guard<py::gil_scoped_release>());
 }
-

@@ -51,13 +51,15 @@ libroom_files = [
         "geometry.hpp",
         "geometry.cpp",
         "common.hpp",
+        "rir_builder.cpp",
+        "rir_builder.hpp",
         "libroom.cpp",
     ]
 ]
 ext_modules = [
     Extension(
         "pyroomacoustics.libroom",
-        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp"]],
+        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp", "rir_builder.cpp"]],
         depends=libroom_files,
         include_dirs=[
             ".",
@@ -68,19 +70,6 @@ ext_modules = [
         ],
         language="c++",
         extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],
-    ),
-    Extension(
-        "pyroomacoustics.rir_builder_ext",
-        ["pyroomacoustics/rir_builder_ext/main.cpp"],
-        # depends=libroom_files,
-        include_dirs=[
-            ".",
-            "pyroomacoustics/rir_builder_ext",
-            str(get_pybind_include()),
-            str(get_pybind_include(user=True)),
-        ],
-        language="c++",
-        extra_compile_args=["-Wall", "-O3"],
     ),
     Extension(
         "pyroomacoustics.build_rir",
