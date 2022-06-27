@@ -3,7 +3,6 @@ import abc
 import numpy as np
 from numpy.random import default_rng
 
-from ..directivities import cardioid_func
 from . import distributions
 from .spherical import uniform_spherical
 
@@ -110,30 +109,3 @@ class DirectionalSampler(RejectionSampler):
              Cartesian coordinates
         """
         pass
-
-
-class CardioidFamilySampler(DirectionalSampler):
-    """
-    This object draws sample from a cardioid shaped distribution on the sphere
-
-    Parameters
-    ----------
-    loc: array_like
-        The unit vector pointing in the main direction of the cardioid
-    coeff: float
-        The shape coefficient (default 0.5 for a regular cardioid)
-    """
-
-    def __init__(self, loc=None, coeff=0.5):
-        super().__init__(loc=loc)
-        self._coeff = coeff
-
-    def _pattern(self, x):
-        return cardioid_func(
-            x.T,
-            direction=self._loc,
-            coef=self._coeff,
-            gain=1.0,
-            normalize=False,
-            magnitude=True,
-        )

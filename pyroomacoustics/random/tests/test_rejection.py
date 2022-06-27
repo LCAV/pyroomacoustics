@@ -1,9 +1,10 @@
 import pyroomacoustics as pra
+from pyroomacoustics.directivities import CardioidFamilySampler
 
 if __name__ == "__main__":
-    import numpy as np
     import matplotlib.pyplot as plt
     import mpl_toolkits.mplot3d.axes3d as axes3d
+    import numpy as np
 
     # let's visualize samples in the sphere
 
@@ -19,7 +20,7 @@ if __name__ == "__main__":
 
     for loc, scale in zip([[1, 1, 1]], [10, 1, 0.1]):
         print(loc, scale)
-        sampler = pra.random.sampler.CardioidFamilySampler(
+        sampler = CardioidFamilySampler(
             loc=loc, coeff=pra.DirectivityPattern.FIGURE_EIGHT.value
         )
 

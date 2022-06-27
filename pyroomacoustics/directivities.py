@@ -166,6 +166,33 @@ class Directivity(abc.ABC):
         raise NotImplementedError
 
 
+class CardioidFamilySampler(random.sampler.DirectionalSampler):
+    """
+    This object draws sample from a cardioid shaped distribution on the sphere
+
+    Parameters
+    ----------
+    loc: array_like
+        The unit vector pointing in the main direction of the cardioid
+    coeff: float
+        The shape coefficient (default 0.5 for a regular cardioid)
+    """
+
+    def __init__(self, loc=None, coeff=0.5):
+        super().__init__(loc=loc)
+        self._coeff = coeff
+
+    def _pattern(self, x):
+        return cardioid_func(
+            x.T,
+            direction=self._loc,
+            coef=self._coeff,
+            gain=1.0,
+            normalize=False,
+            magnitude=True,
+        )
+
+
 class CardioidFamily(Directivity):
     """
     Object for directivities coming from the
@@ -187,7 +214,7 @@ class CardioidFamily(Directivity):
 
         # this is the object that will allow to sample rays according to the
         # distribution corresponding to the source directivity
-        self._ray_sampler = random.sampler.CardioidFamilySampler(
+        self._ray_sampler = CardioidFamilySampler(
             loc=self._orientation.unit_vector, coeff=self._p
         )
 
@@ -507,3 +534,4 @@ def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
         colatitude = np.pi / 2 - np.arcsin(p_dash_array[2] / d_array)
 
     return azimuth, colatitude
+
