@@ -1,6 +1,12 @@
 from __future__ import division, print_function
-import pyroomacoustics as pra
+
+import os
+import time
+
 import numpy as np
+import pyroomacoustics as pra
+from pyroomacoustics.rir_builder_ext import (threaded_rir_builder_double,
+                                             threaded_rir_builder_float)
 
 try:
     from pyroomacoustics import build_rir
@@ -26,7 +32,7 @@ times = np.array(
     [
         [
             t0,
-            t1 + (1 / 40 / 16000),
+            t1 + (1 / 40 / fs),
             t2,
         ],
         [
@@ -82,8 +88,20 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
     ir_ref = np.zeros(N)
     ir_cython = np.zeros(N)
 
+    ir_cpp_f = ir_cython.astype(np.float32)
+
     # Try to use the Cython extension
-    build_rir.fast_rir_builder(ir_cython, time, alpha, visibility, fs, fdl)
+    # build_rir.fast_rir_builder(ir_cython, time, alpha, visibility, fs, fdl)
+    threaded_rir_builder_float(
+        ir_cpp_f,
+        time.astype(np.float32),
+        alpha.astype(np.float32),
+        visibility.astype(np.int32),
+        fs,
+        fdl,
+        20,
+        2,
+    )
 
     # fallback to pure Python implemenation
     for i in range(time.shape[0]):
@@ -94,7 +112,7 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
                 i
             ] * pra.fractional_delay(time_fp)
 
-    return ir_ref, ir_cython
+    return ir_ref, ir_cpp_f
 
 
 def test_build_rir():
@@ -118,16 +136,25 @@ def test_short():
     N = 100
     fs = 16000
     fdl = 81
-    rir = np.zeros(N)
+    rir = np.zeros(N, dtype=np.float32)
 
-    time = np.array([0.0])
-    alpha = np.array([1.0])
+    time = np.array([0.0], dtype=np.float32)
+    alpha = np.array([1.0], dtype=np.float32)
     visibility = np.array([1], dtype=np.int32)
 
     try:
-        build_rir.fast_rir_builder(rir, time, alpha, visibility, fs, fdl)
-        assert False
-    except AssertionError:
+        threaded_rir_builder_float(
+            rir,
+            time,
+            alpha,
+            visibility,
+            fs,
+            fdl,
+            20,
+            2,
+        )
+        assert False, "Short time not caught"
+    except RuntimeError:
         print("Ok, short times are caught")
 
 
@@ -140,16 +167,16 @@ def test_long():
     N = 100
     fs = 16000
     fdl = 81
-    rir = np.zeros(N)
+    rir = np.zeros(N, dtype=np.float32)
 
-    time = np.array([(N - 1) / fs])
-    alpha = np.array([1.0])
+    time = np.array([(N - 1) / fs], dtype=np.float32)
+    alpha = np.array([1.0], dtype=np.float32)
     visibility = np.array([1], dtype=np.int32)
 
     try:
-        build_rir.fast_rir_builder(rir, time, alpha, visibility, fs, fdl)
+        threaded_rir_builder_float(rir, time, alpha, visibility, fs, fdl, 20, 2)
         assert False
-    except AssertionError:
+    except RuntimeError:
         print("Ok, long times are caught")
 
 
@@ -162,32 +189,82 @@ def test_errors():
     N = 300
     fs = 16000
     fdl = 81
-    rir = np.zeros(N)
+    rir = np.zeros(N, dtype=np.float32)
 
-    time = np.array([100 / fs, 200 / fs])
-    alpha = np.array([1.0, 1.0])
+    time = np.array([100 / fs, 200 / fs], dtype=np.float32)
+    alpha = np.array([1.0, 1.0], dtype=np.float32)
     visibility = np.array([1, 1], dtype=np.int32)
 
     try:
-        build_rir.fast_rir_builder(rir, time, alpha[:1], visibility, fs, fdl)
+        threaded_rir_builder_float(rir, time, alpha[:1], visibility, fs, fdl, 20, 2)
         assert False
-    except:
+    except RuntimeError:
         print("Ok, alpha error occured")
         pass
 
     try:
-        build_rir.fast_rir_builder(rir, time, alpha, visibility[:1], fs, fdl)
+        threaded_rir_builder_float(rir, time, alpha, visibility[:1], fs, fdl, 20, 2)
         assert False
-    except:
+    except RuntimeError:
         print("Ok, visibility error occured")
         pass
 
     try:
-        build_rir.fast_rir_builder(rir, time, alpha, visibility, fs, 80)
+        threaded_rir_builder_float(rir, time, alpha, visibility, fs, 80, 20, 2)
         assert False
-    except:
+    except RuntimeError:
         print("Ok, fdl error occured")
         pass
+
+
+def measure_runtime(dtype=np.float32, num_threads=4):
+
+    n_repeat = 20
+    n_img = 1000000
+    T = 2.0
+    fs = 16000
+    fdl = 81
+    time_arr = T * np.random.rand(n_img).astype(dtype) + (fdl // 2) / fs
+    alpha = np.random.randn(n_img).astype(dtype)
+    rir_len = int(np.ceil(time_arr.max() * fs) + fdl)
+    rir = np.zeros(rir_len, dtype=dtype)
+    visibility = np.ones(n_img, dtype=np.int32)
+
+    if dtype == np.float32:
+        func = threaded_rir_builder_float
+    elif dtype == np.float64:
+        func = threaded_rir_builder_double
+    else:
+        raise NotImplementedError()
+
+    tick = time.perf_counter()
+    rir[:] = 0.0
+    for i in range(n_repeat):
+        func(rir, time_arr, alpha, visibility, fs, fdl, 20, 1)
+    tock_1 = (time.perf_counter() - tick) / n_repeat
+
+    tick = time.perf_counter()
+    rir[:] = 0.0
+    for i in range(n_repeat):
+        func(rir, time_arr, alpha, visibility, fs, fdl, 20, num_threads)
+    tock_8 = (time.perf_counter() - tick) / n_repeat
+
+    if dtype == np.float64:
+        tick = time.perf_counter()
+        rir[:] = 0.0
+        for i in range(n_repeat):
+            build_rir.fast_rir_builder(rir, time_arr, alpha, visibility, fs, fdl)
+        tock_old = (time.perf_counter() - tick) / n_repeat
+
+    print("runtime:")
+    print(f"  - 1 thread : {tock_1}")
+    print(f"  - {num_threads} threads: {tock_8}")
+    if dtype == np.float64:
+        print(f"  - old: {tock_old}")
+    print(f"speed-up vs single-thread: {tock_1 / tock_8:.2f}x")
+    if dtype == np.float64:
+        print(f"speed-up vs old: {tock_old / tock_8:.2f}x")
+        print(f"speed-up single-threaded vs old: {tock_old / tock_1:.2f}x")
 
 
 if __name__ == "__main__":
@@ -195,9 +272,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     for t, a, v in zip(times, alphas, visibilities):
-        ir_ref, ir_cython = build_rir_wrap(
-            times[0], alphas[0], visibilities[0], fs, fdl
-        )
+        ir_ref, ir_cython = build_rir_wrap(t, a, v, fs, fdl)
 
         print("Error:", np.max(np.abs(ir_ref - ir_cython)))
 
@@ -210,4 +285,8 @@ if __name__ == "__main__":
     test_long()
     test_errors()
 
-    plt.show()
+    num_threads = os.cpu_count()
+    measure_runtime(dtype=np.float32, num_threads=num_threads)
+    measure_runtime(dtype=np.float64, num_threads=num_threads)
+
+plt.show()
