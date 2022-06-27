@@ -622,8 +622,14 @@ from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
-from .parameters import (Material, Physics, constants, eps, get_num_threads,
-                         make_materials)
+from .parameters import (
+    Material,
+    Physics,
+    constants,
+    eps,
+    get_num_threads,
+    make_materials,
+)
 from .soundsource import SoundSource
 from .utilities import angle_function
 
