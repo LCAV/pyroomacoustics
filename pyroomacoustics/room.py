@@ -622,7 +622,8 @@ from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
-from .parameters import Material, Physics, constants, eps, make_materials
+from .parameters import (Material, Physics, constants, eps,
+                         get_num_available_threads, make_materials)
 from .soundsource import SoundSource
 from .utilities import angle_function
 
@@ -2167,8 +2168,8 @@ class Room(object):
                             vis,
                             self.fs,
                             fdl,
-                            20,
-                            os.cpu_count(),
+                            constants.get("sinc_lut_granularity"),
+                            get_num_available_threads(),
                         )
 
                         if is_multi_band:

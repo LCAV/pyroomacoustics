@@ -32,6 +32,7 @@ This file defines the main physical constants of the system:
 import io
 import json
 import os
+import sys
 
 import numpy as np
 
@@ -50,6 +51,7 @@ _constants_default = {
     "fc_hp": 300.0,  # cut-off frequency of standard high-pass filter
     "frac_delay_length": 81,  # Length of the fractional delay filters used for RIR gen
     "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
+    "sinc_lut_granularity": 20,  # num. points in integer interval in the sinc interp. LUT
 }
 
 
@@ -77,6 +79,31 @@ class Constants:
 
 # the instanciation of the class
 constants = Constants()
+
+
+def get_num_available_threads():
+
+    num_cores = os.cpu_count()
+
+    if "PRA_NUM_THREADS" in sys.env:
+        return int(sys.env["PRA_NUM_THREADS"])
+
+    env_var = [
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+    ]
+
+    all_limits = [int(getattr(sys.env, var, num_cores)) for var in env_var]
+
+    try:
+        import mkl
+
+        all_limits.append(mkl.get_max_threads())
+    except ImportError:
+        all_limits.append(num_cores)
+
+    return min(all_limits)
+
 
 # Compute the speed of sound as a function
 # of temperature, humidity, and pressure
