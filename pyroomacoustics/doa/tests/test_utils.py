@@ -3,7 +3,7 @@ import pyroomacoustics as pra
 
 
 def test_cart_spher_convertion(repetitions=10, vectorized=True):
-    """ Tests that the convertion is invertible """
+    """Tests that the convertion is invertible"""
 
     np.random.seed(124584)
 

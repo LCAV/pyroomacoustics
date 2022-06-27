@@ -10,7 +10,7 @@ from scipy import linalg
 
 class TOPS(MUSIC):
     """
-    Class to apply Test of Orthogonality of Projected Subspaces [TOPS]_ for 
+    Class to apply Test of Orthogonality of Projected Subspaces [TOPS]_ for
     Direction of Arrival (DoA) estimation.
 
     .. note:: Run locate_source() to apply the TOPS algorithm.
@@ -18,7 +18,7 @@ class TOPS(MUSIC):
     Parameters
     ----------
     L: numpy array
-        Microphone array positions. Each column should correspond to the 
+        Microphone array positions. Each column should correspond to the
         cartesian coordinates of a single microphone.
     fs: float
         Sampling frequency.
@@ -29,7 +29,7 @@ class TOPS(MUSIC):
     num_src: int
         Number of sources to detect. Default: 1
     mode: str
-        'far' or 'near' for far-field or near-field detection 
+        'far' or 'near' for far-field or near-field detection
         respectively. Default: 'far'
     r: numpy array
         Candidate distances from the origin. Default: np.ones(1)
@@ -43,7 +43,7 @@ class TOPS(MUSIC):
     References
     ----------
 
-    .. [TOPS] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband 
+    .. [TOPS] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband
         signals*, IEEE Trans. Signal Process., Vol. 54, Num 6., pp 1977--1989, 2006
 
     """
@@ -78,7 +78,7 @@ class TOPS(MUSIC):
 
     def _process(self, X):
         """
-        Perform TOPS for a given frame in order to estimate steered response 
+        Perform TOPS for a given frame in order to estimate steered response
         spectrum.
         """
 

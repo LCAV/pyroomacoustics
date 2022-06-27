@@ -13,6 +13,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/LCAV/pyroomacoustics/master?filepath=notebooks%2Fpyroomacoustics_demo.ipynb
     :alt: Test on mybinder
+.. image:: https://img.shields.io/discord/829534160812245012?color=%237289DA&label=pyroomacoustics%20Discord&logo=discord&logoColor=white
+    :target: https://discord.gg/HQ3evGYk2s
+    :alt: Pyroomacoustics discord server
 
 Summary
 -------
@@ -90,7 +93,7 @@ algorithms for
 * `beamforming <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html>`_
 * `direction of arrival <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.doa.html>`_ (DOA) finding
 * `adaptive filtering <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.adaptive.html>`_ (NLMS, RLS)
-* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA, SparseAuxIVA, FastMNMF)
+* `blind source separation <http://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.bss.html>`_ (AuxIVA, Trinicon, ILRMA, SparseAuxIVA, FastMNMF, FastMNMF2)
 * `single channel denoising <https://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.denoise.html>`_ (Spectral Subtraction, Subspace, Iterative Wiener)
 
 We use an object-oriented approach to abstract the details of
@@ -167,10 +170,8 @@ On top of that, some functionalities of the package depend on extra packages::
 The ``requirements.txt`` file lists all packages necessary to run all of the
 scripts in the ``examples`` folder.
 
-This package is mainly developed under Python 3.5. We try as much as possible to keep
-things compatible with Python 2.7 and run tests and builds under both. However, the tests
-code coverage is far from 100% and it might happen that we break some things in Python 2.7 from
-time to time. We apologize in advance for that.
+This package is mainly developed under Python 3.6. The last supported version for Python 2.7 is
+``0.4.3``.
 
 Under Linux and Mac OS, the compiled accelerators require a valid compiler to
 be installed, typically this is GCC. When no compiler is present, the package
@@ -257,7 +258,7 @@ License
 
 ::
 
-  Copyright (c) 2014-2018 EPFL-LCAV
+  Copyright (c) 2014-2021 EPFL-LCAV
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in

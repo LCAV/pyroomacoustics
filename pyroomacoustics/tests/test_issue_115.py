@@ -15,23 +15,24 @@ def test_issue_115_ism_breaking():
         [9.29447785567344, 6.529510207957697, 4.4677460263160995],
         materials=pra.Material(energy_absorption=0.1675976883006225),
         fs=16000,
-        max_order=17
+        max_order=17,
     )
     source_loc = [5.167674641605016, 4.379726875714017, 2.9190423403507504]
     shoebox.add_source(source_loc)
     noise_loc = [8.47420884677372, 5.675261722911696, 1.2040578622058364]
     shoebox.add_source(noise_loc)
-    R = np.array([[8.571318246865648],
-                  [5.799718630723678],
-                  [1.3702254938278977]])
-    print('mic - source distance : {} m'.format(
-        np.sqrt(sum((np.array(source_loc) - np.squeeze(R))**2)))
+    R = np.array([[8.571318246865648], [5.799718630723678], [1.3702254938278977]])
+    print(
+        "mic - source distance : {} m".format(
+            np.sqrt(sum((np.array(source_loc) - np.squeeze(R)) ** 2))
+        )
     )
-    print('mic - noise distance : {} m'.format(
-        np.sqrt(sum((np.array(noise_loc) - np.squeeze(R))**2)))
+    print(
+        "mic - noise distance : {} m".format(
+            np.sqrt(sum((np.array(noise_loc) - np.squeeze(R)) ** 2))
+        )
     )
-    shoebox.add_microphone_array(
-        pra.MicrophoneArray(R, shoebox.fs))
+    shoebox.add_microphone_array(pra.MicrophoneArray(R, shoebox.fs))
     shoebox.compute_rir()
 
 

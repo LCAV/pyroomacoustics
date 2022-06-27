@@ -35,7 +35,11 @@ def test_rt60_theory_single_band():
 def test_rt60_theory_multi_band():
 
     # Create the room
-    room = pra.ShoeBox(room_dim, fs=fs, materials=pra.Material("curtains_cotton_0.5"),)
+    room = pra.ShoeBox(
+        room_dim,
+        fs=fs,
+        materials=pra.Material("curtains_cotton_0.5"),
+    )
 
     # run the different rt60 functions
     room.rt60_theory(formula="sabine")
@@ -46,7 +50,10 @@ def test_rt60_measure():
 
     # Create the room
     room = pra.ShoeBox(
-        room_dim, fs=fs, materials=pra.Material("curtains_cotton_0.5"), max_order=10,
+        room_dim,
+        fs=fs,
+        materials=pra.Material("curtains_cotton_0.5"),
+        max_order=10,
     )
 
     # place the source in the room

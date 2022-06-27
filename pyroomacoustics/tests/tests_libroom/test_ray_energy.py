@@ -29,7 +29,7 @@ import pyroomacoustics as pra
 
 
 class SimpleHistogram(list):
-    """ A Histogram class based on list """
+    """A Histogram class based on list"""
 
     def __init__(self, bin_size):
         self.bin_size = bin_size
@@ -74,8 +74,8 @@ class TestRayEnergy(unittest.TestCase):
         distance = round_trip / 2.0
 
         while transmitted / distance > energy_thresh:
-            r_sq = distance ** 2
-            p_hit = 1.0 - np.sqrt(1.0 - detector_radius ** 2 / r_sq)
+            r_sq = distance**2
+            p_hit = 1.0 - np.sqrt(1.0 - detector_radius**2 / r_sq)
             histogram_gt.add(distance, transmitted / (r_sq * p_hit))
             transmitted *= (1.0 - energy_absorption) ** 4  # 4 wall hits
             distance += round_trip
@@ -86,8 +86,20 @@ class TestRayEnergy(unittest.TestCase):
             np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # right
             np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # front`
             np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # back
-            np.array([[0, 2, 2, 0], [0, 0, 2, 2], [0, 0, 0, 0],]),  # floor
-            np.array([[0, 0, 2, 2], [0, 2, 2, 0], [2, 2, 2, 2],]),  # ceiling
+            np.array(
+                [
+                    [0, 2, 2, 0],
+                    [0, 0, 2, 2],
+                    [0, 0, 0, 0],
+                ]
+            ),  # floor
+            np.array(
+                [
+                    [0, 0, 2, 2],
+                    [0, 2, 2, 0],
+                    [2, 2, 2, 2],
+                ]
+            ),  # ceiling
         ]
         walls = [pra.wall_factory(c, [energy_absorption], [0.0]) for c in walls_corners]
         room_poly = pra.Room(walls, fs=16000)

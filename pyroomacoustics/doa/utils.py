@@ -64,12 +64,13 @@ def cart2spher(vectors):
         The vectors to transform
 
     Returns
-    r: numpy.ndarray, shape (n_vectors,)
-        The length of the vectors
+    -------
     azimuth: numpy.ndarray, shape (n_vectors,)
         The azimuth of the vectors
     colatitude: numpy.ndarray, shape (n_vectors,)
         The colatitude of the vectors
+    r: numpy.ndarray, shape (n_vectors,)
+        The length of the vectors
     """
 
     r = np.linalg.norm(vectors, axis=0)
@@ -77,27 +78,41 @@ def cart2spher(vectors):
     azimuth = np.arctan2(vectors[1], vectors[0])
     colatitude = np.arctan2(np.linalg.norm(vectors[:2], axis=0), vectors[2])
 
-    return r, azimuth, colatitude
+    return azimuth, colatitude, r
 
 
-def spher2cart(r, azimuth, colatitude):
+def spher2cart(azimuth, colatitude=None, r=1, degrees=False):
     """
     Convert a spherical point to cartesian coordinates.
 
     Parameters
     ----------
-    r:
-        radius
     azimuth:
         azimuth
     colatitude:
         colatitude
+    r:
+        radius
+    degrees:
+        Returns values in degrees instead of radians if set to ``True``
 
     Returns
     -------
     ndarray
-        An ndarray containing the Cartesian coordinates of the points its columns
+        An ndarray containing the Cartesian coordinates of the points as its columns.
     """
+
+    if degrees:
+        azimuth = np.radians(azimuth)
+        if colatitude is not None:
+            colatitude = np.radians(colatitude)
+
+    if colatitude is None:
+        # default to XY plane
+        colatitude = np.pi / 2
+        if hasattr(azimuth, "__len__"):
+            colatitude = np.ones(len(azimuth)) * colatitude
+
     # convert to cartesian
     x = r * np.cos(azimuth) * np.sin(colatitude)
     y = r * np.sin(azimuth) * np.sin(colatitude)

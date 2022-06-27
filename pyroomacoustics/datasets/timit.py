@@ -1,4 +1,4 @@
-'''
+"""
 The TIMIT Dataset
 =================
 
@@ -13,22 +13,23 @@ status (academic or otherwise).
 future to match that of :py:obj:`pyroomacoustics.datasets.cmu_arctic.CMUArcticCorpus`
 
 URL: https://catalog.ldc.upenn.edu/ldc93s1
-'''
+"""
 
 import os
-import numpy as np
 
-from pyroomacoustics import stft
+import numpy as np
+from pyroomacoustics.transform import stft
 
 try:
     import sounddevice as sd
+
     have_sounddevice = True
 except:
     have_sounddevice = False
 
 
 def _read_nist_wav(filename):
-    '''
+    """
     A custom implementation of wav reader that let's read the NIST files from TIMIT
 
     Decode wav header and create numpy array out of raw data.
@@ -37,26 +38,25 @@ def _read_nist_wav(filename):
     ----------
     filename: str
         the name of the file to decode
-    '''
-    _byte_format = { 2 : np.int16, 4 : np.int32 }  # helper
+    """
+    _byte_format = {2: np.int16, 4: np.int32}  # helper
 
     # get raw data
-    f = open(filename, 'rb')
+    f = open(filename, "rb")
     file_data = f.read()
     f.close()
 
     file_type = file_data[:8].decode()
-    if file_type != 'NIST_1A\n':
-        raise ValueError('Format might be wrong. We need a NIST_1A file.')
+    if file_type != "NIST_1A\n":
+        raise ValueError("Format might be wrong. We need a NIST_1A file.")
 
     # separate  header/data
     header_size = int(file_data[8:16].decode())
     header = file_data[16:header_size].decode()
     data = file_data[header_size:]
 
-
     # extract all the key/values for all fields of the header
-    fields = [line.split() for line in header.split('\n')]
+    fields = [line.split() for line in header.split("\n")]
 
     header_dict = dict()
     for field in fields:
@@ -66,21 +66,21 @@ def _read_nist_wav(filename):
         key = field[0]
         t = field[1][1]
 
-        if t == 'i':
+        if t == "i":
             val = int(field[2])
-        elif t == 's':
+        elif t == "s":
             val = field[2]
-        elif t == 'r':
+        elif t == "r":
             val = float(field[2])
         else:
-            raise ValueError('Unknown type field for NIST header')
+            raise ValueError("Unknown type field for NIST header")
 
         header_dict[key] = val
 
     # extract parameters from header
-    nch = header_dict['channel_count']
-    fs = header_dict['sample_rate']
-    bytes_per_sample = header_dict['sample_n_bytes']
+    nch = header_dict["channel_count"]
+    fs = header_dict["sample_rate"]
+    bytes_per_sample = header_dict["sample_n_bytes"]
     try:
         dt = _byte_format[bytes_per_sample]
     except KeyError:
@@ -89,13 +89,13 @@ def _read_nist_wav(filename):
     # Build the array
     array = np.frombuffer(data, dtype=_byte_format[bytes_per_sample])
     if nch > 1:
-        array = array.reshape((-1,nch))
+        array = array.reshape((-1, nch))
 
     return fs, array
 
 
 class Word:
-    '''
+    """
     A class used for words of the TIMIT corpus
 
     Attributes
@@ -126,15 +126,14 @@ class Word:
     phonems: list, optional
         A list of phones contained in the word
 
-    '''
-
+    """
 
     def __init__(self, word, boundaries, data, fs, phonems=None):
 
         self.word = word
         self.phonems = phonems
         self.boundaries = boundaries
-        self.samples = data[boundaries[0]:boundaries[1]]
+        self.samples = data[boundaries[0] : boundaries[1]]
         self.fs = fs
         self.features = None
 
@@ -148,28 +147,28 @@ class Word:
         except ImportError:
             return
 
-        sns.set_style('white')
+        sns.set_style("white")
 
         L = self.samples.shape[0]
-        plt.plot(np.arange(L)/self.fs, self.samples)
-        plt.xlim((0,L/self.fs))
-        plt.xlabel('Time')
+        plt.plot(np.arange(L) / self.fs, self.samples)
+        plt.xlim((0, L / self.fs))
+        plt.xlabel("Time")
         plt.title(self.word)
 
     def play(self):
-        ''' Play the sound sample '''
+        """Play the sound sample"""
         if have_sounddevice:
             sd.play(self.samples, samplerate=self.fs)
         else:
-            print('Warning: sounddevice package is required to play audiofiles.')
+            print("Warning: sounddevice package is required to play audiofiles.")
 
     def mfcc(self, frame_length=1024, hop=512):
-        ''' compute the mel-frequency cepstrum coefficients of the word samples '''
+        """compute the mel-frequency cepstrum coefficients of the word samples"""
         self.features = mfcc(self.samples, L=frame_length, hop=hop)
 
 
 class Sentence:
-    '''
+    """
     Create the sentence object
 
     Parameters
@@ -208,19 +207,19 @@ class Sentence:
         List of phonems contained in the sentence. Each element is a
         dictionnary containing a 'bnd' with the limits of the phonem and 'name'
         that is the phonem transcription.
-    '''
+    """
 
     def __init__(self, path):
-        '''
+        """
         Create the sentence object
 
         path: (string)
             the path to the particular sample
-        '''
+        """
 
         path, ext = os.path.splitext(path)
 
-        t = path.split('/')
+        t = path.split("/")
 
         # extract the attributes
         self.dialect = t[-3]
@@ -229,13 +228,13 @@ class Sentence:
         self.id = t[-1]
 
         # Read in the wav file
-        self.fs, self.data = _read_nist_wav(path + '.WAV')
+        self.fs, self.data = _read_nist_wav(path + ".WAV")
         self.samples = self.data
 
         # Read the sentence text
-        f = open(path + '.TXT', 'r')
+        f = open(path + ".TXT", "r")
         lines = f.readlines()
-        self.text = ' '.join(lines[0].split()[2:])
+        self.text = " ".join(lines[0].split()[2:])
         f.close()
 
         # Read the word list
@@ -243,12 +242,12 @@ class Sentence:
         self.phonems = []
 
         # open the word file
-        f = open(path + '.WRD', 'r')
+        f = open(path + ".WRD", "r")
         w_lines = f.readlines()
         f.close()
 
         # get all lines from the phonem file
-        f_ph = open(path + '.PHN', 'r')
+        f_ph = open(path + ".PHN", "r")
         ph_lines = f_ph.readlines()
         ph_l_index = 0
         f_ph.close()
@@ -277,7 +276,7 @@ class Sentence:
                         break
 
                     # add to sentence object phonems list
-                    self.phonems.append({'name':u[2], 'bnd':ph_bnd})
+                    self.phonems.append({"name": u[2], "bnd": ph_bnd})
 
                     # increase index
                     ph_l_index += 1
@@ -287,10 +286,12 @@ class Sentence:
                         continue
 
                     # add phonem to word if (with adjusted boundaries wrt to start of word)
-                    w_ph_list.append({'name':u[2], 'bnd':ph_bnd - w_bnd[0]})
+                    w_ph_list.append({"name": u[2], "bnd": ph_bnd - w_bnd[0]})
 
                 # Finally create word object
-                self.words.append(Word(t[2], w_bnd, self.data, self.fs, phonems=w_ph_list))
+                self.words.append(
+                    Word(t[2], w_bnd, self.data, self.fs, phonems=w_ph_list)
+                )
 
         # Read the remaining phonem(s)
         while ph_l_index < len(ph_lines):
@@ -302,21 +303,20 @@ class Sentence:
                 ph_bnd = (int(u[0]), int(u[1]))
 
                 # add to sentence object phonems list
-                self.phonems.append({'name':u[2], 'bnd':ph_bnd})
+                self.phonems.append({"name": u[2], "bnd": ph_bnd})
 
             ph_l_index += 1
-
 
     def __str__(self):
         s = " ".join([self.dialect, self.sex, self.speaker, self.id, self.text])
         return s
 
     def play(self):
-        ''' Play the sound sample '''
+        """Play the sound sample"""
         if have_sounddevice:
             sd.play(self.data, samplerate=self.fs)
         else:
-            print('Warning: sounddevice package is required to play audiofiles.')
+            print("Warning: sounddevice package is required to play audiofiles.")
 
     def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
 
@@ -326,36 +326,43 @@ class Sentence:
         except ImportError:
             return
 
-        sns.set_style('white')
-        X = stft(self.data, L=L, hop=hop, zp_back=zpb, transform=np.fft.rfft, win=np.hanning(L+zpb))
-        X = 10*np.log10(np.abs(X)**2).T
+        sns.set_style("white")
+        X = stft(
+            self.data,
+            L=L,
+            hop=hop,
+            zp_back=zpb,
+            transform=np.fft.rfft,
+            win=np.hanning(L + zpb),
+        )
+        X = 10 * np.log10(np.abs(X) ** 2).T
 
-        plt.imshow(X, origin='lower', aspect='auto')
+        plt.imshow(X, origin="lower", aspect="auto")
 
         ticks = []
         ticklabels = []
 
         if phonems:
             for phonem in self.phonems:
-                plt.axvline(x=phonem['bnd'][0]/hop)
-                plt.axvline(x=phonem['bnd'][1]/hop)
-                ticks.append((phonem['bnd'][1]+phonem['bnd'][0])/2/hop)
-                ticklabels.append(phonem['name'])
+                plt.axvline(x=phonem["bnd"][0] / hop)
+                plt.axvline(x=phonem["bnd"][1] / hop)
+                ticks.append((phonem["bnd"][1] + phonem["bnd"][0]) / 2 / hop)
+                ticklabels.append(phonem["name"])
 
         else:
             for word in self.words:
-                plt.axvline(x=word.boundaries[0]/hop)
-                plt.axvline(x=word.boundaries[1]/hop)
-                ticks.append((word.boundaries[1]+word.boundaries[0])/2/hop)
+                plt.axvline(x=word.boundaries[0] / hop)
+                plt.axvline(x=word.boundaries[1] / hop)
+                ticks.append((word.boundaries[1] + word.boundaries[0]) / 2 / hop)
                 ticklabels.append(word.word)
 
         plt.xticks(ticks, ticklabels, rotation=-45)
-        plt.yticks([],[])
-        plt.tick_params(axis='both', which='major', labelsize=14)
+        plt.yticks([], [])
+        plt.tick_params(axis="both", which="major", labelsize=14)
 
 
 class TimitCorpus:
-    '''
+    """
     TimitCorpus class
 
     Parameters
@@ -369,31 +376,42 @@ class TimitCorpus:
     word_corpus : (dict)
         A dictionnary that contains a list of Words objects for each sub-directory
         and word available in the corpus
-    '''
+    """
 
     def __init__(self, basedir):
-        ''' Initialize basic attributes of the class '''
+        """Initialize basic attributes of the class"""
 
         import warnings
-        warnings.warn("This interface for TIMIT is deprecated "
-                    + "and will be replaced soon to match the "
-                    + "Dataset base class and the CMUArcticCorpus "
-                    + "interface.", FutureWarning)
+
+        warnings.warn(
+            "This interface for TIMIT is deprecated "
+            + "and will be replaced soon to match the "
+            + "Dataset base class and the CMUArcticCorpus "
+            + "interface.",
+            FutureWarning,
+        )
 
         if not os.path.exists(basedir):
-            raise ValueError('The directory ''{}'' does not exist.'.format(basedir))
+            raise ValueError("The directory " "{}" " does not exist.".format(basedir))
 
-        if not os.path.exists(basedir + '/TEST') or not os.path.exists(basedir + '/TRAIN'):
-            raise ValueError('The directory ''{}'' does not contain sub-directories TEST and TRAIN'.format(basedir))
+        if not os.path.exists(basedir + "/TEST") or not os.path.exists(
+            basedir + "/TRAIN"
+        ):
+            raise ValueError(
+                "The directory "
+                "{}"
+                " does not contain sub-directories TEST and TRAIN".format(basedir)
+            )
 
         self.basedir = basedir
-        self.directories = ['TEST','TRAIN']
+        self.directories = ["TEST", "TRAIN"]
         self.sentence_corpus = None
         self.word_corpus = None
 
-
-    def build_corpus(self, sentences=None, dialect_region=None, speakers=None, sex=None):
-        '''
+    def build_corpus(
+        self, sentences=None, dialect_region=None, speakers=None, sex=None
+    ):
+        """
         Build the corpus
 
         The TIMIT database structure is encoded in the directory sturcture:
@@ -417,12 +435,12 @@ class TimitCorpus:
             Example: speakers=['AKS0']
         sex: (string)
             Restrict to a single sex: 'F' for female, 'M' for male
-        '''
-        self.sentence_corpus = dict(zip(self.directories, [[],[]]))
-        self.word_corpus = dict(zip(self.directories, [{},{}]))
+        """
+        self.sentence_corpus = dict(zip(self.directories, [[], []]))
+        self.word_corpus = dict(zip(self.directories, [{}, {}]))
 
         if dialect_region is not None:
-            dialect_region = ['DR' + str(i) for i in dialect_region]
+            dialect_region = ["DR" + str(i) for i in dialect_region]
 
         # Read in all the sentences making use of TIMIT special directory structure
         for d in self.directories:
@@ -446,7 +464,7 @@ class TimitCorpus:
 
                     for fil in os.listdir(dir3):
                         # just look at wav files to avoid duplicates
-                        if fil.endswith('.WAV'):
+                        if fil.endswith(".WAV"):
                             sentence = os.path.splitext(fil)[0]
                             # check if sentence should be excluded
                             if sentences is not None and sentence not in sentences:
@@ -463,8 +481,6 @@ class TimitCorpus:
                                 else:
                                     self.word_corpus[d][w.word].append(w)
 
-
     def get_word(self, d, w, index=0):
-        ''' return instance index of word w from group (test or train) d '''
+        """return instance index of word w from group (test or train) d"""
         return self.word_corpus[d][w][index]
-
