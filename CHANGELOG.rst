@@ -21,6 +21,9 @@ Added
   compiled extension, 2) multithreading support
 - New global parameter ``sinc_lut_granularity`` that controls the number of points used
   in the look-up table for the sinc interpolation. Accessible via ``parameters.constants.get``.
+- New global parameter  ``num_threads`` that controls the number of threads used in
+  multi-threaded code (rir builder only at the moment). The number of threads can also
+  be controlled via the environement variable ``PRA_NUM_THREADS``
 
 Changed
 ~~~~~~~
@@ -30,7 +33,7 @@ Changed
 - `End of Python 3.6 support <https://endoflife.date/python>`__.
 - Removed the deprecated ``realtime`` sub-module.
 - Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
-- Removed the broken ``get_rir`` function of the class ``SoundSource``
+- Removed the broken ``get_rir`` method of the class ``SoundSource``
 
 Bugfix
 ~~~~~~
