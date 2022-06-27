@@ -19,6 +19,8 @@ Added
 - New implementation of fast RIR builder function in the ``libroom`` C++
   extentsion to replace the current cython code. Advantages are: 1) only one
   compiled extension, 2) multithreading support
+- New global parameter ``sinc_lut_granularity`` that controls the number of points used
+  in the look-up table for the sinc interpolation. Accessible via ``parameters.constants.get``.
 
 Changed
 ~~~~~~~
