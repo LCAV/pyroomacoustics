@@ -54,6 +54,7 @@ libroom_files = [
         "rir_builder.cpp",
         "rir_builder.hpp",
         "libroom.cpp",
+        "threadpool.hpp",
     ]
 ]
 ext_modules = [

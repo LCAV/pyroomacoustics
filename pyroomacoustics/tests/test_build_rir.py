@@ -281,4 +281,4 @@ if __name__ == "__main__":
     measure_runtime(dtype=np.float32, num_threads=num_threads)
     measure_runtime(dtype=np.float64, num_threads=num_threads)
 
-plt.show()
+    plt.show()

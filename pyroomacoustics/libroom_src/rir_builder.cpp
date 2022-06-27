@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-#include "threadpool.h"
+#include "threadpool.hpp"
 
 // A constexpr function to give PI as float or double
 template <class T>
