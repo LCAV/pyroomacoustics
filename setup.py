@@ -3,7 +3,6 @@ from __future__ import print_function
 
 import os
 import sys
-
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -13,15 +12,14 @@ with open("pyroomacoustics/version.py") as f:
     exec(f.read())
 
 try:
-    from setuptools import setup, Extension
+    from setuptools import Extension, distutils, setup
     from setuptools.command.build_ext import build_ext
-    from setuptools import distutils
 except ImportError:
     print("Setuptools unavailable. Falling back to distutils.")
     import distutils
+    from distutils.command.build_ext import build_ext
     from distutils.core import setup
     from distutils.extension import Extension
-    from distutils.command.build_ext import build_ext
 
 
 class get_pybind_include(object):
@@ -67,6 +65,7 @@ ext_modules = [
             str(get_pybind_include()),
             str(get_pybind_include(user=True)),
             os.path.join(libroom_src_dir, "ext/eigen"),
+            os.path.join(libroom_src_dir, "ext/nanoflann/include"),
         ],
         language="c++",
         extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],

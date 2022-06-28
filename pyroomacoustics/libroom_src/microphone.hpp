@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <iterator>
 #include <Eigen/Dense>
+#include <nanoflann.hpp>
 
 #include "common.hpp"
 
@@ -40,6 +41,16 @@ class Microphone
   /*
    * This is the basic microphone class. It works as an omnidirectional microphone.
    */
+  private:
+  using my_kd_tree_t =
+      nanoflann::KDTreeEigenMatrixAdaptor<MatrixXf, -1 /*dyn size*/,
+                                          nanoflann::metric_L2_Simple>;
+  // the kd-tree
+  my_kd_tree_t *kdtree = nullptr;
+
+  MatrixXf directions;
+  size_t n_dist_bins_init = 1;
+
   public:
     Vectorf<D> loc;
 
@@ -48,22 +59,54 @@ class Microphone
     float hist_resolution;  // the size of one bin in meters
     std::vector<float> distance_bins = { 0.f };  // a list of distances forming the boundaries of the bins in the time histogram
 
-    // We keep a log of discrete hits
-    std::list<Hit> hits;
-
     // and an Energy histogram for the tail
     std::vector<Histogram2D> histograms;
 
+    // Constructor for omni microphones (kd-tree not necessary)
     Microphone(const Vectorf<D> &_loc, int _n_bands, float _hist_res, float max_dist_init)
       : loc(_loc), n_dirs(1), n_bands(_n_bands), hist_resolution(_hist_res)
     {
-      size_t n_dist_bins_init = size_t(max_dist_init / hist_resolution) + 1;
+      n_dist_bins_init = size_t(max_dist_init / hist_resolution) + 1;
       // Initialize the histograms
       histograms.resize(n_dirs);
       for (auto &hist : histograms)
         hist.init(n_bands, n_dist_bins_init);
     }
-    ~Microphone() {};
+
+    Microphone(const Vectorf<D> &_loc, int _n_bands, float _hist_res, float max_dist_init, const MatrixXf &directions)
+      :Microphone(_loc, _n_bands, _hist_res, max_dist_init)
+    {
+      set_directions(directions);
+    }
+
+    ~Microphone() {
+      delete_kdtree();
+    };
+
+    void set_directions(const MatrixXf &_directions) {
+      delete_kdtree();
+      directions = _directions;
+      kdtree = new my_kd_tree_t(D, std::cref(directions), 10 /* max leaf */);
+      n_dirs = directions.rows();
+
+      // Initialize the histograms
+      histograms.resize(n_dirs);
+      for (auto &hist : histograms)
+        hist.init(n_bands, n_dist_bins_init);
+    }
+
+    void make_omni() {
+      delete_kdtree();
+      n_dirs = 1;
+      directions.setZero(1, D);
+    }
+
+    void delete_kdtree() {
+      if (kdtree) {
+        delete kdtree;
+        kdtree = nullptr;
+      }
+    }
 
     void reset()
     {
@@ -76,25 +119,25 @@ class Microphone
       return loc;
     };
 
-    float get_dir_gain(const Vectorf<D> &origin, int band_index) const
+    int get_dir_bin(const Vectorf<D> &origin) const
     {
-      return 1.;  // omnidirectional
-    }
-    
-    float get_dir_bin(const Vectorf<D> &origin) const
-    {
-      return 0;  // only one direction is logged (omni)
-    }
+      if (n_dirs == 1) {
+        return 0;  // only one direction is logged (omni)
+      } else {
+        // direction of incoming ray
+        auto dir = (origin - loc).normalized();
 
-    void log_hit(const Hit &the_hit, const Vectorf<D> &origin)
-    {
-      Hit copy_hit(the_hit);
+        // find in kd-tree
+        MatrixXf::Index ret_index = 0;
+        float out_dist_sqr = 0.0f;
+        //nanoflann::KNNResultSet<float> resultSet(1);
+        //resultSet.init(&ret_index, &out_dist_sqr);
+        float *ptr = dir.data();
+        //kdtree->index->findNeighbors(resultSet, ptr, nanoflann::SearchParams(10));
+        kdtree->query(ptr, 1, &ret_index, &out_dist_sqr);
 
-      // Correct transmitted amplitude with directivity
-      for (int f(0) ; f < n_bands ; f++)
-        copy_hit.transmitted[f] *= get_dir_gain(origin, f);
-        
-      hits.push_back(copy_hit);
+        return int(ret_index);
+      }
     }
 
     void log_histogram(float distance, const Eigen::ArrayXf &energy, const Vectorf<D> &origin)
