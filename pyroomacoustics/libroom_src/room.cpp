@@ -218,7 +218,7 @@ int Room<D>::image_source_model(const Vectorf<D> &source_location)
   else
   {
     // add the original (real) source
-    ImageSource<D> real_source(source_location, n_bands);
+    ImageSource<D> real_source(source_location, n_bands, microphones.size());
 
     // Run the image source model algorithm
     image_sources_dfs(real_source, ism_order);
@@ -270,22 +270,19 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
    * This function runs a depth first search (DFS) on the tree of image sources
    */
 
-  ImageSource<D> new_is(n_bands);
+  ImageSource<D> new_is(n_bands, microphones.size());
 
   // Check the visibility of the source from the different microphones
   bool any_visible = false;
   int m = 0;
   for (auto mic = microphones.begin() ; mic != microphones.end() ; ++mic, ++m)
   {
-    bool is_visible = is_visible_dfs(mic->get_loc(), is);
-    if (is_visible && !any_visible)
-    {
-      any_visible = is_visible;
-      is.visible_mics.resize(microphones.size());
-      is.visible_mics.setZero();
-    }
-    if (any_visible)
-      is.visible_mics.coeffRef(m) = is_visible;
+    // is_visible_dfs checks that the source is visible from the microphone
+    // and also captures the direction vector from the image source towards
+    // the microphone
+    bool is_visible = is_visible_dfs(mic->get_loc(), is, is.source_direction[m]);
+    is.visible_mics.coeffRef(m) = is_visible;
+    any_visible |= is_visible;
   }
 
   if (any_visible)
@@ -321,7 +318,7 @@ void Room<D>::image_sources_dfs(ImageSource<D> &is, int max_order)
 
 
 template<size_t D>
-bool Room<D>::is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is)
+bool Room<D>::is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is, Vectorf<D> &source_direction)
 {
   /*
      Returns true if the given sound source (with image source id) is visible from point p.
@@ -352,10 +349,14 @@ bool Room<D>::is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is)
     // the generating wall
     if (ret >= 0)
       // Check visibility of intersection point from parent source
-      return is_visible_dfs(intersection, *(is.parent));
+      return is_visible_dfs(intersection, *(is.parent), source_direction);
     else
       return false;
   }
+
+  // the source direction is the line between the original source and p
+  // p is the intersection of the ray with the first reflection wall
+  source_direction = (p - is.loc).normalized();
 
   // If we get here this is the original, unobstructed, source
   return true;
@@ -439,7 +440,7 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
   if (D == 2)
     n_image_sources = number_image_sources_2(ism_order);
 
-  std::vector<ImageSource<D>> image_sources(n_image_sources, ImageSource<D>(n_bands));
+  std::vector<ImageSource<D>> image_sources(n_image_sources, ImageSource<D>(n_bands, microphones.size()));
   int img_src_index = 0;
   
   // L1 ball of room images
@@ -462,7 +463,7 @@ int Room<D>::image_source_shoebox(const Vectorf<D> &source)
       for (point[0] = -x_max ; point[0] <= x_max ; point[0]++)
       {
         ImageSource<D> &is = image_sources[img_src_index++];
-        is.visible_mics.resize(microphones.size());
+        //is.visible_mics.resize(microphones.size());
         is.visible_mics.setOnes();  // everything is visible
 
         // Now compute the reflection, the order, and the multiplicative constant

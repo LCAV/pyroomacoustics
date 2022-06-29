@@ -52,25 +52,29 @@ struct ImageSource
 
   // this is a unit vector from the center of the source pointing
   // in the direction of the path to the microphone
-  Vectorf<D> source_impact_dir;
+  std::vector<Vectorf<D>> source_direction;
 
   // This contains the reflection orders with respect to x/y/z axis
   // for the shoebox image source model
   Vectori<D> order_xyz;
 
-  ImageSource(size_t n_bands)
+  ImageSource(size_t n_bands, size_t n_mics)
     : order(0), gen_wall(-1), parent(NULL)
   {
     loc.setZero();
     attenuation.resize(n_bands);
     attenuation.setOnes();
+    source_direction.resize(n_mics);
+    visible_mics.setZero(n_mics);
   }
 
-  ImageSource(const Vectorf<D> &_loc, size_t n_bands)
+  ImageSource(const Vectorf<D> &_loc, size_t n_bands, size_t n_mics)
     : loc(_loc), order(0), gen_wall(-1), parent(NULL)
   {
     attenuation.resize(n_bands);
     attenuation.setOnes();
+    source_direction.resize(n_mics);
+    visible_mics.setZero(n_mics);
   }
 };
 
@@ -265,7 +269,7 @@ class Room
 
     // Image source model internal methods
     void image_sources_dfs(ImageSource<D> &is, int max_order);
-    bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is);
+    bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is, Vectorf<D> &source_direction);
     bool is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is);
     int fill_sources();
 
