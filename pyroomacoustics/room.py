@@ -648,7 +648,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # repeated constant
-    fpcv = 4 * np.pi * c**3 / volume
+    fpcv = 4 * np.pi * c ** 3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -1984,6 +1984,9 @@ class Room(object):
                 source.images = self.room_engine.sources.copy()
                 source.orders = self.room_engine.orders.copy()
                 source.orders_xyz = self.room_engine.orders_xyz.copy()
+                source.directions = self.room_engine.source_directions.reshape(
+                    (3, -1, self.mic_array.M)
+                )
                 source.walls = self.room_engine.gen_walls.copy()
                 source.damping = self.room_engine.attenuations.copy()
                 source.generators = -np.ones(source.walls.shape)
@@ -2358,7 +2361,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
 
     def get_wall_by_name(self, name):
         """

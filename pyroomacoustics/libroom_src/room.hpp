@@ -120,6 +120,7 @@ class Room
     Eigen::VectorXi gen_walls;
     Eigen::VectorXi orders;
     Eigen::Matrix<int, D, Eigen::Dynamic> orders_xyz;
+    Eigen::Matrix<float, D, Eigen::Dynamic> source_directions;
     Eigen::MatrixXf attenuations;
 
     // This array will get filled by visibility status

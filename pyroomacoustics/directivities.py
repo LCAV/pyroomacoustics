@@ -519,6 +519,9 @@ def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
     assert wall_flips.shape[0] == dim
     assert mic_loc.shape[0] == dim
 
+    # this vector does not point in the correct direction, but
+    # the sign is flipped by adding one (np.ones_like) in the
+    # exponent of np.power a few lines below
     p_vector_array = image_source_loc - np.array(mic_loc)[:, np.newaxis]
     d_array = np.linalg.norm(p_vector_array, axis=0)
 
