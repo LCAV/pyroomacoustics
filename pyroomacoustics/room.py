@@ -1981,15 +1981,20 @@ class Room(object):
             if n_sources > 0:
 
                 # Copy to python managed memory
+                # image source locations
                 source.images = self.room_engine.sources.copy()
+                # image source reflection orders
                 source.orders = self.room_engine.orders.copy()
+                # image source reflection orders per x/y/z axis (shoebox only)
                 source.orders_xyz = self.room_engine.orders_xyz.copy()
+                # the microphone direction from the perspective of the image source
                 source.directions = self.room_engine.source_directions.reshape(
-                    (3, -1, self.mic_array.M)
-                )
+                    (self.dim, -1, self.mic_array.M)
+                ).transpose(2, 0, 1).copy()  # (n_mics, 3, n_image_sources)
+                # the index of the wall that produced the image source
                 source.walls = self.room_engine.gen_walls.copy()
+                # the attenuation coefficient associated with the image source
                 source.damping = self.room_engine.attenuations.copy()
-                source.generators = -np.ones(source.walls.shape)
 
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources

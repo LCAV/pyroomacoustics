@@ -30,10 +30,10 @@ class TestSourceDirectivityFlipping(TestCase):
         )
         source_angle_array = np.array(source_angle_array)
 
-        source_dir = room.sources[0].directions
+        source_dir = room.sources[0].directions[0]
         azimuth = np.arctan2(source_dir[1], source_dir[0])
         colatitude = np.pi / 2 - np.arcsin(source_dir[2])
-        source_angle_array_2 = np.array([azimuth[:, 0], colatitude[:, 0]])
+        source_angle_array_2 = np.array([azimuth, colatitude])
 
         np.testing.assert_almost_equal(source_angle_array, source_angle_array_2)
 
