@@ -1990,11 +1990,13 @@ class Room(object):
                 # the microphone direction from the perspective of the image source
                 source.directions = self.room_engine.source_directions.reshape(
                     (self.dim, -1, self.mic_array.M)
-                ).transpose(2, 0, 1).copy()  # (n_mics, 3, n_image_sources)
+                ).transpose(2, 0, 1).copy()  # (n_mics, dim, n_image_sources)
                 # the index of the wall that produced the image source
                 source.walls = self.room_engine.gen_walls.copy()
                 # the attenuation coefficient associated with the image source
                 source.damping = self.room_engine.attenuations.copy()
+                # --deprecated--
+                source.generators = -np.ones(source.walls.shape)
 
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources
