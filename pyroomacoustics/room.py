@@ -605,6 +605,7 @@ from scipy.signal import hilbert
 
 # from ..pyroomacoustics.axis_2phd.3d_subplot import interpolate_sofa_files
 
+
 def wall_factory(corners, absorption, scattering, name=""):
     """Call the correct method according to wall dimension"""
     if corners.shape[0] == 3:
@@ -627,7 +628,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
     # repeated constant
-    fpcv = 4 * np.pi * c ** 3 / volume
+    fpcv = 4 * np.pi * c**3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -768,19 +769,19 @@ class Room(object):
     """
 
     def __init__(
-            self,
-            walls,
-            fs=8000,
-            t0=0.0,
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None,
-            temperature=None,
-            humidity=None,
-            air_absorption=False,
-            ray_tracing=False,
-            min_phase=False,
+        self,
+        walls,
+        fs=8000,
+        t0=0.0,
+        max_order=1,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        temperature=None,
+        humidity=None,
+        air_absorption=False,
+        ray_tracing=False,
+        min_phase=False,
     ):
 
         self.walls = walls
@@ -820,16 +821,16 @@ class Room(object):
             self.mic_array = None
 
     def _var_init(
-            self,
-            fs,
-            t0,
-            max_order,
-            sigma2_awgn,
-            temperature,
-            humidity,
-            air_absorption,
-            ray_tracing,
-            min_phase,
+        self,
+        fs,
+        t0,
+        max_order,
+        sigma2_awgn,
+        temperature,
+        humidity,
+        air_absorption,
+        ray_tracing,
+        min_phase,
     ):
 
         self.fs = fs
@@ -884,8 +885,16 @@ class Room(object):
         self.sh_deg = 12
         self.print_filter = 0
 
-        self.DIRPAT_source_files=["LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa","Debug_sofa_file_source_2.sofa"]
-        self.DIRPAT_receiver_files=["AKG_c480_c414_CUBE.sofa","Oktava_MK4012_CUBE.sofa","Soundfield_ST450_CUBE.sofa","Debug_sofa_file.sofa"]
+        self.DIRPAT_source_files = [
+            "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+            "Debug_sofa_file_source_2.sofa",
+        ]
+        self.DIRPAT_receiver_files = [
+            "AKG_c480_c414_CUBE.sofa",
+            "Oktava_MK4012_CUBE.sofa",
+            "Soundfield_ST450_CUBE.sofa",
+            "Debug_sofa_file.sofa",
+        ]
         self.min_phase = min_phase
 
     def _init_room_engine(self, *args):
@@ -931,8 +940,8 @@ class Room(object):
                 self.rt_args["receiver_radius"],
                 self.rt_args["hist_bin_size"],
                 (
-                        self.simulator_state["ism_needed"]
-                        and self.simulator_state["rt_needed"]
+                    self.simulator_state["ism_needed"]
+                    and self.simulator_state["rt_needed"]
                 ),
             )
 
@@ -945,12 +954,12 @@ class Room(object):
         return multi_band
 
     def set_ray_tracing(
-            self,
-            n_rays=None,
-            receiver_radius=0.5,
-            energy_thres=1e-7,
-            time_thres=10.0,
-            hist_bin_size=0.004,
+        self,
+        n_rays=None,
+        receiver_radius=0.5,
+        energy_thres=1e-7,
+        time_thres=10.0,
+        hist_bin_size=0.004,
     ):
         """
         Activates the ray tracer.
@@ -1003,10 +1012,10 @@ class Room(object):
 
             # This is the multiplier for a single hit in average
             k1 = self.get_volume() / (
-                    np.pi
-                    * (self.rt_args["receiver_radius"] ** 2)
-                    * self.c
-                    * self.rt_args["hist_bin_size"]
+                np.pi
+                * (self.rt_args["receiver_radius"] ** 2)
+                * self.c
+                * self.rt_args["hist_bin_size"]
             )
 
             n_rays = int(target_mean_hit_count * k1)
@@ -1073,17 +1082,17 @@ class Room(object):
 
     @classmethod
     def from_corners(
-            cls,
-            corners,
-            absorption=None,
-            fs=8000,
-            t0=0.0,
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None,
-            materials=None,
-            **kwargs
+        cls,
+        corners,
+        absorption=None,
+        fs=8000,
+        t0=0.0,
+        max_order=1,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        materials=None,
+        **kwargs
     ):
         """
         Creates a 2D room by giving an array of corners.
@@ -1202,11 +1211,11 @@ class Room(object):
         )
 
     def extrude(
-            self,
-            height,
-            v_vec=None,
-            absorption=None,
-            materials=None,
+        self,
+        height,
+        v_vec=None,
+        absorption=None,
+        materials=None,
     ):
         """
         Creates a 3D room by extruding a 2D polygon.
@@ -1363,15 +1372,15 @@ class Room(object):
         self._init_room_engine()
 
     def plot(
-            self,
-            img_order=None,
-            freq=None,
-            figsize=None,
-            no_axis=False,
-            mic_marker_size=10,
-            plot_directivity=True,
-            ax=None,
-            **kwargs
+        self,
+        img_order=None,
+        freq=None,
+        figsize=None,
+        no_axis=False,
+        mic_marker_size=10,
+        plot_directivity=True,
+        ax=None,
+        **kwargs
     ):
         """Plots the room with its walls, microphones, sources and images"""
 
@@ -1438,12 +1447,12 @@ class Room(object):
 
                 # draw the beam pattern of the beamformer if requested (and available)
                 if (
-                        freq is not None
-                        and isinstance(self.mic_array, bf.Beamformer)
-                        and (
+                    freq is not None
+                    and isinstance(self.mic_array, bf.Beamformer)
+                    and (
                         self.mic_array.weights is not None
                         or self.mic_array.filters is not None
-                )
+                    )
                 ):
 
                     freq = np.array(freq)
@@ -1891,16 +1900,25 @@ class Room(object):
 
         if isinstance(position, SoundSource):
             if directivity is not None:
-                if isinstance(directivity, CardioidFamily) or isinstance(directivity,
-                                                                         DIRPATRir):
+                if isinstance(directivity, CardioidFamily) or isinstance(
+                    directivity, DIRPATRir
+                ):
                     return self.add(SoundSource(position, directivity=directivity))
             else:
                 return self.add(position)
         else:
             if directivity is not None:
-                if isinstance(directivity, CardioidFamily) or isinstance(directivity,
-                                                                         DIRPATRir):
-                    return self.add(SoundSource(position, signal=signal, delay=delay, directivity=directivity))
+                if isinstance(directivity, CardioidFamily) or isinstance(
+                    directivity, DIRPATRir
+                ):
+                    return self.add(
+                        SoundSource(
+                            position,
+                            signal=signal,
+                            delay=delay,
+                            directivity=directivity,
+                        )
+                    )
 
             else:
                 return self.add(SoundSource(position, signal=signal, delay=delay))
@@ -1933,12 +1951,22 @@ class Room(object):
 
                 # Copy to python managed memory
 
-                source.images = self.room_engine.sources.copy()  # Positions of the image source (3,n) n: n_sources
-                source.orders = self.room_engine.orders.copy()  # Reflection order for each image source shape n:n_sources
-                source.orders_xyz = self.room_engine.orders_xyz.copy()  # Reflection order for each image source for each coordinate shape (3,n) n:n_sources
-                source.walls = self.room_engine.gen_walls.copy()  # Something that i don't get [-1,-1,-1,-1,-1...] shape n:n_sources
-                source.damping = self.room_engine.attenuations.copy()  # Octave band damping's shape (no_of_octave_bands*n_sources) damping value for each image source for each octave bands
-                source.generators = -np.ones(source.walls.shape)  
+                source.images = (
+                    self.room_engine.sources.copy()
+                )  # Positions of the image source (3,n) n: n_sources
+                source.orders = (
+                    self.room_engine.orders.copy()
+                )  # Reflection order for each image source shape n:n_sources
+                source.orders_xyz = (
+                    self.room_engine.orders_xyz.copy()
+                )  # Reflection order for each image source for each coordinate shape (3,n) n:n_sources
+                source.walls = (
+                    self.room_engine.gen_walls.copy()
+                )  # Something that i don't get [-1,-1,-1,-1,-1...] shape n:n_sources
+                source.damping = (
+                    self.room_engine.attenuations.copy()
+                )  # Octave band damping's shape (no_of_octave_bands*n_sources) damping value for each image source for each octave bands
+                source.generators = -np.ones(source.walls.shape)
 
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources
@@ -1952,7 +1980,6 @@ class Room(object):
                     # add a random displacement to each cartesian coordinate
                     disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
                     source.images += disp
-
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
@@ -2004,9 +2031,9 @@ class Room(object):
 
         volume_room = self.get_volume()
 
-
         for m, mic in enumerate(
-                self.mic_array.R.T):  # Loop over ever microphone present in the room and then for each microphone and source pair present in the room
+            self.mic_array.R.T
+        ):  # Loop over ever microphone present in the room and then for each microphone and source pair present in the room
             self.rir.append([])
             for s, src in enumerate(self.sources):
 
@@ -2031,12 +2058,20 @@ class Room(object):
 
                 """
 
-                if self.mic_array.directivity is not None and self.sources[s].directivity is not None:
-                    if (isinstance(self.mic_array.directivity[m], CardioidFamily) and isinstance(
-                            self.sources[s].directivity, DIRPATRir)) or (
-                            isinstance(self.mic_array.directivity[m], DIRPATRir) and isinstance(
-                            self.sources[s].directivity, CardioidFamily)):
-                        raise ValueError("Microphone and source directivity should be of same class ")
+                if (
+                    self.mic_array.directivity is not None
+                    and self.sources[s].directivity is not None
+                ):
+                    if (
+                        isinstance(self.mic_array.directivity[m], CardioidFamily)
+                        and isinstance(self.sources[s].directivity, DIRPATRir)
+                    ) or (
+                        isinstance(self.mic_array.directivity[m], DIRPATRir)
+                        and isinstance(self.sources[s].directivity, CardioidFamily)
+                    ):
+                        raise ValueError(
+                            "Microphone and source directivity should be of same class "
+                        )
 
                 if self.simulator_state["ism_needed"]:
 
@@ -2056,13 +2091,20 @@ class Room(object):
 
                     # compute the distance from image sources
 
-                    dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2,
-                                          axis=0))  # Calculate distance between image sources and for each microphone
+                    dist = np.sqrt(
+                        np.sum((src.images - mic[:, None]) ** 2, axis=0)
+                    )  # Calculate distance between image sources and for each microphone
 
                     # dist shape (n) : n0 of image sources
-                    time = dist / self.c  # Calculate time of arrival for each image source
-                    t_max = time.max()  # The image source which takes the most time to arrive to this particular microphone
-                    N = int(math.ceil(t_max * self.fs))  # What will be the length of RIR according to t_max
+                    time = (
+                        dist / self.c
+                    )  # Calculate time of arrival for each image source
+                    t_max = (
+                        time.max()
+                    )  # The image source which takes the most time to arrive to this particular microphone
+                    N = int(
+                        math.ceil(t_max * self.fs)
+                    )  # What will be the length of RIR according to t_max
                     print("Minimum Time", time.min() * self.fs)
 
                 else:
@@ -2072,7 +2114,8 @@ class Room(object):
 
                     # get the maximum length from the histograms
                     nz_bins_loc = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[
-                        0]  # Sum vertically across octave band for each value in histogram (7,2500) -> (2500) -> np .nonzero(
+                        0
+                    ]  # Sum vertically across octave band for each value in histogram (7,2500) -> (2500) -> np .nonzero(
 
                     if len(nz_bins_loc) == 0:
                         n_bins = 0
@@ -2114,11 +2157,20 @@ class Room(object):
                 Source Directivity : Obj from CardioidFamily , Receiver Directivity : Obj from CardioidFamily  [Use pyroom acoustics old RIR construction method]
 
                 """
-                if (self.mic_array.directivity is None and self.sources[s].directivity is None) or (
-                        self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],
-                                                                              CardioidFamily)) or (
-                        self.sources[s].directivity is not None and isinstance(self.sources[s].directivity,
-                                                                               CardioidFamily)):
+                if (
+                    (
+                        self.mic_array.directivity is None
+                        and self.sources[s].directivity is None
+                    )
+                    or (
+                        self.mic_array.directivity is not None
+                        and isinstance(self.mic_array.directivity[m], CardioidFamily)
+                    )
+                    or (
+                        self.sources[s].directivity is not None
+                        and isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                ):
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2127,11 +2179,13 @@ class Room(object):
                         # IS method
                         if self.simulator_state["ism_needed"]:
 
-                            alpha = src.damping[b,
-                                    :] / dist  # calculate alpha according to every octave band and for all the image sources for this particular microphone
+                            alpha = (
+                                src.damping[b, :] / dist
+                            )  # calculate alpha according to every octave band and for all the image sources for this particular microphone
 
-                            if self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],
-                                                                                     CardioidFamily):
+                            if self.mic_array.directivity is not None and isinstance(
+                                self.mic_array.directivity[m], CardioidFamily
+                            ):
                                 alpha *= self.mic_array.directivity[m].get_response(
                                     azimuth=azimuth_m,
                                     colatitude=colatitude_m,
@@ -2139,8 +2193,9 @@ class Room(object):
                                     degrees=False,
                                 )
 
-                            if self.sources[s].directivity is not None and isinstance(self.sources[s].directivity,
-                                                                                      CardioidFamily):
+                            if self.sources[s].directivity is not None and isinstance(
+                                self.sources[s].directivity, CardioidFamily
+                            ):
                                 alpha *= self.sources[s].directivity.get_response(
                                     azimuth=azimuth_s,
                                     colatitude=colatitude_s,
@@ -2158,9 +2213,13 @@ class Room(object):
                             # is shorter than the delay to to the filter
                             # hence: time + fdl2
 
-                            time_adjust = time + fdl2 / self.fs  # This remains the same for all octave bands.
+                            time_adjust = (
+                                time + fdl2 / self.fs
+                            )  # This remains the same for all octave bands.
 
-                            fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
+                            fast_rir_builder(
+                                ir_loc, time_adjust, alpha, vis, self.fs, fdl
+                            )
 
                             if is_multi_band:
                                 ir_loc = self.octave_bands.analysis(ir_loc, band=b)
@@ -2186,8 +2245,9 @@ class Room(object):
 
                             hist = self.rt_histograms[m][s][0][b, :new_n_bins]
 
-                            normalization = np.linalg.norm(seq_bp_rot,
-                                                           axis=1)  # Take normalize of the poisson distribution octave band filtered array on the axis 1 -> shape (72|71) if input is of size (72,64)
+                            normalization = np.linalg.norm(
+                                seq_bp_rot, axis=1
+                            )  # Take normalize of the poisson distribution octave band filtered array on the axis 1 -> shape (72|71) if input is of size (72,64)
 
                             # Only those indices which have normalization greater than 0.0
                             indices = normalization > 0.0
@@ -2201,11 +2261,13 @@ class Room(object):
 
                             seq_bp *= np.sqrt(bw / self.fs * 2.0)
 
-                            ir_loc[fdl2: fdl2 + N] += seq_bp
+                            ir_loc[fdl2 : fdl2 + N] += seq_bp
 
                         # keep for further processing
 
-                        rir_bands.append(ir_loc)  # Impulse response for every octave band for each microphone
+                        rir_bands.append(
+                            ir_loc
+                        )  # Impulse response for every octave band for each microphone
 
                     # Do Air absorption
                     if self.simulator_state["air_abs_needed"]:
@@ -2217,67 +2279,140 @@ class Room(object):
                         # Now apply air absorption and distance attenuation
                         for band, air_abs in zip(rir_bands, self.air_absorption):
                             air_decay = np.exp(-0.5 * air_abs * distance_rir)
-                            band[fdl2: N + fdl2] *= air_decay
+                            band[fdl2 : N + fdl2] *= air_decay
 
                     # Sum up IR'S for all the bands
                     np.sum(rir_bands, axis=0, out=ir)
 
-
                 else:
                     """
-                     Important check 
-                     Source Directivity : Obj from DIRPATRir , Receiver Directivity : None   [Use new RIR construction function which is based on full scale DFT resolution]
-                     Source Directivity : None , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
-                     Source Directivity : Obj from DIRPATRir , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
+                    Important check
+                    Source Directivity : Obj from DIRPATRir , Receiver Directivity : None   [Use new RIR construction function which is based on full scale DFT resolution]
+                    Source Directivity : None , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
+                    Source Directivity : Obj from DIRPATRir , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
 
                     """
 
-                    if (self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],
-                                                                              DIRPATRir)) and (
-                            self.sources[s].directivity is not None and isinstance(self.sources[s].directivity,
-                                                                                   DIRPATRir)):
+                    if (
+                        self.mic_array.directivity is not None
+                        and isinstance(self.mic_array.directivity[m], DIRPATRir)
+                    ) and (
+                        self.sources[s].directivity is not None
+                        and isinstance(self.sources[s].directivity, DIRPATRir)
+                    ):
 
-                        if any([s_ in self.sources[s].directivity.path for s_ in self.DIRPAT_source_files]) and \
-                                any([m_ in self.mic_array.directivity[m].path for m_ in self.DIRPAT_receiver_files]):
+                        if any(
+                            [
+                                s_ in self.sources[s].directivity.path
+                                for s_ in self.DIRPAT_source_files
+                            ]
+                        ) and any(
+                            [
+                                m_ in self.mic_array.directivity[m].path
+                                for m_ in self.DIRPAT_receiver_files
+                            ]
+                        ):
 
-                            ir = self.dft_scale_rir_calc(src.damping, dist, time, bws, N, azi_m=azimuth_m,
-                                                     col_m=colatitude_m, azi_s=azimuth_s, col_s=colatitude_s, src_pos=s,
-                                                     mic_pos=m, source_presence=True, rec_presence=True)
+                            ir = self.dft_scale_rir_calc(
+                                src.damping,
+                                dist,
+                                time,
+                                bws,
+                                N,
+                                azi_m=azimuth_m,
+                                col_m=colatitude_m,
+                                azi_s=azimuth_s,
+                                col_s=colatitude_s,
+                                src_pos=s,
+                                mic_pos=m,
+                                source_presence=True,
+                                rec_presence=True,
+                            )
                         else:
-                            raise ValueError("Please check the DIRPATRir source object and DIRPATRir receiver object")
+                            raise ValueError(
+                                "Please check the DIRPATRir source object and DIRPATRir receiver object"
+                            )
 
-                    elif (self.sources[s].directivity is not None and isinstance(self.sources[s].directivity,
-                                                                                 DIRPATRir)):
+                    elif self.sources[s].directivity is not None and isinstance(
+                        self.sources[s].directivity, DIRPATRir
+                    ):
                         # Source directivity should only have LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa file from DIRPAT dataset
-                        if any([s_ in self.sources[s].directivity.path for s_ in self.DIRPAT_source_files]):
+                        if any(
+                            [
+                                s_ in self.sources[s].directivity.path
+                                for s_ in self.DIRPAT_source_files
+                            ]
+                        ):
 
-                            ir = self.dft_scale_rir_calc(src.damping, dist, time, bws, N,
-                                                         azi_m=[], col_m=[], azi_s=azimuth_s, col_s=colatitude_s,
-                                                         src_pos=s,
-                                                         mic_pos=m, source_presence=True, rec_presence=False)
+                            ir = self.dft_scale_rir_calc(
+                                src.damping,
+                                dist,
+                                time,
+                                bws,
+                                N,
+                                azi_m=[],
+                                col_m=[],
+                                azi_s=azimuth_s,
+                                col_s=colatitude_s,
+                                src_pos=s,
+                                mic_pos=m,
+                                source_presence=True,
+                                rec_presence=False,
+                            )
                         else:
-                            raise ValueError("Please check the DIRPATRir source object ")
+                            raise ValueError(
+                                "Please check the DIRPATRir source object "
+                            )
 
-
-
-                    elif (self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],
-                                                                                DIRPATRir)):
+                    elif self.mic_array.directivity is not None and isinstance(
+                        self.mic_array.directivity[m], DIRPATRir
+                    ):
 
                         # Mic directivity should only have AKG_c480_c414_CUBE.sofa file from DIRPAT dataset
-                        if any([m_ in self.mic_array.directivity[m].path for m_ in self.DIRPAT_receiver_files]):
+                        if any(
+                            [
+                                m_ in self.mic_array.directivity[m].path
+                                for m_ in self.DIRPAT_receiver_files
+                            ]
+                        ):
 
-                            ir = self.dft_scale_rir_calc(src.damping, dist, time, bws, N,
-                                                         azi_m=azimuth_m, col_m=colatitude_m, azi_s=[], col_s=[],
-                                                         src_pos=s,
-                                                         mic_pos=m, source_presence=False, rec_presence=True)
+                            ir = self.dft_scale_rir_calc(
+                                src.damping,
+                                dist,
+                                time,
+                                bws,
+                                N,
+                                azi_m=azimuth_m,
+                                col_m=colatitude_m,
+                                azi_s=[],
+                                col_s=[],
+                                src_pos=s,
+                                mic_pos=m,
+                                source_presence=False,
+                                rec_presence=True,
+                            )
                         else:
 
-                            raise ValueError("Please check the DIRPATRir microphone object")
+                            raise ValueError(
+                                "Please check the DIRPATRir microphone object"
+                            )
 
                     else:
-                        ir = self.dft_scale_rir_calc(src.damping, dist, time, bws, N, azi_m=[], col_m=[], azi_s=[],
-                                                     col_s=[], src_pos=s, mic_pos=m, source_presence=False,
-                                                     rec_presence=False)
+                        ir = self.dft_scale_rir_calc(
+                            src.damping,
+                            dist,
+                            time,
+                            bws,
+                            N,
+                            azi_m=[],
+                            col_m=[],
+                            azi_s=[],
+                            col_s=[],
+                            src_pos=s,
+                            mic_pos=m,
+                            source_presence=False,
+                            rec_presence=False,
+                        )
 
                 self.rir[-1].append(ir)
 
@@ -2285,10 +2420,23 @@ class Room(object):
 
     from numba import jit
 
-
-    #@jit(nopython=True)
-    def dft_scale_rir_calc(self, attenuations, dist, time, bws, N, azi_m, col_m, azi_s, col_s, src_pos=0, mic_pos=0,
-                           source_presence=False, rec_presence=False):
+    # @jit(nopython=True)
+    def dft_scale_rir_calc(
+        self,
+        attenuations,
+        dist,
+        time,
+        bws,
+        N,
+        azi_m,
+        col_m,
+        azi_s,
+        col_s,
+        src_pos=0,
+        mic_pos=0,
+        source_presence=False,
+        rec_presence=False,
+    ):
         """
         Full DFT scale RIR construction.
 
@@ -2333,32 +2481,57 @@ class Room(object):
         fp_im = N
         fir_length_octave_band = self.octave_bands.n_fft
 
-        from .build_rir import fast_window_sinc_interpolater,fast_multiplication,fast_multiplication_1
+        from .build_rir import (
+            fast_window_sinc_interpolater,
+            fast_multiplication,
+            fast_multiplication_1,
+        )
 
         if rec_presence and source_presence:
 
-            final_fir_IS_len = ( fir_length_octave_band + window_length + self.mic_array.directivity[mic_pos].obj_open_sofa_inter.samples_size_ir +
-                                 self.sources[src_pos].directivity.obj_open_sofa_inter.samples_size_ir) - 3
+            final_fir_IS_len = (
+                fir_length_octave_band
+                + window_length
+                + self.mic_array.directivity[
+                    mic_pos
+                ].obj_open_sofa_inter.samples_size_ir
+                + self.sources[src_pos].directivity.obj_open_sofa_inter.samples_size_ir
+            ) - 3
 
-            ind_knn_mic=self.mic_array.directivity[mic_pos].obj_open_sofa_inter.cal_index_knn(azi_m,col_m)
-            ind_knn_src = self.sources[src_pos].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
+            ind_knn_mic = self.mic_array.directivity[
+                mic_pos
+            ].obj_open_sofa_inter.cal_index_knn(azi_m, col_m)
+            ind_knn_src = self.sources[
+                src_pos
+            ].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
 
         else:
             if source_presence:
-                final_fir_IS_len = (fir_length_octave_band + window_length +
-                                self.sources[src_pos].directivity.obj_open_sofa_inter.samples_size_ir) - 2
-                ind_knn_src = self.sources[src_pos].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
+                final_fir_IS_len = (
+                    fir_length_octave_band
+                    + window_length
+                    + self.sources[
+                        src_pos
+                    ].directivity.obj_open_sofa_inter.samples_size_ir
+                ) - 2
+                ind_knn_src = self.sources[
+                    src_pos
+                ].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
             elif rec_presence:
-                final_fir_IS_len = (fir_length_octave_band + window_length +
-                                self.mic_array.directivity[mic_pos].obj_open_sofa_inter.samples_size_ir) - 2
-                ind_knn_mic = self.mic_array.directivity[mic_pos].obj_open_sofa_inter.cal_index_knn(azi_m, col_m)
+                final_fir_IS_len = (
+                    fir_length_octave_band
+                    + window_length
+                    + self.mic_array.directivity[
+                        mic_pos
+                    ].obj_open_sofa_inter.samples_size_ir
+                ) - 2
+                ind_knn_mic = self.mic_array.directivity[
+                    mic_pos
+                ].obj_open_sofa_inter.cal_index_knn(azi_m, col_m)
 
-       
-        #else:
-            #txt = "No"
-            #final_fir_IS_len = (fir_length_octave_band + window_length) - 1
-        
-
+        # else:
+        # txt = "No"
+        # final_fir_IS_len = (fir_length_octave_band + window_length) - 1
 
         time_arrival_is = time  # For min phase
 
@@ -2367,82 +2540,104 @@ class Room(object):
 
         ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
 
-        start=timer()
+        start = timer()
         print(no_imag_src)
 
-        cpy_ir_len_1 = np.zeros((no_imag_src,final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_2 = np.zeros((no_imag_src,final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_3 = np.zeros((no_imag_src,final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_4 = np.zeros((no_imag_src,final_fir_IS_len), dtype=np.complex_)
-        att_in_dft_scale = np.zeros((no_imag_src,fir_length_octave_band), dtype=np.complex_)
+        cpy_ir_len_1 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_2 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_3 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_4 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        att_in_dft_scale = np.zeros(
+            (no_imag_src, fir_length_octave_band), dtype=np.complex_
+        )
 
         for i in range(no_imag_src):  # Loop through Image source
 
             att_in_octave_band = attenuations[:, i]
-            att_in_dft_scale_=att_in_dft_scale[i,:]
+            att_in_dft_scale_ = att_in_dft_scale[i, :]
 
             # Interpolating attenuations given in the single octave band to a DFT scale.
-            #for b, bw in enumerate(bws):
+            # for b, bw in enumerate(bws):
 
-            att_in_dft_scale_ = self.octave_bands.octave_band_dft_interpolation(att_in_octave_band, self.air_absorption, dist[i], att_in_dft_scale_,bws, self.min_phase)
-
+            att_in_dft_scale_ = self.octave_bands.octave_band_dft_interpolation(
+                att_in_octave_band,
+                self.air_absorption,
+                dist[i],
+                att_in_dft_scale_,
+                bws,
+                self.min_phase,
+            )
 
             # Minmum phase...
             # k+=1e-07
-            #if self.min_phase:
+            # if self.min_phase:
             #    m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale_))))
             #    att_in_dft_scale_ = np.abs(att_in_dft_scale_) * np.exp(1j * m_p)
-                #plt.plot(np.arange(fir_length_octave_band),np.fft.ifft(att_in_dft_scale_))
-                #plt.show()
-
+            # plt.plot(np.arange(fir_length_octave_band),np.fft.ifft(att_in_dft_scale_))
+            # plt.show()
 
             time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
 
             time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
 
-            #lut_pos_ = lut_pos - time_fp  # Shifting the values for sinc filter changed from 64 to 32
+            # lut_pos_ = lut_pos - time_fp  # Shifting the values for sinc filter changed from 64 to 32
 
-            #sinc_filter = np.sinc(lut_pos_)
+            # sinc_filter = np.sinc(lut_pos_)
 
+            windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
 
-            windowed_sinc_filter=fast_window_sinc_interpolater(time_fp)
-
-
-            cpy_ir_len_1[i,:att_in_dft_scale_.shape[0]] = np.fft.ifft(att_in_dft_scale_)
-            cpy_ir_len_2[i,:windowed_sinc_filter.shape[0]] = windowed_sinc_filter
-
+            cpy_ir_len_1[i, : att_in_dft_scale_.shape[0]] = np.fft.ifft(
+                att_in_dft_scale_
+            )
+            cpy_ir_len_2[i, : windowed_sinc_filter.shape[0]] = windowed_sinc_filter
 
             if source_presence and rec_presence:
 
-                src_resp = (self.sources[src_pos].directivity.get_response(index=ind_knn_src[i])) #ifft
+                src_resp = self.sources[src_pos].directivity.get_response(
+                    index=ind_knn_src[i]
+                )  # ifft
 
-                cpy_ir_len_3[i,:src_resp.shape[0]] = src_resp
+                cpy_ir_len_3[i, : src_resp.shape[0]] = src_resp
 
+                rec_resp = self.mic_array.directivity[mic_pos].get_response(
+                    index=ind_knn_mic[i]
+                )  # ifft
 
-                rec_resp = (self.mic_array.directivity[mic_pos].get_response(index=ind_knn_mic[i])) #ifft
+                cpy_ir_len_4[i, : rec_resp.shape[0]] = rec_resp
 
-                cpy_ir_len_4[i,:rec_resp.shape[0]] = rec_resp
+                out = fast_multiplication(
+                    cpy_ir_len_1[i, :],
+                    cpy_ir_len_2[i, :],
+                    cpy_ir_len_3[i, :],
+                    cpy_ir_len_4[i, :],
+                    final_fir_IS_len,
+                )
 
-
-                out=fast_multiplication( cpy_ir_len_1[i,:], cpy_ir_len_2[i,:], cpy_ir_len_3[i,:], cpy_ir_len_4[i,:], final_fir_IS_len)
-
-
-                ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
+                ir_diff[time_ip : (time_ip + final_fir_IS_len)] += np.real(out)
 
             else:
                 if source_presence:
-                    resp = (self.sources[src_pos].directivity.get_response(index=ind_knn_src[i]))
+                    resp = self.sources[src_pos].directivity.get_response(
+                        index=ind_knn_src[i]
+                    )
                 elif rec_presence:
 
-                    resp = (self.mic_array.directivity[mic_pos].get_response(index=ind_knn_mic[i]))
+                    resp = self.mic_array.directivity[mic_pos].get_response(
+                        index=ind_knn_mic[i]
+                    )
 
-                cpy_ir_len_3[i,:resp.shape[0]] = resp
+                cpy_ir_len_3[i, : resp.shape[0]] = resp
 
-                out=fast_multiplication_1( cpy_ir_len_1[i,:], cpy_ir_len_2[i,:], cpy_ir_len_3[i,:], final_fir_IS_len)
+                out = fast_multiplication_1(
+                    cpy_ir_len_1[i, :],
+                    cpy_ir_len_2[i, :],
+                    cpy_ir_len_3[i, :],
+                    final_fir_IS_len,
+                )
 
-                ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
+                ir_diff[time_ip : (time_ip + final_fir_IS_len)] += np.real(out)
 
-            '''
+            """
             IS method without receiver and source response , right now it's being handled by pyroom acoustics octave band method.
             The below defined is an DFT based method to create RIR , but this does not take into account ray tracing as it is restricted by pyroom.
             else:
@@ -2451,23 +2646,20 @@ class Room(object):
                 out = ifft(out)
 
                 ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
-            '''
+            """
 
-
-        end=timer()
-        print("Image source time taken",end-start)
+        end = timer()
+        print("Image source time taken", end - start)
         return ir_diff
 
-
-
     def simulate(
-            self,
-            snr=None,
-            reference_mic=0,
-            callback_mix=None,
-            callback_mix_kwargs={},
-            return_premix=False,
-            recompute_rir=False,
+        self,
+        snr=None,
+        reference_mic=0,
+        callback_mix=None,
+        callback_mix_kwargs={},
+        return_premix=False,
+        recompute_rir=False,
     ):
         r"""
         Simulates the microphone signal at every microphone in the array
@@ -2559,7 +2751,7 @@ class Room(object):
                     continue
                 d = int(np.floor(self.sources[s].delay * self.fs))
                 h = self.rir[m][s]
-                premix_signals[s, m, d: d + len(sig) + len(h) - 1] += fftconvolve(
+                premix_signals[s, m, d : d + len(sig) + len(h) - 1] += fftconvolve(
                     h, sig
                 )
 
@@ -2606,7 +2798,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
 
     def get_wall_by_name(self, name):
         """
@@ -2686,7 +2878,7 @@ class Room(object):
                 ret = self.walls[i].intersection(p0, p, loc)
 
                 if (
-                        ret == int(Wall.Isect.ENDPT) or ret == 3
+                    ret == int(Wall.Isect.ENDPT) or ret == 3
                 ):  # this flag is True when p is on the wall
                     is_on_border = True
 
@@ -2908,21 +3100,21 @@ class ShoeBox(Room):
     """
 
     def __init__(
-            self,
-            p,
-            fs=8000,
-            t0=0.0,
-            absorption=None,  # deprecated
-            max_order=1,
-            sigma2_awgn=None,
-            sources=None,
-            mics=None,
-            materials=None,
-            temperature=None,
-            humidity=None,
-            air_absorption=False,
-            ray_tracing=False,
-            min_phase=False,
+        self,
+        p,
+        fs=8000,
+        t0=0.0,
+        absorption=None,  # deprecated
+        max_order=1,
+        sigma2_awgn=None,
+        sources=None,
+        mics=None,
+        materials=None,
+        temperature=None,
+        humidity=None,
+        air_absorption=False,
+        ray_tracing=False,
+        min_phase=False,
     ):
 
         p = np.array(p, dtype=np.float32)

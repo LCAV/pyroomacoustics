@@ -347,6 +347,7 @@ def circular_microphone_array_xyplane(
 # =========================================================================
 import copy
 
+
 class MicrophoneArray(object):
 
     """Microphone array class."""

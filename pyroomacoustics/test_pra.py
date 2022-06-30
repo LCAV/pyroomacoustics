@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from scipy.io import wavfile
 from scipy import signal
-from scipy.fft import fftfreq,fft
+from scipy.fft import fftfreq, fft
 from pyroomacoustics.directivities import (
     DirectivityPattern,
     DirectionVector,
@@ -15,8 +15,10 @@ from pyroomacoustics.directivities import (
     DIRPATRir,
 )
 from timeit import default_timer as timer
-#from cal_rt60 import t60_impulse
+
+# from cal_rt60 import t60_impulse
 from scipy.signal import decimate
+
 
 def cal_grp_delay(t, f, Sxx):
     grp_delay = []
@@ -28,8 +30,10 @@ def cal_grp_delay(t, f, Sxx):
         grp_val.append(k)
 
         for ft in range(f.shape[0] - 1)[1:]:
-            k = (-1 / 720) * (((Sxx[ft][_] - Sxx[ft - 1][_]) / (f[ft] - f[ft - 1])) + (
-                        (Sxx[ft + 1][_] - Sxx[ft][_]) / (f[ft + 1] - f[ft])))
+            k = (-1 / 720) * (
+                ((Sxx[ft][_] - Sxx[ft - 1][_]) / (f[ft] - f[ft - 1]))
+                + ((Sxx[ft + 1][_] - Sxx[ft][_]) / (f[ft + 1] - f[ft]))
+            )
             grp_val.append(k)
 
         sh = f.shape[0] - 1
@@ -41,66 +45,106 @@ def cal_grp_delay(t, f, Sxx):
     g_delay = np.array(grp_delay).reshape(f.shape[0], -1)
     return g_delay
 
-#/home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file.sofa
-#/home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file_source.sofa
-#/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
-#/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
+
+# /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file.sofa
+# /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file_source.sofa
+# /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
+# /home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
 
 
 dir_obj_mic = DIRPATRir(
-    orientation=DirectionVector(azimuth=0,colatitude=0 , degrees=True),
+    orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
     path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
     directivity_pattern=1,
     fs=16000,
-    #no_points_on_fibo_sphere=0
-
+    # no_points_on_fibo_sphere=0
 )
-
-
 
 
 dir_obj_sr = DIRPATRir(
-    orientation=DirectionVector(azimuth=0,colatitude=0, degrees=True),
+    orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
     path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
     directivity_pattern=2,
     fs=16000,
-    #no_points_on_fibo_sphere=0
-
+    # no_points_on_fibo_sphere=0
 )
-
 
 
 def cuboid_data(center, size):
 
-
-
-    #suppose axis direction: x: to left; y: to inside; z: to upper
+    # suppose axis direction: x: to left; y: to inside; z: to upper
     # get the (left, outside, bottom) point
 
     o = [a - b / 2 for a, b in zip(center, size)]
     # get the length, width, and height
     l, w, h = size
-    x = [[o[0], o[0] + l, o[0] + l, o[0], o[0]],  # x coordinate of points in bottom surface
-         [o[0], o[0] + l, o[0] + l, o[0], o[0]],  # x coordinate of points in upper surface
-         [o[0], o[0] + l, o[0] + l, o[0], o[0]],  # x coordinate of points in outside surface
-         [o[0], o[0] + l, o[0] + l, o[0], o[0]]]  # x coordinate of points in inside surface
-    y = [[o[1], o[1], o[1] + w, o[1] + w, o[1]],  # y coordinate of points in bottom surface
-         [o[1], o[1], o[1] + w, o[1] + w, o[1]],  # y coordinate of points in upper surface
-         [o[1], o[1], o[1], o[1], o[1]],          # y coordinate of points in outside surface
-         [o[1] + w, o[1] + w, o[1] + w, o[1] + w, o[1] + w]]    # y coordinate of points in inside surface
-    z = [[o[2], o[2], o[2], o[2], o[2]],                        # z coordinate of points in bottom surface
-         [o[2] + h, o[2] + h, o[2] + h, o[2] + h, o[2] + h],    # z coordinate of points in upper surface
-         [o[2], o[2], o[2] + h, o[2] + h, o[2]],                # z coordinate of points in outside surface
-         [o[2], o[2], o[2] + h, o[2] + h, o[2]]]                # z coordinate of points in inside surface
-    return x,y,z
+    x = [
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in bottom surface
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in upper surface
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in outside surface
+        [o[0], o[0] + l, o[0] + l, o[0], o[0]],
+    ]  # x coordinate of points in inside surface
+    y = [
+        [
+            o[1],
+            o[1],
+            o[1] + w,
+            o[1] + w,
+            o[1],
+        ],  # y coordinate of points in bottom surface
+        [
+            o[1],
+            o[1],
+            o[1] + w,
+            o[1] + w,
+            o[1],
+        ],  # y coordinate of points in upper surface
+        [o[1], o[1], o[1], o[1], o[1]],  # y coordinate of points in outside surface
+        [o[1] + w, o[1] + w, o[1] + w, o[1] + w, o[1] + w],
+    ]  # y coordinate of points in inside surface
+    z = [
+        [o[2], o[2], o[2], o[2], o[2]],  # z coordinate of points in bottom surface
+        [
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+        ],  # z coordinate of points in upper surface
+        [
+            o[2],
+            o[2],
+            o[2] + h,
+            o[2] + h,
+            o[2],
+        ],  # z coordinate of points in outside surface
+        [o[2], o[2], o[2] + h, o[2] + h, o[2]],
+    ]  # z coordinate of points in inside surface
+    return x, y, z
 
 
-
-#az=90,col=10
-
+# az=90,col=10
 
 
-'''
+"""
 dir_obj_1 = CardioidFamily(
     orientation=DirectionVector(azimuth=0,colatitude=90, degrees=True),
     pattern_enum=DirectivityPattern.SUBCARDIOID,
@@ -112,163 +156,260 @@ dir_obj_src = CardioidFamily(
     pattern_enum=DirectivityPattern.CARDIOID,
 )
 
-'''
+"""
 
 
+# CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID
+# Hyper-Cardioid : 3
+# Figure of eight : 4
+# Omni : ?
+# Wide Cardioid : 2
+# Cardioid : 0
 
 
-
-#CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID
-#Hyper-Cardioid : 3
-#Figure of eight : 4
-#Omni : ?
-#Wide Cardioid : 2
-#Cardioid : 0
-
-
-start= timer()
-room_dim=[6,6,2.4]
+start = timer()
+room_dim = [6, 6, 2.4]
 
 all_materials = {
-    "east": pra.Material(energy_absorption={'coeffs': [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
-                                            'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                         scattering=0.54),
-    "west": pra.Material(energy_absorption={'coeffs': [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
-                                            'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                         scattering=0.54),
+    "east": pra.Material(
+        energy_absorption={
+            "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+    "west": pra.Material(
+        energy_absorption={
+            "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+    "north": pra.Material(
+        energy_absorption={
+            "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+    "south": pra.Material(
+        energy_absorption={
+            "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+    "ceiling": pra.Material(
+        energy_absorption={
+            "coeffs": [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+    "floor": pra.Material(
+        energy_absorption={
+            "coeffs": [0.11, 0.14, 0.37, 0.43, 0.27, 0.25],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        },
+        scattering=0.54,
+    ),
+}
 
-    "north": pra.Material(energy_absorption={'coeffs': [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
-                                             'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                          scattering=0.54),
+# Length of the RIR Is 600 ms
 
-    "south": pra.Material(energy_absorption={'coeffs': [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
-                                             'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                          scattering=0.54),
-
-    "ceiling": pra.Material(energy_absorption={'coeffs': [0.02, 0.02, 0.03, 0.03, 0.04, 0.05],
-                                               'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                            scattering=0.54),
-
-    "floor": pra.Material(energy_absorption={'coeffs': [0.11, 0.14, 0.37, 0.43, 0.27, 0.25],
-                                             'center_freqs': [125, 250, 500, 1000, 2000, 4000]},
-                          scattering=0.54)}
-
-#Length of the RIR Is 600 ms
-
-room=pra.ShoeBox(room_dim,fs=16000,max_order=2,materials=all_materials,air_absorption=True,ray_tracing=False,min_phase=True)#,min_phase=False)
+room = pra.ShoeBox(
+    room_dim,
+    fs=16000,
+    max_order=2,
+    materials=all_materials,
+    air_absorption=True,
+    ray_tracing=False,
+    min_phase=True,
+)  # ,min_phase=False)
 
 
-room.add_source([1.52,0.883,1.044],directivity=dir_obj_sr) #3.65,1.004,1.38 #0.02,2.004,2.38
+room.add_source(
+    [1.52, 0.883, 1.044], directivity=dir_obj_sr
+)  # 3.65,1.004,1.38 #0.02,2.004,2.38
 mic_locs = np.c_[
-    [2.31, 1.65, 1.163], [3.42, 2.48, 0.91]  # mic 1  # mic 2  #[3.47, 2.57, 1.31], [3.42, 2.48, 0.91]
+    [2.31, 1.65, 1.163],
+    [3.42, 2.48, 0.91],  # mic 1  # mic 2  #[3.47, 2.57, 1.31], [3.42, 2.48, 0.91]
 ]
 
-room.add_microphone_array(mic_locs,directivity=dir_obj_mic)
-#dir_obj_mic.change_orientation(np.radians(0),np.radians(0))
-room.mic_array.directivity[0].change_orientation(np.radians(23),np.radians(43))
-room.mic_array.directivity[1].change_orientation(np.radians(70),np.radians(90))
+room.add_microphone_array(mic_locs, directivity=dir_obj_mic)
+# dir_obj_mic.change_orientation(np.radians(0),np.radians(0))
+room.mic_array.directivity[0].change_orientation(np.radians(23), np.radians(43))
+room.mic_array.directivity[1].change_orientation(np.radians(70), np.radians(90))
 
-#room.set_ray_tracing()
+# room.set_ray_tracing()
 room.compute_rir()
 
 
-end= timer()
-print("Time taken",end-start)
+end = timer()
+print("Time taken", end - start)
 
 rir_1_0 = room.rir[0][0]
 plt.clf()
-plt.plot(np.arange(rir_1_0.shape[0]),rir_1_0)
+plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
 plt.show()
 
 
-#np.save("debug_rir_dir_1.npy",rir_1_0)
+# np.save("debug_rir_dir_1.npy",rir_1_0)
 
 
-
-'''
+"""
 ####################################################
 # 3D acoustic scene plotting code                  #
 # with directivity pattern for source and receiver #
 ####################################################
 Require position of source and receiver.
 Frequency domain filters from interpolated fibo sphere 
-'''
+"""
 
 
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
-plt.style.use('ggplot')
-mic_p_x=room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[0,:]/2 + np.array([[2.31]])
-mic_p_y=room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[1,:]/2 + np.array([[1.65]])
-mic_p_z=room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[2,:]/4 + np.array([[1.163]])
 
-mic_p_x1=room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[0,:]/2 + np.array([[3.42]])
-mic_p_y1=room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[1,:]/2 + np.array([[2.48]])
-mic_p_z1=room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[2,:]/4 + np.array([[0.91]])
+plt.style.use("ggplot")
+mic_p_x = room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[
+    0, :
+] / 2 + np.array([[2.31]])
+mic_p_y = room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[
+    1, :
+] / 2 + np.array([[1.65]])
+mic_p_z = room.mic_array.directivity[0].obj_open_sofa_inter.rotated_fibo_points[
+    2, :
+] / 4 + np.array([[1.163]])
+
+mic_p_x1 = room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[
+    0, :
+] / 2 + np.array([[3.42]])
+mic_p_y1 = room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[
+    1, :
+] / 2 + np.array([[2.48]])
+mic_p_z1 = room.mic_array.directivity[1].obj_open_sofa_inter.rotated_fibo_points[
+    2, :
+] / 4 + np.array([[0.91]])
 
 
-src_p_x=dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[0,:]/2 +np.array([[1.52]])
-src_p_y=dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[1,:]/2 +np.array([[0.883]])
-src_p_z=dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[2,:]/4  +np.array([[1.044]])
+src_p_x = dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[0, :] / 2 + np.array(
+    [[1.52]]
+)
+src_p_y = dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[1, :] / 2 + np.array(
+    [[0.883]]
+)
+src_p_z = dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points[2, :] / 4 + np.array(
+    [[1.044]]
+)
 
 
+# src_p=dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points+(np.array([[3.65],[1.004],[1.38]]))
 
-
-
-
-
-#src_p=dir_obj_sr.obj_open_sofa_inter.rotated_fibo_points+(np.array([[3.65],[1.004],[1.38]]))
-
-#print(np.sqrt(src_p[0,:]**2+src_p[1,:]**2+src_p[2,:]**2))
-#print(src_p.shape)
+# print(np.sqrt(src_p[0,:]**2+src_p[1,:]**2+src_p[2,:]**2))
+# print(src_p.shape)
 import matplotlib.pyplot as plt
 
-fig=plt.figure(figsize=(8,8))
-ax=fig.add_subplot(111,projection='3d')
-x=6
-y=6
-z=2.4
-X, Y, Z = cuboid_data([x/2,y/2,z/2], (x, y, z))
-ax.plot_surface(np.array(X), np.array(Y), np.array(Z), color='deepskyblue', rstride=1, cstride=1, alpha=0.05,linewidth=1)
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection="3d")
+x = 6
+y = 6
+z = 2.4
+X, Y, Z = cuboid_data([x / 2, y / 2, z / 2], (x, y, z))
+ax.plot_surface(
+    np.array(X),
+    np.array(Y),
+    np.array(Z),
+    color="deepskyblue",
+    rstride=1,
+    cstride=1,
+    alpha=0.05,
+    linewidth=1,
+)
 
 
-#ax.plot3D([0,x,x,0,0,0,x,x,0,0,0,0,x,x,x,x],
+# ax.plot3D([0,x,x,0,0,0,x,x,0,0,0,0,x,x,x,x],
 #          [0,0,y,y,0,0,0,y,y,y,0,y,y,y,0,0],
 #          [0,0,0,0,0,z,z,z,z,0,z,z,0,z,0,z])
 
 
-#scamap = plt.cm.ScalarMappable(cmap='summer')
-#fcolors_ = scamap.to_rgba(np.abs(fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,300]),norm=False)
-#fcolors_1 = scamap.to_rgba(np.abs(fft(dir_obj_mic.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,30]),norm=False)
+# scamap = plt.cm.ScalarMappable(cmap='summer')
+# fcolors_ = scamap.to_rgba(np.abs(fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,300]),norm=False)
+# fcolors_1 = scamap.to_rgba(np.abs(fft(dir_obj_mic.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,30]),norm=False)
 
-ax.scatter(src_p_x,src_p_y,src_p_z,c=np.abs(fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,30]), cmap='inferno') #sh_coeffs_expanded_target_grid[:,300],fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)
-ax.scatter(mic_p_x,mic_p_y,mic_p_z,c=np.abs(fft(room.mic_array.directivity[0].obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,30]), cmap='inferno')
-#ax.scatter(src_p_x,src_p_y,src_p_z,c=np.abs(dir_obj_sr.obj_open_sofa_inter.freq_angles_fft[:,30]), cmap='inferno')
+ax.scatter(
+    src_p_x,
+    src_p_y,
+    src_p_z,
+    c=np.abs(
+        fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid, axis=-1)[
+            :, 30
+        ]
+    ),
+    cmap="inferno",
+)  # sh_coeffs_expanded_target_grid[:,300],fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)
+ax.scatter(
+    mic_p_x,
+    mic_p_y,
+    mic_p_z,
+    c=np.abs(
+        fft(
+            room.mic_array.directivity[
+                0
+            ].obj_open_sofa_inter.sh_coeffs_expanded_target_grid,
+            axis=-1,
+        )[:, 30]
+    ),
+    cmap="inferno",
+)
+# ax.scatter(src_p_x,src_p_y,src_p_z,c=np.abs(dir_obj_sr.obj_open_sofa_inter.freq_angles_fft[:,30]), cmap='inferno')
 
-#ax.scatter(mic_p_x,mic_p_y,mic_p_z,c=np.abs(dir_obj_mic.obj_open_sofa_inter.freq_angles_fft[:,30]), cmap='inferno')
-ax.scatter(mic_p_x1,mic_p_y1,mic_p_z1,c=np.abs(fft(room.mic_array.directivity[1].obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)[:,30]), cmap='inferno')
+# ax.scatter(mic_p_x,mic_p_y,mic_p_z,c=np.abs(dir_obj_mic.obj_open_sofa_inter.freq_angles_fft[:,30]), cmap='inferno')
+ax.scatter(
+    mic_p_x1,
+    mic_p_y1,
+    mic_p_z1,
+    c=np.abs(
+        fft(
+            room.mic_array.directivity[
+                1
+            ].obj_open_sofa_inter.sh_coeffs_expanded_target_grid,
+            axis=-1,
+        )[:, 30]
+    ),
+    cmap="inferno",
+)
 
 
-
-ax.text(2.31+0.5,1.65+0.5,1.163+0.5,  '%s' % ("(Mic az=0,col=0 , pos = [2.31,1.65,1.163])"), size=8, zorder=1, color='k')
-ax.text(1.52+0.5,0.883+0.5,1.044+0.5,  '%s' % ("(Src az=45,col=0 , pos = [1.52,0.883,1.044])"), size=8, zorder=1, color='k')
-ax.set_xlabel('Length')
+ax.text(
+    2.31 + 0.5,
+    1.65 + 0.5,
+    1.163 + 0.5,
+    "%s" % ("(Mic az=0,col=0 , pos = [2.31,1.65,1.163])"),
+    size=8,
+    zorder=1,
+    color="k",
+)
+ax.text(
+    1.52 + 0.5,
+    0.883 + 0.5,
+    1.044 + 0.5,
+    "%s" % ("(Src az=45,col=0 , pos = [1.52,0.883,1.044])"),
+    size=8,
+    zorder=1,
+    color="k",
+)
+ax.set_xlabel("Length")
 ax.set_xlim(0, 6)
-ax.set_ylabel('Width')
+ax.set_ylabel("Width")
 ax.set_ylim(0, 6)
-ax.set_zlabel('Height')
+ax.set_zlabel("Height")
 ax.set_zlim(0, 2.4)
 plt.legend()
 plt.show()
-#fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)
+# fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)
 
 
-
-
-
-
-
-'''
+"""
 ####################################################
 # Compare Realism , The code below                 #
 # plots dEchorate RIR and pyroom DIRPAT RIR        #
@@ -278,9 +419,9 @@ plt.show()
 Requires dirpat pyroom RIR and path to dEchorate RIR 
 from one of it's rooms. 
 
-'''
+"""
 
-'''
+"""
 plt.style.use('ggplot')
 
 fig = plt.figure(figsize=(12, 20), constrained_layout=True)
@@ -324,10 +465,10 @@ print("DRR Simulated",10*np.log10(first_part_s/second_part_s))
 AB_=10 * np.log10(np.abs(fft(rir_2_0)[:(rir_2_0.shape[0] // 2)]) ** 2)
 BA_=10 * np.log10(np.abs(fft(rir_1_0)[:(rir_1_0.shape[0] // 2)]) ** 2)
 #CA_=10 * np.log10(np.abs(fft(rir_3_0)[:(rir_3_0.shape[0] // 2)]) ** 2)
-'''
+"""
 
-#Plots the impulse responses in the time domain and also compares them in the frequency domain
-'''
+# Plots the impulse responses in the time domain and also compares them in the frequency domain
+"""
 ax0 = fig.add_subplot(spec[2, :])
 ax0.plot(fftfreq(rir_2_0.shape[0],d=1/16000)[:(rir_2_0.shape[0]//2)],AB_,label="dEchorate Room 011111")
 ax0.plot(fftfreq(rir_1_0.shape[0],d=1/16000)[:(rir_1_0.shape[0]//2)],BA_,label="Simulated dEchorate room 011111 with pyroom DIRPAT")
@@ -342,10 +483,10 @@ ax2.plot(np.arange(rir_2_0.shape[0]),rir_2_0,label="dEchorate Room 011111",color
 ax2.legend()
 
 #axs[2].plot(np.arange(rir_3_0.shape[0]),rir_3_0,label="Vanilla pyroomacoustics simulated dEchorate Room 011111")
-'''
+"""
 
 
-'''
+"""
 rir_1_0=rir_1_0[140:6000]
 rir_2_0=rir_2_0[140:6000]
 f,t,Sxx=signal.spectrogram(rir_1_0,16000,nperseg=32,noverlap=32//1.3)
@@ -433,10 +574,10 @@ plt.legend()
 plt.show()
 
 
-'''
+"""
 
 
-'''
+"""
 ####################################################
 # Compare Old pyroom acoustic and dirpat pyroom    #
 # plot old RIR and pyroom DIRPAT RIR               #
@@ -448,10 +589,10 @@ Simulated in the same frequency , rotation of the source and
 receiver should be the same the same goes with the directivity pattern, 
 acoustic scene should be same . DIrectivity pattern should be imported from SOFA file.
 
-'''
+"""
 
 
-'''
+"""
 
 #To plot the newly created sofa files.
 rir_1_0=np.load("debug_rir_dir_1.npy")
@@ -491,11 +632,11 @@ plt.show()
 #np.save("debug_rir_4.npy",rir_1_0)
 
 
-'''
+"""
 
 
 ####### Fractional Delay Computation Experiment (Interpolation and Look up table) ############
-'''
+"""
 
 from scipy.fft import fft
 fdl=80
@@ -512,25 +653,10 @@ for i in range(81):
     tau+=20
 plt.plot(np.arange(81),np.sinc(g))
 plt.show()
-'''
+"""
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
+"""
 tau = 0.3  # Fractional delay [samples].
 N = 201  # Filter length.
 n = np.arange(N)
@@ -559,11 +685,12 @@ for a,f in enumerate(fftfreq(512,d=1/16000)):
 
 plt.plot(np.arange(257),np.real(s))
 plt.show()
-'''
+"""
 
 from scipy.fft import fft
 from scipy.signal import fftconvolve
-'''
+
+"""
 impulse_resp=np.zeros(32)
 impulse_resp[10]=1
 alpha=0.55
@@ -578,14 +705,14 @@ for i in range(32):
 
 plt.plot(np.arange(32),ls)
 plt.show()
-'''
+"""
 
 
-#dl=np.arange(-40,41,1)
-#dl=dl-0.282196044921875
-#dl=np.sinc(dl)
+# dl=np.arange(-40,41,1)
+# dl=dl-0.282196044921875
+# dl=np.sinc(dl)
 
-#wd=np.hanning(81)
-#k=fftconvolve(wd,dl,mode="same")
-#plt.plot(np.arange(81),np.abs(fft(wd*dl)))
-#plt.show()
+# wd=np.hanning(81)
+# k=fftconvolve(wd,dl,mode="same")
+# plt.plot(np.arange(81),np.abs(fft(wd*dl)))
+# plt.show()

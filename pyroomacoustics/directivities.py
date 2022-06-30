@@ -5,7 +5,8 @@ from pyroomacoustics.doa import spher2cart
 from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 import matplotlib.pyplot as plt
 import sys
-sys.path.insert(0,"/home/psrivast/PycharmProjects/axis_2_phd")
+
+sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
 import open_sofa_interpolate
 
 
@@ -181,7 +182,6 @@ class CardioidFamily(Directivity):
                 self._orientation.unit_vector, coord
             )
 
-
             if magnitude:
                 return np.abs(resp)
             else:
@@ -323,64 +323,80 @@ class DIRPATRir(Directivity):
 
     """
 
+    def __init__(
+        self,
+        orientation,
+        path,
+        directivity_pattern,
+        fs=16000,
+        no_points_on_fibo_sphere=1200,
+    ):
 
-    def __init__(self,orientation,path,directivity_pattern,fs=16000,no_points_on_fibo_sphere=1200):
+        assert isinstance(orientation, DirectionVector)
+        Directivity.__init__(
+            self, orientation
+        )  # Initialization of the Directivity class with Direction vector class required as a parameter of the init function.
 
-        assert isinstance(orientation,DirectionVector)
-        Directivity.__init__(self, orientation) #Initialization of the Directivity class with Direction vector class required as a parameter of the init function.
-
-        if "AKG_c480_c414_CUBE.sofa" in path :
+        if "AKG_c480_c414_CUBE.sofa" in path:
             self.path = path
-            self.source=False
+            self.source = False
 
-        elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path :
+        elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path:
             self.path = path
-            self.source=True
+            self.source = True
 
         elif "Debug_sofa_file_source_2.sofa" in path:
-            self.path=path
-            self.source=True
+            self.path = path
+            self.source = True
         elif "Debug_sofa_file.sofa" in path:
-            self.path=path
-            self.source=False
+            self.path = path
+            self.source = False
         elif "Oktava_MK4012_CUBE.sofa" in path:
-            self.path=path
-            self.source=False
+            self.path = path
+            self.source = False
         elif "Soundfield_ST450_CUBE.sofa" in path:
-            self.path=path
-            self.source=False
+            self.path = path
+            self.source = False
 
         else:
             raise ValueError("Check SOFA file and source boolean value")
 
         if no_points_on_fibo_sphere >= 480:
-            self.interpolate=True
+            self.interpolate = True
         else:
-            self.interpolate=False
+            self.interpolate = False
 
+        self.id = directivity_pattern
+        self.fs = fs  # Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
 
-        self.id=directivity_pattern
-        self.fs=fs #Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
+        self.points_on_fibo = no_points_on_fibo_sphere
 
-        self.points_on_fibo =no_points_on_fibo_sphere
-
-
-
-        self.obj_open_sofa_inter=open_sofa_interpolate.DIRPATInterpolate(path=self.path,fs=self.fs,directivity_pattern=self.id,source=self.source,interpolate=self.interpolate,azimuth_simulation=self._orientation.get_azimuth(degrees=False),colatitude_simulation=self._orientation.get_colatitude(degrees=False))
+        self.obj_open_sofa_inter = open_sofa_interpolate.DIRPATInterpolate(
+            path=self.path,
+            fs=self.fs,
+            directivity_pattern=self.id,
+            source=self.source,
+            interpolate=self.interpolate,
+            azimuth_simulation=self._orientation.get_azimuth(degrees=False),
+            colatitude_simulation=self._orientation.get_colatitude(degrees=False),
+        )
 
         self.obj_open_sofa_inter.plot(freq_bin=30)
 
     def change_orientation(self, azimuth_change, colatitude_change):
         self.obj_open_sofa_inter.change_orientation(azimuth_change, colatitude_change)
 
-    def get_response(self, azimuth=None, colatitude=None, index=0, magnitude=False, frequency=None, degrees=True):
+    def get_response(
+        self,
+        azimuth=None,
+        colatitude=None,
+        index=0,
+        magnitude=False,
+        frequency=None,
+        degrees=True,
+    ):
 
         return self.obj_open_sofa_inter.neareast_neighbour(index)
-
-
-
-
-
 
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
@@ -470,6 +486,5 @@ def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
         colatitude = np.ones(n_sources) * np.pi / 2
     else:
         colatitude = np.pi / 2 - np.arcsin(p_dash_array[2] / d_array)
-
 
     return azimuth, colatitude
