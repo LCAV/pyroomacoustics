@@ -1932,12 +1932,27 @@ class Room(object):
             if n_sources > 0:  # Number of image source that are generated
 
                 # Copy to python managed memory
+
                 source.images = self.room_engine.sources.copy()  # Positions of the image source (3,n) n: n_sources
                 source.orders = self.room_engine.orders.copy()  # Reflection order for each image source shape n:n_sources
                 source.orders_xyz = self.room_engine.orders_xyz.copy()  # Reflection order for each image source for each coordinate shape (3,n) n:n_sources
                 source.walls = self.room_engine.gen_walls.copy()  # Something that i don't get [-1,-1,-1,-1,-1...] shape n:n_sources
                 source.damping = self.room_engine.attenuations.copy()  # Octave band damping's shape (no_of_octave_bands*n_sources) damping value for each image source for each octave bands
-                source.generators = -np.ones(source.walls.shape)  # Don't get it's purpose ?
+                source.generators = -np.ones(source.walls.shape)  
+
+                # if randomized image method is selected, add a small random
+                # displacement to the image sources
+                if self.simulator_state["random_ism_needed"]:
+
+                    n_images = np.shape(source.images)[1]
+
+                    # maximum allowed displacement is 8cm
+                    max_disp = self.max_rand_disp
+
+                    # add a random displacement to each cartesian coordinate
+                    disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
+                    source.images += disp
+
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
