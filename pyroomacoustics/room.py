@@ -648,7 +648,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # repeated constant
-    fpcv = 4 * np.pi * c ** 3 / volume
+    fpcv = 4 * np.pi * c**3 / volume
 
     # initial time
     t0 = ((2 * np.log(2)) / fpcv) ** (1.0 / 3.0)
@@ -1988,9 +1988,13 @@ class Room(object):
                 # image source reflection orders per x/y/z axis (shoebox only)
                 source.orders_xyz = self.room_engine.orders_xyz.copy()
                 # the microphone direction from the perspective of the image source
-                source.directions = self.room_engine.source_directions.reshape(
-                    (self.dim, -1, self.mic_array.M)
-                ).transpose(2, 0, 1).copy()  # (n_mics, dim, n_image_sources)
+                source.directions = (
+                    self.room_engine.source_directions.reshape(
+                        (self.dim, -1, self.mic_array.M)
+                    )
+                    .transpose(2, 0, 1)
+                    .copy()
+                )  # (n_mics, dim, n_image_sources)
                 # the index of the wall that produced the image source
                 source.walls = self.room_engine.gen_walls.copy()
                 # the attenuation coefficient associated with the image source
@@ -2368,7 +2372,7 @@ class Room(object):
         sigma2_s = np.mean(self.sources[0].signal ** 2)
         d2 = np.sum((x - self.sources[source].position) ** 2)
 
-        return sigma2_s / self.sigma2_awgn / (16 * np.pi ** 2 * d2)
+        return sigma2_s / self.sigma2_awgn / (16 * np.pi**2 * d2)
 
     def get_wall_by_name(self, name):
         """
