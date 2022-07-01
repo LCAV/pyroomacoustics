@@ -35,7 +35,9 @@ class TestSourceDirectivityFlipping(TestCase):
         colatitude = np.pi / 2 - np.arcsin(source_dir[2])
         source_angle_array_2 = np.array([azimuth, colatitude])
 
-        np.testing.assert_almost_equal(source_angle_array, source_angle_array_2)
+        np.testing.assert_almost_equal(
+            source_angle_array, source_angle_array_2, decimal=4
+        )
 
     def test_robin_check(self):
         # create room
