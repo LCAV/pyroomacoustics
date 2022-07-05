@@ -20,8 +20,8 @@ def test_cart_spher_convertion(repetitions=10, vectorized=True):
         err1 = np.max(np.abs(sph_back - sph))
         err2 = np.max(np.abs(cart_back - cart))
 
-        assert err1 < 1e-15
-        assert err2 < 1e-15
+        assert err1 < 1e-13
+        assert err2 < 1e-13
 
 
 if __name__ == "__main__":
