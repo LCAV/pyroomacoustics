@@ -213,7 +213,7 @@ class Subspace(object):
             q1[w, w] = pos_eigenvals[w] / (pos_eigenvals[w] + self.mu)
 
         v_t = np.transpose(-eigenvecs[:, order])
-        self.h_opt[:] = np.real(np.dot(np.dot(np.linalg.pinv(v_t), q1), v_t))
+        self.h_opt[:] = np.real(np.linalg.multi_dot([np.linalg.pinv(v_t), q1, v_t]))
         # self.h_opt = np.dot(np.linalg.lstsq(v_t, q1, rcond=None)[0], v_t)
 
     def update_cov_matrices(self, new_samples):
