@@ -1505,6 +1505,6 @@ class Beamformer(MicrophoneArray):
         # compute and return SNR
         A = np.dot(g_val.T, H[:, :L])
         num = np.dot(A, A.T)
-        denom = np.dot(np.dot(g_val.T, K_nq), g_val)
+        denom = np.linalg.multi_dot(g_val.T, K_nq, g_val)
 
         return num / denom
