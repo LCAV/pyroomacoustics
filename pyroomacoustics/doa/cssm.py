@@ -157,6 +157,6 @@ class CSSM(MUSIC):
 
             Tj = np.dot(np.c_[A0, B], np.linalg.inv(np.c_[Aj, B]))
 
-            R = R + np.dot(np.dot(Tj, C_hat[j, :, :]), np.conjugate(Tj).T)
+            R = R + np.linalg.multi_dot([Tj, C_hat[j, :, :], np.conjugate(Tj).T])
 
         return R
