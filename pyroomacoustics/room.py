@@ -1707,7 +1707,7 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, select=None, FD=False):
+    def plot_rir(self, select=None, FD=False, kind=None):
         """
         Plot room impulse responses. Compute if not done already.
 
@@ -1718,9 +1718,14 @@ class Room(object):
             `int` to plot RIR from particular microphone to all sources. Note
             that microphones and sources are zero-indexed. Default is to plot
             all microphone-source pairs.
-        FD: bool
-            If True, the spectrogram of the impulse response is plotted.
+        FD: bool, optional
+            If True, the transfer function is plotted instead of the impulse response.
             Default is False.
+        kind: str, optional
+            The value can be "ir", "tf", or "spec" which will plot impulse response,
+            transfer function, and spectrogram, respectively. If this option is
+            specified, then the value of ``FD`` is ignored. Default is "ir".
+
 
         Returns
         -------
@@ -1729,6 +1734,22 @@ class Room(object):
         axes: matplotlib list of axes objects
             Axes for further modifications
         """
+
+        if kind is None:
+            kind = "tf" if FD else "ir"
+
+        if kind == "ir":
+            y_label = None
+            x_label = "Time (ms)"
+        elif kind == "tf":
+            x_label = "Freq. (kHz)"
+            y_label = "Power (dB)"
+        elif kind == "spec":
+            x_label = "Time (ms)"
+            y_label = "Freq. (kHz)"
+        else:
+            raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
+
         n_src = len(self.sources)
         n_mic = self.mic_array.M
         if select is None:
@@ -1768,7 +1789,18 @@ class Room(object):
             warnings.warn("Matplotlib is required for plotting")
             return
 
-        from . import utilities as u
+        def plot_func(ax, h):
+            if kind == "ir":
+                ax.plot(np.arange(len(h)) / float(self.fs / 1000), h)
+            elif kind == "tf":
+                H = 20.0 * np.log10(abs(np.fft.rfft(h)) + 1e-15)
+                freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs * 1000)
+                ax.plot(freq, H)
+            elif kind == "spec":
+                h = h + np.random.randn(*h.shape) * 1e-15
+                ax.specgram(h, Fs=self.fs / 1000)
+            else:
+                raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
 
         if select is None:
             fig, axes = plt.subplots(
@@ -1777,15 +1809,11 @@ class Room(object):
             for r in range(n_mic):
                 for s in range(n_src):
                     h = self.rir[r][s]
-                    if not FD:
-                        axes[r, s].plot(np.arange(len(h)) / float(self.fs / 1000), h)
-                    else:
-                        h = h + np.random.randn(*h.shape) * 1e-15
-                        axes[r, s].specgram(h, Fs=self.fs / 1000)
+                    plot_func(axes[r, s], h)
 
             for r in range(n_mic):
-                if FD:
-                    axes[r, 0].set_ylabel("Freq. [kHz]")
+                if y_label is not None:
+                    axes[r, 0].set_ylabel(y_label)
 
                 axes[r, -1].annotate(
                     "Mic {}".format(r),
@@ -1798,7 +1826,8 @@ class Room(object):
 
             for s in range(n_src):
                 axes[0, s].set_title("Source {}".format(s), fontsize="medium")
-                axes[-1, s].set_xlabel("Time [ms]")
+                if x_label is not None:
+                    axes[-1, s].set_xlabel(x_label)
 
             fig.align_ylabels(axes[:, 0])
             fig.tight_layout()
@@ -1809,11 +1838,7 @@ class Room(object):
             )
             for k, (r, s) in enumerate(pairs):
                 h = self.rir[r][s]
-                if not FD:
-                    axes[k, 0].plot(np.arange(len(h)) / float(self.fs / 1000), h)
-                else:
-                    h = h + np.random.randn(*h.shape) * 1e-15
-                    axes[k, 0].specgram(h, Fs=self.fs / 1000)
+                plot_func(axes[k, 0], h)
 
                 if len(pairs) == 1:
                     axes[k, 0].set_title("Mic {}, Source {}".format(r, s))
@@ -1827,10 +1852,11 @@ class Room(object):
                         va="center",
                     )
 
-                if FD:
-                    axes[k, 0].set_ylabel("Freq. [kHz]")
+                if y_label is not None:
+                    axes[k, 0].set_ylabel(y_label)
 
-            axes[-1, 0].set_xlabel("Time [ms]")
+            if x_label is not None:
+                axes[-1, 0].set_xlabel(x_label)
             fig.align_ylabels(axes[:, 0])
             fig.tight_layout()
 

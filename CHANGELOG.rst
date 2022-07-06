@@ -21,8 +21,8 @@ Changed
 ~~~~~~~
 
 - Cleans up the plot_rir function in Room so that the labels are neater. It
-  also changes the plot with the `FD` option to display spectrograms of the
-  RIR.
+  also adds an extra option ``kind`` that can take values "ir", "tf", or "spec"
+  to plot the impulse responses, transfer functions, or spectrograms of the RIR.
 - Refactored the implementation of FastMNMF.
 - Modified the document of __init__.py in ``doa`` subpackage.
 - `End of Python 3.6 support <https://endoflife.date/python>`__.

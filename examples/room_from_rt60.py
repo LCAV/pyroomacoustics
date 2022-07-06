@@ -82,8 +82,12 @@ if __name__ == "__main__":
     print("The measured RT60 is {}".format(rt60[1, 0]))
 
     # plot the RIRs
-    fig, axes = room.plot_rir()  # impulse responses
-    fig, axes = room.plot_rir(FD=True)  # spectrograms
+    select = None  # plot all RIR
+    # select = (2, 0)  # uncomment to only plot the RIR from mic 2 -> src 0
+    # select = [(0, 0), (2, 0)]  # only mic 0 -> src 0, mic 2 -> src 0
+    fig, axes = room.plot_rir(select=select, kind="ir")  # impulse responses
+    fig, axes = room.plot_rir(select=select, kind="tf")  # transfer function
+    fig, axes = room.plot_rir(select=select, kind="spec")  # spectrograms
 
     plt.tight_layout()
     plt.show()
