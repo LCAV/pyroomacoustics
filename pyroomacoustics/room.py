@@ -1132,7 +1132,7 @@ class Room(object):
         sources=None,
         mics=None,
         materials=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Creates a 2D room by giving an array of corners.
@@ -1247,7 +1247,7 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs
+            **kwargs,
         )
 
     def extrude(
@@ -1420,7 +1420,7 @@ class Room(object):
         mic_marker_size=10,
         plot_directivity=True,
         ax=None,
-        **kwargs
+        **kwargs,
     ):
         """Plots the room with its walls, microphones, sources and images"""
 
@@ -1721,6 +1721,13 @@ class Room(object):
         FD: bool
             If True, the spectrogram of the impulse response is plotted.
             Default is False.
+
+        Returns
+        -------
+        fig: matplotlib figure
+            Figure object for further modifications
+        axes: matplotlib list of axes objects
+            Axes for further modifications
         """
         n_src = len(self.sources)
         n_mic = self.mic_array.M
@@ -1764,45 +1771,48 @@ class Room(object):
         from . import utilities as u
 
         if select is None:
-            fig, axes = plt.subplots(n_mic, n_src)
+            fig, axes = plt.subplots(
+                n_mic, n_src, squeeze=False, sharex=True, sharey=True
+            )
             for r in range(n_mic):
                 for s in range(n_src):
                     h = self.rir[r][s]
                     if not FD:
                         axes[r, s].plot(np.arange(len(h)) / float(self.fs / 1000), h)
                     else:
+                        h = h + np.random.randn(*h.shape) * 1e-15
                         axes[r, s].specgram(h, Fs=self.fs / 1000)
 
-                    if r == 0:
-                        axes[r, s].set_title("Source {}".format(s), fontsize="medium")
-                    if s == n_src - 1:
-                        axes[r, s].annotate(
-                            "Mic {}".format(r),
-                            xy=(1.02, 0.5),
-                            xycoords="axes fraction",
-                            rotation=270,
-                            ha="left",
-                            va="center",
-                        )
-                    elif s == 0 and FD:
-                        axes[r, s].set_ylabel("Freq. [kHz]")
+            for r in range(n_mic):
+                if FD:
+                    axes[r, 0].set_ylabel("Freq. [kHz]")
 
-                    if r < n_mic - 1:
-                        axes[r, s].set_xticks([])
-                    else:
-                        axes[r, s].set_xlabel("Time [ms]")
-                    if s > 0:
-                        axes[r, s].set_yticks([])
+                axes[r, -1].annotate(
+                    "Mic {}".format(r),
+                    xy=(1.02, 0.5),
+                    xycoords="axes fraction",
+                    rotation=270,
+                    ha="left",
+                    va="center",
+                )
+
+            for s in range(n_src):
+                axes[0, s].set_title("Source {}".format(s), fontsize="medium")
+                axes[-1, s].set_xlabel("Time [ms]")
+
             fig.align_ylabels(axes[:, 0])
             fig.tight_layout()
 
         else:
-            fig, axes = plt.subplots(len(pairs), 1, squeeze=False)
+            fig, axes = plt.subplots(
+                len(pairs), 1, squeeze=False, sharex=True, sharey=True
+            )
             for k, (r, s) in enumerate(pairs):
                 h = self.rir[r][s]
                 if not FD:
                     axes[k, 0].plot(np.arange(len(h)) / float(self.fs / 1000), h)
                 else:
+                    h = h + np.random.randn(*h.shape) * 1e-15
                     axes[k, 0].specgram(h, Fs=self.fs / 1000)
 
                 if len(pairs) == 1:
@@ -1820,12 +1830,11 @@ class Room(object):
                 if FD:
                     axes[k, 0].set_ylabel("Freq. [kHz]")
 
-                if k < len(pairs) - 1:
-                    axes[k, 0].set_xticks([])
-                else:
-                    axes[k, 0].set_xlabel("Time [ms]")
+            axes[-1, 0].set_xlabel("Time [ms]")
             fig.align_ylabels(axes[:, 0])
             fig.tight_layout()
+
+        return fig, axes
 
     def add(self, obj):
         """
