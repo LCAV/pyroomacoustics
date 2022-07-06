@@ -16,10 +16,15 @@ Added
 
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
 - Randomized image source method for removing sweeping echoes in shoebox rooms.
+- Adds the ``cart2spher`` method in ``pyroomacoustics.doa.utils`` to convert from cartesian
+  to spherical coordinates.
 
 Changed
 ~~~~~~~
 
+- Cleans up the plot_rir function in Room so that the labels are neater. It
+  also adds an extra option ``kind`` that can take values "ir", "tf", or "spec"
+  to plot the impulse responses, transfer functions, or spectrograms of the RIR.
 - Refactored the implementation of FastMNMF.
 - Modified the document of __init__.py in ``doa`` subpackage.
 - `End of Python 3.6 support <https://endoflife.date/python>`__.

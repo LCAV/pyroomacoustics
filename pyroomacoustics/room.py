@@ -1132,7 +1132,7 @@ class Room(object):
         sources=None,
         mics=None,
         materials=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Creates a 2D room by giving an array of corners.
@@ -1247,7 +1247,7 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs
+            **kwargs,
         )
 
     def extrude(
@@ -1420,7 +1420,7 @@ class Room(object):
         mic_marker_size=10,
         plot_directivity=True,
         ax=None,
-        **kwargs
+        **kwargs,
     ):
         """Plots the room with its walls, microphones, sources and images"""
 
@@ -1707,7 +1707,7 @@ class Room(object):
 
             return fig, ax
 
-    def plot_rir(self, select=None, FD=False):
+    def plot_rir(self, select=None, FD=False, kind=None):
         """
         Plot room impulse responses. Compute if not done already.
 
@@ -1718,18 +1718,53 @@ class Room(object):
             `int` to plot RIR from particular microphone to all sources. Note
             that microphones and sources are zero-indexed. Default is to plot
             all microphone-source pairs.
-        FD: bool
-            Whether to plot in the frequency domain, namely the transfer
-            function. Default is False.
+        FD: bool, optional
+            If True, the transfer function is plotted instead of the impulse response.
+            Default is False.
+        kind: str, optional
+            The value can be "ir", "tf", or "spec" which will plot impulse response,
+            transfer function, and spectrogram, respectively. If this option is
+            specified, then the value of ``FD`` is ignored. Default is "ir".
+
+
+        Returns
+        -------
+        fig: matplotlib figure
+            Figure object for further modifications
+        axes: matplotlib list of axes objects
+            Axes for further modifications
         """
+
+        if kind is None:
+            kind = "tf" if FD else "ir"
+
+        if kind == "ir":
+            y_label = None
+            x_label = "Time (ms)"
+        elif kind == "tf":
+            x_label = "Freq. (kHz)"
+            y_label = "Power (dB)"
+        elif kind == "spec":
+            x_label = "Time (ms)"
+            y_label = "Freq. (kHz)"
+        else:
+            raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
+
         n_src = len(self.sources)
         n_mic = self.mic_array.M
         if select is None:
             pairs = [(r, s) for r in range(n_mic) for s in range(n_src)]
         elif isinstance(select, int):
             pairs = [(select, s) for s in range(n_src)]
-        elif isinstance(select, list):
-            pairs = select
+        elif isinstance(select, list) or isinstance(select, tuple):
+            if (
+                len(select) == 2
+                and isinstance(select[0], int)
+                and isinstance(select[1], int)
+            ):
+                pairs = [select]
+            else:
+                pairs = select
         else:
             raise ValueError('Invalid type for "select".')
 
@@ -1754,29 +1789,78 @@ class Room(object):
             warnings.warn("Matplotlib is required for plotting")
             return
 
-        from . import utilities as u
-
-        plt.figure()
-        for k, _pair in enumerate(pairs):
-            r = _pair[0]
-            s = _pair[1]
-            h = self.rir[r][s]
-            if select is None:  # matrix plot
-                plt.subplot(n_mic, n_src, r_plot[r] * n_src + s_plot[s] + 1)
-            else:  # one column
-                plt.subplot(len(pairs), 1, k + 1)
-            if not FD:
-                plt.plot(np.arange(len(h)) / float(self.fs), h)
+        def plot_func(ax, h):
+            if kind == "ir":
+                ax.plot(np.arange(len(h)) / float(self.fs / 1000), h)
+            elif kind == "tf":
+                H = 20.0 * np.log10(abs(np.fft.rfft(h)) + 1e-15)
+                freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs * 1000)
+                ax.plot(freq, H)
+            elif kind == "spec":
+                h = h + np.random.randn(*h.shape) * 1e-15
+                ax.specgram(h, Fs=self.fs / 1000)
             else:
-                u.real_spectrum(h)
-            plt.title("RIR: mic" + str(r) + " source" + str(s))
-            if r == n_mic - 1:
-                if not FD:
-                    plt.xlabel("Time [s]")
-                else:
-                    plt.xlabel("Normalized frequency")
+                raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
 
-        plt.tight_layout()
+        if select is None:
+            fig, axes = plt.subplots(
+                n_mic, n_src, squeeze=False, sharex=True, sharey=True
+            )
+            for r in range(n_mic):
+                for s in range(n_src):
+                    h = self.rir[r][s]
+                    plot_func(axes[r, s], h)
+
+            for r in range(n_mic):
+                if y_label is not None:
+                    axes[r, 0].set_ylabel(y_label)
+
+                axes[r, -1].annotate(
+                    "Mic {}".format(r),
+                    xy=(1.02, 0.5),
+                    xycoords="axes fraction",
+                    rotation=270,
+                    ha="left",
+                    va="center",
+                )
+
+            for s in range(n_src):
+                axes[0, s].set_title("Source {}".format(s), fontsize="medium")
+                if x_label is not None:
+                    axes[-1, s].set_xlabel(x_label)
+
+            fig.align_ylabels(axes[:, 0])
+            fig.tight_layout()
+
+        else:
+            fig, axes = plt.subplots(
+                len(pairs), 1, squeeze=False, sharex=True, sharey=True
+            )
+            for k, (r, s) in enumerate(pairs):
+                h = self.rir[r][s]
+                plot_func(axes[k, 0], h)
+
+                if len(pairs) == 1:
+                    axes[k, 0].set_title("Mic {}, Source {}".format(r, s))
+                else:
+                    axes[k, 0].annotate(
+                        "M{}, S{}".format(r, s),
+                        xy=(1.02, 0.5),
+                        xycoords="axes fraction",
+                        rotation=270,
+                        ha="left",
+                        va="center",
+                    )
+
+                if y_label is not None:
+                    axes[k, 0].set_ylabel(y_label)
+
+            if x_label is not None:
+                axes[-1, 0].set_xlabel(x_label)
+            fig.align_ylabels(axes[:, 0])
+            fig.tight_layout()
+
+        return fig, axes
 
     def add(self, obj):
         """
