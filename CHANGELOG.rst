@@ -16,6 +16,8 @@ Added
 
 - Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
 - Randomized image source method for removing sweeping echoes in shoebox rooms.
+- Adds the ``cart2spher`` method in ``pyroomacoustics.doa.utils`` to convert from cartesian
+  to spherical coordinates.
 
 Changed
 ~~~~~~~
