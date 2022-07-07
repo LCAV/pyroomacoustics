@@ -5,9 +5,11 @@ include pyroomacoustics/data/materials.json
 include pyroomacoustics/libroom_src/*.hpp
 include pyroomacoustics/libroom_src/*.cpp
 
-# The compiled extension code rely on Eigen, which is included
+# The compiled extension code rely on Eigen and nanoflann,
+# which are included
 include pyroomacoustics/libroom_src/ext/eigen/COPYING.*
 graft pyroomacoustics/libroom_src/ext/eigen/Eigen
+graft pyroomacoustics/libroom_src/ext/nanoflann/include
 
 include pyproject.toml
 include requirements.txt
