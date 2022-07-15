@@ -596,7 +596,7 @@ from scipy.fft import fft, fftfreq, ifft
 from scipy.signal import fftconvolve
 import sys
 
-sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
+#sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
 # import open_sofa_interpolate
 
 from scipy import fft
