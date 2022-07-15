@@ -176,7 +176,6 @@ class OctaveBandsFactory(object):
         self.bands, self.centers = octave_bands(
             fc=self.base_freq, n=self.n_bands, third=False
         )
-        print("Old Bands And Centers", self.bands, self.centers)
 
         self._make_filters()
 
@@ -184,7 +183,7 @@ class OctaveBandsFactory(object):
         """Returns the bandwidth of the bands"""
         return np.array([b2 - b1 for b1, b2 in self.bands])
 
-    def analysis(self, x, band=None, a=False):
+    def analysis(self, x, band=None):
         """
         Process a signal x through the filter bank
 
@@ -208,8 +207,6 @@ class OctaveBandsFactory(object):
 
         for i, b in enumerate(bands):
             output[:, i] = fftconvolve(x, self.filters[:, b], mode="same")
-            if a == True:
-                return x * fft(self.filters_2[:, b])
 
         if output.shape[1] == 1:
             return output[:, 0]
@@ -308,8 +305,6 @@ class OctaveBandsFactory(object):
             np.arange(n_freq) / self.n_fft * self.fs
         )  # This only contains positive newfrequencies
 
-        print("New Bands And Centers ", new_bands, centers)
-
         for b, (band, center) in enumerate(zip(new_bands, centers)):
 
             if (
@@ -337,8 +332,8 @@ class OctaveBandsFactory(object):
         # plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:64], freq_resp[:64, i])
 
         # plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)], np.abs(np.sum(freq_resp[:(n_freq-1),:], axis=1)),label="Sum Of All The Bands")
-        print(len(np.abs(np.sum(freq_resp[: (n_freq - 1), :], axis=1))))
-        print(len(fftfreq(self.n_fft, d=1 / self.fs)[: (n_freq - 1)]))
+        # print(len(np.abs(np.sum(freq_resp[: (n_freq - 1), :], axis=1))))
+        # print(len(fftfreq(self.n_fft, d=1 / self.fs)[: (n_freq - 1)]))
 
         # plt.show()
 
@@ -362,6 +357,18 @@ class OctaveBandsFactory(object):
         bws,
         min_phase,
     ):
+        """
+        Convert octave band dampings to dft scale, interpolates octave band values to full dft scale values.
+
+                Parameters:
+                        att_in_octave_band : Dampings in octave band
+                        air_abs_band : air absorption in octave band
+                        distance_is : distance of the image source from the mic
+                        min_phase : decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
+
+                Returns:
+                        binary_sum (str): Binary string of the sum of a and b
+        """
 
         u_ = [
             att_in_octave_band[i] * np.exp(-0.5 * air_abs_band[i] * distance_is)

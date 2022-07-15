@@ -29,7 +29,7 @@
 #include <vector>
 #include <stack>
 #include <tuple>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <algorithm>
 #include <ctime>
 

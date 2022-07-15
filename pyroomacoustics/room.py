@@ -766,6 +766,9 @@ class Room(object):
     ray_tracing: bool, optional
         If set to True, the ray tracing simulator will be used along with
         image source model.
+    min_phsae: bool, optional
+        If set to True, generated RIRs will have a minimum phase response.
+        Cannot be used with ray tracing model.
     """
 
     def __init__(
@@ -882,8 +885,8 @@ class Room(object):
         # initialize the attribute for the impulse responses
         self.rir = None
 
-        self.sh_deg = 12
-        self.print_filter = 0
+        # self.sh_deg = 12
+        # self.print_filter = 0
 
         self.DIRPAT_source_files = [
             "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
@@ -1970,6 +1973,8 @@ class Room(object):
 
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources
+
+                """
                 if self.simulator_state["random_ism_needed"]:
 
                     n_images = np.shape(source.images)[1]
@@ -1980,6 +1985,7 @@ class Room(object):
                     # add a random displacement to each cartesian coordinate
                     disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
                     source.images += disp
+                """
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
@@ -2058,6 +2064,7 @@ class Room(object):
 
                 """
 
+                # Update it to just include one class for directivity
                 if (
                     self.mic_array.directivity is not None
                     and self.sources[s].directivity is not None
@@ -2157,20 +2164,13 @@ class Room(object):
                 Source Directivity : Obj from CardioidFamily , Receiver Directivity : Obj from CardioidFamily  [Use pyroom acoustics old RIR construction method]
 
                 """
+                """
+                Use octave bands to construct RIR, when ray-tracing is activated or directivity of both the microphones are not given.
+                """
                 if (
-                    (
-                        self.mic_array.directivity is None
-                        and self.sources[s].directivity is None
-                    )
-                    or (
-                        self.mic_array.directivity is not None
-                        and isinstance(self.mic_array.directivity[m], CardioidFamily)
-                    )
-                    or (
-                        self.sources[s].directivity is not None
-                        and isinstance(self.sources[s].directivity, CardioidFamily)
-                    )
-                ):
+                    self.mic_array.directivity is None
+                    and self.sources[s].directivity is None
+                ) or (self.simulator_state["rt_needed"]):
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2292,7 +2292,9 @@ class Room(object):
                     Source Directivity : Obj from DIRPATRir , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
 
                     """
-
+                    """
+                    Check if both source and microphone directivity is from the class DIRPATRir
+                    """
                     if (
                         self.mic_array.directivity is not None
                         and isinstance(self.mic_array.directivity[m], DIRPATRir)
@@ -2300,19 +2302,13 @@ class Room(object):
                         self.sources[s].directivity is not None
                         and isinstance(self.sources[s].directivity, DIRPATRir)
                     ):
-
-                        if any(
-                            [
-                                s_ in self.sources[s].directivity.path
-                                for s_ in self.DIRPAT_source_files
-                            ]
-                        ) and any(
-                            [
-                                m_ in self.mic_array.directivity[m].path
-                                for m_ in self.DIRPAT_receiver_files
-                            ]
+                        """
+                        Checks if both source and microphone are frequency dependent or not.
+                        """
+                        if (
+                            not self.sources[s].directivity.frequency_dependent
+                            and not self.mic_array.directivity[m].frequency_dependent
                         ):
-
                             ir = self.dft_scale_rir_calc(
                                 src.damping,
                                 dist,
@@ -2327,23 +2323,52 @@ class Room(object):
                                 mic_pos=m,
                                 source_presence=True,
                                 rec_presence=True,
+                                frequency_dependent=False,
                             )
                         else:
-                            raise ValueError(
-                                "Please check the DIRPATRir source object and DIRPATRir receiver object"
-                            )
+                            """
+                            Checks that the specified path of the SOFA files contains the file from the DIRPAT dataset.
+                            """
+                            if any(
+                                [
+                                    s_ in self.sources[s].directivity.path
+                                    for s_ in self.DIRPAT_source_files
+                                ]
+                            ) and any(
+                                [
+                                    m_ in self.mic_array.directivity[m].path
+                                    for m_ in self.DIRPAT_receiver_files
+                                ]
+                            ):
+
+                                ir = self.dft_scale_rir_calc(
+                                    src.damping,
+                                    dist,
+                                    time,
+                                    bws,
+                                    N,
+                                    azi_m=azimuth_m,
+                                    col_m=colatitude_m,
+                                    azi_s=azimuth_s,
+                                    col_s=colatitude_s,
+                                    src_pos=s,
+                                    mic_pos=m,
+                                    source_presence=True,
+                                    rec_presence=True,
+                                    frequency_dependent=True,
+                                )
+                            else:
+                                raise ValueError(
+                                    "Please check the DIRPATRir source object and DIRPATRir receiver object"
+                                )
 
                     elif self.sources[s].directivity is not None and isinstance(
                         self.sources[s].directivity, DIRPATRir
                     ):
-                        # Source directivity should only have LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa file from DIRPAT dataset
-                        if any(
-                            [
-                                s_ in self.sources[s].directivity.path
-                                for s_ in self.DIRPAT_source_files
-                            ]
-                        ):
-
+                        """
+                        If the source directivity is not frequency dependent
+                        """
+                        if not self.sources[s].directivity.frequency_dependent:
                             ir = self.dft_scale_rir_calc(
                                 src.damping,
                                 dist,
@@ -2358,24 +2383,50 @@ class Room(object):
                                 mic_pos=m,
                                 source_presence=True,
                                 rec_presence=False,
+                                frequency_dependent=False,
                             )
+
                         else:
-                            raise ValueError(
-                                "Please check the DIRPATRir source object "
-                            )
+                            """
+                            if source directivity is frequency dependent
+                            """
+                            # Source directivity should only have LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa file from DIRPAT dataset
+                            if any(
+                                [
+                                    s_ in self.sources[s].directivity.path
+                                    for s_ in self.DIRPAT_source_files
+                                ]
+                            ):
+
+                                ir = self.dft_scale_rir_calc(
+                                    src.damping,
+                                    dist,
+                                    time,
+                                    bws,
+                                    N,
+                                    azi_m=[],
+                                    col_m=[],
+                                    azi_s=azimuth_s,
+                                    col_s=colatitude_s,
+                                    src_pos=s,
+                                    mic_pos=m,
+                                    source_presence=True,
+                                    rec_presence=False,
+                                    frequency_dependent=True,
+                                )
+                            else:
+                                raise ValueError(
+                                    "Please check the DIRPATRir source object "
+                                )
 
                     elif self.mic_array.directivity is not None and isinstance(
                         self.mic_array.directivity[m], DIRPATRir
                     ):
+                        """
+                        if mic directivity is not frequency dependent
+                        """
 
-                        # Mic directivity should only have AKG_c480_c414_CUBE.sofa file from DIRPAT dataset
-                        if any(
-                            [
-                                m_ in self.mic_array.directivity[m].path
-                                for m_ in self.DIRPAT_receiver_files
-                            ]
-                        ):
-
+                        if not self.mic_array.directivity[m].frequency_dependent:
                             ir = self.dft_scale_rir_calc(
                                 src.damping,
                                 dist,
@@ -2390,12 +2441,41 @@ class Room(object):
                                 mic_pos=m,
                                 source_presence=False,
                                 rec_presence=True,
+                                frequency_dependent=False,
                             )
                         else:
+                            """
+                            if mic directivity is frequency dependent
+                            """
+                            # Mic directivity should only have AKG_c480_c414_CUBE.sofa file from DIRPAT dataset
+                            if any(
+                                [
+                                    m_ in self.mic_array.directivity[m].path
+                                    for m_ in self.DIRPAT_receiver_files
+                                ]
+                            ):
 
-                            raise ValueError(
-                                "Please check the DIRPATRir microphone object"
-                            )
+                                ir = self.dft_scale_rir_calc(
+                                    src.damping,
+                                    dist,
+                                    time,
+                                    bws,
+                                    N,
+                                    azi_m=azimuth_m,
+                                    col_m=colatitude_m,
+                                    azi_s=[],
+                                    col_s=[],
+                                    src_pos=s,
+                                    mic_pos=m,
+                                    source_presence=False,
+                                    rec_presence=True,
+                                    frequency_dependent=True,
+                                )
+                            else:
+
+                                raise ValueError(
+                                    "Please check the DIRPATRir microphone object"
+                                )
 
                     else:
                         ir = self.dft_scale_rir_calc(
@@ -2418,9 +2498,6 @@ class Room(object):
 
         self.simulator_state["rir_done"] = True
 
-    from numba import jit
-
-    # @jit(nopython=True)
     def dft_scale_rir_calc(
         self,
         attenuations,
@@ -2436,6 +2513,7 @@ class Room(object):
         mic_pos=0,
         source_presence=False,
         rec_presence=False,
+        frequency_dependent=False,
     ):
         """
         Full DFT scale RIR construction.
@@ -2459,6 +2537,7 @@ class Room(object):
         mic_pos : The particular mic we are calculating RIR
         source_presence : Is source directivity is present or not
         rec_presence : Is microphone directivity is present or not
+        frequency_dependent : If true , DIRPAT directivity profiles are used else Cardioid frequency independent patterns were used.
 
         Returns
         -------
@@ -2473,8 +2552,6 @@ class Room(object):
         attenuations = attenuations / dist
         alp = []
         window_length = 81
-
-        lut_pos = np.arange(-32, 32, 1)
 
         no_imag_src = attenuations.shape[1]
 
@@ -2492,42 +2569,39 @@ class Room(object):
             final_fir_IS_len = (
                 fir_length_octave_band
                 + window_length
-                + self.mic_array.directivity[
-                    mic_pos
-                ].obj_open_sofa_inter.samples_size_ir
-                + self.sources[src_pos].directivity.obj_open_sofa_inter.samples_size_ir
+                + self.mic_array.directivity[mic_pos].samples_size_ir
+                + self.sources[src_pos].directivity.samples_size_ir
             ) - 3
 
-            ind_knn_mic = self.mic_array.directivity[
-                mic_pos
-            ].obj_open_sofa_inter.cal_index_knn(azi_m, col_m)
-            ind_knn_src = self.sources[
-                src_pos
-            ].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
+            resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                frequency=frequency_dependent, azimuth=azi_m, colatitude=col_m
+            )  # Return response as an array of number of (img_sources * length of filters)
+            resp_src = self.sources[src_pos].directivity.get_response(
+                frequency=frequency_dependent, azimuth=azi_s, colatitude=col_s
+            )
 
         else:
             if source_presence:
                 final_fir_IS_len = (
                     fir_length_octave_band
                     + window_length
-                    + self.sources[
-                        src_pos
-                    ].directivity.obj_open_sofa_inter.samples_size_ir
+                    + self.sources[src_pos].directivity.samples_size_ir
                 ) - 2
-                ind_knn_src = self.sources[
-                    src_pos
-                ].directivity.obj_open_sofa_inter.cal_index_knn(azi_s, col_s)
+
+                resp_src = self.sources[src_pos].directivity.get_response(
+                    frequency=frequency_dependent, azimuth=azi_s, colatitude=col_s
+                )
+
             elif rec_presence:
                 final_fir_IS_len = (
                     fir_length_octave_band
                     + window_length
-                    + self.mic_array.directivity[
-                        mic_pos
-                    ].obj_open_sofa_inter.samples_size_ir
+                    + self.mic_array.directivity[mic_pos].samples_size_ir
                 ) - 2
-                ind_knn_mic = self.mic_array.directivity[
-                    mic_pos
-                ].obj_open_sofa_inter.cal_index_knn(azi_m, col_m)
+
+                resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                    frequency=frequency_dependent, azimuth=azi_m, colatitude=col_m
+                )
 
         # else:
         # txt = "No"
@@ -2541,7 +2615,8 @@ class Room(object):
         ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
 
         start = timer()
-        print(no_imag_src)
+
+        # Create arrays for fractional delay low pass filter, sum of {damping coeffiecients * octave band filter}, source response, receiver response.
 
         cpy_ir_len_1 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
         cpy_ir_len_2 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
@@ -2593,17 +2668,12 @@ class Room(object):
 
             if source_presence and rec_presence:
 
-                src_resp = self.sources[src_pos].directivity.get_response(
-                    index=ind_knn_src[i]
-                )  # ifft
+                # src_resp = self.sources[src_pos].directivity.get_response(index=ind_knn_src[i])  # ifft
 
-                cpy_ir_len_3[i, : src_resp.shape[0]] = src_resp
+                cpy_ir_len_3[i, : resp_src[i, :].shape[0]] = resp_src[i, :]
+                # rec_resp = self.mic_array.directivity[mic_pos].get_response(index=ind_knn_mic[i])  # ifft
 
-                rec_resp = self.mic_array.directivity[mic_pos].get_response(
-                    index=ind_knn_mic[i]
-                )  # ifft
-
-                cpy_ir_len_4[i, : rec_resp.shape[0]] = rec_resp
+                cpy_ir_len_4[i, : resp_mic[i, :].shape[0]] = resp_mic[i, :]
 
                 out = fast_multiplication(
                     cpy_ir_len_1[i, :],
@@ -2617,14 +2687,10 @@ class Room(object):
 
             else:
                 if source_presence:
-                    resp = self.sources[src_pos].directivity.get_response(
-                        index=ind_knn_src[i]
-                    )
+                    resp = resp_src[i, :]
                 elif rec_presence:
 
-                    resp = self.mic_array.directivity[mic_pos].get_response(
-                        index=ind_knn_mic[i]
-                    )
+                    resp = resp_mic[i, :]
 
                 cpy_ir_len_3[i, : resp.shape[0]] = resp
 

@@ -65,9 +65,12 @@ def fast_rir_builder(
     # create a look-up table of the sinc function and
     # then use linear interpolation
     cdef float delta = 1. / lut_gran
-    cdef int lut_size = (fdl + 1) * lut_gran + 1  #Total number of points in 81 fractional delay
-    n = np.linspace(-fdl2-1, fdl2 + 1, lut_size)  #equal space between -41 to +41 for 1641 length as each point between -40 to +40 represents 20 samples in the sinc signal
 
+    #Total number of points in 81 fractional delay
+    cdef int lut_size = (fdl + 1) * lut_gran + 1
+
+    #equal space between -41 to +41 for 1641 length as each point between -40 to +40 represents 20 samples in the sinc
+    n = np.linspace(-fdl2-1, fdl2 + 1, lut_size)
 
     cdef double [:] sinc_lut = np.sinc(n) #Sinc over linspace n
     cdef double [:] hann = np.hanning(fdl) #Hanning window of size 81
@@ -99,9 +102,10 @@ def fast_rir_builder(
                 pf.append(rir[time_ip+f])
                 lut_pos += lut_gran
                 k += 1
-            if print_filter==0:
-                np.save("/home/psrivast/PycharmProjects/axis_2_phd/filter_non_dir.npy",np.array(pf))
-                print_filter+=1
+
+            #if print_filter==0:
+            #    np.save("/home/psrivast/PycharmProjects/axis_2_phd/filter_non_dir.npy",np.array(pf))
+            #    print_filter+=1
 
 
 

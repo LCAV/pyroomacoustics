@@ -23,7 +23,6 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
-import copy
 import numpy as np
 import scipy.linalg as la
 from .directivities import (

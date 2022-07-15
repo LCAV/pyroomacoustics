@@ -30,7 +30,7 @@
 #include <list>
 #include <algorithm>
 #include <iterator>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include "common.hpp"
 

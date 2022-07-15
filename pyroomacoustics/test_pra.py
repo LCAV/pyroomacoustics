@@ -16,135 +16,83 @@ from pyroomacoustics.directivities import (
 )
 from timeit import default_timer as timer
 
-# from cal_rt60 import t60_impulse
-from scipy.signal import decimate
-
-
-def cal_grp_delay(t, f, Sxx):
-    grp_delay = []
-
-    for _ in range((t.shape[0])):
-        grp_val = []
-
-        k = (-1 / 360) * ((Sxx[1][_] - Sxx[0][_]) / (f[1] - f[0]))
-        grp_val.append(k)
-
-        for ft in range(f.shape[0] - 1)[1:]:
-            k = (-1 / 720) * (
-                ((Sxx[ft][_] - Sxx[ft - 1][_]) / (f[ft] - f[ft - 1]))
-                + ((Sxx[ft + 1][_] - Sxx[ft][_]) / (f[ft + 1] - f[ft]))
-            )
-            grp_val.append(k)
-
-        sh = f.shape[0] - 1
-
-        k = (-1 / 360) * ((Sxx[sh][_] - Sxx[sh - 1][_]) / (f[sh] - f[sh - 1]))
-        grp_val.append(k)
-        grp_delay.append(grp_val)
-
-    g_delay = np.array(grp_delay).reshape(f.shape[0], -1)
-    return g_delay
-
 
 # /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file.sofa
 # /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file_source.sofa
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
 # /home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
 
+"""
+##########################################################
+With DIRPATRir object we can generate RIRs with mics and source having either
+frequency independent CARDIOID patterns or  
+freqeuncy dependent patterns from DIRPAT dataset.
 
-dir_obj_mic = DIRPATRir(
-    orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
-    path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
-    directivity_pattern=1,
-    fs=16000,
-    # no_points_on_fibo_sphere=0
-)
+Parameters
+--------------------------------------
+    orientation : class DirectioVector
+    path : Path towrds the DIRPAT dataset, the ending name of the file should be the same as specified in the 
+    DIRPAT dataset
+    DIRPAT_pattern_id : (int) Only used to choose the directive patterns available in the specific files in the DIRPAT dataset 
+    
+    # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID  
+    # Hyper-Cardioid : 3
+    # Figure of eight : 4
+    # Omni : 1
+    # Wide Cardioid : 2
+    # Cardioid : 0
+    
+    # LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa DIRPAT file include source patterns
+    # Genelec 8020 : 0
+    #
+    #
+    #
+    #
+    #
+    
+    fs : (int) Sampling frequency of the filters present in the DIRPAT dataset
+    pattern_enum : Specify frequency independent cardioid directive patterns.
+    frequency_dependent : (Boolean) True : Directive patterns from the DIRPAT dataset, False: Cardioid frequency independent directive patterns.
 
-
-dir_obj_sr = DIRPATRir(
-    orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
-    path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    directivity_pattern=2,
-    fs=16000,
-    # no_points_on_fibo_sphere=0
-)
-
-
-def cuboid_data(center, size):
-
-    # suppose axis direction: x: to left; y: to inside; z: to upper
-    # get the (left, outside, bottom) point
-
-    o = [a - b / 2 for a, b in zip(center, size)]
-    # get the length, width, and height
-    l, w, h = size
-    x = [
-        [
-            o[0],
-            o[0] + l,
-            o[0] + l,
-            o[0],
-            o[0],
-        ],  # x coordinate of points in bottom surface
-        [
-            o[0],
-            o[0] + l,
-            o[0] + l,
-            o[0],
-            o[0],
-        ],  # x coordinate of points in upper surface
-        [
-            o[0],
-            o[0] + l,
-            o[0] + l,
-            o[0],
-            o[0],
-        ],  # x coordinate of points in outside surface
-        [o[0], o[0] + l, o[0] + l, o[0], o[0]],
-    ]  # x coordinate of points in inside surface
-    y = [
-        [
-            o[1],
-            o[1],
-            o[1] + w,
-            o[1] + w,
-            o[1],
-        ],  # y coordinate of points in bottom surface
-        [
-            o[1],
-            o[1],
-            o[1] + w,
-            o[1] + w,
-            o[1],
-        ],  # y coordinate of points in upper surface
-        [o[1], o[1], o[1], o[1], o[1]],  # y coordinate of points in outside surface
-        [o[1] + w, o[1] + w, o[1] + w, o[1] + w, o[1] + w],
-    ]  # y coordinate of points in inside surface
-    z = [
-        [o[2], o[2], o[2], o[2], o[2]],  # z coordinate of points in bottom surface
-        [
-            o[2] + h,
-            o[2] + h,
-            o[2] + h,
-            o[2] + h,
-            o[2] + h,
-        ],  # z coordinate of points in upper surface
-        [
-            o[2],
-            o[2],
-            o[2] + h,
-            o[2] + h,
-            o[2],
-        ],  # z coordinate of points in outside surface
-        [o[2], o[2], o[2] + h, o[2] + h, o[2]],
-    ]  # z coordinate of points in inside surface
-    return x, y, z
-
-
-# az=90,col=10
+############################################################
+    
+"""
 
 
 """
+dir_obj_mic = DIRPATRir(
+    orientation=DirectionVector(azimuth=43,colatitude=45 , degrees=True),
+    path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
+    directivity_pattern=0,
+    fs=16000,
+    #frequency_dependent=True
+    #no_points_on_fibo_sphere=0
+
+)
+#pattern_enum=DirectivityPattern.HYPERCARDIOID,
+"""
+
+
+dir_obj_sr = DIRPATRir(
+    orientation=DirectionVector(azimuth=0, colatitude=45, degrees=True),
+    path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    DIRPAT_pattern_id=3,
+    pattern_enum=DirectivityPattern.SUBCARDIOID,
+    fs=16000,
+    frequency_dependent=True
+    # no_points_on_fibo_sphere=0
+)
+
+
+"""
+#########################################
+With new implementation older class of CardioidFamily does not function.
+Basically octave band RIR construction only functions when ray tracing is "on" 
+and also in the case when no directivity is assigned to source or microphone.
+
+#########################################
+
+
 dir_obj_1 = CardioidFamily(
     orientation=DirectionVector(azimuth=0,colatitude=90, degrees=True),
     pattern_enum=DirectivityPattern.SUBCARDIOID,
@@ -153,18 +101,9 @@ dir_obj_1 = CardioidFamily(
 
 dir_obj_src = CardioidFamily(
     orientation=DirectionVector(azimuth=0,colatitude=45, degrees=True),
-    pattern_enum=DirectivityPattern.CARDIOID,
+    pattern_enum=DirectivityPattern.SUBCARDIOID,
 )
-
 """
-
-
-# CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID
-# Hyper-Cardioid : 3
-# Figure of eight : 4
-# Omni : ?
-# Wide Cardioid : 2
-# Cardioid : 0
 
 
 start = timer()
@@ -236,10 +175,10 @@ mic_locs = np.c_[
     [3.42, 2.48, 0.91],  # mic 1  # mic 2  #[3.47, 2.57, 1.31], [3.42, 2.48, 0.91]
 ]
 
-room.add_microphone_array(mic_locs, directivity=dir_obj_mic)
+room.add_microphone_array(mic_locs)  # directivity=dir_obj_mic)
 # dir_obj_mic.change_orientation(np.radians(0),np.radians(0))
-room.mic_array.directivity[0].change_orientation(np.radians(23), np.radians(43))
-room.mic_array.directivity[1].change_orientation(np.radians(70), np.radians(90))
+# room.mic_array.directivity[0].change_orientation(np.radians(23), np.radians(43))
+# room.mic_array.directivity[1].change_orientation(np.radians(70), np.radians(90))
 
 # room.set_ray_tracing()
 room.compute_rir()
@@ -258,6 +197,90 @@ plt.show()
 
 
 """
+Create a cuboid with center and the given length of x,y,z
+
+Parameters
+--------------
+    center : np.ndarray
+    size : np.ndarray
+ 
+
+"""
+"""
+def cuboid_data(center, size):
+
+    # suppose axis direction: x: to left; y: to inside; z: to upper
+    # get the (left, outside, bottom) point
+
+    o = [a - b / 2 for a, b in zip(center, size)]
+    # get the length, width, and height
+    l, w, h = size
+    x = [
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in bottom surface
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in upper surface
+        [
+            o[0],
+            o[0] + l,
+            o[0] + l,
+            o[0],
+            o[0],
+        ],  # x coordinate of points in outside surface
+        [o[0], o[0] + l, o[0] + l, o[0], o[0]],
+    ]  # x coordinate of points in inside surface
+    y = [
+        [
+            o[1],
+            o[1],
+            o[1] + w,
+            o[1] + w,
+            o[1],
+        ],  # y coordinate of points in bottom surface
+        [
+            o[1],
+            o[1],
+            o[1] + w,
+            o[1] + w,
+            o[1],
+        ],  # y coordinate of points in upper surface
+        [o[1], o[1], o[1], o[1], o[1]],  # y coordinate of points in outside surface
+        [o[1] + w, o[1] + w, o[1] + w, o[1] + w, o[1] + w],
+    ]  # y coordinate of points in inside surface
+    z = [
+        [o[2], o[2], o[2], o[2], o[2]],  # z coordinate of points in bottom surface
+        [
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+            o[2] + h,
+        ],  # z coordinate of points in upper surface
+        [
+            o[2],
+            o[2],
+            o[2] + h,
+            o[2] + h,
+            o[2],
+        ],  # z coordinate of points in outside surface
+        [o[2], o[2], o[2] + h, o[2] + h, o[2]],
+    ]  # z coordinate of points in inside surface
+    return x, y, z
+
+"""
+# az=90,col=10
+
+"""
 ####################################################
 # 3D acoustic scene plotting code                  #
 # with directivity pattern for source and receiver #
@@ -266,7 +289,7 @@ Require position of source and receiver.
 Frequency domain filters from interpolated fibo sphere 
 """
 
-
+"""
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -407,7 +430,7 @@ ax.set_zlim(0, 2.4)
 plt.legend()
 plt.show()
 # fft(dir_obj_sr.obj_open_sofa_inter.sh_coeffs_expanded_target_grid,axis=-1)
-
+"""
 
 """
 ####################################################

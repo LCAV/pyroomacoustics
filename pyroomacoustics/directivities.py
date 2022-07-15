@@ -6,8 +6,7 @@ from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 import matplotlib.pyplot as plt
 import sys
 
-sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
-import open_sofa_interpolate
+from . import open_sofa_interpolate
 
 
 class DirectivityPattern(Enum):
@@ -290,28 +289,32 @@ class CardioidFamily(Directivity):
 class DIRPATRir(Directivity):
 
     """
-    Open specific DIRPAT files and interpolate the FIR filters on the fibonacci sphere
+    Open specific DIRPAT files and interpolate the FIR filters on the fibonacci sphere also frequency independent
+    cardioid patterns can be called from this function
     This class inherits the base class Directivity and all its functions.
     This class should be called with the requested parameters as follows.
-    Parameters :
-    ------------------------
-        orientation : Object Of Class DirectionVector
-        path : (String) SOFA file path only two sofa files are supported from the DIRPAT dataset a)AKG_c480_c414_CUBE.sofa (Receivers) b) LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa (Source)
-        directivity_pattern :(Int) Specify the below listed pattern you want needs an (integer)
 
-        CARDIOID :0
-        SUB CARDIOID : 1
-        FIGURE_EIGHT : 4
-        OMNI :
-        HYPER CARDIOID :
+    Parameters
+    ----------
 
-        fs: (Int) Sampling frequency of the source and receiver , SHOULD ALWAYS BE EQUAL OR LESS THAN SIMAULATION FREQUENCY
+    orientation : Obj
+        Object Of Class DirectionVector
+    path : (String)
+        SOFA file path only two sofa files are supported from the DIRPAT dataset
+        a)AKG_c480_c414_CUBE.sofa (Receivers) b) LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa (Source)
+    DIRPAT_pattern_id : (Int)
 
-        source: (Boolean) Should be True when using the specific source sofa file from the DIRPAT Dataset (See Above which files are supported)
+    fs: (Int)
+        Sampling frequency of the source and receiver , SHOULD ALWAYS BE EQUAL OR LESS THAN SIMAULATION FREQUENCY
 
-        interpolate : (Boolean) Put it to False , if you don't want to interpolate the FIR'S on the fibonacci sphere (Save's time)
+    source: (Boolean)
+        Should be True when using the specific source sofa file from the DIRPAT Dataset (See Above which files are supported)
 
-        no_points_on_fibo_sphere : (Int) Number of points on the Fibonacci sphere.
+    interpolate : (Boolean)
+        Put it to False , if you don't want to interpolate the FIR'S on the fibonacci sphere (Save's time)
+
+    no_points_on_fibo_sphere : (Int)
+        Number of points on the Fibonacci sphere.
 
     Returns:
     --------------------------------
@@ -326,10 +329,12 @@ class DIRPATRir(Directivity):
     def __init__(
         self,
         orientation,
-        path,
-        directivity_pattern,
+        path=None,
+        pattern_enum=None,
+        DIRPAT_pattern_id=None,
         fs=16000,
         no_points_on_fibo_sphere=1200,
+        frequency_dependent=False,
     ):
 
         assert isinstance(orientation, DirectionVector)
@@ -337,66 +342,154 @@ class DIRPATRir(Directivity):
             self, orientation
         )  # Initialization of the Directivity class with Direction vector class required as a parameter of the init function.
 
-        if "AKG_c480_c414_CUBE.sofa" in path:
-            self.path = path
-            self.source = False
+        if not frequency_dependent:
 
-        elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path:
-            self.path = path
-            self.source = True
+            assert pattern_enum is not None, "Please specifiy Cardioid pattern"
 
-        elif "Debug_sofa_file_source_2.sofa" in path:
-            self.path = path
-            self.source = True
-        elif "Debug_sofa_file.sofa" in path:
-            self.path = path
-            self.source = False
-        elif "Oktava_MK4012_CUBE.sofa" in path:
-            self.path = path
-            self.source = False
-        elif "Soundfield_ST450_CUBE.sofa" in path:
-            self.path = path
-            self.source = False
+            self._pattern_name = pattern_enum.name
+            self._p = pattern_enum.value
+            self.samples_size_ir = 2  # Define the length of the cardioid filter.
+            self.frequency_dependent = frequency_dependent
+            self._gain = 1.0
+
+            @property
+            def directivity_pattern(self):
+                """Name of cardioid directivity pattern."""
+                return self._pattern_name
 
         else:
-            raise ValueError("Check SOFA file and source boolean value")
 
-        if no_points_on_fibo_sphere >= 480:
-            self.interpolate = True
-        else:
-            self.interpolate = False
+            assert (
+                DIRPAT_pattern_id is not None
+            ), "Please specifiy directivity pattern from the DIRPAT dataset "
 
-        self.id = directivity_pattern
-        self.fs = fs  # Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
+            if "AKG_c480_c414_CUBE.sofa" in path:
+                self.path = path
+                self.source = False
 
-        self.points_on_fibo = no_points_on_fibo_sphere
+            elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path:
+                self.path = path
+                self.source = True
+            else:
+                raise ValueError(
+                    "Unknown file. The file should be part of the DIRPAT database, i.e., one of 'AKG_c480_c414_CUBE.sofa', 'LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa' "
+                )
 
-        self.obj_open_sofa_inter = open_sofa_interpolate.DIRPATInterpolate(
-            path=self.path,
-            fs=self.fs,
-            directivity_pattern=self.id,
-            source=self.source,
-            interpolate=self.interpolate,
-            azimuth_simulation=self._orientation.get_azimuth(degrees=False),
-            colatitude_simulation=self._orientation.get_colatitude(degrees=False),
-        )
+            """
+            elif "Debug_sofa_file_source_2.sofa" in path:
+                self.path = path
+                self.source = True
+            elif "Debug_sofa_file.sofa" in path:
+                self.path = path
+                self.source = False
+            elif "Oktava_MK4012_CUBE.sofa" in path:
+                self.path = path
+                self.source = False
+            elif "Soundfield_ST450_CUBE.sofa" in path:
+                self.path = path
+                self.source = False
+            """
 
-        self.obj_open_sofa_inter.plot(freq_bin=30)
+            if no_points_on_fibo_sphere >= 480:
+                self.interpolate = True
+            else:
+                self.interpolate = False
 
-    def change_orientation(self, azimuth_change, colatitude_change):
-        self.obj_open_sofa_inter.change_orientation(azimuth_change, colatitude_change)
+            self.id = DIRPAT_pattern_id
+            self.fs = fs  # Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
+
+            self.points_on_fibo = no_points_on_fibo_sphere
+
+            self.obj_open_sofa_inter = open_sofa_interpolate.DIRPATInterpolate(
+                path=self.path,
+                fs=self.fs,
+                directivity_pattern=self.id,
+                source=self.source,
+                interpolate=self.interpolate,
+                azimuth_simulation=self._orientation.get_azimuth(degrees=False),
+                colatitude_simulation=self._orientation.get_colatitude(degrees=False),
+            )
+            self.samples_size_ir = self.obj_open_sofa_inter.samples_size_ir
+            # self.obj_open_sofa_inter.plot(freq_bin=30) For plotting directivity pattern on the sphere for a specific frequency bin
+            self.frequency_dependent = frequency_dependent
+
+        def set_orientation(self, azimuth, colatitude):
+            """
+            Changes the orientation absolutely of the object only if frequency dependent directivity from the DIRPAT dataset is used.
+
+            Parameters
+            ----------
+            azimuth_change: (Int)
+                In degrees
+            colatitude_change: (Int)
+                In degrees
+
+            """
+            if frequency_dependent:
+                self.obj_open_sofa_inter.change_orientation(azimuth, colatitude)
+            else:
+                print(
+                    "Orientation of the object at run time can only be changed if frequency dependent directivity from DIRPAT is used"
+                )
 
     def get_response(
         self,
         azimuth=None,
         colatitude=None,
-        index=0,
         magnitude=False,
-        frequency=None,
-        degrees=True,
+        frequency=False,
+        degrees=False,
     ):
+        """
+        Returns response for carioid "frequency independent" directive patterns and also for the DIRPAT dataset according
+        to the frequency boolean
+        frequency boolean is connected to frequency_dependent variable that is intialized while specifying the class.
 
-        return self.obj_open_sofa_inter.neareast_neighbour(index)
+        Parameters
+        ------------
+        azimuth: (np.ndarray)
+            List of azimuth for all the image source
+        colatitude: (np.ndarray)
+            List of colatitude for all the image source
+        frequency : (Boolean)
+            True : DIRPAT response
+            False : Cardioid response
+        degrees : (Boolean)
+            False : Azimuth and colatitude are provided in radians.
+
+        """
+
+        if frequency:
+            indexs = self.obj_open_sofa_inter.cal_index_knn(
+                azimuth, colatitude
+            )  # Using NN search calculates all the indexes for list of azimuth and colitude of all the image sources
+            return self.obj_open_sofa_inter.neareast_neighbour(
+                indexs
+            )  # Returns filter response for the given indexes from the sphere (interpolation (True) : fibonacci sphere , interpolation (False) : original grid )
+        else:
+            resp_array = np.zeros(
+                (len(azimuth), self.samples_size_ir)
+            )  # Array collecting response of all the image sources at once.
+            if colatitude is not None:
+                assert len(azimuth) == len(colatitude)
+            if self._p == DirectivityPattern.OMNI:
+                resp_array[:, 0] = np.ones(len(azimuth))
+                return resp_array
+            else:
+                coord = spher2cart(
+                    azimuth=azimuth, colatitude=colatitude, degrees=degrees
+                )
+
+                resp = self._gain * self._p + (1 - self._p) * np.matmul(
+                    self._orientation.unit_vector, coord
+                )
+
+                if magnitude:
+                    resp_array[:, 0] = np.abs(resp)
+                    return resp_array
+                else:
+                    resp_array[:, 0] = resp
+                    return resp_array
 
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
