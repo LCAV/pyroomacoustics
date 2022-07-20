@@ -574,8 +574,8 @@ class DIRPATInterpolate:
 
         """
 
-        n_c = colatitude_change
-        n_a = azimuth_change
+        n_c = np.radians(colatitude_change)
+        n_a = np.radians(azimuth_change)
         R_y = np.array(
             [[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]]
         )

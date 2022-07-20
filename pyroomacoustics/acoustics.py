@@ -361,10 +361,14 @@ class OctaveBandsFactory(object):
         Convert octave band dampings to dft scale, interpolates octave band values to full dft scale values.
 
                 Parameters:
-                        att_in_octave_band : Dampings in octave band
-                        air_abs_band : air absorption in octave band
-                        distance_is : distance of the image source from the mic
-                        min_phase : decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
+                        att_in_octave_band : arr
+                            Dampings in octave band Shape : (no_of_octave_band)
+                        air_abs_band : arr
+                            air absorption in octave band Shape : (no_of_octave_band)
+                        distance_is : float
+                            distance of the image source from the mic
+                        min_phase : Boolean
+                            decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
 
                 Returns:
                         binary_sum (str): Binary string of the sum of a and b

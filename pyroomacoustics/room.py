@@ -596,7 +596,7 @@ from scipy.fft import fft, fftfreq, ifft
 from scipy.signal import fftconvolve
 import sys
 
-#sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
+# sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
 # import open_sofa_interpolate
 
 from scipy import fft
@@ -2057,6 +2057,9 @@ class Room(object):
                 N = fdl
 
                 """
+                Important: If frequency independent cardioid patterns and DIRPAT patterns can be loaded from only one class then 
+                this chunk of code become obselete.
+                
                 Source Directivity : Obj of CardioidFamily , Receiver Directivity : Obj of freq_dependent_response_sofa 
                 Source Directivity : Obj of freq_dependent_response_sofa , Receiver Directivity : Obj of CardioidFamily
 
@@ -2156,16 +2159,9 @@ class Room(object):
                 rir_bands = []
 
                 """
-                Important check
-
-                Source Directivity : None , Receiver Directivity : None [Use pyroom acoustics old RIR construction method which supports RAY-TRACING]
-                Source Directivity : Obj from CardioidFamily , Receiver Directivity : None   [Use pyroom acoustics old RIR construction method]
-                Source Directivity : None , Receiver Directivity : Obj from CardioidFamily  [Use pyroom acoustics old RIR construction method]
-                Source Directivity : Obj from CardioidFamily , Receiver Directivity : Obj from CardioidFamily  [Use pyroom acoustics old RIR construction method]
-
-                """
-                """
-                Use octave bands to construct RIR, when ray-tracing is activated or directivity of both the microphones are not given.
+                Use octave bands to construct RIR : 
+                1) Ray-tracing is activated 
+                2) directivity of both the microphones and source is not given.
                 """
                 if (
                     self.mic_array.directivity is None
@@ -2290,11 +2286,12 @@ class Room(object):
                     Source Directivity : Obj from DIRPATRir , Receiver Directivity : None   [Use new RIR construction function which is based on full scale DFT resolution]
                     Source Directivity : None , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
                     Source Directivity : Obj from DIRPATRir , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
+                    """
 
                     """
+                    Checks if both source and microphone directivity is from the class DIRPATRir
                     """
-                    Check if both source and microphone directivity is from the class DIRPATRir
-                    """
+
                     if (
                         self.mic_array.directivity is not None
                         and isinstance(self.mic_array.directivity[m], DIRPATRir)
@@ -2524,25 +2521,38 @@ class Room(object):
 
         Parameters
         ----------
-        attenuations: Dampings for all the image sources
-        dist :  distance of all the image source present in the room from this particular mic
-        time : Time of arrival of all the image source
-        bws : bandwidth of all the octave bands
+        attenuations: arr
+            Dampings for all the image sources Shape : ( No_of_octave_band x no_img_src)
+        dist : arr
+            distance of all the image source present in the room from this particular mic Shape : (no_img_src)
+        time : arr
+            Time of arrival of all the image source Shape : (no_img_src)
+        bws :
+            bandwidth of all the octave bands
         N :
-        azi_m : Azimuth angle of arrival of this particular mic for all image sources
-        col_m : Colatitude angle of arrival of this particular mic  for all image sources
-        azi_s : Azimuth angle of departure of this particular source for all image sources
-        col_s : Colatitude angle of departure of this particular source for all image sources
-        src_pos : The particular source we are calculating RIR
-        mic_pos : The particular mic we are calculating RIR
-        source_presence : Is source directivity is present or not
-        rec_presence : Is microphone directivity is present or not
-        frequency_dependent : If true , DIRPAT directivity profiles are used else Cardioid frequency independent patterns were used.
+        azi_m : arr
+            Azimuth angle of arrival of this particular mic for all image sources Shape : (no_img_src)
+        col_m : arr
+            Colatitude angle of arrival of this particular mic  for all image sources Shape : (no_img_src)
+        azi_s : arr
+            Azimuth angle of departure of this particular source for all image sources Shape : (no_img_src)
+        col_s : arr
+            Colatitude angle of departure of this particular source for all image sources Shape : (no_img_src)
+        src_pos : int
+            The particular source we are calculating RIR
+        mic_pos : int
+            The particular mic we are calculating RIR
+        source_presence : Boolean
+            Is source directivity is present or not
+        rec_presence : Boolean
+            Is microphone directivity is present or not
+        frequency_dependent : Boolean
+            If true , DIRPAT directivity profiles are used else Cardioid frequency independent patterns were used.
 
         Returns
         -------
             rir : :py:class:`~numpy.ndarray`
-            Constructed RIR for this particlar src mic pair .
+                Constructed RIR for this particlar src mic pair .
 
             The constructed RIR still lacks air absorption and distance absorption because in the old pyroom these calculation happens on the octave band level.
 

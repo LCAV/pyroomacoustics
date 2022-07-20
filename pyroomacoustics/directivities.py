@@ -413,24 +413,25 @@ class DIRPATRir(Directivity):
             # self.obj_open_sofa_inter.plot(freq_bin=30) For plotting directivity pattern on the sphere for a specific frequency bin
             self.frequency_dependent = frequency_dependent
 
-        def set_orientation(self, azimuth, colatitude):
-            """
-            Changes the orientation absolutely of the object only if frequency dependent directivity from the DIRPAT dataset is used.
+    def set_orientation(self, azimuth, colatitude):
+        """
+        Changes the orientation absolutely of the object only if frequency dependent directivity from the DIRPAT dataset is used.
 
-            Parameters
-            ----------
-            azimuth_change: (Int)
-                In degrees
-            colatitude_change: (Int)
-                In degrees
+        Parameters
+        ----------
+        azimuth_change: (Int)
+            In degrees
+        colatitude_change: (Int)
+            In degrees
 
-            """
-            if frequency_dependent:
-                self.obj_open_sofa_inter.change_orientation(azimuth, colatitude)
-            else:
-                print(
-                    "Orientation of the object at run time can only be changed if frequency dependent directivity from DIRPAT is used"
-                )
+        """
+        if self.frequency_dependent:
+            self.obj_open_sofa_inter.change_orientation(azimuth, colatitude)
+        else:
+            Directivity.__init__(
+                self,
+                DirectionVector(azimuth=azimuth, colatitude=colatitude, degrees=True),
+            )
 
     def get_response(
         self,
