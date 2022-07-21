@@ -27,7 +27,7 @@
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include "common.hpp"
 

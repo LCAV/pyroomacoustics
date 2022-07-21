@@ -29,7 +29,7 @@
 #define __COMMON_HPP__
 
 #include <iostream>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 extern float libroom_eps;  // epsilon is the precision for floating point computations. It is defined in libroom.cpp
 

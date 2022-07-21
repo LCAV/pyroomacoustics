@@ -27,7 +27,7 @@
 #define __CWALL_H__
 
 #include <string>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 extern float libroom_eps;
 
