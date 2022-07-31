@@ -136,7 +136,7 @@ class CardioidFamily(Directivity):
         self._p = pattern_enum.value
         self._gain = gain
         self._pattern_name = pattern_enum.name
-        self.filter_len_ir=1
+        self.filter_len_ir = 1
 
     @property
     def directivity_pattern(self):
@@ -185,6 +185,7 @@ class CardioidFamily(Directivity):
                 return np.abs(resp)
             else:
                 return resp
+
     """
     def set_orientation(self, azimuth, colatitude):
         Directivity.__init__(
@@ -192,6 +193,7 @@ class CardioidFamily(Directivity):
             DirectionVector(azimuth=azimuth, colatitude=colatitude, degrees=True),
         )
     """
+
     @requires_matplotlib
     def plot_response(
         self, azimuth, colatitude=None, degrees=True, ax=None, offset=None
@@ -368,7 +370,6 @@ class DIRPATRir(Directivity):
             self, orientation
         )  # Initialization of the Directivity class with Direction vector class required as a parameter of the init function.
 
-
         assert (
             DIRPAT_pattern_enum is not None
         ), "Please specifiy directivity pattern from the DIRPAT dataset "
@@ -384,17 +385,14 @@ class DIRPATRir(Directivity):
                 "Unknown file. The file should be part of the DIRPAT database, i.e., one of 'AKG_c480_c414_CUBE.sofa', 'LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa' "
             )
 
-
-
         if no_points_on_fibo_sphere == 0:
             self.interpolate = False
         else:
             self.interpolate = True
 
-
         self.fs = fs  # Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
 
-        assert self.fs <= 44100 , "Interpolation frequency should be less than 44100 khz"
+        assert self.fs <= 44100, "Interpolation frequency should be less than 44100 khz"
 
         self.points_on_fibo = no_points_on_fibo_sphere
 
@@ -410,7 +408,6 @@ class DIRPATRir(Directivity):
         )
         self.filter_len_ir = self.obj_open_sofa_inter.samples_size_ir
         # self.obj_open_sofa_inter.plot(freq_bin=30) For plotting directivity pattern on the sphere for a specific frequency bin
-
 
     def set_orientation(self, azimuth, colatitude):
         """
@@ -449,9 +446,12 @@ class DIRPATRir(Directivity):
 
         """
 
-
-        indexs = self.obj_open_sofa_inter.cal_index_knn(azimuth, colatitude)  # Using NN search calculates all the indexes for list of azimuth and colitude of all the image sources
-        return self.obj_open_sofa_inter.neareast_neighbour(indexs)  # Returns filter response for the given indexes from the sphere (interpolation (True) : fibonacci sphere , interpolation (False) : original grid )
+        indexs = self.obj_open_sofa_inter.cal_index_knn(
+            azimuth, colatitude
+        )  # Using NN search calculates all the indexes for list of azimuth and colitude of all the image sources
+        return self.obj_open_sofa_inter.neareast_neighbour(
+            indexs
+        )  # Returns filter response for the given indexes from the sphere (interpolation (True) : fibonacci sphere , interpolation (False) : original grid )
 
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):

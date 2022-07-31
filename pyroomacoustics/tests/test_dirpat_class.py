@@ -78,7 +78,6 @@ directivity_MIC = DIRPATRir(
     path="../AKG_c480_c414_CUBE.sofa",
     DIRPAT_pattern_enum=PATTERN_MIC_DIRPAT_ID,
     fs=16000,
-
 )
 
 """
@@ -100,7 +99,7 @@ room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
 # Check set different orientation after intailization of the DIRPATRir class
 directivity_MIC.set_orientation(np.radians(0), np.radians(0))
-#directivity_SRC.set_orientation(np.radians(70), np.radians(34))
+# directivity_SRC.set_orientation(np.radians(70), np.radians(34))
 
 
 room.compute_rir()

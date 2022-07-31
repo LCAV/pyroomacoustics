@@ -70,9 +70,7 @@ room = pra.ShoeBox(
 
 PATTERN_SRC = DirectivityPattern.FIGURE_EIGHT
 ORIENTATION_SRC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
-directivity_SRC = CardioidFamily(
-    orientation=ORIENTATION_SRC, pattern_enum=PATTERN_SRC
-)
+directivity_SRC = CardioidFamily(orientation=ORIENTATION_SRC, pattern_enum=PATTERN_SRC)
 
 # define source with figure_eight directivity
 PATTERN_MIC_DIRPAT_ID = "AKG_c480"
@@ -82,9 +80,7 @@ directivity_MIC = DIRPATRir(
     path="../AKG_c480_c414_CUBE.sofa",
     DIRPAT_pattern_enum=PATTERN_MIC_DIRPAT_ID,
     fs=16000,
-
 )
-
 
 
 # add source with figure_eight directivity
@@ -95,7 +91,7 @@ room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
 # Check set different orientation after intailization of the DIRPATRir class
 directivity_MIC.set_orientation(70, 123)
-#directivity_SRC.set_orientation(70, 34)
+# directivity_SRC.set_orientation(70, 34)
 
 
 room.compute_rir()
@@ -106,4 +102,4 @@ plt.clf()
 plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
 plt.show()
 
-#np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_acous_push_1.npy", rir_1_0)
+# np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_acous_push_1.npy", rir_1_0)

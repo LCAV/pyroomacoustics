@@ -259,7 +259,7 @@ class OctaveBandsFactory(object):
             # now clip between 0. and 1.
             ret[ret < 0.0] = 0.0
             ret[ret > 1.0] = 1.0
-            #print(ret)
+            # print(ret)
 
         return ret
 
@@ -386,10 +386,8 @@ class OctaveBandsFactory(object):
         for b in range(len(bws)):
             att_in_dft_scale += u_[b] * self.filters_2[:, b]
 
-
-
         if min_phase:
-            att_in_dft_scale += 1e-07 #To avoid divide by zero error when performing hilbert transform.
+            att_in_dft_scale += 1e-07  # To avoid divide by zero error when performing hilbert transform.
             m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale))))
             att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
         return att_in_dft_scale

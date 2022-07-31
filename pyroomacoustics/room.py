@@ -922,7 +922,6 @@ class Room(object):
         # self.sh_deg = 12
         # self.print_filter = 0
 
-
         self.min_phase = min_phase
 
     def _init_room_engine(self, *args):
@@ -982,12 +981,12 @@ class Room(object):
         return multi_band
 
     def set_ray_tracing(
-            self,
-            n_rays=None,
-            receiver_radius=0.5,
-            energy_thres=1e-7,
-            time_thres=10.0,
-            hist_bin_size=0.004,
+        self,
+        n_rays=None,
+        receiver_radius=0.5,
+        energy_thres=1e-7,
+        time_thres=10.0,
+        hist_bin_size=0.004,
     ):
         """
         Activates the ray tracer.
@@ -1015,14 +1014,14 @@ class Room(object):
         )
 
     def _set_ray_tracing_options(
-            self,
-            use_ray_tracing,
-            n_rays=None,
-            receiver_radius=0.5,
-            energy_thres=1e-7,
-            time_thres=10.0,
-            hist_bin_size=0.004,
-            is_init=False,
+        self,
+        use_ray_tracing,
+        n_rays=None,
+        receiver_radius=0.5,
+        energy_thres=1e-7,
+        time_thres=10.0,
+        hist_bin_size=0.004,
+        is_init=False,
     ):
         """
         Base method to set all ray tracing related options
@@ -1064,10 +1063,10 @@ class Room(object):
 
             # This is the multiplier for a single hit in average
             k1 = self.get_volume() / (
-                    np.pi
-                    * (self.rt_args["receiver_radius"] ** 2)
-                    * self.c
-                    * self.rt_args["hist_bin_size"]
+                np.pi
+                * (self.rt_args["receiver_radius"] ** 2)
+                * self.c
+                * self.rt_args["hist_bin_size"]
             )
 
             n_rays = int(target_mean_hit_count * k1)
@@ -1259,7 +1258,7 @@ class Room(object):
             sigma2_awgn=sigma2_awgn,
             sources=sources,
             mics=mics,
-            **kwargs
+            **kwargs,
         )
 
     def extrude(
@@ -1767,9 +1766,9 @@ class Room(object):
             pairs = [(select, s) for s in range(n_src)]
         elif isinstance(select, list) or isinstance(select, tuple):
             if (
-                    len(select) == 2
-                    and isinstance(select[0], int)
-                    and isinstance(select[1], int)
+                len(select) == 2
+                and isinstance(select[0], int)
+                and isinstance(select[1], int)
             ):
                 pairs = [select]
             else:
@@ -2104,7 +2103,6 @@ class Room(object):
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources
 
-
                 if self.simulator_state["random_ism_needed"]:
 
                     n_images = np.shape(source.images)[1]
@@ -2115,7 +2113,6 @@ class Room(object):
                     # add a random displacement to each cartesian coordinate
                     disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
                     source.images += disp
-
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
 
@@ -2185,7 +2182,6 @@ class Room(object):
 
                 # default, just in case both ism and rt are disabled (should never happen)
                 N = fdl
-
 
                 if self.simulator_state["ism_needed"]:
 
@@ -2268,14 +2264,37 @@ class Room(object):
                 2) directivity of both the microphones and source is not given.
                 
                 """
-                #Improve the checks.
+                # Improve the checks.
 
-                if ((self.mic_array.directivity is None
-                    and self.sources[s].directivity is None
-                ) or (self.simulator_state["rt_needed"])  or
-                        (self.mic_array.directivity is None and isinstance(self.sources[s].directivity, CardioidFamily)) or
-                        (self.sources[s].directivity is None and (self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],CardioidFamily))) or
-                        ((self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m],CardioidFamily)) and isinstance(self.sources[s].directivity, CardioidFamily))):
+                if (
+                    (
+                        self.mic_array.directivity is None
+                        and self.sources[s].directivity is None
+                    )
+                    or (self.simulator_state["rt_needed"])
+                    or (
+                        self.mic_array.directivity is None
+                        and isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                    or (
+                        self.sources[s].directivity is None
+                        and (
+                            self.mic_array.directivity is not None
+                            and isinstance(
+                                self.mic_array.directivity[m], CardioidFamily
+                            )
+                        )
+                    )
+                    or (
+                        (
+                            self.mic_array.directivity is not None
+                            and isinstance(
+                                self.mic_array.directivity[m], CardioidFamily
+                            )
+                        )
+                        and isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                ):
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2402,11 +2421,19 @@ class Room(object):
                     """
 
                     if (
-                         (self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m], DIRPATRir)) or
-                         (self.mic_array.directivity is not None and isinstance(self.mic_array.directivity[m], CardioidFamily))
+                        (
+                            self.mic_array.directivity is not None
+                            and isinstance(self.mic_array.directivity[m], DIRPATRir)
+                        )
+                        or (
+                            self.mic_array.directivity is not None
+                            and isinstance(
+                                self.mic_array.directivity[m], CardioidFamily
+                            )
+                        )
                     ) and (
-                        isinstance(self.sources[s].directivity, DIRPATRir) or
-                        isinstance(self.sources[s].directivity, CardioidFamily)
+                        isinstance(self.sources[s].directivity, DIRPATRir)
+                        or isinstance(self.sources[s].directivity, CardioidFamily)
                     ):
 
                         ir = self.dft_scale_rir_calc(
@@ -2423,7 +2450,6 @@ class Room(object):
                             mic_pos=m,
                             source_presence=True,
                             rec_presence=True,
-
                         )
 
                     elif self.sources[s].directivity is not None and isinstance(
@@ -2444,9 +2470,7 @@ class Room(object):
                             mic_pos=m,
                             source_presence=True,
                             rec_presence=False,
-
                         )
-
 
                     elif self.mic_array.directivity is not None and isinstance(
                         self.mic_array.directivity[m], DIRPATRir
@@ -2467,7 +2491,6 @@ class Room(object):
                             mic_pos=m,
                             source_presence=False,
                             rec_presence=True,
-
                         )
 
                     else:
@@ -2571,7 +2594,6 @@ class Room(object):
 
         if rec_presence and source_presence:
 
-
             final_fir_IS_len = (
                 fir_length_octave_band
                 + window_length
@@ -2579,26 +2601,28 @@ class Room(object):
                 + self.sources[src_pos].directivity.filter_len_ir
             ) - 3
 
+            resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                azimuth=azi_m, colatitude=col_m
+            )  # Return response as an array of number of (img_sources * length of filters)
+            resp_src = self.sources[src_pos].directivity.get_response(
+                azimuth=azi_s, colatitude=col_s
+            )
 
-
-            resp_mic = self.mic_array.directivity[mic_pos].get_response(azimuth=azi_m, colatitude=col_m)  # Return response as an array of number of (img_sources * length of filters)
-            resp_src = self.sources[src_pos].directivity.get_response(azimuth=azi_s, colatitude=col_s)
-
-
-
-            if self.mic_array.directivity[mic_pos].filter_len_ir == 1 :
-                resp_mic=np.array(resp_mic).reshape(-1,1)
+            if self.mic_array.directivity[mic_pos].filter_len_ir == 1:
+                resp_mic = np.array(resp_mic).reshape(-1, 1)
                 print("CMic DFT")
             else:
-                assert (self.fs == self.mic_array.directivity[
-                    mic_pos].fs), "Mic directivity: frequency of simulation should be same as frequency of interpolation"
+                assert (
+                    self.fs == self.mic_array.directivity[mic_pos].fs
+                ), "Mic directivity: frequency of simulation should be same as frequency of interpolation"
 
             if self.sources[src_pos].directivity.filter_len_ir == 1:
-                resp_src=np.array(resp_src).reshape(-1,1)
+                resp_src = np.array(resp_src).reshape(-1, 1)
                 print("CSrc DFT")
             else:
-                assert (self.fs == self.sources[
-                    src_pos].directivity.fs), "Source directivity:  frequency of simulation should be same as frequency of interpolation"
+                assert (
+                    self.fs == self.sources[src_pos].directivity.fs
+                ), "Source directivity:  frequency of simulation should be same as frequency of interpolation"
 
         else:
             if source_presence:
@@ -2607,10 +2631,13 @@ class Room(object):
                     + window_length
                     + self.sources[src_pos].directivity.filter_len_ir
                 ) - 2
-                assert (self.fs == self.sources[
-                    src_pos].directivity.fs), "Directivity source frequency of simulation should be same as frequency of interpolation"
+                assert (
+                    self.fs == self.sources[src_pos].directivity.fs
+                ), "Directivity source frequency of simulation should be same as frequency of interpolation"
 
-                resp_src = self.sources[src_pos].directivity.get_response(azimuth=azi_s, colatitude=col_s)
+                resp_src = self.sources[src_pos].directivity.get_response(
+                    azimuth=azi_s, colatitude=col_s
+                )
 
             elif rec_presence:
                 final_fir_IS_len = (
@@ -2619,10 +2646,13 @@ class Room(object):
                     + self.mic_array.directivity[mic_pos].filter_len_ir
                 ) - 2
 
-                assert (self.fs == self.mic_array.directivity[
-                    mic_pos].fs), "Directivity mic frequency of simulation should be same as frequency of interpolation"
+                assert (
+                    self.fs == self.mic_array.directivity[mic_pos].fs
+                ), "Directivity mic frequency of simulation should be same as frequency of interpolation"
 
-                resp_mic = self.mic_array.directivity[mic_pos].get_response(azimuth=azi_m, colatitude=col_m)
+                resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                    azimuth=azi_m, colatitude=col_m
+                )
 
         # else:
         # txt = "No"
@@ -2643,7 +2673,9 @@ class Room(object):
         cpy_ir_len_2 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
         cpy_ir_len_3 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
         cpy_ir_len_4 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
-        att_in_dft_scale = np.zeros((no_imag_src, fir_length_octave_band), dtype=np.complex_)
+        att_in_dft_scale = np.zeros(
+            (no_imag_src, fir_length_octave_band), dtype=np.complex_
+        )
 
         for i in range(no_imag_src):  # Loop through Image source
 
@@ -2665,7 +2697,6 @@ class Room(object):
             time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
 
             time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
-
 
             windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
 

@@ -17,7 +17,7 @@ from pyroomacoustics.directivities import (
 from timeit import default_timer as timer
 
 
-#Path on my system.
+# Path on my system.
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
 # /home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
 
@@ -72,15 +72,13 @@ Parameters
 
 
 dir_obj_Dmic = DIRPATRir(
-    orientation=DirectionVector(azimuth=54,colatitude=73 , degrees=True),
+    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
     path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
     DIRPAT_pattern_enum="AKG_c414K",
     fs=16000,
-
 )
 
-#pattern_enum=DirectivityPattern.HYPERCARDIOID,
-
+# pattern_enum=DirectivityPattern.HYPERCARDIOID,
 
 
 dir_obj_Dsrc = DIRPATRir(
@@ -91,20 +89,14 @@ dir_obj_Dsrc = DIRPATRir(
 )
 
 
-
-
-
-
 dir_obj_Cmic = CardioidFamily(
-    orientation=DirectionVector(azimuth=90,colatitude=12, degrees=True),
+    orientation=DirectionVector(azimuth=90, colatitude=12, degrees=True),
     pattern_enum=DirectivityPattern.FIGURE_EIGHT,
 )
 
 
-
-
 dir_obj_Csrc = CardioidFamily(
-    orientation=DirectionVector(azimuth=0,colatitude=123, degrees=True),
+    orientation=DirectionVector(azimuth=0, colatitude=123, degrees=True),
     pattern_enum=DirectivityPattern.OMNI,
 )
 
@@ -172,21 +164,21 @@ room = pra.ShoeBox(
 
 
 room.add_source(
-    [1.52, 0.883, 1.044],directivity=dir_obj_Csrc
+    [1.52, 0.883, 1.044], directivity=dir_obj_Csrc
 )  # 3.65,1.004,1.38 #0.02,2.004,2.38
 
-'''
+"""
 mic_locs = np.c_[
     [2.31, 1.65, 1.163],
     [3.42, 2.48, 0.91],  # mic 1  # mic 2  #[3.47, 2.57, 1.31], [3.42, 2.48, 0.91]
 ]
-'''
+"""
 
-room.add_microphone([2.31, 1.65, 1.163],directivity=dir_obj_Dmic)
-#room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
+room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Dmic)
+# room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
 
-dir_obj_Dmic.set_orientation(54,73)
-dir_obj_Dsrc.set_orientation(173,60)
+dir_obj_Dmic.set_orientation(54, 73)
+dir_obj_Dsrc.set_orientation(173, 60)
 
 room.compute_rir()
 
@@ -200,9 +192,7 @@ plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
 plt.show()
 
 
-#np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_new_test_dirpat_src_Cardioid_mic.npy",rir_1_0)
-
-
+# np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_new_test_dirpat_src_Cardioid_mic.npy",rir_1_0)
 
 
 """

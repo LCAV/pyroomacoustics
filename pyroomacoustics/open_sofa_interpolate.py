@@ -72,7 +72,7 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
 
     Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
 
-    #print("Ysh Shape ", Ysh.shape)
+    # print("Ysh Shape ", Ysh.shape)
     # Ysh_tar=np.zeros(len(theta_target),(degree+1)**2)
     ny0 = 1
     for j in range(no_of_nodes):
@@ -141,7 +141,7 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
         Ysh_tilda, rcond=1e-2
     )  # rcond is inverse of the condition number
 
-    #print("Condition Number Psuedo Inverse ", np.linalg.cond(Ysh_tilda_inv), Ysh_tilda_inv.shape)
+    # print("Condition Number Psuedo Inverse ", np.linalg.cond(Ysh_tilda_inv), Ysh_tilda_inv.shape)
 
     return Ysh_tilda_inv, w_
 
@@ -172,7 +172,7 @@ def sph2cart(phi, theta, r):
     return x, y, z
 
 
-def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum,source=False):
+def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
     """
     Assigns DIRPAT pattern enum to respective id present in the DIRPAT SOFA files.
     Works only for mic and source files
@@ -182,47 +182,46 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum,source=False):
 
     if source is not True:
         if "AKG_c480" in DIRPAT_pattern_enum:
-            id=0
+            id = 0
         elif "AKG_c414K" in DIRPAT_pattern_enum:
-            id=1
+            id = 1
         elif "AKG_c414N" in DIRPAT_pattern_enum:
-            id=2
+            id = 2
         elif "AKG_c414S" in DIRPAT_pattern_enum:
-            id=3
+            id = 3
         elif "AKG_c414A" in DIRPAT_pattern_enum:
-            id=4
+            id = 4
         else:
             raise ValueError("Please specifiy correct DIRPAT_pattern_enum for mic")
     else:
         if "Genelec_8020" in DIRPAT_pattern_enum:
-            id=0
+            id = 0
         elif "Lambda_labs_CX-1A" in DIRPAT_pattern_enum:
-            id=1
+            id = 1
         elif "HATS_4128C" in DIRPAT_pattern_enum:
-            id=2
+            id = 2
         elif "Tannoy_System_1200" in DIRPAT_pattern_enum:
-            id=3
+            id = 3
         elif "Neumann_KH120A" in DIRPAT_pattern_enum:
-            id=4
+            id = 4
         elif "Yamaha_DXR8" in DIRPAT_pattern_enum:
-            id=5
+            id = 5
         elif "BM_1x12inch_driver_closed_cabinet" in DIRPAT_pattern_enum:
-            id=6
+            id = 6
         elif "BM_1x12inch_driver_open_cabinet" in DIRPAT_pattern_enum:
-            id=7
+            id = 7
         elif "BM_open_stacked_on_closed_withCrossoverNetwork" in DIRPAT_pattern_enum:
-            id=8
+            id = 8
         elif "BM_open_stacked_on_closed_fullrange" in DIRPAT_pattern_enum:
-            id=9
+            id = 9
         elif "Palmer_1x12inch" in DIRPAT_pattern_enum:
-            id=10
+            id = 10
         elif "Vibrolux_2x10inch" in DIRPAT_pattern_enum:
-            id=11
+            id = 11
         else:
             raise ValueError("Please specifiy correct DIRPAT_pattern_enum for source")
 
     return id
-
 
 
 class DIRPATInterpolate:
@@ -266,7 +265,7 @@ class DIRPATInterpolate:
     ):
 
         self.path = path
-        self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum,source=source)
+        self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source)
         self.source = source
 
         self.fs = fs
@@ -387,7 +386,7 @@ class DIRPATInterpolate:
                 self.rotated_sofa_r,
             ) = cart2sphere(self.rotated_sofa_points.T)
 
-            #print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
+            # print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
             self.nn_kd_tree_rotated_sofa_grid = cKDTree(
                 np.hstack(
                     (
@@ -440,7 +439,6 @@ class DIRPATInterpolate:
             np.matmul(self.Ysh_fibo, gamma_full_scale), axis=-1
         )
 
-
     def open_sofa_database(self, path, fs=16000):
         # Open DirPat database
 
@@ -450,8 +448,6 @@ class DIRPATInterpolate:
             # Receiver positions
 
             rcv_pos = file_sofa.Receiver.Position.get_values()
-
-
 
             # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
 
@@ -471,15 +467,13 @@ class DIRPATInterpolate:
                 self.id, :, :
             ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
 
-
             # downsample the fir filter.
 
             rcv_msr = decimate(
-                    rcv_msr,
-                    int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-                    axis=-1,
-                )
-
+                rcv_msr,
+                int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+                axis=-1,
+            )
 
             no_of_nodes = 540
 
@@ -538,13 +532,11 @@ class DIRPATInterpolate:
                 :, self.id, :
             ]  # First receiver #Shape (no_measurement_points * no_receivers * no_samples_IR)
 
-
             rcv_msr = decimate(
-                    rcv_msr,
-                    int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-                    axis=-1,
-                )
-
+                rcv_msr,
+                int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+                axis=-1,
+            )
 
             no_of_nodes = file_sofa.Dimensions.M  # Number of measurement points
 
@@ -608,7 +600,7 @@ class DIRPATInterpolate:
                 np.hstack((longitude, latitude))
             )  # Query on the rotated set of points
         end = timer()
-        #print("Time taken For Query Once ", end - start)
+        # print("Time taken For Query Once ", end - start)
         return ii
 
     def neareast_neighbour(self, index):
