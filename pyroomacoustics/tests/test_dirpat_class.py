@@ -71,37 +71,36 @@ room = pra.ShoeBox(
 
 
 # define source with figure_eight directivity
-PATTERN_MIC_DIRPAT_ID = 2
+PATTERN_MIC_DIRPAT_ID = "AKG_c480"
 ORIENTATION_MIC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
 directivity_MIC = DIRPATRir(
     orientation=ORIENTATION_MIC,
-    path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
-    DIRPAT_pattern_id=PATTERN_MIC_DIRPAT_ID,
+    path="../AKG_c480_c414_CUBE.sofa",
+    DIRPAT_pattern_enum=PATTERN_MIC_DIRPAT_ID,
     fs=16000,
-    frequency_dependent=True,
+
 )
 
-
-PATTERN_SRC_DIRPAT_ID = 0
+"""
+PATTERN_SRC_DIRPAT_ID = "HATS_4128C"
 ORIENTATION_SRC = DirectionVector(azimuth=123, colatitude=45, degrees=True)
 directivity_SRC = DIRPATRir(
     orientation=ORIENTATION_SRC,
     path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    DIRPAT_pattern_id=PATTERN_SRC_DIRPAT_ID,
+    DIRPAT_pattern_enum=PATTERN_SRC_DIRPAT_ID,
     fs=16000,
-    frequency_dependent=True,
 )
-
+"""
 
 # add source with figure_eight directivity
-room.add_source([1.52, 0.883, 1.044], directivity=directivity_SRC)
+room.add_source([1.52, 0.883, 1.044])
 
 # add microphone in its null
 room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
 # Check set different orientation after intailization of the DIRPATRir class
 directivity_MIC.set_orientation(np.radians(0), np.radians(0))
-directivity_SRC.set_orientation(np.radians(70), np.radians(34))
+#directivity_SRC.set_orientation(np.radians(70), np.radians(34))
 
 
 room.compute_rir()

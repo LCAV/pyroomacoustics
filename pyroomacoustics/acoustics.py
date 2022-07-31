@@ -259,7 +259,7 @@ class OctaveBandsFactory(object):
             # now clip between 0. and 1.
             ret[ret < 0.0] = 0.0
             ret[ret > 1.0] = 1.0
-            print(ret)
+            #print(ret)
 
         return ret
 
@@ -360,18 +360,22 @@ class OctaveBandsFactory(object):
         """
         Convert octave band dampings to dft scale, interpolates octave band values to full dft scale values.
 
-                Parameters:
-                        att_in_octave_band : arr
-                            Dampings in octave band Shape : (no_of_octave_band)
-                        air_abs_band : arr
-                            air absorption in octave band Shape : (no_of_octave_band)
-                        distance_is : float
-                            distance of the image source from the mic
-                        min_phase : Boolean
-                            decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
+        Parameters:
+        -------------
+        att_in_octave_band : np.ndarray
+            Dampings in octave band Shape : (no_of_octave_band)
+        air_abs_band : np.ndarray
+            air absorption in octave band Shape : (no_of_octave_band)
+        distance_is : float
+            distance of the image source from the mic
+        min_phase : Boolean
+            decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
 
-                Returns:
-                        binary_sum (str): Binary string of the sum of a and b
+        Returns:
+        -------------
+        att_in_dft_scale : np.ndarray
+            Dampings in octave bands interpolated to full scale frequency domain.
+
         """
 
         u_ = [
@@ -382,7 +386,10 @@ class OctaveBandsFactory(object):
         for b in range(len(bws)):
             att_in_dft_scale += u_[b] * self.filters_2[:, b]
 
+
+
         if min_phase:
+            att_in_dft_scale += 1e-07 #To avoid divide by zero error when performing hilbert transform.
             m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale))))
             att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
         return att_in_dft_scale

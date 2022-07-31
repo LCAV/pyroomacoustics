@@ -17,8 +17,7 @@ from pyroomacoustics.directivities import (
 from timeit import default_timer as timer
 
 
-# /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file.sofa
-# /home/psrivast/PycharmProjects/axis_2_phd/Debug_sofa_file_source.sofa
+#Path on my system.
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
 # /home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
 
@@ -30,84 +29,89 @@ freqeuncy dependent patterns from DIRPAT dataset.
 
 Parameters
 --------------------------------------
-    orientation : class DirectioVector
-    path : Path towrds the DIRPAT dataset, the ending name of the file should be the same as specified in the 
-    DIRPAT dataset
-    DIRPAT_pattern_id : (int) Only used to choose the directive patterns available in the specific files in the DIRPAT dataset 
+    orientation : 
+        class DirectionVector
+    path : (string) 
+        Path towards the DIRPAT dataset, the ending name of the file should be the same as specified in the DIRPAT dataset
+    
+    DIRPAT_pattern_enum : (string) 
+        Only used to choose the directive patterns available in the specific files in the DIRPAT dataset 
     
     # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID  
-    # Hyper-Cardioid : 3
-    # Figure of eight : 4
-    # Omni : 1
-    # Wide Cardioid : 2
-    # Cardioid : 0
+    a)AKG_c480
+    b)AKG_c414K
+    c)AKG_c414N
+    d)AKG_c414S
+    e)AKG_c414A
     
     # LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa DIRPAT file include source patterns
-    # Genelec 8020 : 0
-    #
-    #
-    #
-    #
-    #
+    a)Genelec_8020
+    b)Lambda_labs_CX-1A
+    c)HATS_4128C
+    d)Tannoy_System_1200
+    e)Neumann_KH120A
+    f)Yamaha_DXR8
+    g)BM_1x12inch_driver_closed_cabinet
+    h)BM_1x12inch_driver_open_cabinet
+    i)BM_open_stacked_on_closed_withCrossoverNetwork
+    j)BM_open_stacked_on_closed_fullrange
+    k)Palmer_1x12inch
+    l)Vibrolux_2x10inch
     
-    fs : (int) Sampling frequency of the filters present in the DIRPAT dataset
-    pattern_enum : Specify frequency independent cardioid directive patterns.
-    frequency_dependent : (Boolean) True : Directive patterns from the DIRPAT dataset, False: Cardioid frequency independent directive patterns.
-
+    fs : (int) 
+        Sampling frequency of the filters for interpolation.
+        Should be same as the simulator frequency and less than 44100 kHz 
+    no_points_on_fibo_sphere : (int)
+        Number of points on the Fibonacci sphere.
+        if "0" no interpolation will happen.
+    
+    
 ############################################################
     
 """
 
 
-"""
-dir_obj_mic = DIRPATRir(
-    orientation=DirectionVector(azimuth=43,colatitude=45 , degrees=True),
+dir_obj_Dmic = DIRPATRir(
+    orientation=DirectionVector(azimuth=54,colatitude=73 , degrees=True),
     path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
-    directivity_pattern=0,
+    DIRPAT_pattern_enum="AKG_c414K",
     fs=16000,
-    #frequency_dependent=True
-    #no_points_on_fibo_sphere=0
 
 )
+
 #pattern_enum=DirectivityPattern.HYPERCARDIOID,
-"""
 
 
-dir_obj_sr = DIRPATRir(
-    orientation=DirectionVector(azimuth=0, colatitude=45, degrees=True),
+
+dir_obj_Dsrc = DIRPATRir(
+    orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
     path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    DIRPAT_pattern_id=3,
-    pattern_enum=DirectivityPattern.SUBCARDIOID,
+    DIRPAT_pattern_enum="Genelec_8020",
     fs=16000,
-    frequency_dependent=True
-    # no_points_on_fibo_sphere=0
 )
 
 
-"""
-#########################################
-With new implementation older class of CardioidFamily does not function.
-Basically octave band RIR construction only functions when ray tracing is "on" 
-and also in the case when no directivity is assigned to source or microphone.
-
-#########################################
 
 
-dir_obj_1 = CardioidFamily(
-    orientation=DirectionVector(azimuth=0,colatitude=90, degrees=True),
-    pattern_enum=DirectivityPattern.SUBCARDIOID,
+
+
+dir_obj_Cmic = CardioidFamily(
+    orientation=DirectionVector(azimuth=90,colatitude=12, degrees=True),
+    pattern_enum=DirectivityPattern.FIGURE_EIGHT,
 )
 
 
-dir_obj_src = CardioidFamily(
-    orientation=DirectionVector(azimuth=0,colatitude=45, degrees=True),
-    pattern_enum=DirectivityPattern.SUBCARDIOID,
+
+
+dir_obj_Csrc = CardioidFamily(
+    orientation=DirectionVector(azimuth=0,colatitude=123, degrees=True),
+    pattern_enum=DirectivityPattern.OMNI,
 )
-"""
 
 
 start = timer()
 room_dim = [6, 6, 2.4]
+
 
 all_materials = {
     "east": pra.Material(
@@ -160,27 +164,30 @@ room = pra.ShoeBox(
     room_dim,
     fs=16000,
     max_order=2,
-    materials=all_materials,
+    materials=pra.Material(0.99),
     air_absorption=True,
     ray_tracing=False,
-    min_phase=True,
-)  # ,min_phase=False)
+    min_phase=False,
+)
 
 
 room.add_source(
-    [1.52, 0.883, 1.044], directivity=dir_obj_sr
+    [1.52, 0.883, 1.044],directivity=dir_obj_Csrc
 )  # 3.65,1.004,1.38 #0.02,2.004,2.38
+
+'''
 mic_locs = np.c_[
     [2.31, 1.65, 1.163],
     [3.42, 2.48, 0.91],  # mic 1  # mic 2  #[3.47, 2.57, 1.31], [3.42, 2.48, 0.91]
 ]
+'''
 
-room.add_microphone_array(mic_locs)  # directivity=dir_obj_mic)
-# dir_obj_mic.change_orientation(np.radians(0),np.radians(0))
-# room.mic_array.directivity[0].change_orientation(np.radians(23), np.radians(43))
-# room.mic_array.directivity[1].change_orientation(np.radians(70), np.radians(90))
+room.add_microphone([2.31, 1.65, 1.163],directivity=dir_obj_Dmic)
+#room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
 
-# room.set_ray_tracing()
+dir_obj_Dmic.set_orientation(54,73)
+dir_obj_Dsrc.set_orientation(173,60)
+
 room.compute_rir()
 
 
@@ -193,7 +200,9 @@ plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
 plt.show()
 
 
-# np.save("debug_rir_dir_1.npy",rir_1_0)
+#np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_new_test_dirpat_src_Cardioid_mic.npy",rir_1_0)
+
+
 
 
 """

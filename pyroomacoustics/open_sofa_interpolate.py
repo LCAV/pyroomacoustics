@@ -17,14 +17,15 @@ def fibonacci_sphere(samples):
     """
     Creates a uniform fibonacci sphere.
 
-    :Parameter
-    ------------------------
-    samples:(int) Points on the sphere
+    Parameter
+    ---------
+    samples : (int)
+        Points on the sphere
 
-    :Return:
-    -------------------------
-    Points:(np.array) shape(Points) = [no_of_points * 3] Cartesian coordinates of the points
-
+    Return
+    --------
+    Points : (np.array) shape(Points) = [no_of_points * 3]
+        Cartesian coordinates of the points
 
     """
 
@@ -49,25 +50,29 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
     """
      Calculate a spherical basis matrix
 
-     :Parameter
-     ---------------------------------------
-     theta: (np.array) Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
-     phi: (np.array) Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
-     degree:(int) spherical harmonic degree
-     no_of_nodes: (int) Length (theta)
+     Parameters
+     -----------
+     theta: array_like
+        Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
+     phi: array_like
+        Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
+     degree:(int)
+        spherical harmonic degree
+     no_of_nodes: (int)
+        Length (theta)
 
 
-     :Return:
-    ------------------------------------------
-    Spherical harmonics basis matrix
+     Return
+    --------
 
     Ysh (np.array) shape(Ysh) = no_of_nodes * (degree + 1)**2
+        Spherical harmonics basis matrix
 
     """
 
     Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
 
-    print("Ysh Shape ", Ysh.shape)
+    #print("Ysh Shape ", Ysh.shape)
     # Ysh_tar=np.zeros(len(theta_target),(degree+1)**2)
     ny0 = 1
     for j in range(no_of_nodes):
@@ -103,14 +108,20 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
 
     Calculation of psuedo inverse and voronoi cells,
 
-    :Parameters
-    -------------------------------
-    Ysh: Spherical harmonic basis matrix
-    theta_16:
+    Parameters
+    -----------
+    Ysh: (np.ndarray)
+        Spherical harmonic basis matrix
+    theta_16: (int)
+        Number of longitude on the original grid
     no_of_lat:
-    :Returns:
-    -------------------------------
 
+    Returns:
+    -------------------------------
+    Ysh_tilda_inv : (np.ndarray)
+        Weighted psuedo inverse of spherical harmonic basis matrix Ysh
+    w_ : (np.ndarray)
+        Weight on the original grid
 
     """
 
@@ -130,11 +141,7 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
         Ysh_tilda, rcond=1e-2
     )  # rcond is inverse of the condition number
 
-    print(
-        "Condition Number Psuedo Inverse ",
-        np.linalg.cond(Ysh_tilda_inv),
-        Ysh_tilda_inv.shape,
-    )
+    #print("Condition Number Psuedo Inverse ", np.linalg.cond(Ysh_tilda_inv), Ysh_tilda_inv.shape)
 
     return Ysh_tilda_inv, w_
 
@@ -165,6 +172,59 @@ def sph2cart(phi, theta, r):
     return x, y, z
 
 
+def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum,source=False):
+    """
+    Assigns DIRPAT pattern enum to respective id present in the DIRPAT SOFA files.
+    Works only for mic and source files
+
+
+    """
+
+    if source is not True:
+        if "AKG_c480" in DIRPAT_pattern_enum:
+            id=0
+        elif "AKG_c414K" in DIRPAT_pattern_enum:
+            id=1
+        elif "AKG_c414N" in DIRPAT_pattern_enum:
+            id=2
+        elif "AKG_c414S" in DIRPAT_pattern_enum:
+            id=3
+        elif "AKG_c414A" in DIRPAT_pattern_enum:
+            id=4
+        else:
+            raise ValueError("Please specifiy correct DIRPAT_pattern_enum for mic")
+    else:
+        if "Genelec_8020" in DIRPAT_pattern_enum:
+            id=0
+        elif "Lambda_labs_CX-1A" in DIRPAT_pattern_enum:
+            id=1
+        elif "HATS_4128C" in DIRPAT_pattern_enum:
+            id=2
+        elif "Tannoy_System_1200" in DIRPAT_pattern_enum:
+            id=3
+        elif "Neumann_KH120A" in DIRPAT_pattern_enum:
+            id=4
+        elif "Yamaha_DXR8" in DIRPAT_pattern_enum:
+            id=5
+        elif "BM_1x12inch_driver_closed_cabinet" in DIRPAT_pattern_enum:
+            id=6
+        elif "BM_1x12inch_driver_open_cabinet" in DIRPAT_pattern_enum:
+            id=7
+        elif "BM_open_stacked_on_closed_withCrossoverNetwork" in DIRPAT_pattern_enum:
+            id=8
+        elif "BM_open_stacked_on_closed_fullrange" in DIRPAT_pattern_enum:
+            id=9
+        elif "Palmer_1x12inch" in DIRPAT_pattern_enum:
+            id=10
+        elif "Vibrolux_2x10inch" in DIRPAT_pattern_enum:
+            id=11
+        else:
+            raise ValueError("Please specifiy correct DIRPAT_pattern_enum for source")
+
+    return id
+
+
+
 class DIRPATInterpolate:
 
     """
@@ -176,14 +236,20 @@ class DIRPATInterpolate:
 
     Parameters
     --------------
-    path (string) : Path towards the specific DIRPAT file
-    fs (int) : Sampling frequency of the microphone or source FIR's filters , should be  <= simulation frequency
-    directivity_pattern (int) : The specific pattern in the DIRPAT files are associated with id's , presented in the github document
-    source (Boolean) : If the DIRPAT files represnts one of source or receiver's
-    interpolate (Boolean) : Interpolate the FIR filter or not
-    no_of_points_fibo_sphere (int) : How many points should be there on fibonnacci sphere
-    azimuth_ (int) , colatitude_ : Orientation of the source/mic in the simulation environment.
-
+    path : (string)
+        Path towards the specific DIRPAT file
+    fs  : (int)
+        Sampling frequency of the microphone or source FIR's filters , should be  <= simulation frequency
+    DIRPAT_pattern_enum :  (string)
+        The specific pattern in the DIRPAT files are associated with id's , presented in the github document
+    source  : (Boolean)
+        If the DIRPAT files represnts one of source or receiver's
+    interpolate  : (Boolean)
+        Interpolate the FIR filter or not
+    no_of_points_fibo_sphere  : (int)
+        How many points should be there on fibonnacci sphere
+    azimuth_simulation  , colatitude_simulation : (int)
+        Orientation of the source/mic in the simulation environment in degrees.
 
     """
 
@@ -191,16 +257,16 @@ class DIRPATInterpolate:
         self,
         path,
         fs,
-        directivity_pattern=2,
+        DIRPAT_pattern_enum=None,
         source=False,
         interpolate=True,
-        no_of_points_fibo_sphere=1200,
+        no_of_points_fibo_sphere=1000,
         azimuth_simulation=0,
         colatitude_simulation=0,
     ):
 
         self.path = path
-        self.id = directivity_pattern
+        self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum,source=source)
         self.source = source
 
         self.fs = fs
@@ -321,7 +387,7 @@ class DIRPATInterpolate:
                 self.rotated_sofa_r,
             ) = cart2sphere(self.rotated_sofa_points.T)
 
-            print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
+            #print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
             self.nn_kd_tree_rotated_sofa_grid = cKDTree(
                 np.hstack(
                     (
@@ -373,11 +439,7 @@ class DIRPATInterpolate:
         self.sh_coeffs_expanded_target_grid = np.fft.ifft(
             np.matmul(self.Ysh_fibo, gamma_full_scale), axis=-1
         )
-        print(
-            self.sh_coeffs_expanded_target_grid.shape,
-            self.sh_coeffs_expanded_target_grid.shape,
-            self.samples_size_ir,
-        )
+
 
     def open_sofa_database(self, path, fs=16000):
         # Open DirPat database
@@ -389,7 +451,7 @@ class DIRPATInterpolate:
 
             rcv_pos = file_sofa.Receiver.Position.get_values()
 
-            print(rcv_pos.shape)
+
 
             # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
 
@@ -409,14 +471,15 @@ class DIRPATInterpolate:
                 self.id, :, :
             ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
 
+
             # downsample the fir filter.
-            if "Debug_sofa_file" not in self.path:
-                rcv_msr = decimate(
+
+            rcv_msr = decimate(
                     rcv_msr,
                     int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
                     axis=-1,
                 )
-                print("Decimating FIR'S Source")
+
 
             no_of_nodes = 540
 
@@ -475,13 +538,13 @@ class DIRPATInterpolate:
                 :, self.id, :
             ]  # First receiver #Shape (no_measurement_points * no_receivers * no_samples_IR)
 
-            if "Debug_sofa_file" not in self.path:
-                rcv_msr = decimate(
+
+            rcv_msr = decimate(
                     rcv_msr,
                     int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
                     axis=-1,
                 )
-                print("Decimating FIR'S Receiver")
+
 
             no_of_nodes = file_sofa.Dimensions.M  # Number of measurement points
 
@@ -519,13 +582,17 @@ class DIRPATInterpolate:
         Calculates nearest neighbour for all the image source for the source and the receiver
         This method exist so that we don't have to query each image source , nearest neighbour for all the incoming angles (mic) and departure angles(sources)
         are calculated at once.
-        : Parameter
-        ------------------------------
+        Parameters
+        ----------
 
-        azimuth:nd.array() (int)  [-pi,pi]
-        colatitude:nd.array() (int) [0,pi]
+        azimuth: (np.ndarray)
+             list of azimuth angles [-pi,pi]
+        colatitude: (np.ndarray)
+            list of colatitude angles [0,pi]
 
-        : Return : nd.array() return nearest index on the grid based on the input angles using kDtree
+        Return : (np.ndarray)
+        -------
+          Return nearest index on the grid based on the input angles using kDtree
         """
 
         longitude = azimuth.reshape(-1, 1)
@@ -541,22 +608,21 @@ class DIRPATInterpolate:
                 np.hstack((longitude, latitude))
             )  # Query on the rotated set of points
         end = timer()
-        print("Time taken For Query Once ", end - start)
+        #print("Time taken For Query Once ", end - start)
         return ii
 
     def neareast_neighbour(self, index):
         """
-        Interpolated or non interpolated response given the azimuth and colatitude of the angle of arrival (microphone) / angle of departure (source)
-        Query on a KDTree given azimuth and elevation and find the most neareast point according to that on the sphere.
+        Retrives the FIR in frequency resolution according to the given index parameter. Index is found using query on kdtree based on incoming or outgoing angles of the image sources
 
-        :Parameter
+        Parameters
         -------------------------
-        azimuth: (int)  [-pi,pi]
-        colatitude: (int) [0,pi]
+        index : (np.ndarray)
+            Index of the points on the grid
 
-        :Return (np.array) [Coeffs of DFT]
+        :Return (np.ndarray) [Coeffs of DFT]
         -------------------------
-        FIR in frequency resolution for the particular query angle.
+            FIR in frequency resolution for the particular query angle.
 
         """
 
