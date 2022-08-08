@@ -2190,6 +2190,8 @@ class Room(object):
                         angle_function_array = angle_function(src.images, mic)
                         azimuth_m = angle_function_array[0]
                         colatitude_m = angle_function_array[1]
+                    else:
+                        azimuth_m,colatitude_m=[],[]
 
                     # compute azimuth and colatitude angles for source
                     if self.sources[s].directivity is not None:
@@ -2198,6 +2200,8 @@ class Room(object):
                             wall_flips=abs(src.orders_xyz),
                             mic_loc=mic,
                         )
+                    else:
+                        azimuth_s,colatitude_s=[],[]
 
                     # compute the distance from image sources
 
@@ -2266,35 +2270,11 @@ class Room(object):
                 """
                 # Improve the checks.
 
-                if (
-                    (
-                        self.mic_array.directivity is None
-                        and self.sources[s].directivity is None
-                    )
-                    or (self.simulator_state["rt_needed"])
-                    or (
-                        self.mic_array.directivity is None
-                        and isinstance(self.sources[s].directivity, CardioidFamily)
-                    )
-                    or (
-                        self.sources[s].directivity is None
-                        and (
-                            self.mic_array.directivity is not None
-                            and isinstance(
-                                self.mic_array.directivity[m], CardioidFamily
-                            )
-                        )
-                    )
-                    or (
-                        (
-                            self.mic_array.directivity is not None
-                            and isinstance(
-                                self.mic_array.directivity[m], CardioidFamily
-                            )
-                        )
-                        and isinstance(self.sources[s].directivity, CardioidFamily)
-                    )
-                ):
+                if (((self.mic_array.directivity is None or isinstance(self.mic_array.directivity[m],
+                                                                       CardioidFamily)) and (
+                             self.sources[s].directivity is None or isinstance(self.sources[s].directivity,
+                                                                               CardioidFamily))) or
+                        self.simulator_state["rt_needed"]):
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2316,6 +2296,7 @@ class Room(object):
                                     frequency=bw,
                                     degrees=False,
                                 )
+                                print("Cmic")
 
                             if self.sources[s].directivity is not None and isinstance(
                                 self.sources[s].directivity, CardioidFamily
@@ -2326,6 +2307,7 @@ class Room(object):
                                     frequency=bw,
                                     degrees=False,
                                 )
+                                print("Csrc")
 
                             # Use the Cython extension for the fractional delays
                             from .build_rir import fast_rir_builder
@@ -2409,34 +2391,13 @@ class Room(object):
                     np.sum(rir_bands, axis=0, out=ir)
 
                 else:
-                    """
-                    Important check
-                    Source Directivity : Obj from DIRPATRir , Receiver Directivity : None   [Use new RIR construction function which is based on full scale DFT resolution]
-                    Source Directivity : None , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
-                    Source Directivity : Obj from DIRPATRir , Receiver Directivity : Obj from DIRPATRir  [Use new RIR construction function which is based on full scale DFT resolution]
-                    """
 
                     """
                     Checks if both source and microphone directivity is from the class DIRPATRir
                     """
 
-                    if (
-                        (
-                            self.mic_array.directivity is not None
-                            and isinstance(self.mic_array.directivity[m], DIRPATRir)
-                        )
-                        or (
-                            self.mic_array.directivity is not None
-                            and isinstance(
-                                self.mic_array.directivity[m], CardioidFamily
-                            )
-                        )
-                    ) and (
-                        isinstance(self.sources[s].directivity, DIRPATRir)
-                        or isinstance(self.sources[s].directivity, CardioidFamily)
-                    ):
 
-                        ir = self.dft_scale_rir_calc(
+                    ir = self.dft_scale_rir_calc(
                             src.damping,
                             dist,
                             time,
@@ -2448,67 +2409,9 @@ class Room(object):
                             col_s=colatitude_s,
                             src_pos=s,
                             mic_pos=m,
-                            source_presence=True,
-                            rec_presence=True,
+
                         )
 
-                    elif self.sources[s].directivity is not None and isinstance(
-                        self.sources[s].directivity, DIRPATRir
-                    ):
-
-                        ir = self.dft_scale_rir_calc(
-                            src.damping,
-                            dist,
-                            time,
-                            bws,
-                            N,
-                            azi_m=[],
-                            col_m=[],
-                            azi_s=azimuth_s,
-                            col_s=colatitude_s,
-                            src_pos=s,
-                            mic_pos=m,
-                            source_presence=True,
-                            rec_presence=False,
-                        )
-
-                    elif self.mic_array.directivity is not None and isinstance(
-                        self.mic_array.directivity[m], DIRPATRir
-                    ):
-
-                        # Mic directivity should only have AKG_c480_c414_CUBE.sofa file from DIRPAT dataset
-                        ir = self.dft_scale_rir_calc(
-                            src.damping,
-                            dist,
-                            time,
-                            bws,
-                            N,
-                            azi_m=azimuth_m,
-                            col_m=colatitude_m,
-                            azi_s=[],
-                            col_s=[],
-                            src_pos=s,
-                            mic_pos=m,
-                            source_presence=False,
-                            rec_presence=True,
-                        )
-
-                    else:
-                        ir = self.dft_scale_rir_calc(
-                            src.damping,
-                            dist,
-                            time,
-                            bws,
-                            N,
-                            azi_m=[],
-                            col_m=[],
-                            azi_s=[],
-                            col_s=[],
-                            src_pos=s,
-                            mic_pos=m,
-                            source_presence=False,
-                            rec_presence=False,
-                        )
 
                 self.rir[-1].append(ir)
 
@@ -2527,8 +2430,8 @@ class Room(object):
         col_s,
         src_pos=0,
         mic_pos=0,
-        source_presence=False,
-        rec_presence=False,
+
+
     ):
         """
         Full DFT scale RIR construction.
@@ -2560,10 +2463,6 @@ class Room(object):
             The particular source we are calculating RIR
         mic_pos : int
             The particular mic we are calculating RIR
-        source_presence : Boolean
-            Is source directivity is present or not
-        rec_presence : Boolean
-            Is microphone directivity is present or not
 
         Returns
         -------
@@ -2586,20 +2485,20 @@ class Room(object):
 
         from .build_rir import (
             fast_window_sinc_interpolater,
-            fast_multiplication,
-            fast_multiplication_1,
+            fast_convolution_4,
+            fast_convolution_3,
         )
 
-        import matplotlib.pyplot as plt
+        rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
+        source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False
+
+
+        final_fir_IS_len = ( (self.mic_array.directivity[mic_pos].filter_len_ir if (rec_presence) else 1)
+                + (self.sources[src_pos].directivity.filter_len_ir if (source_presence) else 1)
+            + window_length + fir_length_octave_band) -3
+
 
         if rec_presence and source_presence:
-
-            final_fir_IS_len = (
-                fir_length_octave_band
-                + window_length
-                + self.mic_array.directivity[mic_pos].filter_len_ir
-                + self.sources[src_pos].directivity.filter_len_ir
-            ) - 3
 
             resp_mic = self.mic_array.directivity[mic_pos].get_response(
                 azimuth=azi_m, colatitude=col_m
@@ -2610,7 +2509,7 @@ class Room(object):
 
             if self.mic_array.directivity[mic_pos].filter_len_ir == 1:
                 resp_mic = np.array(resp_mic).reshape(-1, 1)
-                print("CMic DFT")
+
             else:
                 assert (
                     self.fs == self.mic_array.directivity[mic_pos].fs
@@ -2618,7 +2517,6 @@ class Room(object):
 
             if self.sources[src_pos].directivity.filter_len_ir == 1:
                 resp_src = np.array(resp_src).reshape(-1, 1)
-                print("CSrc DFT")
             else:
                 assert (
                     self.fs == self.sources[src_pos].directivity.fs
@@ -2626,11 +2524,7 @@ class Room(object):
 
         else:
             if source_presence:
-                final_fir_IS_len = (
-                    fir_length_octave_band
-                    + window_length
-                    + self.sources[src_pos].directivity.filter_len_ir
-                ) - 2
+
                 assert (
                     self.fs == self.sources[src_pos].directivity.fs
                 ), "Directivity source frequency of simulation should be same as frequency of interpolation"
@@ -2639,12 +2533,8 @@ class Room(object):
                     azimuth=azi_s, colatitude=col_s
                 )
 
+
             elif rec_presence:
-                final_fir_IS_len = (
-                    fir_length_octave_band
-                    + window_length
-                    + self.mic_array.directivity[mic_pos].filter_len_ir
-                ) - 2
 
                 assert (
                     self.fs == self.mic_array.directivity[mic_pos].fs
@@ -2653,6 +2543,7 @@ class Room(object):
                 resp_mic = self.mic_array.directivity[mic_pos].get_response(
                     azimuth=azi_m, colatitude=col_m
                 )
+
 
         # else:
         # txt = "No"
@@ -2665,7 +2556,7 @@ class Room(object):
 
         ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
 
-        start = timer()
+        #start = timer()
 
         # Create arrays for fractional delay low pass filter, sum of {damping coeffiecients * octave band filter}, source response, receiver response.
 
@@ -2711,7 +2602,7 @@ class Room(object):
 
                 cpy_ir_len_4[i, : resp_mic[i, :].shape[0]] = resp_mic[i, :]
 
-                out = fast_multiplication(
+                out = fast_convolution_4(
                     cpy_ir_len_1[i, :],
                     cpy_ir_len_2[i, :],
                     cpy_ir_len_3[i, :],
@@ -2725,12 +2616,11 @@ class Room(object):
                 if source_presence:
                     resp = resp_src[i, :]
                 elif rec_presence:
-
                     resp = resp_mic[i, :]
 
                 cpy_ir_len_3[i, : resp.shape[0]] = resp
 
-                out = fast_multiplication_1(
+                out = fast_convolution_3(
                     cpy_ir_len_1[i, :],
                     cpy_ir_len_2[i, :],
                     cpy_ir_len_3[i, :],
@@ -2750,8 +2640,8 @@ class Room(object):
                 ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
             """
 
-        end = timer()
-        print("Image source time taken", end - start)
+        #end = timer()
+        #print("Image source time taken", end - start)
         return ir_diff
 
     def simulate(

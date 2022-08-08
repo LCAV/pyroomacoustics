@@ -139,7 +139,7 @@ cdef int val_i
 import multiprocessing
 nthread = multiprocessing.cpu_count()
 
-def fast_multiplication (
+def fast_convolution_4 (
         double complex [:] a,
         double complex [:] b,
         double complex [:] c,
@@ -160,7 +160,7 @@ def fast_multiplication (
     return out
 
 
-def fast_multiplication_1 (
+def fast_convolution_3 (
         double complex [:] a,
         double complex [:] b,
         double complex [:] c,

@@ -32,10 +32,10 @@ Parameters
     orientation : 
         class DirectionVector
     path : (string) 
-        Path towards the DIRPAT dataset, the ending name of the file should be the same as specified in the DIRPAT dataset
+        Path towards the DIRPAT sofa file, the ending name of the file should be the same as specified in the DIRPAT dataset
     
     DIRPAT_pattern_enum : (string) 
-        Only used to choose the directive patterns available in the specific files in the DIRPAT dataset 
+        Only used to choose the directivity patterns available in the specific files in the DIRPAT dataset 
     
     # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID  
     a)AKG_c480
@@ -62,7 +62,7 @@ Parameters
         Sampling frequency of the filters for interpolation.
         Should be same as the simulator frequency and less than 44100 kHz 
     no_points_on_fibo_sphere : (int)
-        Number of points on the Fibonacci sphere.
+        Number of points on the interpolated Fibonacci sphere.
         if "0" no interpolation will happen.
     
     
@@ -90,14 +90,14 @@ dir_obj_Dsrc = DIRPATRir(
 
 
 dir_obj_Cmic = CardioidFamily(
-    orientation=DirectionVector(azimuth=90, colatitude=12, degrees=True),
+    orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
     pattern_enum=DirectivityPattern.FIGURE_EIGHT,
 )
 
 
 dir_obj_Csrc = CardioidFamily(
-    orientation=DirectionVector(azimuth=0, colatitude=123, degrees=True),
-    pattern_enum=DirectivityPattern.OMNI,
+    orientation=DirectionVector(azimuth=56, colatitude=123, degrees=True),
+    pattern_enum=DirectivityPattern.CARDIOID,
 )
 
 
@@ -164,7 +164,7 @@ room = pra.ShoeBox(
 
 
 room.add_source(
-    [1.52, 0.883, 1.044], directivity=dir_obj_Csrc
+    [1.52, 0.883, 1.044], directivity=dir_obj_Dsrc
 )  # 3.65,1.004,1.38 #0.02,2.004,2.38
 
 """
@@ -174,7 +174,7 @@ mic_locs = np.c_[
 ]
 """
 
-room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Dmic)
+room.add_microphone([2.31, 1.65, 1.163],directivity=dir_obj_Dmic)
 # room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
 
 dir_obj_Dmic.set_orientation(54, 73)
