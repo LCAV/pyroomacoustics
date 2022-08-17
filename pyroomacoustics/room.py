@@ -1735,6 +1735,7 @@ class Room(object):
             The value can be "ir", "tf", or "spec" which will plot impulse response,
             transfer function, and spectrogram, respectively. If this option is
             specified, then the value of ``FD`` is ignored. Default is "ir".
+            
         Returns
         -------
         fig: matplotlib figure
