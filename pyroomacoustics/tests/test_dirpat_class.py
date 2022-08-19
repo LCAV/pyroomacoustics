@@ -12,6 +12,11 @@ from unittest import TestCase
 
 room_dim = [6, 6, 2.4]
 
+path_DIRPAT_file=""
+for x in os.path.dirname(__file__)[:-1]:
+    path_DIRPAT_file=os.path.join(path_DIRPAT_file,x)
+path_DIRPAT_file=os.path.join(path_DIRPAT_file,"data","AKG_c480_c414_CUBE.sofa")
+
 all_materials = {
     "east": pra.Material(
         energy_absorption={
@@ -70,12 +75,13 @@ room = pra.ShoeBox(
 )  # ,min_phase=False)
 
 
+
 # define source with figure_eight directivity
 PATTERN_MIC_DIRPAT_ID = "AKG_c480"
 ORIENTATION_MIC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
 directivity_MIC = DIRPATRir(
     orientation=ORIENTATION_MIC,
-    path=os.path.join(os.path.dirname(__file__), "data/AKG_c480_c414_CUBE.sofa"),
+    path=path_DIRPAT_file,
     DIRPAT_pattern_enum=PATTERN_MIC_DIRPAT_ID,
     fs=16000,
 )

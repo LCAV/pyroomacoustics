@@ -69,25 +69,28 @@ Parameters
 ############################################################
 
 """
-
+path_DIRPAT_file=""
+for x in os.path.dirname(__file__)[:-1]:
+    path_DIRPAT_file=os.path.join(path_DIRPAT_file,x)
+path_DIRPAT_file=os.path.join(path_DIRPAT_file,"data","AKG_c480_c414_CUBE.sofa")
 
 dir_obj_Dmic = DIRPATRir(
     orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
-    path="/home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa",
+    path=path_DIRPAT_file,
     DIRPAT_pattern_enum="AKG_c414K",
     fs=16000,
 )
 
 # pattern_enum=DirectivityPattern.HYPERCARDIOID,
 
-
+'''
 dir_obj_Dsrc = DIRPATRir(
     orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
     path="/home/psrivast/Téléchargements/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
     DIRPAT_pattern_enum="Genelec_8020",
     fs=16000,
 )
-
+'''
 
 dir_obj_Cmic = CardioidFamily(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
@@ -164,7 +167,7 @@ room = pra.ShoeBox(
 
 
 room.add_source(
-    [1.52, 0.883, 1.044], directivity=dir_obj_Dsrc
+    [1.52, 0.883, 1.044], directivity=dir_obj_Csrc
 )  # 3.65,1.004,1.38 #0.02,2.004,2.38
 
 """
