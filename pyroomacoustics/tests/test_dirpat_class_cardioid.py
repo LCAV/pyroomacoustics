@@ -69,10 +69,8 @@ room = pra.ShoeBox(
 )  # ,min_phase=False)
 
 
-path_DIRPAT_file=""
-for x in os.path.dirname(__file__)[:-1]:
-    path_DIRPAT_file=os.path.join(path_DIRPAT_file,x)
-path_DIRPAT_file=os.path.join(path_DIRPAT_file,"data","AKG_c480_c414_CUBE.sofa")
+
+path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("test",""),"data","AKG_c480_c414_CUBE.sofa")
 
 PATTERN_SRC = DirectivityPattern.FIGURE_EIGHT
 ORIENTATION_SRC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
