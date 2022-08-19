@@ -1,5 +1,6 @@
 # Acoustic data for the simulation
 include pyroomacoustics/data/materials.json
+include pyroomacoustics/data/AKG_c480_c414_CUBE.sofa
 
 # The header files for the compiled extension
 include pyroomacoustics/libroom_src/*.hpp

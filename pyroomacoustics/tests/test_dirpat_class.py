@@ -75,7 +75,7 @@ PATTERN_MIC_DIRPAT_ID = "AKG_c480"
 ORIENTATION_MIC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
 directivity_MIC = DIRPATRir(
     orientation=ORIENTATION_MIC,
-    path="../AKG_c480_c414_CUBE.sofa",
+    path=os.path.join(os.path.dirname(__file__), "data/AKG_c480_c414_CUBE.sofa"),
     DIRPAT_pattern_enum=PATTERN_MIC_DIRPAT_ID,
     fs=16000,
 )

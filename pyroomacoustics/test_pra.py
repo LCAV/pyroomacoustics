@@ -15,7 +15,7 @@ from pyroomacoustics.directivities import (
     DIRPATRir,
 )
 from timeit import default_timer as timer
-
+from scipy.signal import fftconvolve
 
 # Path on my system.
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
@@ -24,26 +24,26 @@ from timeit import default_timer as timer
 """
 ##########################################################
 With DIRPATRir object we can generate RIRs with mics and source having either
-frequency independent CARDIOID patterns or  
+frequency independent CARDIOID patterns or
 freqeuncy dependent patterns from DIRPAT dataset.
 
 Parameters
 --------------------------------------
-    orientation : 
+    orientation :
         class DirectionVector
-    path : (string) 
+    path : (string)
         Path towards the DIRPAT sofa file, the ending name of the file should be the same as specified in the DIRPAT dataset
-    
-    DIRPAT_pattern_enum : (string) 
-        Only used to choose the directivity patterns available in the specific files in the DIRPAT dataset 
-    
-    # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID  
+
+    DIRPAT_pattern_enum : (string)
+        Only used to choose the directivity patterns available in the specific files in the DIRPAT dataset
+
+    # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID
     a)AKG_c480
     b)AKG_c414K
     c)AKG_c414N
     d)AKG_c414S
     e)AKG_c414A
-    
+
     # LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa DIRPAT file include source patterns
     a)Genelec_8020
     b)Lambda_labs_CX-1A
@@ -57,17 +57,17 @@ Parameters
     j)BM_open_stacked_on_closed_fullrange
     k)Palmer_1x12inch
     l)Vibrolux_2x10inch
-    
-    fs : (int) 
+
+    fs : (int)
         Sampling frequency of the filters for interpolation.
-        Should be same as the simulator frequency and less than 44100 kHz 
+        Should be same as the simulator frequency and less than 44100 kHz
     no_points_on_fibo_sphere : (int)
         Number of points on the interpolated Fibonacci sphere.
         if "0" no interpolation will happen.
-    
-    
+
+
 ############################################################
-    
+
 """
 
 
@@ -174,7 +174,7 @@ mic_locs = np.c_[
 ]
 """
 
-room.add_microphone([2.31, 1.65, 1.163],directivity=dir_obj_Dmic)
+room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Dmic)
 # room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
 
 dir_obj_Dmic.set_orientation(54, 73)
@@ -192,9 +192,6 @@ plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
 plt.show()
 
 
-# np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_new_test_dirpat_src_Cardioid_mic.npy",rir_1_0)
-
-
 """
 Create a cuboid with center and the given length of x,y,z
 
@@ -202,7 +199,7 @@ Parameters
 --------------
     center : np.ndarray
     size : np.ndarray
- 
+
 
 """
 """
@@ -285,7 +282,7 @@ def cuboid_data(center, size):
 # with directivity pattern for source and receiver #
 ####################################################
 Require position of source and receiver.
-Frequency domain filters from interpolated fibo sphere 
+Frequency domain filters from interpolated fibo sphere
 """
 
 """
@@ -438,8 +435,8 @@ plt.show()
 # in time domain and frequency domain              #
 # it also plots spectogram, DRR, PSD and  grp del  #
 ####################################################
-Requires dirpat pyroom RIR and path to dEchorate RIR 
-from one of it's rooms. 
+Requires dirpat pyroom RIR and path to dEchorate RIR
+from one of it's rooms.
 
 """
 
@@ -605,10 +602,10 @@ plt.show()
 # plot old RIR and pyroom DIRPAT RIR               #
 # in time domain and frequency domain              #
 ####################################################
-Requires path to dirpat pyroom RIR and path to old pyroom generate 
+Requires path to dirpat pyroom RIR and path to old pyroom generate
 RIR.
-Simulated in the same frequency , rotation of the source and 
-receiver should be the same the same goes with the directivity pattern, 
+Simulated in the same frequency , rotation of the source and
+receiver should be the same the same goes with the directivity pattern,
 acoustic scene should be same . DIrectivity pattern should be imported from SOFA file.
 
 """
@@ -664,7 +661,7 @@ from scipy.fft import fft
 fdl=80
 lut_gran=20
 lut_size = (fdl + 1) * lut_gran + 1
-fdl2=(fdl - 1) // 2d 
+fdl2=(fdl - 1) // 2d
 n = np.linspace(-fdl2-1, fdl2 + 1, lut_size)
 print(n)
 g=[]
@@ -709,8 +706,6 @@ plt.plot(np.arange(257),np.real(s))
 plt.show()
 """
 
-from scipy.fft import fft
-from scipy.signal import fftconvolve
 
 """
 impulse_resp=np.zeros(32)

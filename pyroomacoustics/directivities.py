@@ -390,7 +390,7 @@ class DIRPATRir(Directivity):
         else:
             self.interpolate = True
 
-        self.fs = fs  # Check that if sampling frequency of simulation should not be greater than sampling frequency of the microphone
+        self.fs = fs
 
         assert self.fs <= 44100, "Interpolation frequency should be less than 44100 khz"
 

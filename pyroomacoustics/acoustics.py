@@ -325,18 +325,6 @@ class OctaveBandsFactory(object):
                 hi = center <= freq
                 freq_resp[hi, b] = 1.0
 
-        # Display octave bands.
-        # for i in range(n):
-        #    plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)], np.abs(freq_resp[:(n_freq-1),i]))
-        #    plt.show()
-        # plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:64], freq_resp[:64, i])
-
-        # plt.plot(fftfreq(self.n_fft,d=1/self.fs)[:(n_freq-1)], np.abs(np.sum(freq_resp[:(n_freq-1),:], axis=1)),label="Sum Of All The Bands")
-        # print(len(np.abs(np.sum(freq_resp[: (n_freq - 1), :], axis=1))))
-        # print(len(fftfreq(self.n_fft, d=1 / self.fs)[: (n_freq - 1)]))
-
-        # plt.show()
-
         filters = np.fft.fftshift(
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
             axes=[0],

@@ -2191,7 +2191,7 @@ class Room(object):
                         azimuth_m = angle_function_array[0]
                         colatitude_m = angle_function_array[1]
                     else:
-                        azimuth_m,colatitude_m=[],[]
+                        azimuth_m, colatitude_m = [], []
 
                     # compute azimuth and colatitude angles for source
                     if self.sources[s].directivity is not None:
@@ -2201,7 +2201,7 @@ class Room(object):
                             mic_loc=mic,
                         )
                     else:
-                        azimuth_s,colatitude_s=[],[]
+                        azimuth_s, colatitude_s = [], []
 
                     # compute the distance from image sources
 
@@ -2263,18 +2263,23 @@ class Room(object):
                 rir_bands = []
 
                 """
-                Use octave bands to construct RIR : 
-                1) Ray-tracing is activated 
+                Use octave bands to construct RIR :
+                1) Ray-tracing is activated
                 2) directivity of both the microphones and source is not given.
-                
+
                 """
                 # Improve the checks.
 
-                if (((self.mic_array.directivity is None or isinstance(self.mic_array.directivity[m],
-                                                                       CardioidFamily)) and (
-                             self.sources[s].directivity is None or isinstance(self.sources[s].directivity,
-                                                                               CardioidFamily))) or
-                        self.simulator_state["rt_needed"]):
+                if (
+                    (
+                        self.mic_array.directivity is None
+                        or isinstance(self.mic_array.directivity[m], CardioidFamily)
+                    )
+                    and (
+                        self.sources[s].directivity is None
+                        or isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                ) or self.simulator_state["rt_needed"]:
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2396,22 +2401,19 @@ class Room(object):
                     Checks if both source and microphone directivity is from the class DIRPATRir
                     """
 
-
                     ir = self.dft_scale_rir_calc(
-                            src.damping,
-                            dist,
-                            time,
-                            bws,
-                            N,
-                            azi_m=azimuth_m,
-                            col_m=colatitude_m,
-                            azi_s=azimuth_s,
-                            col_s=colatitude_s,
-                            src_pos=s,
-                            mic_pos=m,
-
-                        )
-
+                        src.damping,
+                        dist,
+                        time,
+                        bws,
+                        N,
+                        azi_m=azimuth_m,
+                        col_m=colatitude_m,
+                        azi_s=azimuth_s,
+                        col_s=colatitude_s,
+                        src_pos=s,
+                        mic_pos=m,
+                    )
 
                 self.rir[-1].append(ir)
 
@@ -2430,8 +2432,6 @@ class Room(object):
         col_s,
         src_pos=0,
         mic_pos=0,
-
-
     ):
         """
         Full DFT scale RIR construction.
@@ -2492,11 +2492,16 @@ class Room(object):
         rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
         source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False
 
-
-        final_fir_IS_len = ( (self.mic_array.directivity[mic_pos].filter_len_ir if (rec_presence) else 1)
-                + (self.sources[src_pos].directivity.filter_len_ir if (source_presence) else 1)
-            + window_length + fir_length_octave_band) -3
-
+        final_fir_IS_len = (
+            (self.mic_array.directivity[mic_pos].filter_len_ir if (rec_presence) else 1)
+            + (
+                self.sources[src_pos].directivity.filter_len_ir
+                if (source_presence)
+                else 1
+            )
+            + window_length
+            + fir_length_octave_band
+        ) - 3
 
         if rec_presence and source_presence:
 
@@ -2533,7 +2538,6 @@ class Room(object):
                     azimuth=azi_s, colatitude=col_s
                 )
 
-
             elif rec_presence:
 
                 assert (
@@ -2543,7 +2547,6 @@ class Room(object):
                 resp_mic = self.mic_array.directivity[mic_pos].get_response(
                     azimuth=azi_m, colatitude=col_m
                 )
-
 
         # else:
         # txt = "No"
@@ -2555,8 +2558,6 @@ class Room(object):
         sample_frac = time_arrival_is * self.fs  # Find the fractional sample number
 
         ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
-
-        #start = timer()
 
         # Create arrays for fractional delay low pass filter, sum of {damping coeffiecients * octave band filter}, source response, receiver response.
 
@@ -2574,7 +2575,6 @@ class Room(object):
             att_in_dft_scale_ = att_in_dft_scale[i, :]
 
             # Interpolating attenuations given in the single octave band to a DFT scale.
-            # for b, bw in enumerate(bws):
 
             att_in_dft_scale_ = self.octave_bands.octave_band_dft_interpolation(
                 att_in_octave_band,
@@ -2640,8 +2640,8 @@ class Room(object):
                 ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
             """
 
-        #end = timer()
-        #print("Image source time taken", end - start)
+        # end = timer()
+        # print("Image source time taken", end - start)
         return ir_diff
 
     def simulate(
