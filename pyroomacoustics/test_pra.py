@@ -69,7 +69,7 @@ Parameters
 ############################################################
 
 """
-path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("test",""),"data","AKG_c480_c414_CUBE.sofa")
+path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("examples",""),"pyroomacoustics","data","AKG_c480_c414_CUBE.sofa")
 
 dir_obj_Dmic = DIRPATRir(
     orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),

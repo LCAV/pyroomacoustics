@@ -12,7 +12,7 @@ from unittest import TestCase
 
 room_dim = [6, 6, 2.4]
 
-path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("test",""),"data","AKG_c480_c414_CUBE.sofa")
+path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("tests",""),"data","AKG_c480_c414_CUBE.sofa")
 
 all_materials = {
     "east": pra.Material(
