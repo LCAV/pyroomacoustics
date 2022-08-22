@@ -179,7 +179,7 @@ room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Dmic)
 # room.add_microphone_array(mic_locs)#,directivity=dir_obj_1)
 
 dir_obj_Dmic.set_orientation(54, 73)
-dir_obj_Dsrc.set_orientation(173, 60)
+#dir_obj_Dsrc.set_orientation(173, 60)
 
 room.compute_rir()
 
@@ -188,9 +188,7 @@ end = timer()
 print("Time taken", end - start)
 
 rir_1_0 = room.rir[0][0]
-plt.clf()
-plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
-plt.show()
+
 
 
 """
