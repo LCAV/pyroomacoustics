@@ -883,6 +883,7 @@ class Room(object):
         self.sigma2_awgn = sigma2_awgn
 
         self.octave_bands = OctaveBandsFactory(fs=self.fs)
+        self.max_rand_disp = max_rand_disp
 
         # Keep track of the state of the simulator
         self.simulator_state = {
@@ -1735,7 +1736,7 @@ class Room(object):
             The value can be "ir", "tf", or "spec" which will plot impulse response,
             transfer function, and spectrogram, respectively. If this option is
             specified, then the value of ``FD`` is ignored. Default is "ir".
-            
+
         Returns
         -------
         fig: matplotlib figure
