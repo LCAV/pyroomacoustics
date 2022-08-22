@@ -16,7 +16,7 @@ from pyroomacoustics.directivities import (
 )
 from timeit import default_timer as timer
 from scipy.signal import fftconvolve
-import os 
+import os
 
 # Path on my system.
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
@@ -70,10 +70,7 @@ Parameters
 ############################################################
 
 """
-path_DIRPAT_file=""
-for x in os.path.dirname(__file__)[:-1]:
-    path_DIRPAT_file=os.path.join(path_DIRPAT_file,x)
-path_DIRPAT_file=os.path.join(path_DIRPAT_file,"data","AKG_c480_c414_CUBE.sofa")
+path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("examples",""),"pyroomacoustics","data","AKG_c480_c414_CUBE.sofa")
 
 dir_obj_Dmic = DIRPATRir(
     orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
