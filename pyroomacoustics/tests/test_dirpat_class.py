@@ -9,6 +9,8 @@ from pyroomacoustics.directivities import (
 import matplotlib.pyplot as plt
 
 from unittest import TestCase
+import os 
+
 
 room_dim = [6, 6, 2.4]
 

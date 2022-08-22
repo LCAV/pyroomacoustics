@@ -16,6 +16,7 @@ from pyroomacoustics.directivities import (
 )
 from timeit import default_timer as timer
 from scipy.signal import fftconvolve
+import os 
 
 # Path on my system.
 # /home/psrivast/Téléchargements/AKG_c480_c414_CUBE.sofa
