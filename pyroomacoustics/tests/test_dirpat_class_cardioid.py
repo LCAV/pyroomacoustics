@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
     DirectivityPattern,
@@ -102,8 +101,6 @@ room.compute_rir()
 
 rir_1_0 = room.rir[0][0]
 
-plt.clf()
-plt.plot(np.arange(rir_1_0.shape[0]), rir_1_0)
-plt.show()
+
 
 # np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_acous_push_1.npy", rir_1_0)
