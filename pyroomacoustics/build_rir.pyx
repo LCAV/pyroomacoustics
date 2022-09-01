@@ -1,19 +1,12 @@
 # cython: infer_types=True
 
 import numpy as np
-import matplotlib.pyplot as plt
 cimport cython
-
 from scipy.fft import fft , ifft
 from libc.math cimport floor, ceil
 from .directivities import DIRPATRir
 from scipy.signal import hilbert
 from timeit import default_timer as timer
-
-
-
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def fast_rir_builder(
@@ -103,37 +96,31 @@ def fast_rir_builder(
                 lut_pos += lut_gran
                 k += 1
 
-            #if print_filter==0:
-            #    np.save("/home/psrivast/PycharmProjects/axis_2_phd/filter_non_dir.npy",np.array(pf))
-            #    print_filter+=1
+def fast_window_sinc_interpolator(double [:] vectorized_time_fp, int window_length, double [:,:] vectorized_interpolated_sinc): #Takes fractional part of the delay of IS k
 
+    cdef double [:] hann_wd = np.hanning(window_length)
+    cdef int fdl2 = (window_length - 1) // 2
+    cdef int lut_gran=20
+    cdef int lut_size = (window_length + 1) * lut_gran + 1
+    n_ = np.linspace(-fdl2 - 1, fdl2 + 1, lut_size)
+    cdef double [:] sinc_lut=np.sinc(n_)
+    cdef int img_src = 0
 
+    for time_fp in vectorized_time_fp:
+        x_off_frac = (1 - time_fp) * lut_gran
+        lut_gran_off = int(np.floor(x_off_frac))
+        x_off = x_off_frac - lut_gran_off
+        lut_pos = lut_gran_off
+        filter_sample = 0
 
+        for f in range(-fdl2, fdl2 + 1):
+            vectorized_interpolated_sinc[img_src,filter_sample] = hann_wd[filter_sample]*(sinc_lut[lut_pos] + x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]))
+            lut_pos += lut_gran
+            filter_sample += 1
 
-cdef int window_length=81
-cdef double [:] hann_wd = np.hanning(window_length)
-cdef int fdl2 = (window_length - 1) // 2
-cdef int lut_gran=20
-cdef int lut_size = (window_length + 1) * lut_gran + 1
-n_ = np.linspace(-fdl2 - 1, fdl2 + 1, lut_size)
-cdef double [:] sinc_lut=np.sinc(n_)
+        img_src+=1
 
-
-
-def fast_window_sinc_interpolater(double time_fp): #Takes fractional part of the delay of IS k
-
-    cdef double x_off_frac = (1 - time_fp) * lut_gran
-    cdef int lut_gran_off = int(np.floor(x_off_frac))
-    cdef double x_off = x_off_frac - lut_gran_off
-    cdef int lut_pos = lut_gran_off
-    cdef double [:] sinc_filter = np.empty(window_length)
-    cdef int filter_sample = 0
-
-    for f in range(-fdl2, fdl2 + 1):
-        sinc_filter[filter_sample] = hann_wd[filter_sample]*(sinc_lut[lut_pos] + x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]))
-        lut_pos += lut_gran
-        filter_sample += 1
-    return sinc_filter
+    return vectorized_interpolated_sinc
 
 cdef int val_i
 import multiprocessing
@@ -177,9 +164,3 @@ def fast_convolution_3 (
 
     out=np.fft.ifft(out)
     return out
-
-
-
-
-
-

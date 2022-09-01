@@ -99,8 +99,12 @@ The fourth and last argument is the maximum number of reflections allowed in the
     actually **not** the energy absorption we use now.  The ``absorption``
     parameter is now deprecated and will be removed in the future.
 
+
+
 Randomized Image Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 In highly symmetric shoebox rooms, the regularity of image sources’ positions
 leads to a monotonic convergence in the time arrival of far-field image pairs.
 This causes sweeping echoes. The randomized image method adds a small random
@@ -110,17 +114,23 @@ To use the randomized method, set the flag ``use_rand_ism`` to True while creati
 a room. Additionally, the maximum displacement of the image sources can be
 chosen by setting the parameter ``max_rand_disp``. The default value is 8cm.
 For a full example see examples/randomized_image_method.py
+
 .. code-block:: python
+
     import pyroomacoustics as pra
+
     # The desired reverberation time and dimensions of the room
     rt60 = 0.5  # seconds
     room_dim = [5, 5, 5]  # meters
+
     # We invert Sabine's formula to obtain the parameters for the ISM simulator
     e_absorption, max_order = pra.inverse_sabine(rt60, room_dim)
+
     # Create the room
     room = pra.ShoeBox(
         room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=max_order,
         use_rand_ism = True, max_rand_disp = 0.05
+    )
 
 Add sources and microphones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -362,6 +372,7 @@ This example is partly exctracted from `./examples/room_from_rt60.py`.
 
 
 
+
 Hybrid ISM/Ray Tracing Simulator
 --------------------------------
 
@@ -594,6 +605,7 @@ References
 
 """
 
+
 from __future__ import division, print_function
 
 import math
@@ -619,14 +631,12 @@ from scipy.fft import fft, fftfreq, ifft
 from scipy.signal import fftconvolve
 import sys
 
-# sys.path.insert(0, "/home/psrivast/PycharmProjects/axis_2_phd")
-# import open_sofa_interpolate
+
 
 from scipy import fft
 from scipy.signal import hilbert
 
 
-# from ..pyroomacoustics.axis_2phd.3d_subplot import interpolate_sofa_files
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -650,6 +660,7 @@ def wall_factory(corners, absorption, scattering, name=""):
 
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
+
     # repeated constant
     fpcv = 4 * np.pi * c**3 / volume
 
@@ -658,6 +669,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
     times = [t0]
 
     while times[-1] < t0 + duration:
+
         # uniform random variable
         z = np.random.rand()
         # rate of the point process at this time
@@ -668,6 +680,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
         times.append(times[-1] + dt)
 
     # convert from continuous to discrete time
+
     indices = (np.array(times) * fs).astype(np.int)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
@@ -991,6 +1004,7 @@ class Room(object):
     ):
         """
         Activates the ray tracer.
+
         Parameters
         ----------
         n_rays: int, optional
@@ -1722,6 +1736,7 @@ class Room(object):
     def plot_rir(self, select=None, FD=False, kind=None):
         """
         Plot room impulse responses. Compute if not done already.
+
         Parameters
         ----------
         select: list of tuples OR int
@@ -1736,6 +1751,7 @@ class Room(object):
             The value can be "ir", "tf", or "spec" which will plot impulse response,
             transfer function, and spectrogram, respectively. If this option is
             specified, then the value of ``FD`` is ignored. Default is "ir".
+
 
         Returns
         -------
@@ -2271,17 +2287,29 @@ class Room(object):
 
                 """
                 # Improve the checks.
+                if isinstance(self.mic_array.directivity[m], DIRPATPattern) or isinstance(self.sources[s].directivity, DIRPATPattern):
+                    if self.simulator_state["rt_needed"]:
+                        raise ValueError("DIRPATPattern directivities cannot be used with ray tracing yet.")
+                    """
+                    Checks if either source or the microphone directivity belongs from the class DIRPATRir
+                    """
 
-                if (
-                    (
-                        self.mic_array.directivity is None
-                        or isinstance(self.mic_array.directivity[m], CardioidFamily)
+                    ir = self.dft_scale_rir_calc(
+                        src.damping,
+                        dist,
+                        time,
+                        bws,
+                        N,
+                        azi_m=azimuth_m,
+                        col_m=colatitude_m,
+                        azi_s=azimuth_s,
+                        col_s=colatitude_s,
+                        src_pos=s,
+                        mic_pos=m,
                     )
-                    and (
-                        self.sources[s].directivity is None
-                        or isinstance(self.sources[s].directivity, CardioidFamily)
-                    )
-                ) or self.simulator_state["rt_needed"]:
+
+
+                else:
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2397,26 +2425,6 @@ class Room(object):
                     # Sum up IR'S for all the bands
                     np.sum(rir_bands, axis=0, out=ir)
 
-                else:
-
-                    """
-                    Checks if both source and microphone directivity is from the class DIRPATRir
-                    """
-
-                    ir = self.dft_scale_rir_calc(
-                        src.damping,
-                        dist,
-                        time,
-                        bws,
-                        N,
-                        azi_m=azimuth_m,
-                        col_m=colatitude_m,
-                        azi_s=azimuth_s,
-                        col_s=colatitude_s,
-                        src_pos=s,
-                        mic_pos=m,
-                    )
-
                 self.rir[-1].append(ir)
 
         self.simulator_state["rir_done"] = True
@@ -2486,7 +2494,7 @@ class Room(object):
         fir_length_octave_band = self.octave_bands.n_fft
 
         from .build_rir import (
-            fast_window_sinc_interpolater,
+            fast_window_sinc_interpolator,
             fast_convolution_4,
             fast_convolution_3,
         )
@@ -2571,6 +2579,13 @@ class Room(object):
             (no_imag_src, fir_length_octave_band), dtype=np.complex_
         )
 
+        #Vectorized sinc filters
+
+        vectorized_interpolated_sinc=np.zeros((no_img_src, window_length), dtype=np.double)
+        vectorized_time_fp=[sample_frac[img_src] - int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
+        vectorized_time_fp=np.array(vectorized_time_fp, dtype=np.double)
+        vectorized_interpolated_sinc=fast_window_sinc_interpolator(vectorized_time_fp, window_length, vectorized_interpolated_sinc)
+
         for i in range(no_imag_src):  # Loop through Image source
 
             att_in_octave_band = attenuations[:, i]
@@ -2587,16 +2602,16 @@ class Room(object):
                 self.min_phase,
             )
 
-            time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
+            #time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
 
-            time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
+            #time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
 
-            windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
+            #windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
 
             cpy_ir_len_1[i, : att_in_dft_scale_.shape[0]] = np.fft.ifft(
                 att_in_dft_scale_
             )
-            cpy_ir_len_2[i, : windowed_sinc_filter.shape[0]] = windowed_sinc_filter
+            cpy_ir_len_2[i, : window_length] = vectorized_interpolated_sinc[i,:]
 
             if source_presence and rec_presence:
 
@@ -2631,19 +2646,7 @@ class Room(object):
 
                 ir_diff[time_ip : (time_ip + final_fir_IS_len)] += np.real(out)
 
-            """
-            IS method without receiver and source response , right now it's being handled by pyroom acoustics octave band method.
-            The below defined is an DFT based method to create RIR , but this does not take into account ray tracing as it is restricted by pyroom.
-            else:
-                out = a * b
 
-                out = ifft(out)
-
-                ir_diff[time_ip:(time_ip + final_fir_IS_len)] += np.real(out)
-            """
-
-        # end = timer()
-        # print("Image source time taken", end - start)
         return ir_diff
 
     def simulate(

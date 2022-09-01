@@ -849,7 +849,7 @@ class Beamformer(MicrophoneArray):
         xticks = [-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
         for i, p in enumerate(xticks):
             xticks[i] = np.argmin(np.abs(p - phi))
-        xticklabels = ["$-\pi$", "$-\pi/2$", "0", "$\pi/2$", "$\pi$"]
+        xticklabels = [r"$-\pi$", r"$-\pi/2$", r"0", r"$\pi/2$", r"$\pi$"]
         plt.setp(plt.gca(), "xticks", xticks)
         plt.setp(plt.gca(), "xticklabels", xticklabels)
 

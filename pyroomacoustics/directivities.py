@@ -186,13 +186,6 @@ class CardioidFamily(Directivity):
             else:
                 return resp
 
-    """
-    def set_orientation(self, azimuth, colatitude):
-        Directivity.__init__(
-            self,
-            DirectionVector(azimuth=azimuth, colatitude=colatitude, degrees=True),
-        )
-    """
 
     @requires_matplotlib
     def plot_response(

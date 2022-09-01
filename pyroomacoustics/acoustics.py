@@ -101,7 +101,7 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     return filters
 
 
-def octave_bands(fc=1000, third=False, start=0.0, n=6):
+def octave_bands(fc=1000, third=False, start=0.0, n=8):
     """
     Create a bank of octave bands
 
@@ -164,14 +164,14 @@ class OctaveBandsFactory(object):
         Use third octave bands if True (default: False)
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, n_fft=128):
+    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
 
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
 
         # compute the number of bands
-        self.n_bands = math.floor(np.log2(fs / base_frequency)) - 1
+        self.n_bands = math.floor(np.log2(fs / base_frequency))
 
         self.bands, self.centers = octave_bands(
             fc=self.base_freq, n=self.n_bands, third=False
@@ -259,7 +259,7 @@ class OctaveBandsFactory(object):
             # now clip between 0. and 1.
             ret[ret < 0.0] = 0.0
             ret[ret > 1.0] = 1.0
-            # print(ret)
+
 
         return ret
 
@@ -329,12 +329,11 @@ class OctaveBandsFactory(object):
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
             axes=[0],
         )
-
-        self.filters_2 = fft(filters, axis=0)
-
         # remove the first sample to make them odd-length symmetric filters
-
         self.filters = filters[1:, :]
+
+        # Octave band filters in frequency domain used in the following method "octave_band_dft_interpolation"
+        self.filters_freq_domain = fft(filters, axis=0)
 
     def octave_band_dft_interpolation(
         self,
@@ -372,7 +371,7 @@ class OctaveBandsFactory(object):
         ]
 
         for b in range(len(bws)):
-            att_in_dft_scale += u_[b] * self.filters_2[:, b]
+            att_in_dft_scale += u_[b] * self.filters_freq_domain[:, b]
 
         if min_phase:
             att_in_dft_scale += 1e-07  # To avoid divide by zero error when performing hilbert transform.

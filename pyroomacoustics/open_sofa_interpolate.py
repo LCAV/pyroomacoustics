@@ -1,9 +1,14 @@
 import numpy as np
 import scipy
-import sofa
+
+try:
+     import sofa
+     has_sofa = True
+except ImportError:
+     has_sofa = False
+
 from scipy.fft import fft, fftfreq, ifft
 import math
-import matplotlib.pyplot as plt
 import collections
 from scipy.spatial import KDTree, cKDTree
 from scipy.signal import decimate
@@ -11,6 +16,9 @@ from timeit import default_timer as timer
 
 # from numpy import linalg as LA
 # from scipy.signal import find_peaks
+
+
+
 
 
 def fibonacci_sphere(samples):
@@ -72,8 +80,6 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
 
     Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
 
-    # print("Ysh Shape ", Ysh.shape)
-    # Ysh_tar=np.zeros(len(theta_target),(degree+1)**2)
     ny0 = 1
     for j in range(no_of_nodes):
         for i in range(degree + 1):
@@ -141,7 +147,6 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
         Ysh_tilda, rcond=1e-2
     )  # rcond is inverse of the condition number
 
-    # print("Condition Number Psuedo Inverse ", np.linalg.cond(Ysh_tilda_inv), Ysh_tilda_inv.shape)
 
     return Ysh_tilda_inv, w_
 
@@ -364,14 +369,7 @@ class DIRPATInterpolate:
             )
             for i in range(self.no_of_nodes):
                 self.freq_angles_fft[i, :] = fft(self.sofa_msr_fir[i, :])
-            """
-            n_c = (self.colatitude_simulation)
-            n_a = (self.azimuth_simulation)
 
-            R_y = np.array([[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]])
-            R_z = np.array([[np.cos(n_a), -np.sin(n_a), 0], [np.sin(n_a), np.cos(n_a), 0], [0, 0, 1]])
-            res = np.matmul(R_z, R_y)
-            """
 
             cart_points = np.empty((3, self.phi_sofa.shape[0]))
             cart_points[0, :] = self.sofa_x
@@ -441,6 +439,8 @@ class DIRPATInterpolate:
 
     def open_sofa_database(self, path, fs=16000):
         # Open DirPat database
+        if not has_sofa:
+            raise ValueError("The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`")
 
         if self.source == True:
             file_sofa = sofa.Database.open(path)
@@ -669,6 +669,7 @@ class DIRPATInterpolate:
         :Parameter (int) freq_bin:Bin number
 
         """
+        import matplotlib.pyplot as plt
 
         fg = plt.figure(figsize=plt.figaspect(0.5))
 
