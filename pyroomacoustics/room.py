@@ -2286,30 +2286,8 @@ class Room(object):
                 2) directivity of both the microphones and source is not given.
 
                 """
-                # Improve the checks.
-                if isinstance(self.mic_array.directivity[m], DIRPATPattern) or isinstance(self.sources[s].directivity, DIRPATPattern):
-                    if self.simulator_state["rt_needed"]:
-                        raise ValueError("DIRPATPattern directivities cannot be used with ray tracing yet.")
-                    """
-                    Checks if either source or the microphone directivity belongs from the class DIRPATRir
-                    """
 
-                    ir = self.dft_scale_rir_calc(
-                        src.damping,
-                        dist,
-                        time,
-                        bws,
-                        N,
-                        azi_m=azimuth_m,
-                        col_m=colatitude_m,
-                        azi_s=azimuth_s,
-                        col_s=colatitude_s,
-                        src_pos=s,
-                        mic_pos=m,
-                    )
-
-
-                else:
+                if ((self.mic_array.directivity is None or isinstance(self.mic_array.directivity[m], CardioidFamily)) and ( self.sources[s].directivity is None or isinstance(self.sources[s].directivity, CardioidFamily))) or self.simulator_state["rt_needed"]:
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2424,6 +2402,27 @@ class Room(object):
 
                     # Sum up IR'S for all the bands
                     np.sum(rir_bands, axis=0, out=ir)
+
+                else:
+                    """
+                    Checks if either source or the microphone directivity belongs from the class DIRPATRir
+                    """
+
+                    ir = self.dft_scale_rir_calc(
+                        src.damping,
+                        dist,
+                        time,
+                        bws,
+                        N,
+                        azi_m=azimuth_m,
+                        col_m=colatitude_m,
+                        azi_s=azimuth_s,
+                        col_s=colatitude_s,
+                        src_pos=s,
+                        mic_pos=m,
+                    )
+
+
 
                 self.rir[-1].append(ir)
 
