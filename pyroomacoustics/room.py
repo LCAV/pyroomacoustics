@@ -2580,7 +2580,7 @@ class Room(object):
 
         #Vectorized sinc filters
 
-        vectorized_interpolated_sinc=np.zeros((no_img_src, window_length), dtype=np.double)
+        vectorized_interpolated_sinc=np.zeros((no_imag_src, window_length), dtype=np.double)
         vectorized_time_fp=[sample_frac[img_src] - int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
         vectorized_time_fp=np.array(vectorized_time_fp, dtype=np.double)
         vectorized_interpolated_sinc=fast_window_sinc_interpolator(vectorized_time_fp, window_length, vectorized_interpolated_sinc)
