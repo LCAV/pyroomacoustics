@@ -1150,7 +1150,7 @@ class Room(object):
             list of corners, must be antiClockwise oriented
         absorption: float array or float
             list of absorption factor for each wall or single value
-            for all walls (deprecated)
+            for all walls (deprecated, use ``materials`` instead)
         fs: int, optional
             The sampling frequency in Hz. Default is 8000.
         t0: float, optional
