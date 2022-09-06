@@ -35,6 +35,7 @@ Bugfix
 ~~~~~~
 
 - Fixed most warnings in the tests
+- Fixed bug in ``examples/adaptive_filter_stft_domain.py``
 
 `0.6.0`_ - 2021-11-29
 ---------------------
