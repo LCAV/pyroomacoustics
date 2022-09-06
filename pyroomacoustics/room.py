@@ -450,6 +450,9 @@ be defined by chosing a material from the :doc:`materials database<pyroomacousti
 
 We can use different materials for different walls. In this case, the materials should be
 provided in a dictionary. For a shoebox room, this can be done as follows.
+We use the :py:func:`~pyroomacoustics.parameters.make_materials` helper
+function to create a ``dict`` of
+:py:class:`~pyroomacoustics.parameters.Material` objects.
 
 .. code-block:: python
 
@@ -465,6 +468,10 @@ provided in a dictionary. For a shoebox room, this can be done as follows.
     room = pra.ShoeBox(
         [9, 7.5, 3.5], fs=16000, materials=m, max_order=17, air_absorption=True, ray_tracing=True
     )
+
+For a more complete example see
+`examples/room_complex_wall_materials.py
+<https://github.com/LCAV/pyroomacoustics/blob/master/examples/room_complex_wall_materials.py>`_.
 
 .. note::
 
@@ -1143,7 +1150,26 @@ class Room(object):
             list of corners, must be antiClockwise oriented
         absorption: float array or float
             list of absorption factor for each wall or single value
-            for all walls
+            for all walls (deprecated)
+        fs: int, optional
+            The sampling frequency in Hz. Default is 8000.
+        t0: float, optional
+            The global starting time of the simulation in seconds. Default is 0.
+        max_order: int, optional
+            The maximum reflection order in the image source model. Default is 1,
+            namely direct sound and first order reflections.
+        sigma2_awgn: float, optional
+            The variance of the additive white Gaussian noise added during
+            simulation. By default, none is added.
+        sources: list of SoundSource objects, optional
+            Sources to place in the room. Sources can be added after room creating
+            with the `add_source` method by providing coordinates.
+        mics: MicrophoneArray object, optional
+            The microphone array to place in the room. A single microphone or
+            microphone array can be added after room creation with the
+            `add_microphone_array` method.
+        kwargs: key, value mappings
+            Other keyword arguments accepted by the :py:class:`~pyroomacoustics.room.Room` class
 
         Returns
         -------
