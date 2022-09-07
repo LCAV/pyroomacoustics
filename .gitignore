@@ -5,6 +5,7 @@
 *.idea
 *.DS_Store
 *.wav
+*.so
 build/
 docs/_build
 dist/
