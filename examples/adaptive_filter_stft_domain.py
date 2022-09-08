@@ -71,6 +71,7 @@ adaptive_filters = pra.adaptive.SubbandLMS(
 y_hat = np.zeros(n_samples)
 aec_out = np.zeros(n_samples)
 error_per_band = np.zeros((num_bands, num_blocks), dtype=np.complex64)
+time_idx = 0
 for n in range(num_blocks):
 
     # update filter with new samples
@@ -78,13 +79,14 @@ for n in range(num_blocks):
     error_per_band[:, n] = np.linalg.norm(adaptive_filters.W.conj() - W, axis=0)
 
     # back to time domain
-    y_hat[n : n + hop,] = stft_in.synthesis(
+    y_hat[time_idx : time_idx + hop,] = stft_in.synthesis(
         np.diag(np.dot(adaptive_filters.W.conj().T, adaptive_filters.X))
     )
-    aec_out[n : n + hop,] = stft_out.synthesis(
+    aec_out[time_idx : time_idx + hop,] = stft_out.synthesis(
         D_concat[:, n]
         - np.diag(np.dot(adaptive_filters.W.conj().T, adaptive_filters.X))
     )
+    time_idx += hop
 
 # visualization and debug
 plt.figure()
@@ -96,4 +98,11 @@ plt.grid()
 plt.autoscale(enable=True, axis="x", tight=True)
 plt.xlabel("Time [s]")
 plt.ylabel("Filter error")
+
+plt.figure()
+time_scale = np.arange(aec_out.shape[0]) / fs
+plt.plot(time_scale, aec_out, label="residual signal")
+plt.title("Adaptive filter residual")
+plt.xlabel("Time [s]")
+
 plt.show()

@@ -18,6 +18,7 @@ Added
 - Randomized image source method for removing sweeping echoes in shoebox rooms.
 - Adds the ``cart2spher`` method in ``pyroomacoustics.doa.utils`` to convert from cartesian
   to spherical coordinates.
+- Example `room_complex_wall_materials.py`
 
 Changed
 ~~~~~~~
@@ -35,6 +36,7 @@ Bugfix
 ~~~~~~
 
 - Fixed most warnings in the tests
+- Fixed bug in ``examples/adaptive_filter_stft_domain.py``
 
 `0.6.0`_ - 2021-11-29
 ---------------------
