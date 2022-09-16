@@ -600,23 +600,14 @@ You can also use this package to simulate free-field sound propagation between a
 Simulating Direction-of-Arrival Estimation in Free Field
 --------------------------------------------------------
 
-As a simple usage example, assume you want to localize a sound source emitting white noise, using a square microphone array. If you can neglect room effects (e.g. you operate in an anechoic room or outdoors), or if you simply want to test your algorithm in the best-case scenario, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class. The below code shows an example using the popular MUSIC algorithm for DOA estimation. The example is exctracted from `./examples/doa_anechoic_room.py`.
+If you can neglect room effects (e.g. you operate in an anechoic room or outdoors), or if you simply want to test your algorithm in the best-case scenario, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class. The below code shows how to create and simualte an anechoic room. For a more involved example (testing a the DOA algorithm MUSIC in an anechoic room), see `./examples/doa_anechoic_room.py`.
 
 .. code-block:: python
 
-    # we use a white noise signal for the source
-    nfft = 256
-    fs = 16000
-    x = np.random.randn((nfft // 2 + 1) * nfft)
+    # Create anechoic room. 
+    room = pra.AnechoicRoom(fs=16000)
 
-    # create anechoic room
-    room = pra.AnechoicRoom(fs=fs)
-
-    # place the source at a 90 degree angle and 5 meters distance from origin
-    azimuth_true = np.pi / 2
-    room.add_source([5 * np.cos(azimuth_true), 5 * np.sin(azimuth_true), 0], signal=x)
-
-    # place the microphone array 
+    # Place the microphone array around the origin.
     mic_locs = np.c_[
         [0.1, 0.1, 0],
         [-0.1, 0.1, 0],
@@ -625,24 +616,13 @@ As a simple usage example, assume you want to localize a sound source emitting w
     ]
     room.add_microphone_array(mic_locs)
 
+    # Add a source. We use a white noise signal for the source, and
+    # the source can be arbitrarily far because there are no walls.
+    x = np.random.randn(2**10)
+    room.add_source([10.0, 20.0, -20], signal=x)
+
     # run the simulation
     room.simulate()
-
-    # create frequency-domain input for DOA algorithms
-    X = pra.transform.stft.analysis(
-        room.mic_array.signals.T, nfft, nfft // 2, win=np.hanning(nfft)
-    )
-    X = np.swapaxes(X, 2, 0)
-
-    # perform DOA estimation
-    doa = pra.doa.algorithms["MUSIC"](mic_locs, fs, nfft)
-    doa.locate_sources(X)
-
-    # evaluate result
-    print("Source is estimated at:", doa.azimuth_recon)
-    print("Real source is at:", azimuth_true)
-    print("Error:", pra.doa.circ_dist(azimuth_true, doa.azimuth_recon))
-
 
 References
 ----------
