@@ -632,11 +632,8 @@ from scipy.signal import fftconvolve
 import sys
 
 
-
 from scipy import fft
 from scipy.signal import hilbert
-
-
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -2287,7 +2284,16 @@ class Room(object):
 
                 """
 
-                if ((self.mic_array.directivity is None or isinstance(self.mic_array.directivity[m], CardioidFamily)) and ( self.sources[s].directivity is None or isinstance(self.sources[s].directivity, CardioidFamily))) or self.simulator_state["rt_needed"]:
+                if (
+                    (
+                        self.mic_array.directivity is None
+                        or isinstance(self.mic_array.directivity[m], CardioidFamily)
+                    )
+                    and (
+                        self.sources[s].directivity is None
+                        or isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                ) or self.simulator_state["rt_needed"]:
 
                     for b, bw in enumerate(bws):  # Loop through every band
 
@@ -2421,8 +2427,6 @@ class Room(object):
                         src_pos=s,
                         mic_pos=m,
                     )
-
-
 
                 self.rir[-1].append(ir)
 
@@ -2578,13 +2582,22 @@ class Room(object):
             (no_imag_src, fir_length_octave_band), dtype=np.complex_
         )
 
-        #Vectorized sinc filters
+        # Vectorized sinc filters
 
-        vectorized_interpolated_sinc=np.zeros((no_imag_src, window_length), dtype=np.double)
-        vectorized_time_ip=np.array([int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)])
-        vectorized_time_fp=[sample_frac[img_src] - int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
-        vectorized_time_fp=np.array(vectorized_time_fp, dtype=np.double)
-        vectorized_interpolated_sinc=fast_window_sinc_interpolator(vectorized_time_fp, window_length, vectorized_interpolated_sinc)
+        vectorized_interpolated_sinc = np.zeros(
+            (no_imag_src, window_length), dtype=np.double
+        )
+        vectorized_time_ip = np.array(
+            [int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
+        )
+        vectorized_time_fp = [
+            sample_frac[img_src] - int(floor(sample_frac[img_src]))
+            for img_src in range(no_imag_src)
+        ]
+        vectorized_time_fp = np.array(vectorized_time_fp, dtype=np.double)
+        vectorized_interpolated_sinc = fast_window_sinc_interpolator(
+            vectorized_time_fp, window_length, vectorized_interpolated_sinc
+        )
 
         for i in range(no_imag_src):  # Loop through Image source
 
@@ -2602,16 +2615,16 @@ class Room(object):
                 self.min_phase,
             )
 
-            #time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
+            # time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
 
-            #time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
+            # time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
 
-            #windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
+            # windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
 
             cpy_ir_len_1[i, : att_in_dft_scale_.shape[0]] = np.fft.ifft(
                 att_in_dft_scale_
             )
-            cpy_ir_len_2[i, : window_length] = vectorized_interpolated_sinc[i,:]
+            cpy_ir_len_2[i, :window_length] = vectorized_interpolated_sinc[i, :]
 
             if source_presence and rec_presence:
 
@@ -2627,7 +2640,9 @@ class Room(object):
                     final_fir_IS_len,
                 )
 
-                ir_diff[vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)] += np.real(out)
+                ir_diff[
+                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
+                ] += np.real(out)
 
             else:
                 if source_presence:
@@ -2644,8 +2659,9 @@ class Room(object):
                     final_fir_IS_len,
                 )
 
-                ir_diff[vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)] += np.real(out)
-
+                ir_diff[
+                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
+                ] += np.real(out)
 
         return ir_diff
 

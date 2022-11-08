@@ -68,8 +68,9 @@ room = pra.ShoeBox(
 )  # ,min_phase=False)
 
 
-
-path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("tests",""),"data","AKG_c480_c414_CUBE.sofa")
+path_DIRPAT_file = os.path.join(
+    os.path.dirname(__file__).replace("tests", ""), "data", "AKG_c480_c414_CUBE.sofa"
+)
 
 PATTERN_SRC = DirectivityPattern.FIGURE_EIGHT
 ORIENTATION_SRC = DirectionVector(azimuth=90, colatitude=90, degrees=True)
@@ -100,7 +101,6 @@ directivity_MIC.set_orientation(70, 123)
 room.compute_rir()
 
 rir_1_0 = room.rir[0][0]
-
 
 
 # np.save("/home/psrivast/PycharmProjects/axis_2_phd/pyroom_acous_push_1.npy", rir_1_0)

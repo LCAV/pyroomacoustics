@@ -28,6 +28,10 @@ Parameters
     d)AKG_c414S
     e)AKG_c414A
 
+    Eigenmic directivity pattern file "EM32_Directivity.sofa", specify mic name at the end to retrive directivity pattern for that particular mic from the eigenmike
+    a)EM_32_* : where * \in [0,31]
+    For example EM_32_9 : Will retrive pattern of mic number "10" from the eigenmic.
+
     # LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa DIRPAT file include source patterns
     a)Genelec_8020
     b)Lambda_labs_CX-1A
@@ -53,9 +57,8 @@ Parameters
 This implementation shows how we can use both DIRPAT object and frequency independent directivity class CardioidFamily together.
 We can also use the objects separately.
 
-~ Prerak SRIVASTAVA, 1/09/2022
+~ Prerak SRIVASTAVA, 8/11/2022
 """
-
 
 
 import pyroomacoustics as pra
@@ -73,8 +76,18 @@ from scipy.signal import fftconvolve
 import os
 
 
-
-path_DIRPAT_file=os.path.join(os.path.dirname(__file__).replace("examples",""),"pyroomacoustics","data","AKG_c480_c414_CUBE.sofa")
+path_DIRPAT_file = os.path.join(
+    os.path.dirname(__file__).replace("examples", ""),
+    "pyroomacoustics",
+    "data",
+    "AKG_c480_c414_CUBE.sofa",
+)
+path_Eigenmic_file = os.path.join(
+    os.path.dirname(__file__).replace("examples", ""),
+    "pyroomacoustics",
+    "data",
+    "EM32_Directivity.sofa",
+)
 
 dir_obj_Dmic = DIRPATRir(
     orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
@@ -83,6 +96,12 @@ dir_obj_Dmic = DIRPATRir(
     fs=16000,
 )
 
+dir_obj_Emic = DIRPATRir(
+    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
+    path=path_Eigenmic_file,
+    DIRPAT_pattern_enum="EM_32_9",
+    fs=16000,
+)
 
 dir_obj_Cmic = CardioidFamily(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
@@ -145,7 +164,6 @@ all_materials = {
 }
 
 
-
 room = pra.ShoeBox(
     room_dim,
     fs=16000,
@@ -157,18 +175,15 @@ room = pra.ShoeBox(
 )
 
 
-room.add_source(
-    [1.52, 0.883, 1.044], directivity=dir_obj_Csrc
-)
+room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 
 
-room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Dmic)
+room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Emic)
 
-dir_obj_Dmic.set_orientation(54, 73)
+dir_obj_Emic.set_orientation(54, 73)
 
 
 room.compute_rir()
-
 
 
 rir_1_0 = room.rir[0][0]

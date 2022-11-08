@@ -2,10 +2,11 @@ import numpy as np
 import scipy
 
 try:
-     import sofa
-     has_sofa = True
+    import sofa
+
+    has_sofa = True
 except ImportError:
-     has_sofa = False
+    has_sofa = False
 
 from scipy.fft import fft, fftfreq, ifft
 import math
@@ -16,9 +17,6 @@ from timeit import default_timer as timer
 
 # from numpy import linalg as LA
 # from scipy.signal import find_peaks
-
-
-
 
 
 def fibonacci_sphere(samples):
@@ -147,7 +145,6 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
         Ysh_tilda, rcond=1e-2
     )  # rcond is inverse of the condition number
 
-
     return Ysh_tilda_inv, w_
 
 
@@ -196,6 +193,8 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
             id = 3
         elif "AKG_c414A" in DIRPAT_pattern_enum:
             id = 4
+        elif "EM_32" in DIRPAT_pattern_enum:
+            id = int(DIRPAT_pattern_enum.split("_")[-1])
         else:
             raise ValueError("Please specifiy correct DIRPAT_pattern_enum for mic")
     else:
@@ -272,6 +271,7 @@ class DIRPATInterpolate:
         self.path = path
         self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source)
         self.source = source
+        self.DIRPAT_pattern_enum = DIRPAT_pattern_enum
 
         self.fs = fs
 
@@ -370,7 +370,6 @@ class DIRPATInterpolate:
             for i in range(self.no_of_nodes):
                 self.freq_angles_fft[i, :] = fft(self.sofa_msr_fir[i, :])
 
-
             cart_points = np.empty((3, self.phi_sofa.shape[0]))
             cart_points[0, :] = self.sofa_x
             cart_points[1, :] = self.sofa_y
@@ -440,7 +439,9 @@ class DIRPATInterpolate:
     def open_sofa_database(self, path, fs=16000):
         # Open DirPat database
         if not has_sofa:
-            raise ValueError("The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`")
+            raise ValueError(
+                "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
+            )
 
         if self.source == True:
             file_sofa = sofa.Database.open(path)
@@ -514,13 +515,17 @@ class DIRPATInterpolate:
 
             src_pos = file_sofa.Source.Position.get_values()
 
-            # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
+            if "EM_32" in self.DIRPAT_pattern_enum:
+                src_pos = np.deg2rad(src_pos)
 
-            src_pos_RS = np.reshape(src_pos, [30, 16, 3])
+            else:
+                # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
 
-            src_pos = np.swapaxes(src_pos_RS, 0, 1).reshape([480, -1])
+                src_pos_RS = np.reshape(src_pos, [30, 16, 3])
 
-            ###########################
+                src_pos = np.swapaxes(src_pos_RS, 0, 1).reshape([480, -1])
+
+                ###########################
 
             # Get impulse responses from all the measurements
 

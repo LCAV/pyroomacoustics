@@ -36,7 +36,6 @@ from scipy.signal import butter, fftconvolve, sosfiltfilt
 
 from .parameters import constants
 from .transform import stft
-import matplotlib.pyplot as plt
 from scipy.fft import fft, fftfreq, fftshift, ifft
 from scipy.signal import hilbert
 
@@ -259,7 +258,6 @@ class OctaveBandsFactory(object):
             # now clip between 0. and 1.
             ret[ret < 0.0] = 0.0
             ret[ret > 1.0] = 1.0
-
 
         return ret
 

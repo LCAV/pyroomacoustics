@@ -186,7 +186,6 @@ class CardioidFamily(Directivity):
             else:
                 return resp
 
-
     @requires_matplotlib
     def plot_response(
         self, azimuth, colatitude=None, degrees=True, ax=None, offset=None
@@ -312,6 +311,10 @@ class DIRPATRir(Directivity):
         d)AKG_c414S
         e)AKG_c414A
 
+        Eigenmic directivity pattern file "EM32_Directivity.sofa", specify mic name at the end to retrive directivity pattern for that particular mic from the eigenmike
+        a)EM_32_* : where * \in [0,31]
+        For example EM_32_9 : Will retrive pattern of mic number "10" from the eigenmic.
+
         Source directivity files LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa contains the follwing patterns
         a)Genelec_8020
         b)Lambda_labs_CX-1A
@@ -368,6 +371,9 @@ class DIRPATRir(Directivity):
         ), "Please specifiy directivity pattern from the DIRPAT dataset "
 
         if "AKG_c480_c414_CUBE.sofa" in path:
+            self.path = path
+            self.source = False
+        elif "EM32" in path:
             self.path = path
             self.source = False
         elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path:
