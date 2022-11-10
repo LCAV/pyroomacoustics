@@ -31,6 +31,7 @@ Changed
 - `End of Python 3.6 support <https://endoflife.date/python>`__.
 - Removed the deprecated ``realtime`` sub-module.
 - Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
+- The minimum required version of numpy was changed to 1.13.0 (use of ``np.linalg.multi_dot`` in ``doa`` sub-package see #271)
 
 Bugfix
 ~~~~~~
