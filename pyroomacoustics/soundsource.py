@@ -109,8 +109,8 @@ class SoundSource(object):
         self.directivity = directivity
 
     def add_signal(self, signal):
-        """Sets `signal` attribute 
-        
+        """Sets `signal` attribute
+
         Parameters
         ----------
         signal: ndarray
