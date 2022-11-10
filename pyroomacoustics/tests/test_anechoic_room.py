@@ -63,9 +63,7 @@ def test_anechoic_room(debug=False):
                 )
             plt.legend()
         else:
-            np.testing.assert_allclose(
-                premix_infinite, premix_shoebox
-            )
+            np.testing.assert_allclose(premix_infinite, premix_shoebox)
     if debug:
         plt.show()
 
