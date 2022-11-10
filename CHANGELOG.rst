@@ -20,6 +20,7 @@ Added
 - Adds the ``cart2spher`` method in ``pyroomacoustics.doa.utils`` to convert from cartesian
   to spherical coordinates.
 - Example `room_complex_wall_materials.py`
+- CI for python 3.10
 
 Changed
 ~~~~~~~
