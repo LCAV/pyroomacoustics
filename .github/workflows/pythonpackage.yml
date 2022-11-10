@@ -40,16 +40,24 @@ jobs:
         python -m pip install -e .
     - name: Test with pytest
       run: |
-        pip install pytest
+        pip install -U pytest setuptools wheel twine
         pytest
+    - name: Test the univers wheels
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        python setup.py sdist
+        twine check dist/*
+    - name: Test the binary wheels
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        python setup.py bdist_wheel
+        twine check dist/*
     - name: Publish sdist to pypi
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && matrix.os == 'ubuntu-latest'
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        pip install wheel twine
-        python setup.py sdist
         twine upload --skip-existing dist/*
     - name: Publish bdist to pypi
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && matrix.os != 'ubuntu-latest'
@@ -57,8 +65,6 @@ jobs:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        pip install wheel twine
-        python setup.py bdist_wheel
         twine upload --skip-existing dist/*
     - name: Publish sdist to pypi-test
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/test-') && matrix.os == 'ubuntu-latest'
