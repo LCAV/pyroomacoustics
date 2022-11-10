@@ -187,7 +187,7 @@ def square_2D_array(center, M, N, phi, d):
         The center of the array
     M: int
         The number of points in the first dimension
-    M: int
+    N: int
         The number of points in the second dimension
     phi: float
         The counterclockwise rotation of the array (from the x-axis)
@@ -806,9 +806,7 @@ class Beamformer(MicrophoneArray):
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError(
-                "Beamforming weights or filters need to be computed" " first."
-            )
+            raise NameError("Beamforming weights or filters need to be computed first.")
 
         phi = np.linspace(-np.pi, np.pi - np.pi / 180, 360)
         freq = self.frequencies

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This helper script creates a documentation page from the materials database
 that is stored in JSON format.
@@ -83,3 +84,4 @@ if __name__ == "__main__":
                 headers=headers,
                 file=f,
             )
+        print("Wrote file", docfile)

@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function
 import math
 import sys
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 import numpy as np
 
