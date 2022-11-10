@@ -60,7 +60,7 @@ room_dim = np.r_[10.0, 10.0]
 
 # Use AnechoicRoom or ShoeBox implementation. The results are equivalent because max_order=0 for both.
 # The plots change a little because in one case there are no walls.
-use_anechoic_class = True   
+use_anechoic_class = True
 
 print("============ Using anechoic: {} ==================".format(anechoic))
 
