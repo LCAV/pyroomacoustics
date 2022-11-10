@@ -602,12 +602,21 @@ The method is also directly integrated in the :py:obj:`~pyroomacoustics.room.Roo
 Free-field simulation
 =====================
 
-You can also use this package to simulate free-field sound propagation between a set of sound sources and a set of microphones, without considering room effects. To this end, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class, which simply corresponds to setting the maximum image image order of the room simulation to zero. This allows for early development and testing of various audio-based algorithms, without worrying about room acoustics at first. Thanks to the modular framework of pyroomacoustics, room acoustics can easily be added, after this first testing stage, for more realistic simulations. 
+You can also use this package to simulate free-field sound propagation between
+a set of sound sources and a set of microphones, without considering room
+effects. To this end, you can use the
+:py:obj:`pyroomacoustics.room.AnechoicRoom` class, which simply corresponds to
+setting the maximum image image order of the room simulation to zero. This
+allows for early development and testing of various audio-based algorithms,
+without worrying about room acoustics at first. Thanks to the modular framework
+of pyroomacoustics, room acoustics can easily be added, after this first
+testing stage, for more realistic simulations. 
 
-Simulating Direction-of-Arrival Estimation in Free Field
---------------------------------------------------------
-
-If you can neglect room effects (e.g. you operate in an anechoic room or outdoors), or if you simply want to test your algorithm in the best-case scenario, you can use the :py:obj:`pyroomacoustics.room.AnechoicRoom` class. The below code shows how to create and simualte an anechoic room. For a more involved example (testing a the DOA algorithm MUSIC in an anechoic room), see `./examples/doa_anechoic_room.py`.
+Use this if you can neglect room effects (e.g. you operate in an anechoic room
+or outdoors), or if you simply want to test your algorithm in the best-case
+scenario. The below code shows how to create and simualte an anechoic room. For
+a more involved example (testing a the DOA algorithm MUSIC in an anechoic
+room), see `./examples/doa_anechoic_room.py`.
 
 .. code-block:: python
 
