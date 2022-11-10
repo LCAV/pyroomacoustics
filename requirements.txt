@@ -1,5 +1,5 @@
 Cython
-numpy
+numpy>=1.13.0
 scipy>=0.18.0
 pybind11>=2.2
 matplotlib

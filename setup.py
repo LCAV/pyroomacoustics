@@ -180,7 +180,7 @@ setup_kwargs = dict(
     package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
     install_requires=[
         "Cython",
-        "numpy",
+        "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
     ],
