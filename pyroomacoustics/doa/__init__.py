@@ -1,26 +1,29 @@
-'''
+"""
 Direction of Arrival Finding
 ============================
 
 This sub-package provides implementations of popular direction of arrival findings algorithms.
 
 MUSIC
-    | Multiple Signal Classification [1]_ 
-    | :py:obj:`pyroomacoustics.doa.music` 
-SRP-PHAT 
-    | Steered Response Power -- Phase Transform [2]_ 
+    | Multiple Signal Classification [1]_
+    | :py:obj:`pyroomacoustics.doa.music`
+NormMUSIC
+    | MUSIC with frequency normalization [2]_
+    | :py:obj:`pyroomacoustics.doa.normmusic`
+SRP-PHAT
+    | Steered Response Power -- Phase Transform [3]_
     | :py:obj:`pyroomacoustics.doa.srp`
-CSSM 
-    | Coherent Signal Subspace Method [3]_
+CSSM
+    | Coherent Signal Subspace Method [4]_
     | :py:obj:`pyroomacoustics.doa.cssm`
-WAVES 
-    | Weighted Average of Signal Subspaces [4]_ 
+WAVES
+    | Weighted Average of Signal Subspaces [5]_
     | :py:obj:`pyroomacoustics.doa.waves`
-TOPS 
-    | Test of Orthogonality of Projected Subspaces [5]_
+TOPS
+    | Test of Orthogonality of Projected Subspaces [6]_
     | :py:obj:`pyroomacoustics.doa.tops`
-FRIDA 
-    | Finite Rate of Innovation Direction of Arrival [6]_ 
+FRIDA
+    | Finite Rate of Innovation Direction of Arrival [7]_
     | :py:obj:`pyroomacoustics.doa.frida`
 
 All these classes derive from the abstract base class
@@ -69,37 +72,46 @@ Utilities
 
 :py:obj:`pyroomacoustics.doa.algorithms`
     a dictionary containing all the DOA object subclasses availables indexed by
-    keys ``['MUSIC', 'SRP', 'CSSM', 'WAVES', 'TOPS', 'FRIDA']``
+    keys ``['MUSIC', 'NormMUSIC', 'SRP', 'CSSM', 'WAVES', 'TOPS', 'FRIDA']``
+
+Note on MUSIC
+-----------------
+
+Since NormMUSIC has a more robust performance, we recommend to use NormMUSIC over MUSIC. When MUSIC is used as a baseline for publications, we recommend to use both NormMUSIC and MUSIC. For more information, you may have a look at our jupyter notebook at ``https://github.com/LCAV/pyroomacoustics/tree/master/notebooks/norm_music_demo.ipynb``
 
 References
 ----------
 
-.. [1] R. Schmidt, *Multiple emitter location and signal parameter estimation*, 
+.. [1] R. Schmidt, *Multiple emitter location and signal parameter estimation*,
     IEEE Trans. Antennas Propag., Vol. 34, Num. 3, pp 276--280, 1986
 
-.. [2] J. H. DiBiase, *A high-accuracy, low-latency technique for talker localization 
+.. [2] D. Salvati, C. Drioli, G. L. Foresti, *Incoherent Frequency Fusion for Broadband Steered Response Power Algorithms in
+    Noisy Environments*, IEEE Signal Process. Lett., Vol. 21, Num. 5, pp 581-585, 2014
+
+.. [3] J. H. DiBiase, *A high-accuracy, low-latency technique for talker localization
     in reverberant environments using microphone arrays*, PHD Thesis, Brown University, 2000
 
-.. [3] H. Wang, M. Kaveh, *Coherent signal-subspace processing for the detection and 
-    estimation of angles of arrival of multiple wide-band sources*, IEEE Trans. Acoust., 
+.. [4] H. Wang, M. Kaveh, *Coherent signal-subspace processing for the detection and
+    estimation of angles of arrival of multiple wide-band sources*, IEEE Trans. Acoust.,
     Speech, Signal Process., Vol. 33, Num. 4, pp 823--831, 1985
 
-.. [4] E. D. di Claudio, R. Parisi, *WAVES: Weighted average of signal subspaces for 
-    robust wideband direction finding*, IEEE Trans. Signal Process., Vol. 49, Num. 10, 
+.. [5] E. D. di Claudio, R. Parisi, *WAVES: Weighted average of signal subspaces for
+    robust wideband direction finding*, IEEE Trans. Signal Process., Vol. 49, Num. 10,
     2179--2191, 2001
 
-.. [5] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband 
+.. [6] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband
     signals*, IEEE Trans. Signal Process., Vol. 54, Num 6., pp 1977--1989, 2006
 
-.. [6] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanic, and M. Vetterli, *FRIDA:
+.. [7] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanic, and M. Vetterli, *FRIDA:
     FRI-based DOA estimation for arbitrary array layouts*, Proc. ICASSP,
     pp 3186-3190, 2017
 
-'''
+"""
 
 from .doa import *
 from .srp import *
 from .music import *
+from .normmusic import *
 from .cssm import *
 from .waves import *
 from .tops import *
@@ -109,11 +121,11 @@ from .utils import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {
-        'SRP' : SRP,
-        'MUSIC' : MUSIC,
-        'CSSM' : CSSM,
-        'WAVES' : WAVES,
-        'TOPS' : TOPS,
-        'FRIDA' : FRIDA,
-        }
-
+    "SRP": SRP,
+    "MUSIC": MUSIC,
+    "NormMUSIC": NormMUSIC,
+    "CSSM": CSSM,
+    "WAVES": WAVES,
+    "TOPS": TOPS,
+    "FRIDA": FRIDA,
+}

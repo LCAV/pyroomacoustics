@@ -3,8 +3,8 @@ from __future__ import print_function
 
 import os
 import sys
+
 # To use a consistent encoding
-from codecs import open
 from os import path
 
 # import version from file
@@ -28,7 +28,7 @@ class get_pybind_include(object):
 
     The purpose of this class is to postpone importing pybind11
     until it is actually installed, so that the ``get_include()``
-    method can be invoked. """
+    method can be invoked."""
 
     def __init__(self, user=False):
         self.user = user
@@ -177,7 +177,12 @@ setup_kwargs = dict(
     ext_modules=ext_modules,
     # Necessary to keep the source files
     package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
-    install_requires=["Cython", "numpy", "scipy>=0.18.0", "pybind11>=2.2",],
+    install_requires=[
+        "Cython",
+        "numpy>=1.13.0",
+        "scipy>=0.18.0",
+        "pybind11>=2.2",
+    ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,
     test_suite="nose.collector",

@@ -1,9 +1,11 @@
 import unittest
+
 import numpy as np
 import pyroomacoustics as pra
 
 room_dim = [15, 14, 16]
 absorption = 0.2
+e_abs = 1.0 - (1.0 - absorption) ** 2
 source_position = [2.0, 3.1, 2.0]
 mic_position = [2.0, 1.5, 2.0]
 fs = 16000
@@ -11,28 +13,31 @@ max_order = 5
 
 # scenario A
 def get_room_constructor_args():
-    '''
+    """
     When provided with sources and microphones, the constructor
     should try to compute the RIR immediately
-    '''
+    """
     source = pra.SoundSource(position=source_position)
     mics = pra.MicrophoneArray(np.array([mic_position]).T, fs)
     shoebox = pra.ShoeBox(
-            room_dim,
-            absorption=absorption,
-            fs=fs,
-            max_order=max_order,
-            sources=[source],
-            mics=mics,
-            )
+        room_dim,
+        materials=pra.Material(e_abs),
+        fs=fs,
+        max_order=max_order,
+        sources=[source],
+        mics=mics,
+    )
 
     shoebox.image_source_model()
     shoebox.compute_rir()
     return shoebox
 
-#scenario B
+
+# scenario B
 def get_room_add_method():
-    shoebox = pra.ShoeBox(room_dim, absorption=absorption, fs=fs, max_order=max_order)
+    shoebox = pra.ShoeBox(
+        room_dim, materials=pra.Material(e_abs), fs=fs, max_order=max_order
+    )
     shoebox.add_source(source_position)
     mics = pra.MicrophoneArray(np.array([mic_position]).T, fs)
     shoebox.add_microphone_array(mics)
@@ -41,8 +46,8 @@ def get_room_add_method():
     shoebox.compute_rir()
     return shoebox
 
-class RoomConstructorSources(unittest.TestCase):
 
+class RoomConstructorSources(unittest.TestCase):
     def test_room_constructor(self):
 
         room_1 = get_room_constructor_args()
@@ -58,6 +63,6 @@ class RoomConstructorSources(unittest.TestCase):
         self.assertTrue(np.allclose(room_1.rir[0][0], room_2.rir[0][0]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     unittest.main()

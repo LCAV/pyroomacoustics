@@ -8,9 +8,8 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.io import wavfile
-
 import pyroomacoustics as pra
+from scipy.io import wavfile
 
 methods = ["ism", "hybrid"]
 
@@ -56,10 +55,13 @@ if __name__ == "__main__":
 
     # place the source in the room
     room.add_source([2.5, 3.73, 1.76], signal=audio, delay=0.5)
+    room.add_source([2.5, 4.73, 1.76], signal=audio, delay=0.5)
 
     # define the locations of the microphones
     mic_locs = np.c_[
-        [6.3, 4.87, 1.2], [6.3, 4.93, 1.2],  # mic 1  # mic 2
+        [6.3, 4.87, 1.2],
+        [6.3, 4.93, 1.2],  # mic 1  # mic 2
+        [6.3, 4.98, 1.2],  # mic 1  # mic 2
     ]
 
     # finally place the array in the room
@@ -79,21 +81,13 @@ if __name__ == "__main__":
     print("The desired RT60 was {}".format(rt60_tgt))
     print("The measured RT60 is {}".format(rt60[1, 0]))
 
-    # Create a plot
-    plt.figure()
-
-    # plot one of the RIR. both can also be plotted using room.plot_rir()
-    rir_1_0 = room.rir[1][0]
-    plt.subplot(2, 1, 1)
-    plt.plot(np.arange(len(rir_1_0)) / room.fs, rir_1_0)
-    plt.title("The RIR from source 0 to mic 1")
-    plt.xlabel("Time [s]")
-
-    # plot signal at microphone 1
-    plt.subplot(2, 1, 2)
-    plt.plot(room.mic_array.signals[1, :])
-    plt.title("Microphone 1 signal")
-    plt.xlabel("Time [s]")
+    # plot the RIRs
+    select = None  # plot all RIR
+    # select = (2, 0)  # uncomment to only plot the RIR from mic 2 -> src 0
+    # select = [(0, 0), (2, 0)]  # only mic 0 -> src 0, mic 2 -> src 0
+    fig, axes = room.plot_rir(select=select, kind="ir")  # impulse responses
+    fig, axes = room.plot_rir(select=select, kind="tf")  # transfer function
+    fig, axes = room.plot_rir(select=select, kind="spec")  # spectrograms
 
     plt.tight_layout()
     plt.show()

@@ -98,7 +98,10 @@ def freq_bss(algo="auxiva", L=256, **kwargs):
         Y = pra.bss.auxiva(X, n_src=1, n_iter=30, proj_back=True, **kwargs)
         max_mse = 0.5
     elif algo == "fastmnmf":
-        Y = pra.bss.fastmnmf(X, n_src=2, n_iter=30, n_components=8)
+        Y = pra.bss.fastmnmf(X, n_iter=30, n_components=2, **kwargs)
+        max_mse = 1e-1
+    elif algo == "fastmnmf2":
+        Y = pra.bss.fastmnmf2(X, n_iter=30, n_components=2, **kwargs)
         max_mse = 1e-1
 
     ## STFT Synthesis
@@ -163,6 +166,11 @@ class TestBSS(unittest.TestCase):
     def test_bss_fastmnmf(self):
         for block in L:
             freq_bss(algo="fastmnmf", L=block)
+
+    # Test fastmnmf2 with frame lengths [256, 512, 1024, 2048, 4096]
+    def test_bss_fastmnmf2(self):
+        for block in L:
+            freq_bss(algo="fastmnmf2", L=block)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ Submodules
    pyroomacoustics.acoustics
    pyroomacoustics.beamforming
    pyroomacoustics.build_rir
+   pyroomacoustics.directivities
    pyroomacoustics.metrics
    pyroomacoustics.multirate
    pyroomacoustics.parameters

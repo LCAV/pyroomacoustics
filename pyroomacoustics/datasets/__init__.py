@@ -1,4 +1,4 @@
-'''
+"""
 The Datasets Sub-package is responsible to deliver
 wrappers around a few popular audio datasets to make
 them easier to use.
@@ -135,7 +135,7 @@ Example 3 (Google's Speech Commands Dataset)
     matches[0].plot()
     plt.show()
   
-'''
+"""
 
 from .base import Meta, Sample, AudioSample, Dataset
 from .timit import Word, Sentence, TimitCorpus

@@ -24,6 +24,10 @@ We try to stick to `PEP8 <https://www.python.org/dev/peps/pep-0008/>`__
 as much as possible. Variables, functions, modules and packages should
 be in lowercase with underscores. Class names in CamelCase.
 
+We use `Black <https://github.com/psf/black>`__ to format the code.
+The format will be automatically checked when doing a pull request so it is
+recommended to regularly run Black on the code.
+
 Documentation
 ~~~~~~~~~~~~~
 
@@ -33,7 +37,7 @@ style <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__
 We recommend the following steps for generating the documentation:
 
 -  Create a separate environment, e.g. with Anaconda, as such:
-   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme``
+   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme sphinxcontrib-napoleon tabulate`` 
 -  Switch to the environment: ``source activate mkdocs37``
 -  Navigate to the ``docs`` folder and run: ``./make_apidoc.sh``
 -  The materials database page is generated with the script ``./make_materials_table.py``
@@ -150,6 +154,24 @@ them.
 And last but not least: Always write your commit messages in the present
 tense. Your commit message should describe what the commit, when
 applied, does to the code – not what you did to the code.
+
+How to deploy a new version to pypi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. git checkout pypi-release
+2. git merge master
+3. Change version number in ``pyroomacoustics/version.py`` to new version number vX.Y.Z
+4. Edit ``CHANGELOG.rst`` as follows
+
+   - Add new title ``X.Y.Z_ - YEAR-MONTH-DAY`` under ``Unreleased``, add "Nothing yet" in the unreleased section.
+   - Edit appropriately the lists of links at the bottom of the file.
+5. git commit
+6. git tag vX.Y.Z
+7. git push origin vX.Y.Z
+8. git push
+9. git checkout master
+10. git merge pypi-release
+11. git push origin master
 
 Reference
 ---------

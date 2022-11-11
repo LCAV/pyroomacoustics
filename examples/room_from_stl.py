@@ -51,7 +51,13 @@ if __name__ == "__main__":
         )
 
     room = (
-        pra.Room(walls, fs=16000, max_order=3, ray_tracing=True, air_absorption=True,)
+        pra.Room(
+            walls,
+            fs=16000,
+            max_order=3,
+            ray_tracing=True,
+            air_absorption=True,
+        )
         .add_source([-2.0, 2.0, 1.8])
         .add_microphone_array(np.c_[[-6.5, 8.5, 3 + 0.1], [-6.5, 8.1, 3 + 0.1]])
     )
