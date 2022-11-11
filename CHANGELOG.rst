@@ -13,6 +13,13 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Nothing yet.
 
+`0.7.1`_ - 2022-11-11
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixed pypi upload for windows wheels
 
 `0.7.0`_ - 2022-11-10
 ---------------------
@@ -486,7 +493,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.0...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.1...master
+.. _0.7.1: https://github.com/LCAV/pyroomacoustics/compare/v0.7.0...v0.7.1
 .. _0.7.0: https://github.com/LCAV/pyroomacoustics/compare/v0.6.0...v0.7.0
 .. _0.6.0: https://github.com/LCAV/pyroomacoustics/compare/v0.5.0...v0.6.0
 .. _0.5.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...v0.5.0
