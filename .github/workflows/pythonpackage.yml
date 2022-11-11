@@ -42,7 +42,7 @@ jobs:
       run: |
         pip install -U pytest setuptools wheel twine
         pytest
-    - name: Test the univers wheels
+    - name: Test the universal wheels
       if: matrix.os == 'ubuntu-latest'
       run: |
         python setup.py sdist

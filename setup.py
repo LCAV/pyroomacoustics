@@ -5,7 +5,6 @@ import os
 import sys
 
 # To use a consistent encoding
-from codecs import open
 from os import path
 
 # import version from file
