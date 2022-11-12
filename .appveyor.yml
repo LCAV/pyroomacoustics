@@ -7,33 +7,17 @@ environment:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
     - PYTHON_VERSION: 3.7
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda37
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda37-x64
       PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda38
-      PYTHON_ARCH: "32"
     - PYTHON_VERSION: 3.8
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda38-x64
       PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.9
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda39
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.9
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
       PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.10
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda39
-      PYTHON_ARCH: "32"
     - PYTHON_VERSION: 3.10
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
@@ -51,14 +35,15 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose pytest"
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose"
   - pip install twine wheel
   - activate test-environment
 
   - pip install -r requirements.txt
-  - python.exe -m pip install -e .
+  - python setup.py install
 
 test_script:
+  - python.exe setup.py build_ext --inplace
   - pytest
 
 after_test:
