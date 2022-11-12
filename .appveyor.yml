@@ -1,4 +1,5 @@
 build: false
+image: Visual Studio 2019
 
 environment:
   PYPI_PASSWORD:
