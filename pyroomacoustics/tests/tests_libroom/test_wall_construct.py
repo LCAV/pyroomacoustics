@@ -65,15 +65,11 @@ def test_wall_3d_construct_0():
     w_info = walls[0]
     wall = pra.wall_factory(w_info["corners"], [0.2], [0.1])
 
-    return wall
-
 
 def test_wall_3d_construct_1():
     """Tests construction of a wall"""
     w_info = walls[1]
     wall = pra.wall_factory(w_info["corners"], [0.2], [0.1])
-
-    return wall
 
 
 def test_wall_3d_area_0():
@@ -120,9 +116,9 @@ def test_wall_3d_normal_1():
 
 if __name__ == "__main__":
 
-    wall0 = test_wall_3d_construct_0()
+    test_wall_3d_construct_0()
     test_wall_3d_normal_0()
     test_wall_3d_area_0()
-    wall1 = test_wall_3d_construct_1()
+    test_wall_3d_construct_1()
     test_wall_3d_normal_1()
     test_wall_3d_area_1()

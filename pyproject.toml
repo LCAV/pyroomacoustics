@@ -1,3 +1,8 @@
 [build-system]
 # Minimum requirements for the build system to execute.
 requires = ["setuptools", "wheel", "numpy>=1.13.0", "Cython", "pybind11>=2.2"]  # PEP 508 specifications.
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  'ignore:Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.:UserWarning'
+]
