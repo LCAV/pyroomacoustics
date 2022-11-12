@@ -1654,7 +1654,8 @@ class Room(object):
 
             if ax is None:
                 fig = plt.figure(figsize=figsize)
-                ax = a3.Axes3D(fig)
+                ax = a3.Axes3D(fig, auto_add_to_figure=False)
+                fig.add_axes(ax)
 
             # plot the walls
             for w in self.walls:
