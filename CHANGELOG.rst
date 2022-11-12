@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes missing import statement in room.plot for 3D rooms (PR #286)
 
 `0.7.1`_ - 2022-11-11
 ---------------------

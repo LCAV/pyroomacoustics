@@ -39,8 +39,7 @@ absorptions = [0.1, 0.25, 0.25, 0.25, 0.2, 0.15]
 scatterings = [0.1, 0.05, 0.1, 0.02, 0.2, 0.3]
 
 
-def test_room_construct():
-
+def room_construct():
     walls = [
         pra.wall_factory(c, [a], [s])
         for c, a, s in zip(wall_corners, absorptions, scatterings)
@@ -64,6 +63,10 @@ def test_room_construct():
     print(room.max_dist)
 
     return room
+
+
+def test_room_construct():
+    room_construct()
 
 
 if __name__ == "__main__":
