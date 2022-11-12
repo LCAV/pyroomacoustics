@@ -1,11 +1,11 @@
 build: false
-image: Visual Studio 2019
 
 environment:
   PYPI_PASSWORD:
     secure: 9NqOJYSnExOsNW15tqSNOV/tLcIAeQOknx7PpXdZ0Vw=
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
+  image: Visual Studio 2019
   matrix:
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3-x64
@@ -30,14 +30,13 @@ init:
 install:
   - git submodule update --init --recursive
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose"
   - activate test-environment
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - pip install -U setuptools twine wheel
   - pip install -r requirements.txt
   - python setup.py install
