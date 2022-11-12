@@ -6,22 +6,6 @@ environment:
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
-    - PYTHON_VERSION: 3.5
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda35
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.5
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda35-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda36
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda36-x64
-      PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3
       RESTORE_MINICONDA: C:\Miniconda37
@@ -46,6 +30,14 @@ environment:
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
       PYTHON_ARCH: "64"
+    - PYTHON_VERSION: 3.10
+      MINICONDA: C:\Miniconda3
+      RESTORE_MINICONDA: C:\Miniconda39
+      PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.10
+      MINICONDA: C:\Miniconda3-x64
+      RESTORE_MINICONDA: C:\Miniconda39-x64
+      PYTHON_ARCH: "64"
 
 init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
@@ -59,20 +51,20 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose"
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose pytest"
   - pip install twine wheel
   - activate test-environment
 
   - pip install -r requirements.txt
-  - python setup.py install
+  - python.exe -m pip install -e .
 
 test_script:
-  - python.exe setup.py build_ext --inplace
-  - nosetests
+  - pytest
 
 after_test:
   # This step builds your wheels.
   - python.exe setup.py bdist_wheel
+  - twine check dist\*
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
