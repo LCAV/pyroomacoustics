@@ -11,6 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- Appveyor builds for compiled wheels for win32/win64 x86
+
 Bugfix
 ~~~~~~
 
