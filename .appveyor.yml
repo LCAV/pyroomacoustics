@@ -5,27 +5,25 @@ environment:
     secure: 9NqOJYSnExOsNW15tqSNOV/tLcIAeQOknx7PpXdZ0Vw=
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
+  image:
+    - Visual Studio 2017
   matrix:
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda37-x64
       PYTHON_ARCH: "64"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     - PYTHON_VERSION: 3.8
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda38-x64
       PYTHON_ARCH: "64"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     - PYTHON_VERSION: 3.9
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
       PYTHON_ARCH: "64"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     - PYTHON_VERSION: 3.10
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
       PYTHON_ARCH: "64"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
 
 init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
