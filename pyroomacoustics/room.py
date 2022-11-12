@@ -1650,6 +1650,7 @@ class Room(object):
 
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
+            import mpl_toolkits.mplot3d as a3
 
             if ax is None:
                 fig = plt.figure(figsize=figsize)
