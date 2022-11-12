@@ -45,7 +45,7 @@ install:
 
 test_script:
   - python.exe setup.py build_ext --inplace
-  - pytest
+  - python.exe -m pytest
 
 after_test:
   # This step builds your wheels.
