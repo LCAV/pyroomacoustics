@@ -1504,7 +1504,7 @@ class Room(object):
 
             # draw room
             corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-            polygons = [Polygon(corners.T, True)]
+            polygons = [Polygon(xy=corners.T, closed=True)]
             p = PatchCollection(
                 polygons,
                 cmap=matplotlib.cm.jet,
@@ -1650,7 +1650,6 @@ class Room(object):
 
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
-            import scipy as sp
 
             if ax is None:
                 fig = plt.figure(figsize=figsize)
@@ -1659,7 +1658,7 @@ class Room(object):
             # plot the walls
             for w in self.walls:
                 tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
-                tri.set_color(colors.rgb2hex(sp.rand(3)))
+                tri.set_color(colors.rgb2hex(np.random.rand(3)))
                 tri.set_edgecolor("k")
                 ax.add_collection3d(tri)
 

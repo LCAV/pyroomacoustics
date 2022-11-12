@@ -16,8 +16,7 @@ mic_loc = [0.5, 1, 0.75]
 fs = 44100
 
 
-def test_ism():
-
+def wrapper_ism():
     room = pra.ShoeBox(room_size, fs, materials=pra.Material(0.1), max_order=50)
 
     room.add_source(source_loc)
@@ -28,13 +27,15 @@ def test_ism():
 
     ssf_ism = met.sweeping_echo_measure(room.rir[0][0], fs)
 
-    assert 0 <= ssf_ism <= 1.0
-
     return ssf_ism
 
 
-def test_random_ism():
+def test_ism():
+    ssf_ism = wrapper_ism()
+    assert 0 <= ssf_ism <= 1.0
 
+
+def wrapper_random_ism():
     room = pra.ShoeBox(
         room_size, fs, materials=pra.Material(0.1), max_order=50, use_rand_ism=True
     )
@@ -49,12 +50,15 @@ def test_random_ism():
     # higher value is desired
     ssf_rism = met.sweeping_echo_measure(room.rir[0][0], fs)
 
-    assert 0 <= ssf_rism <= 1.0
-
     return ssf_rism
 
 
+def test_random_ism():
+    ssf_rism = wrapper_random_ism()
+    assert 0 <= ssf_rism <= 1.0
+
+
 if __name__ == "__main__":
-    ssf_ism = test_ism()
-    ssf_rism = test_random_ism()
+    ssf_ism = wrapper_ism()
+    ssf_rism = wrapper_random_ism()
     assert ssf_rism > ssf_ism
