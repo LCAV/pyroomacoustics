@@ -105,7 +105,7 @@ def calculate_speed_of_sound(t, h, p):
 
 
 def _calculate_temperature(c, h):
-    """ Compute the temperature give a speed of sound ``c`` and humidity ``h`` """
+    """Compute the temperature give a speed of sound ``c`` and humidity ``h``"""
 
     return (c - 331.4 - 0.0124 * h) / 0.6
 
@@ -203,7 +203,7 @@ class Physics(object):
 
     @classmethod
     def from_speed(cls, c):
-        """ Choose a temperature and humidity matching a desired speed of sound """
+        """Choose a temperature and humidity matching a desired speed of sound"""
 
         H = 0.3
         T = _calculate_temperature(c, H)
@@ -386,16 +386,16 @@ class Material(object):
 
     @property
     def absorption_coeffs(self):
-        """ shorthand to the energy absorption coefficients """
+        """shorthand to the energy absorption coefficients"""
         return self.energy_absorption["coeffs"]
 
     @property
     def scattering_coeffs(self):
-        """ shorthand to the scattering coefficients """
+        """shorthand to the scattering coefficients"""
         return self.scattering["coeffs"]
 
     def resample(self, octave_bands):
-        """ resample at given octave bands """
+        """resample at given octave bands"""
         self.energy_absorption = {
             "coeffs": octave_bands(**self.energy_absorption),
             "center_freqs": octave_bands.centers,
@@ -445,6 +445,30 @@ def make_materials(*args, **kwargs):
     If only keyword arguments are provided, only the dict is returned.
     If both are provided, both are returned.
     If no argument is provided, an empty list is returned.
+
+    .. code-block:: python
+        :linenos:
+
+        # energy absorption parameters
+        floor_eabs = {
+            "description": "Example floor material",
+            "coeffs": [0.1, 0.2, 0.1, 0.1, 0.1, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # scattering parameters
+        audience_scat = {
+            "description": "Theatre Audience",
+            "coeffs": [0.3, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7]
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # create a list of materials
+        my_mat_list = pra.make_materials((floor_eabs, audience_scat))
+
+        # create a dict of materials
+        my_mat_dict = pra.make_materials(floor=(floor_abs, audience_scat))
+
     """
 
     ret_args = []

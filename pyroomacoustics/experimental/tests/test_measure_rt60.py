@@ -25,7 +25,8 @@ import pyroomacoustics as pra
 
 eps = 1e-15
 
-room = pra.ShoeBox([10, 7, 6], fs=16000, absorption=0.35, max_order=17)
+e_abs = 1.0 - (1.0 - 0.35) ** 2
+room = pra.ShoeBox([10, 7, 6], fs=16000, materials=pra.Material(e_abs), max_order=17)
 room.add_source([3, 2.5, 1.7])
 room.add_microphone_array(pra.MicrophoneArray(np.array([[7, 3.7, 1.1]]).T, room.fs))
 room.compute_rir()
@@ -58,7 +59,8 @@ def test_rt60_plot():
     """
 
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
 
     pra.experimental.measure_rt60(ir, plot=True)
     pra.experimental.measure_rt60(ir, plot=True, rt60_tgt=0.3)

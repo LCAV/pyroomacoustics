@@ -27,7 +27,7 @@ import numpy as np
 
 
 class SpectralSub(object):
-    """
+    r"""
     Here we have a class for performing **single channel** noise reduction via
     spectral subtraction. The instantaneous signal energy and noise floor is
     estimated at each time instance (for each frequency bin) and this is used
@@ -115,7 +115,7 @@ class SpectralSub(object):
         Overestimation factor to "push" the gain filter value (at each
         frequency) closer to the dB reduction specified by ``db_reduc``.
     alpha: float, optional
-        Exponent factor to modify transition behavior towards the dB reduction 
+        Exponent factor to modify transition behavior towards the dB reduction
         specified by ``db_reduc``. Default is 1.
 
     """
@@ -125,9 +125,9 @@ class SpectralSub(object):
         self.beta = beta
         self.alpha = alpha
 
-        self.n_bins = nfft//2+1
-        self.p_prev = np.zeros((self.n_bins, lookback+1))
-        self.gmin = 10**(-db_reduc/20)
+        self.n_bins = nfft // 2 + 1
+        self.p_prev = np.zeros((self.n_bins, lookback + 1))
+        self.gmin = 10 ** (-db_reduc / 20)
 
         self.p_sn = np.zeros(self.n_bins)
         self.p_n = np.zeros(self.n_bins)
@@ -146,16 +146,21 @@ class SpectralSub(object):
         """
 
         # estimate of signal + noise at current time
-        self.p_sn[:] = np.real(np.conj(X)*X)
+        self.p_sn[:] = np.real(np.conj(X) * X)
 
         # estimate of noise level
         self.p_prev[:, -1] = self.p_sn
         self.p_n[:] = np.min(self.p_prev, axis=1)
 
         # compute gain filter
-        gain_filter = [max((max(self.p_sn[k]-self.beta*self.p_n[k], 0) /
-                            self.p_sn[k])**self.alpha, self.gmin)
-                       for k in range(self.n_bins)]
+        gain_filter = [
+            max(
+                (max(self.p_sn[k] - self.beta * self.p_n[k], 0) / self.p_sn[k])
+                ** self.alpha,
+                self.gmin,
+            )
+            for k in range(self.n_bins)
+        ]
 
         # update
         self.p_prev = np.roll(self.p_prev, -1, axis=1)
@@ -163,8 +168,9 @@ class SpectralSub(object):
         return gain_filter
 
 
-def apply_spectral_sub(noisy_signal, nfft=512, db_reduc=25, lookback=12,
-                       beta=30, alpha=1):
+def apply_spectral_sub(
+    noisy_signal, nfft=512, db_reduc=25, lookback=12, beta=30, alpha=1
+):
     """
     One-shot function to apply spectral subtraction approach.
 
@@ -196,7 +202,7 @@ def apply_spectral_sub(noisy_signal, nfft=512, db_reduc=25, lookback=12,
     from pyroomacoustics.transform import STFT
 
     hop = nfft // 2
-    window = hann(nfft, flag='asymmetric', length='full')
+    window = hann(nfft, flag="asymmetric", length="full")
     stft = STFT(nfft, hop=hop, analysis_window=window, streaming=True)
     scnr = SpectralSub(nfft, db_reduc, lookback, beta, alpha)
 
@@ -204,11 +210,17 @@ def apply_spectral_sub(noisy_signal, nfft=512, db_reduc=25, lookback=12,
     n = 0
     while noisy_signal.shape[0] - n >= hop:
         # SCNR in frequency domain
-        stft.analysis(noisy_signal[n:(n + hop), ])
+        stft.analysis(
+            noisy_signal[
+                n : (n + hop),
+            ]
+        )
         gain_filt = scnr.compute_gain_filter(stft.X)
 
         # back to time domain
-        processed_audio[n:n + hop, ] = stft.synthesis(gain_filt * stft.X)
+        processed_audio[
+            n : n + hop,
+        ] = stft.synthesis(gain_filt * stft.X)
 
         # update step
         n += hop

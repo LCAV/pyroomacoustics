@@ -32,8 +32,8 @@ except ImportError:
     from urllib import urlopen
 
 
-def download_uncompress(url, path='.', compression=None, context=None):
-    '''
+def download_uncompress(url, path=".", compression=None, context=None):
+    """
     This functions download and uncompress on the fly a file
     of type tar, tar.gz, tar.bz2.
 
@@ -48,19 +48,19 @@ def download_uncompress(url, path='.', compression=None, context=None):
         if not provided
     context: SSL certification, optional
         Default is to use none.
-    '''
+    """
 
     # infer compression from url
     if compression is None:
         compression = os.path.splitext(url)[1][1:]
 
     # check compression format and set mode
-    if compression in ['gz', 'bz2']:
-        mode = 'r|' + compression
-    elif compression == 'tar':
-        mode = 'r:'
+    if compression in ["gz", "bz2"]:
+        mode = "r|" + compression
+    elif compression == "tar":
+        mode = "r:"
     else:
-        raise ValueError('The file must be of type tar/gz/bz2.')
+        raise ValueError("The file must be of type tar/gz/bz2.")
 
     # download and untar/uncompress at the same time
     if context is not None:

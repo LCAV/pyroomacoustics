@@ -33,6 +33,13 @@ The method implemented is described in the following publication
     K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
 
+5) Fast Multichannel Nonnegative Matrix Factorization 2 (FastMNMF2)
+The method implemented is described in the following publication
+
+    K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel Nonnegative
+    Matrix Factorization With Directivity-Aware Jointly-Diagonalizable Spatial
+    Covariance Matrices for Blind Source Separation*, IEEE/ACM TASLP, 2020.
+
 All the algorithms work in the STFT domain. The test files are recorded by an external
 microphone array.
 Depending on the input arguments running this script will do these actions:.
@@ -61,7 +68,7 @@ import sounddevice as sd
 
 if __name__ == "__main__":
 
-    choices = ["ilrma", "auxiva", "sparseauxiva", "fastmnmf"]
+    choices = ["ilrma", "auxiva", "sparseauxiva", "fastmnmf", "fastmnmf2"]
 
     import argparse
 
@@ -139,9 +146,10 @@ if __name__ == "__main__":
         )
     elif bss_type == "fastmnmf":
         # Run FastMNMF
-        Y = pra.bss.fastmnmf(
-            X, n_iter=args.n_iter, n_components=8, n_src=2, callback=cb_print
-        )
+        Y = pra.bss.fastmnmf(X, n_iter=args.n_iter, n_components=4, callback=cb_print)
+    elif bss_type == "fastmnmf2":
+        # Run FastMNMF2
+        Y = pra.bss.fastmnmf2(X, n_iter=args.n_iter, n_components=4, callback=cb_print)
     elif bss_type == "sparseauxiva":
         # Estimate set of active frequency bins
         ratio = 0.35

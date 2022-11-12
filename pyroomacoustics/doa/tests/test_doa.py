@@ -5,9 +5,8 @@
 import unittest
 
 import numpy as np
-from scipy.signal import fftconvolve
-
 import pyroomacoustics as pra
+from scipy.signal import fftconvolve
 
 # fix the RNG seed for repeatability
 np.random.seed(0)
@@ -36,13 +35,19 @@ x = np.random.randn((nfft // 2 + 1) * nfft)
 # convolve the source signal with the fractional delay filters
 # to get the microphone input signals
 mic_signals = np.array([fftconvolve(x, filter, mode="same") for filter in filter_bank])
-X = pra.transform.analysis(mic_signals.T, nfft, nfft // 2, win=np.hanning(nfft))
+X = pra.transform.stft.analysis(mic_signals.T, nfft, nfft // 2, win=np.hanning(nfft))
 X = np.swapaxes(X, 2, 0)
 
 
 class TestDOA(unittest.TestCase):
     def test_music(self):
         doa = pra.doa.algorithms["MUSIC"](R, fs, nfft, c=c)
+        doa.locate_sources(X, freq_bins=freq_bins)
+        print("distance:", pra.doa.circ_dist(azimuth, doa.azimuth_recon))
+        self.assertTrue(pra.doa.circ_dist(azimuth, doa.azimuth_recon) < tol)
+
+    def test_normmusic(self):
+        doa = pra.doa.algorithms["NormMUSIC"](R, fs, nfft, c=c)
         doa.locate_sources(X, freq_bins=freq_bins)
         print("distance:", pra.doa.circ_dist(azimuth, doa.azimuth_recon))
         self.assertTrue(pra.doa.circ_dist(azimuth, doa.azimuth_recon) < tol)

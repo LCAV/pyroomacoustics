@@ -1,4 +1,4 @@
-'''
+"""
 pyroomacoustics
 ===============
 
@@ -46,6 +46,9 @@ Available submodules
 
 :py:obj:`pyroomacoustics.beamforming`
     Microphone arrays and beamforming routines.
+
+:py:obj:`pyroomacoustics.directivities`
+    Directivity pattern objects and routines.
 
 :py:obj:`pyroomacoustics.geometry`
     Core geometry routine for the image source model.
@@ -113,36 +116,23 @@ Utilities
 __version__
     pyroomacoustics version string
 
-'''
-
-from .version import __version__
-
-from . import libroom as libroom
-
-from .room import *
-from .beamforming import *
-from .soundsource import *
-from .parameters import *
-from .utilities import *
-from .windows import *
-from .sync import *
-from .metrics import *
-from .multirate import *
-from .acoustics import *
-from .recognition import *
-
-from . import doa
-from . import adaptive
-from . import transform
-from . import transform as realtime  # to be deprecated
-from . import experimental
-from . import datasets
-from . import bss
-from . import denoise
-from . import phase
+"""
 
 import warnings
-warnings.warn(
-    "Do not import the 'realtime' module as it will be deprecated soon. It will be replaced by the 'transform' module."
-    , DeprecationWarning
-)
+
+from . import adaptive, bss, datasets, denoise, doa, experimental
+from . import libroom as libroom
+from . import phase, transform
+from .acoustics import *
+from .beamforming import *
+from .directivities import *
+from .metrics import *
+from .multirate import *
+from .parameters import *
+from .recognition import *
+from .room import *
+from .soundsource import *
+from .sync import *
+from .utilities import *
+from .version import __version__
+from .windows import *
