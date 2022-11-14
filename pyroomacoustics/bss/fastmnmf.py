@@ -170,13 +170,19 @@ def fastmnmf(
                         np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
                     )
                 except np.linalg.LinAlgError:
+                    # If Gaussian elimination fails due to a singlular matrix, we
+                    # switch to the pseudo-inverse solution
                     import warnings
 
                     warnings.warn(
                         "Singular matrix encountered, switching to pseudo-inverse"
                     )
                     mat_inv = np.linalg.pinv(np.matmul(Q_FMM, V_FMM))
-                    tmp_FM = np.matmul(mat_inv, np.eye(n_chan)[None, m])
+                    rhs = np.broadcast_to(
+                        np.eye(n_chan)[None, :, [m]], (mat_inv.shape[0], n_chan, 1)
+                    )
+                    tmp_FM = np.matmul(mat_inv, rhs)
+                    tmp_FM = tmp_FM[..., 0]
 
                 Q_FMM[:, m] = (
                     tmp_FM
