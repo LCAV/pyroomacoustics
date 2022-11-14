@@ -107,7 +107,17 @@ def fastmnmf(
 
     def separate():
         Qx_FTM = np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)
-        Qinv_FMM = np.linalg.inv(Q_FMM)
+        try:
+            Qinv_FMM = np.linalg.inv(Q_FMM)
+        except np.linalg.LinAlgError:
+            # If Gaussian elimination fails due to a singlular matrix, we
+            # switch to the pseudo-inverse solution
+            import warnings
+
+            warnings.warn(
+                "Singular matrix encountered in separate, switching to pseudo-inverse"
+            )
+            Qinv_FMM = np.linalg.pinv(Q_FMM)
         Y_NFTM = np.einsum("nft, nfm -> nftm", lambda_NFT, G_NFM)
 
         if mic_index == "all":
