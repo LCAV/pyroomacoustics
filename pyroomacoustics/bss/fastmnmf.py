@@ -164,9 +164,20 @@ def fastmnmf(
                 V_FMM = (
                     np.einsum("ftij, ft -> fij", XX_FTMM, 1 / Y_FTM[..., m]) / n_frames
                 )
-                tmp_FM = np.linalg.solve(
-                    np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
-                )
+
+                try:
+                    tmp_FM = np.linalg.solve(
+                        np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
+                    )
+                except np.linalg.LinAlgError:
+                    import warnings
+
+                    warnings.warn(
+                        "Singular matrix encountered, switching to pseudo-inverse"
+                    )
+                    mat_inv = np.linalg.pinv(np.matmul(Q_FMM, V_FMM))
+                    tmp_FM = np.matmul(mat_inv, np.eye(n_chan)[None, m])
+
                 Q_FMM[:, m] = (
                     tmp_FM
                     / (
