@@ -72,7 +72,7 @@ def fastmnmf(
     If mic_index is int, returns an (nframes, nfrequencies, nsources) array.
     If mic_index is 'all', returns an (nchannels, nframes, nfrequencies, nsources) array.
     """
-    eps = 1e-5
+    eps = 1e-6
     g_eps = 5e-2
     interval_update_Q = 1  # 2 may work as well and is faster
     interval_normalize = 10
