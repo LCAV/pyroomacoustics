@@ -9,34 +9,6 @@ environment:
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
-    - PYTHON_VERSION: 3.7
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda37
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda37
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.9
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda37
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.10
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda37
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.7
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda37-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda38-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.9
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda39-x64
-      PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.10
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
