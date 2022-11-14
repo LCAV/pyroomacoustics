@@ -20,8 +20,8 @@ Bugfix
 ~~~~~~
 
 - Fixes missing import statement in room.plot for 3D rooms (PR #286)
-- On win64, ``bss.fastmnmf`` would fail due to some singular matrix. This is fixed by switching
-  to the pseudo-inverse solution when this happens
+- On win64, ``bss.fastmnmf`` would fail due to some singular matrix. 1) protect solve
+  with try/except and switch to pseudo-inverse if necessary, 2) change eps 1e-7 -> 1e-6
 
 `0.7.1`_ - 2022-11-11
 ---------------------
