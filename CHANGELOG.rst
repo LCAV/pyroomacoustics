@@ -11,10 +11,17 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- Appveyor builds for compiled wheels for win32/win64 x86
+
 Bugfix
 ~~~~~~
 
 - Fixes missing import statement in room.plot for 3D rooms (PR #286)
+- On win64, ``bss.fastmnmf`` would fail due to some singular matrix. 1) protect solve
+  with try/except and switch to pseudo-inverse if necessary, 2) change eps 1e-7 -> 1e-6
 
 `0.7.1`_ - 2022-11-11
 ---------------------
