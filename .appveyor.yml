@@ -1,28 +1,27 @@
 build: false
 
+image:
+  - Visual Studio 2017
+
 environment:
   PYPI_PASSWORD:
     secure: 9NqOJYSnExOsNW15tqSNOV/tLcIAeQOknx7PpXdZ0Vw=
   PYPITEST_PASSWORD:
     secure: V4MvmVbhivy0HjzUsUqp7s8TRzSiv1yjWnH3rbzRDobU3dJMwWmkvQyAGr0J5Il1
   matrix:
-    - PYTHON_VERSION: 3.5
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda35
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.5
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda35-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda36
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda36-x64
-      PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.7
+      MINICONDA: C:\Miniconda3
+      RESTORE_MINICONDA: C:\Miniconda37
+      PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.8
+      MINICONDA: C:\Miniconda3
+      RESTORE_MINICONDA: C:\Miniconda37
+      PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.9
+      MINICONDA: C:\Miniconda3
+      RESTORE_MINICONDA: C:\Miniconda37
+      PYTHON_ARCH: "32"
+    - PYTHON_VERSION: 3.10
       MINICONDA: C:\Miniconda3
       RESTORE_MINICONDA: C:\Miniconda37
       PYTHON_ARCH: "32"
@@ -31,18 +30,14 @@ environment:
       RESTORE_MINICONDA: C:\Miniconda37-x64
       PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda38
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.8
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda38-x64
       PYTHON_ARCH: "64"
     - PYTHON_VERSION: 3.9
-      MINICONDA: C:\Miniconda3
-      RESTORE_MINICONDA: C:\Miniconda39
-      PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.9
+      MINICONDA: C:\Miniconda3-x64
+      RESTORE_MINICONDA: C:\Miniconda39-x64
+      PYTHON_ARCH: "64"
+    - PYTHON_VERSION: 3.10
       MINICONDA: C:\Miniconda3-x64
       RESTORE_MINICONDA: C:\Miniconda39-x64
       PYTHON_ARCH: "64"
@@ -53,26 +48,25 @@ init:
 install:
   - git submodule update --init --recursive
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-  - "python --version"
-  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose"
-  - pip install twine wheel
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy>=0.18.0 matplotlib nose pytest"
   - activate test-environment
-
-  - pip install -r requirements.txt
-  - python setup.py install
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "python -m pip install -U setuptools twine wheel"
+  - "python -m pip install -r requirements.txt"
+  - "python setup.py install"
 
 test_script:
-  - python.exe setup.py build_ext --inplace
-  - nosetests
+  - "python setup.py build_ext --inplace"
+  - "python -m pytest"
 
 after_test:
   # This step builds your wheels.
   - python.exe setup.py bdist_wheel
+  - twine check dist\*
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory

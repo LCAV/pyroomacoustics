@@ -72,7 +72,7 @@ def fastmnmf(
     If mic_index is int, returns an (nframes, nfrequencies, nsources) array.
     If mic_index is 'all', returns an (nchannels, nframes, nfrequencies, nsources) array.
     """
-    eps = 1e-7
+    eps = 1e-6
     g_eps = 5e-2
     interval_update_Q = 1  # 2 may work as well and is faster
     interval_normalize = 10
@@ -107,7 +107,17 @@ def fastmnmf(
 
     def separate():
         Qx_FTM = np.einsum("fij, ftj -> fti", Q_FMM, X_FTM)
-        Qinv_FMM = np.linalg.inv(Q_FMM)
+        try:
+            Qinv_FMM = np.linalg.inv(Q_FMM)
+        except np.linalg.LinAlgError:
+            # If Gaussian elimination fails due to a singlular matrix, we
+            # switch to the pseudo-inverse solution
+            import warnings
+
+            warnings.warn(
+                "Singular matrix encountered in separate, switching to pseudo-inverse"
+            )
+            Qinv_FMM = np.linalg.pinv(Q_FMM)
         Y_NFTM = np.einsum("nft, nfm -> nftm", lambda_NFT, G_NFM)
 
         if mic_index == "all":
@@ -164,9 +174,26 @@ def fastmnmf(
                 V_FMM = (
                     np.einsum("ftij, ft -> fij", XX_FTMM, 1 / Y_FTM[..., m]) / n_frames
                 )
-                tmp_FM = np.linalg.solve(
-                    np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
-                )
+
+                try:
+                    tmp_FM = np.linalg.solve(
+                        np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
+                    )
+                except np.linalg.LinAlgError:
+                    # If Gaussian elimination fails due to a singlular matrix, we
+                    # switch to the pseudo-inverse solution
+                    import warnings
+
+                    warnings.warn(
+                        "Singular matrix encountered, switching to pseudo-inverse"
+                    )
+                    mat_inv = np.linalg.pinv(np.matmul(Q_FMM, V_FMM))
+                    rhs = np.broadcast_to(
+                        np.eye(n_chan)[None, :, [m]], (mat_inv.shape[0], n_chan, 1)
+                    )
+                    tmp_FM = np.matmul(mat_inv, rhs)
+                    tmp_FM = tmp_FM[..., 0]
+
                 Q_FMM[:, m] = (
                     tmp_FM
                     / (
