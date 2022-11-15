@@ -1,5 +1,10 @@
 build: false
 
+branches:
+  only:
+    - pypi-release
+    - pypi-test
+
 image:
   - Visual Studio 2017
 
@@ -25,22 +30,6 @@ environment:
       MINICONDA: C:\Miniconda3
       RESTORE_MINICONDA: C:\Miniconda37
       PYTHON_ARCH: "32"
-    - PYTHON_VERSION: 3.7
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda37-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda38-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.9
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda39-x64
-      PYTHON_ARCH: "64"
-    - PYTHON_VERSION: 3.10
-      MINICONDA: C:\Miniconda3-x64
-      RESTORE_MINICONDA: C:\Miniconda39-x64
-      PYTHON_ARCH: "64"
 
 init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
