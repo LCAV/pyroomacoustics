@@ -1,12 +1,12 @@
 """
 Routines to perform grid search on the sphere
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
-
-from abc import ABCMeta, abstractmethod
 
 from .detect_peaks import detect_peaks
 from .utils import great_circ_dist
@@ -159,6 +159,14 @@ class GridSphere(Grid):
     spherical_points: ndarray, optional
         A 2 x n_points array of spherical coordinates with azimuth in
         the top row and colatitude in the second row. Overrides n_points.
+    enable_peak_finding: bool, optional
+        If this is set to True, the list of neighbors of every points
+        in the grid will be precomputed to allow to do peak finding on
+        the sphere (default is True). When set to False, calling the ``find_peak``
+        method will result in an error. Not that setting this to True means
+        that the convex hull of the point is computed which may result in overhead
+        time, especially for a lot of points. If peak finding is not required, it is
+        recommended to set this value to False.
 
     References
     ----------
@@ -166,7 +174,7 @@ class GridSphere(Grid):
     http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
     """
 
-    def __init__(self, n_points=1000, spherical_points=None):
+    def __init__(self, n_points=1000, spherical_points=None, enable_peak_finding=True):
         if spherical_points is not None:
 
             if spherical_points.ndim != 2 or spherical_points.shape[0] != 2:
@@ -215,25 +223,28 @@ class GridSphere(Grid):
         # Convex Hull of points on the sphere is equivalent to the Delauney
         # triangulation of the point set, which is what we are looking for.
 
-        # Now we also want to compute the convex hull
-        self.hull = sp.ConvexHull(self.cartesian.T)
+        self._enable_peak_finding = enable_peak_finding
 
-        # and create an adjacency list
-        adjacency = [set() for pt in range(self.n_points)]
+        if self._enable_peak_finding:
+            # Now we also want to compute the convex hull
+            self.hull = sp.ConvexHull(self.cartesian.T)
 
-        # Simplices contains all the triangles that form
-        # the faces of the convex hull. We use this to find which
-        # points are connected on the hull.
-        for tri in self.hull.simplices:
-            adjacency[tri[0]].add(tri[1])
-            adjacency[tri[0]].add(tri[2])
-            adjacency[tri[1]].add(tri[0])
-            adjacency[tri[1]].add(tri[2])
-            adjacency[tri[2]].add(tri[0])
-            adjacency[tri[2]].add(tri[1])
+            # and create an adjacency list
+            adjacency = [set() for pt in range(self.n_points)]
 
-        # convert to list of lists
-        self.neighbors = [list(x) for x in adjacency]
+            # Simplices contains all the triangles that form
+            # the faces of the convex hull. We use this to find which
+            # points are connected on the hull.
+            for tri in self.hull.simplices:
+                adjacency[tri[0]].add(tri[1])
+                adjacency[tri[0]].add(tri[2])
+                adjacency[tri[1]].add(tri[0])
+                adjacency[tri[1]].add(tri[2])
+                adjacency[tri[2]].add(tri[0])
+                adjacency[tri[2]].add(tri[1])
+
+            # convert to list of lists
+            self.neighbors = [list(x) for x in adjacency]
 
     def apply(self, func, spherical=False):
         """
@@ -247,6 +258,9 @@ class GridSphere(Grid):
 
     def min_max_distance(self):
         """Compute some statistics on the distribution of the points"""
+
+        if not self._enable_peak_finding:
+            raise ValueError("This method requires that peak finding is enabled.")
 
         min_dist = np.inf
         max_dist = 0
@@ -282,6 +296,9 @@ class GridSphere(Grid):
         Find the largest peaks on the grid
         """
 
+        if not self._enable_peak_finding:
+            raise ValueError("This method requires that peak finding is enabled.")
+
         candidates = []
 
         # We start by looking at points whose neighbors all have lower values
@@ -307,7 +324,7 @@ class GridSphere(Grid):
         """Regrid the non-uniform data on a regular mesh"""
 
         if self.values is None:
-            warnings.warn("Cannont regrid: data missing.")
+            warnings.warn("Cannot regrid: data missing.")
             return
 
         # First we need to interpolate the non-uniformly sampled data
@@ -380,10 +397,10 @@ class GridSphere(Grid):
 
         try:
             import matplotlib.colors as colors
+            import matplotlib.pyplot as plt
 
             # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
-            import matplotlib.pyplot as plt
         except ImportError:
             import warnings
 

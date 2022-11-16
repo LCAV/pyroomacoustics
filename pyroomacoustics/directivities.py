@@ -1,8 +1,14 @@
 import abc
-import numpy as np
 from enum import Enum
+
+import numpy as np
+from scipy.spatial import SphericalVoronoi, cKDTree
+
 from pyroomacoustics.doa import spher2cart
-from pyroomacoustics.utilities import requires_matplotlib, all_combinations
+from pyroomacoustics.utilities import all_combinations, requires_matplotlib
+
+from . import random
+from .doa import GridSphere
 
 
 class DirectivityPattern(Enum):
@@ -75,12 +81,25 @@ class DirectionVector(object):
         """Direction vector in cartesian coordinates."""
         return self._unit_v
 
+    @property
+    def azimuth(self):
+        return self.get_azimuth()
+
+    @property
+    def colatitude(self):
+        return self.get_colatitude()
+
+    @property
+    def azimuth_deg(self):
+        return self.get_azimuth(degrees=True)
+
+    @property
+    def colatitude_deg(self):
+        return self.get_colatitude(degrees=True)
+
 
 class Directivity(abc.ABC):
-    """
-    Abstract class for directivity patterns.
-
-    """
+    """Abstract class for directivity patterns."""
 
     def __init__(self, orientation):
         assert isinstance(orientation, DirectionVector)
@@ -109,9 +128,68 @@ class Directivity(abc.ABC):
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
         """
-        Get response for provided angles and frequency.
+        This method returns the attenuation associated to a direction for
+        this directive object.
+
+        Parameters
+        ----------
+        directions: array_like, shape (n_dim, n_directions)
+            The direction unit vectors
+        magnitude: bool, optional
+            A flag indicating if the response should be given for the
+             magnitude, instead of energy (the default)
+
+        Returns
+        -------
+        response: numpy.ndarray, shape (n_directions)
+            The attenuation corresponding to the given directions
         """
         return
+
+    @abc.abstractmethod
+    def sample_rays(self, n_rays):
+        """
+        This method samples unit vectors from the sphere according to
+        the distribution of the source
+
+        Parameters
+        ----------
+        n_rays: int
+            The number of rays to sample
+
+        Returns
+        -------
+        ray_directions: numpy.ndarray, shape (n_dim, n_rays)
+            An array containing the unit vectors in its columns
+        """
+        raise NotImplementedError
+
+
+class CardioidFamilySampler(random.sampler.DirectionalSampler):
+    """
+    This object draws sample from a cardioid shaped distribution on the sphere
+
+    Parameters
+    ----------
+    loc: array_like
+        The unit vector pointing in the main direction of the cardioid
+    coeff: float
+        The shape coefficient (default 0.5 for a regular cardioid)
+    """
+
+    def __init__(self, loc=None, coeff=0.5):
+        super().__init__(loc=loc)
+        self._coeff = coeff
+
+    def _pattern(self, x):
+        return cardioid_func(
+            x.T,
+            direction=self._loc,
+            coef=self._coeff,
+            gain=1.0,
+            normalize=False,
+            magnitude=True,
+        )
 
 
 class CardioidFamily(Directivity):
@@ -132,6 +210,12 @@ class CardioidFamily(Directivity):
         self._p = pattern_enum.value
         self._gain = gain
         self._pattern_name = pattern_enum.name
+
+        # this is the object that will allow to sample rays according to the
+        # distribution corresponding to the source directivity
+        self._ray_sampler = CardioidFamilySampler(
+            loc=self._orientation.unit_vector, coeff=self._p
+        )
 
     @property
     def directivity_pattern(self):
@@ -178,6 +262,9 @@ class CardioidFamily(Directivity):
                 return np.abs(resp)
             else:
                 return resp
+
+    def sample_rays(self, n_rays):
+        return self._ray_sampler(n_rays).T
 
     @requires_matplotlib
     def plot_response(
@@ -319,6 +406,86 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
         return resp
 
 
+class SphericalHistogram:
+    def __init__(self, n_bins, dim=3, enable_peak_finding=False):
+
+        self._n_dim = 3
+        self._n_bins = n_bins
+
+        if self.n_dim == 3:
+            self._grid = GridSphere(
+                n_points=self.n_bins, enable_peak_finding=enable_peak_finding
+            )
+        else:
+            raise NotImplementedError("Only 3D histogram has been implemented")
+
+        # we need to know the area of each bin
+        self._voronoi = SphericalVoronoi(self._grid.cartesian.T)
+        self._areas = self._voronoi.calculate_areas()
+
+        # now we also need a KD-tree to do nearest neighbor search
+        self._kd_tree = cKDTree(self._grid.cartesian.T)
+
+        # the counter variables for every bin
+        self._bins = np.zeros(self.n_bins, dtype=np.int)
+
+        # the total number of points in the histogram
+        self._total_count = 0
+
+        # we cache the histogram bins
+        self._cache_dirty = False
+        self._cache_histogram = np.zeros(self.n_bins)
+
+    @property
+    def n_dim(self):
+        return self._n_dim
+
+    @property
+    def n_bins(self):
+        return self._n_bins
+
+    @property
+    def histogram(self):
+        if self._cache_dirty:
+            # if the cache is dirty, we need to recompute
+            Z = np.sum(self._areas * self._bins)  # partitioning constant
+            self._cache_histogram[:] = self._bins / Z
+            self._cache_dirty = False
+
+        return self._cache_histogram
+
+    @property
+    def raw_counts(self):
+        return self._bins
+
+    @property
+    def total_count(self):
+        return self._total_count
+
+    def find_peak(self, *args, **kwargs):
+        return self._grid.find_peaks(self, *args, **kwargs)
+
+    def plot(self):
+        self._grid.set_values(self.histogram)
+        self._grid.plot_old()
+
+    def push(self, points):
+        """
+        Add new data into the histogram
+
+        Parameters
+        ----------
+        points: array_like, shape (n_dim, n_points)
+            The points to add to the histogram
+        """
+        self._total_count += points.shape[1]
+        self._cache_dirty = True
+
+        _, matches = self._kd_tree.query(points.T)
+        bin_indices, counts = np.unique(matches, return_counts=True)
+        self._bins[bin_indices] += counts
+
+
 def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
     """
     Determine outgoing angle for each image source for a ShoeBox configuration.
@@ -352,6 +519,9 @@ def source_angle_shoebox(image_source_loc, wall_flips, mic_loc):
     assert wall_flips.shape[0] == dim
     assert mic_loc.shape[0] == dim
 
+    # this vector does not point in the correct direction, but
+    # the sign is flipped by adding one (np.ones_like) in the
+    # exponent of np.power a few lines below
     p_vector_array = image_source_loc - np.array(mic_loc)[:, np.newaxis]
     d_array = np.linalg.norm(p_vector_array, axis=0)
 
