@@ -665,13 +665,13 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .doa import GridCircle, GridSphere
 from .directivities import CardioidFamily, source_angle_shoebox
+from .doa import GridCircle, GridSphere
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
-from .utilities import fractional_delay, angle_function
+from .utilities import angle_function, fractional_delay
 
 
 def wall_factory(corners, absorption, scattering, name=""):
