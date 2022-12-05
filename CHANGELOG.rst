@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes issue #293 due to the C++ method ``Room::next_wall_hit`` not handling
+  2D shoebox rooms, which cause a seg fault
 
 `0.7.2`_ - 2022-11-15
 ---------------------

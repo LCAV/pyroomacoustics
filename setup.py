@@ -12,15 +12,14 @@ with open("pyroomacoustics/version.py") as f:
     exec(f.read())
 
 try:
-    from setuptools import setup, Extension
+    from setuptools import Extension, distutils, setup
     from setuptools.command.build_ext import build_ext
-    from setuptools import distutils
 except ImportError:
     print("Setuptools unavailable. Falling back to distutils.")
     import distutils
+    from distutils.command.build_ext import build_ext
     from distutils.core import setup
     from distutils.extension import Extension
-    from distutils.command.build_ext import build_ext
 
 
 class get_pybind_include(object):
