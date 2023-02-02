@@ -98,19 +98,20 @@ The fourth and last argument is the maximum number of reflections allowed in the
     Until recently, rooms would take an ``absorption`` parameter that was
     actually **not** the energy absorption we use now.  The ``absorption``
     parameter is now deprecated and will be removed in the future.
-    
-    
+
+
+
 Randomized Image Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In highly symmetric shoebox rooms, the regularity of image sources’ positions 
-leads to a monotonic convergence in the time arrival of far-field image pairs.
-This causes sweeping echoes. The randomized image method adds a small random 
-displacement to the image source positions, so that they are no longer 
-time-aligned, thus reducing sweeping echoes considerably.
 
+In highly symmetric shoebox rooms, the regularity of image sources’ positions
+leads to a monotonic convergence in the time arrival of far-field image pairs.
+This causes sweeping echoes. The randomized image method adds a small random
+displacement to the image source positions, so that they are no longer
+time-aligned, thus reducing sweeping echoes considerably.
 To use the randomized method, set the flag ``use_rand_ism`` to True while creating
-a room. Additionally, the maximum displacement of the image sources can be 
+a room. Additionally, the maximum displacement of the image sources can be
 chosen by setting the parameter ``max_rand_disp``. The default value is 8cm.
 For a full example see examples/randomized_image_method.py
 
@@ -617,12 +618,22 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import angle_function
+from .directivities import CardioidFamily, source_angle_shoebox, Directivity, DIRPATRir
+
+from math import floor
+from timeit import default_timer as timer
+from scipy.fft import fft, fftfreq, ifft
+from scipy.signal import fftconvolve
+import sys
+
+
+from scipy import fft
+from scipy.signal import hilbert
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -666,7 +677,8 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
         times.append(times[-1] + dt)
 
     # convert from continuous to discrete time
-    indices = (np.array(times) * fs).astype(np.int64)
+
+    indices = (np.array(times) * fs).astype(np.int)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
@@ -793,6 +805,9 @@ class Room(object):
     max_rand_disp: float, optional;
         If using randomized image source method, what is the maximum
         displacement of the image sources?
+    min_phase: bool, optional
+        If set to True, generated RIRs will have a minimum phase response.
+        Cannot be used with ray tracing model.
     """
 
     def __init__(
@@ -810,6 +825,7 @@ class Room(object):
         ray_tracing=False,
         use_rand_ism=False,
         max_rand_disp=0.08,
+        min_phase=False,
     ):
 
         self.walls = walls
@@ -832,6 +848,7 @@ class Room(object):
             ray_tracing,
             use_rand_ism,
             max_rand_disp,
+            min_phase,
         )
 
         # initialize the C++ room engine
@@ -861,6 +878,7 @@ class Room(object):
         ray_tracing,
         use_rand_ism,
         max_rand_disp,
+        min_phase,
     ):
 
         self.fs = fs
@@ -911,6 +929,11 @@ class Room(object):
 
         # initialize the attribute for the impulse responses
         self.rir = None
+
+        # self.sh_deg = 12
+        # self.print_filter = 0
+
+        self.min_phase = min_phase
 
     def _init_room_engine(self, *args):
 
@@ -1984,6 +2007,7 @@ class Room(object):
             # if the type is microphone array
             if directivity is not None:
                 mic_array.set_directivity(directivity)
+
             if self.simulator_state["rt_needed"] and mic_array.directivity is not None:
                 raise NotImplementedError("Directivity not supported with ray tracing.")
 
@@ -2023,18 +2047,26 @@ class Room(object):
 
         if isinstance(position, SoundSource):
             if directivity is not None:
-                assert isinstance(directivity, CardioidFamily)
-                return self.add(SoundSource(position, directivity=directivity))
+                if isinstance(directivity, CardioidFamily) or isinstance(
+                    directivity, DIRPATRir
+                ):
+                    return self.add(SoundSource(position, directivity=directivity))
             else:
                 return self.add(position)
         else:
             if directivity is not None:
-                assert isinstance(directivity, CardioidFamily)
-                return self.add(
-                    SoundSource(
-                        position, signal=signal, delay=delay, directivity=directivity
+                if isinstance(directivity, CardioidFamily) or isinstance(
+                    directivity, DIRPATRir
+                ):
+                    return self.add(
+                        SoundSource(
+                            position,
+                            signal=signal,
+                            delay=delay,
+                            directivity=directivity,
+                        )
                     )
-                )
+
             else:
                 return self.add(SoundSource(position, signal=signal, delay=delay))
 
@@ -2062,18 +2094,30 @@ class Room(object):
 
             n_sources = self.room_engine.image_source_model(source.position)
 
-            if n_sources > 0:
+            if n_sources > 0:  # Number of image source that are generated
 
                 # Copy to python managed memory
-                source.images = self.room_engine.sources.copy()
-                source.orders = self.room_engine.orders.copy()
-                source.orders_xyz = self.room_engine.orders_xyz.copy()
-                source.walls = self.room_engine.gen_walls.copy()
-                source.damping = self.room_engine.attenuations.copy()
+
+                source.images = (
+                    self.room_engine.sources.copy()
+                )  # Positions of the image source (3,n) n: n_sources
+                source.orders = (
+                    self.room_engine.orders.copy()
+                )  # Reflection order for each image source shape n:n_sources
+                source.orders_xyz = (
+                    self.room_engine.orders_xyz.copy()
+                )  # Reflection order for each image source for each coordinate shape (3,n) n:n_sources
+                source.walls = (
+                    self.room_engine.gen_walls.copy()
+                )  # Something that i don't get [-1,-1,-1,-1,-1...] shape n:n_sources
+                source.damping = (
+                    self.room_engine.attenuations.copy()
+                )  # Octave band damping's shape (no_of_octave_bands*n_sources) damping value for each image source for each octave bands
                 source.generators = -np.ones(source.walls.shape)
 
                 # if randomized image method is selected, add a small random
                 # displacement to the image sources
+
                 if self.simulator_state["random_ism_needed"]:
 
                     n_images = np.shape(source.images)[1]
@@ -2116,6 +2160,7 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
+        # Basically, histograms for 2 mics corresponding to each source , the histograms are in each octave bands hence (7,2500) 2500 histogram length
         # update the state
         self.simulator_state["rt_done"] = True
 
@@ -2134,7 +2179,9 @@ class Room(object):
 
         volume_room = self.get_volume()
 
-        for m, mic in enumerate(self.mic_array.R.T):
+        for m, mic in enumerate(
+            self.mic_array.R.T
+        ):  # Loop over ever microphone present in the room and then for each microphone and source pair present in the room
             self.rir.append([])
             for s, src in enumerate(self.sources):
 
@@ -2145,6 +2192,7 @@ class Room(object):
                 """
                 # fractional delay length
                 fdl = constants.get("frac_delay_length")
+
                 fdl2 = fdl // 2
 
                 # default, just in case both ism and rt are disabled (should never happen)
@@ -2155,8 +2203,10 @@ class Room(object):
                     # compute azimuth and colatitude angles for receiver
                     if self.mic_array.directivity is not None:
                         angle_function_array = angle_function(src.images, mic)
-                        azimuth = angle_function_array[0]
-                        colatitude = angle_function_array[1]
+                        azimuth_m = angle_function_array[0]
+                        colatitude_m = angle_function_array[1]
+                    else:
+                        azimuth_m, colatitude_m = [], []
 
                     # compute azimuth and colatitude angles for source
                     if self.sources[s].directivity is not None:
@@ -2165,12 +2215,26 @@ class Room(object):
                             wall_flips=abs(src.orders_xyz),
                             mic_loc=mic,
                         )
+                    else:
+                        azimuth_s, colatitude_s = [], []
 
                     # compute the distance from image sources
-                    dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
-                    time = dist / self.c
-                    t_max = time.max()
-                    N = int(math.ceil(t_max * self.fs))
+
+                    dist = np.sqrt(
+                        np.sum((src.images - mic[:, None]) ** 2, axis=0)
+                    )  # Calculate distance between image sources and for each microphone
+
+                    # dist shape (n) : n0 of image sources
+                    time = (
+                        dist / self.c
+                    )  # Calculate time of arrival for each image source
+                    t_max = (
+                        time.max()
+                    )  # The image source which takes the most time to arrive to this particular microphone
+                    N = int(
+                        math.ceil(t_max * self.fs)
+                    )  # What will be the length of RIR according to t_max
+                    print("Minimum Time", time.min() * self.fs)
 
                 else:
                     t_max = 0.0
@@ -2178,7 +2242,10 @@ class Room(object):
                 if self.simulator_state["rt_needed"]:
 
                     # get the maximum length from the histograms
-                    nz_bins_loc = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[0]
+                    nz_bins_loc = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[
+                        0
+                    ]  # Sum vertically across octave band for each value in histogram (7,2500) -> (2500) -> np .nonzero(
+
                     if len(nz_bins_loc) == 0:
                         n_bins = 0
                     else:
@@ -2186,13 +2253,16 @@ class Room(object):
 
                     t_max = np.maximum(t_max, n_bins * self.rt_args["hist_bin_size"])
 
+                    # N changes here , the length of RIR changes if we apply RT method.
                     # the number of samples needed
                     # round up to multiple of the histogram bin size
                     # add the lengths of the fractional delay filter
+
                     hbss = int(self.rt_args["hist_bin_size_samples"])
+
                     N = int(math.ceil(t_max * self.fs / hbss) * hbss)
 
-                # this is where we will compose the RIR
+                # this is where we will compose the RIR i.e length of RIR
                 ir = np.zeros(N + fdl)
 
                 # This is the distance travelled wrt time
@@ -2200,101 +2270,400 @@ class Room(object):
 
                 # this is the random sequence for the tail generation
                 seq = sequence_generation(volume_room, N / self.fs, self.c, self.fs)
-                seq = seq[:N]
+                seq = seq[:N]  # take values according to N as seq is larger
 
                 # Do band-wise RIR construction
                 is_multi_band = self.is_multi_band
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
                 rir_bands = []
 
-                for b, bw in enumerate(bws):
+                """
+                Use octave bands to construct RIR :
+                1) Ray-tracing is activated
+                2) directivity of both the microphones and source is not given.
 
-                    ir_loc = np.zeros_like(ir)
+                """
 
-                    # IS method
-                    if self.simulator_state["ism_needed"]:
+                if (
+                    (
+                        self.mic_array.directivity is None
+                        or isinstance(self.mic_array.directivity[m], CardioidFamily)
+                    )
+                    and (
+                        self.sources[s].directivity is None
+                        or isinstance(self.sources[s].directivity, CardioidFamily)
+                    )
+                ) or self.simulator_state["rt_needed"]:
 
-                        alpha = src.damping[b, :] / dist
+                    for b, bw in enumerate(bws):  # Loop through every band
 
-                        if self.mic_array.directivity is not None:
+                        ir_loc = np.zeros_like(ir)  # ir for every band
 
-                            alpha *= self.mic_array.directivity[m].get_response(
-                                azimuth=azimuth,
-                                colatitude=colatitude,
-                                frequency=bw,
-                                degrees=False,
+                        # IS method
+                        if self.simulator_state["ism_needed"]:
+
+                            alpha = (
+                                src.damping[b, :] / dist
+                            )  # calculate alpha according to every octave band and for all the image sources for this particular microphone
+
+                            if self.mic_array.directivity is not None and isinstance(
+                                self.mic_array.directivity[m], CardioidFamily
+                            ):
+                                alpha *= self.mic_array.directivity[m].get_response(
+                                    azimuth=azimuth_m,
+                                    colatitude=colatitude_m,
+                                    frequency=bw,
+                                    degrees=False,
+                                )
+                                print("Cmic")
+
+                            if self.sources[s].directivity is not None and isinstance(
+                                self.sources[s].directivity, CardioidFamily
+                            ):
+                                alpha *= self.sources[s].directivity.get_response(
+                                    azimuth=azimuth_s,
+                                    colatitude=colatitude_s,
+                                    frequency=bw,
+                                    degrees=False,
+                                )
+                                print("Csrc")
+
+                            # Use the Cython extension for the fractional delays
+                            from .build_rir import fast_rir_builder
+
+                            vis = self.visibility[s][m, :].astype(np.int32)
+
+                            # we add the delay due to the factional delay filter to
+                            # the arrival times to avoid problems when propagation
+                            # is shorter than the delay to to the filter
+                            # hence: time + fdl2
+
+                            time_adjust = (
+                                time + fdl2 / self.fs
+                            )  # This remains the same for all octave bands.
+
+                            fast_rir_builder(
+                                ir_loc, time_adjust, alpha, vis, self.fs, fdl
                             )
 
-                        if self.sources[s].directivity is not None:
-                            alpha *= self.sources[s].directivity.get_response(
-                                azimuth=azimuth_s,
-                                colatitude=colatitude_s,
-                                frequency=bw,
-                                degrees=False,
-                            )
+                            if is_multi_band:
+                                ir_loc = self.octave_bands.analysis(ir_loc, band=b)
 
-                        # Use the Cython extension for the fractional delays
-                        from .build_rir import fast_rir_builder
+                            ir += ir_loc  # All the IR'S from different octave bands are added together in the same sequence.
 
-                        vis = self.visibility[s][m, :].astype(np.int32)
-                        # we add the delay due to the factional delay filter to
-                        # the arrival times to avoid problems when propagation
-                        # is shorter than the delay to to the filter
-                        # hence: time + fdl2
-                        time_adjust = time + fdl2 / self.fs
-                        fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
+                        # Ray Tracing
+                        if self.simulator_state["rt_needed"]:
 
-                        if is_multi_band:
-                            ir_loc = self.octave_bands.analysis(ir_loc, band=b)
+                            if is_multi_band:
+                                seq_bp = self.octave_bands.analysis(seq, band=b)
 
-                        ir += ir_loc
+                            else:
+                                seq_bp = seq.copy()
 
-                    # Ray Tracing
-                    if self.simulator_state["rt_needed"]:
+                            # interpolate the histogram and multiply the sequence
 
-                        if is_multi_band:
-                            seq_bp = self.octave_bands.analysis(seq, band=b)
-                        else:
-                            seq_bp = seq.copy()
+                            seq_bp_rot = seq_bp.reshape((-1, hbss))  # shape 72,64
 
-                        # interpolate the histogram and multiply the sequence
-                        seq_bp_rot = seq_bp.reshape((-1, hbss))
-                        new_n_bins = seq_bp_rot.shape[0]
+                            new_n_bins = seq_bp_rot.shape[0]
 
-                        hist = self.rt_histograms[m][s][0][b, :new_n_bins]
+                            # Take only those bins which have some non-zero values for that specific octave bands.
 
-                        normalization = np.linalg.norm(seq_bp_rot, axis=1)
-                        indices = normalization > 0.0
-                        seq_bp_rot[indices, :] /= normalization[indices, None]
-                        seq_bp_rot *= np.sqrt(hist[:, None])
+                            hist = self.rt_histograms[m][s][0][b, :new_n_bins]
 
-                        # Normalize the band power
-                        # The bands should normally sum up to fs / 2
-                        seq_bp *= np.sqrt(bw / self.fs * 2.0)
+                            normalization = np.linalg.norm(
+                                seq_bp_rot, axis=1
+                            )  # Take normalize of the poisson distribution octave band filtered array on the axis 1 -> shape (72|71) if input is of size (72,64)
 
-                        ir_loc[fdl2 : fdl2 + N] += seq_bp
+                            # Only those indices which have normalization greater than 0.0
+                            indices = normalization > 0.0
 
-                    # keep for further processing
-                    rir_bands.append(ir_loc)
+                            seq_bp_rot[indices, :] /= normalization[indices, None]
 
-                # Do Air absorption
-                if self.simulator_state["air_abs_needed"]:
+                            seq_bp_rot *= np.sqrt(hist[:, None])
 
-                    # In case this was not multi-band, do the band pass filtering
-                    if len(rir_bands) == 1:
-                        rir_bands = self.octave_bands.analysis(rir_bands[0]).T
+                            # Normalize the band power
+                            # The bands should normally sum up to fs / 2
 
-                    # Now apply air absorption
-                    for band, air_abs in zip(rir_bands, self.air_absorption):
-                        air_decay = np.exp(-0.5 * air_abs * distance_rir)
-                        band[fdl2 : N + fdl2] *= air_decay
+                            seq_bp *= np.sqrt(bw / self.fs * 2.0)
 
-                # Sum up all the bands
-                np.sum(rir_bands, axis=0, out=ir)
+                            ir_loc[fdl2 : fdl2 + N] += seq_bp
+
+                        # keep for further processing
+
+                        rir_bands.append(
+                            ir_loc
+                        )  # Impulse response for every octave band for each microphone
+
+                    # Do Air absorption
+                    if self.simulator_state["air_abs_needed"]:
+
+                        # In case this was not multi-band, do the band pass filtering
+                        if len(rir_bands) == 1:
+                            rir_bands = self.octave_bands.analysis(rir_bands[0]).T
+
+                        # Now apply air absorption and distance attenuation
+                        for band, air_abs in zip(rir_bands, self.air_absorption):
+                            air_decay = np.exp(-0.5 * air_abs * distance_rir)
+                            band[fdl2 : N + fdl2] *= air_decay
+
+                    # Sum up IR'S for all the bands
+                    np.sum(rir_bands, axis=0, out=ir)
+
+                else:
+                    """
+                    Checks if either source or the microphone directivity belongs from the class DIRPATRir
+                    """
+
+                    ir = self.dft_scale_rir_calc(
+                        src.damping,
+                        dist,
+                        time,
+                        bws,
+                        N,
+                        azi_m=azimuth_m,
+                        col_m=colatitude_m,
+                        azi_s=azimuth_s,
+                        col_s=colatitude_s,
+                        src_pos=s,
+                        mic_pos=m,
+                    )
 
                 self.rir[-1].append(ir)
 
         self.simulator_state["rir_done"] = True
+
+    def dft_scale_rir_calc(
+        self,
+        attenuations,
+        dist,
+        time,
+        bws,
+        N,
+        azi_m,
+        col_m,
+        azi_s,
+        col_s,
+        src_pos=0,
+        mic_pos=0,
+    ):
+        """
+        Full DFT scale RIR construction.
+
+        This function also takes into account the FIR's of the source and receiver retrieved from the SOFA file.
+
+
+
+        Parameters
+        ----------
+        attenuations: arr
+            Dampings for all the image sources Shape : ( No_of_octave_band x no_img_src)
+        dist : arr
+            distance of all the image source present in the room from this particular mic Shape : (no_img_src)
+        time : arr
+            Time of arrival of all the image source Shape : (no_img_src)
+        bws :
+            bandwidth of all the octave bands
+        N :
+        azi_m : arr
+            Azimuth angle of arrival of this particular mic for all image sources Shape : (no_img_src)
+        col_m : arr
+            Colatitude angle of arrival of this particular mic  for all image sources Shape : (no_img_src)
+        azi_s : arr
+            Azimuth angle of departure of this particular source for all image sources Shape : (no_img_src)
+        col_s : arr
+            Colatitude angle of departure of this particular source for all image sources Shape : (no_img_src)
+        src_pos : int
+            The particular source we are calculating RIR
+        mic_pos : int
+            The particular mic we are calculating RIR
+
+        Returns
+        -------
+            rir : :py:class:`~numpy.ndarray`
+                Constructed RIR for this particlar src mic pair .
+
+            The constructed RIR still lacks air absorption and distance absorption because in the old pyroom these calculation happens on the octave band level.
+
+
+        """
+
+        attenuations = attenuations / dist
+        alp = []
+        window_length = 81
+
+        no_imag_src = attenuations.shape[1]
+
+        fp_im = N
+        fir_length_octave_band = self.octave_bands.n_fft
+
+        from .build_rir import (
+            fast_window_sinc_interpolator,
+            fast_convolution_4,
+            fast_convolution_3,
+        )
+
+        rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
+        source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False
+
+        final_fir_IS_len = (
+            (self.mic_array.directivity[mic_pos].filter_len_ir if (rec_presence) else 1)
+            + (
+                self.sources[src_pos].directivity.filter_len_ir
+                if (source_presence)
+                else 1
+            )
+            + window_length
+            + fir_length_octave_band
+        ) - 3
+
+        if rec_presence and source_presence:
+
+            resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                azimuth=azi_m, colatitude=col_m
+            )  # Return response as an array of number of (img_sources * length of filters)
+            resp_src = self.sources[src_pos].directivity.get_response(
+                azimuth=azi_s, colatitude=col_s
+            )
+
+            if self.mic_array.directivity[mic_pos].filter_len_ir == 1:
+                resp_mic = np.array(resp_mic).reshape(-1, 1)
+
+            else:
+                assert (
+                    self.fs == self.mic_array.directivity[mic_pos].fs
+                ), "Mic directivity: frequency of simulation should be same as frequency of interpolation"
+
+            if self.sources[src_pos].directivity.filter_len_ir == 1:
+                resp_src = np.array(resp_src).reshape(-1, 1)
+            else:
+                assert (
+                    self.fs == self.sources[src_pos].directivity.fs
+                ), "Source directivity:  frequency of simulation should be same as frequency of interpolation"
+
+        else:
+            if source_presence:
+
+                assert (
+                    self.fs == self.sources[src_pos].directivity.fs
+                ), "Directivity source frequency of simulation should be same as frequency of interpolation"
+
+                resp_src = self.sources[src_pos].directivity.get_response(
+                    azimuth=azi_s, colatitude=col_s
+                )
+
+            elif rec_presence:
+
+                assert (
+                    self.fs == self.mic_array.directivity[mic_pos].fs
+                ), "Directivity mic frequency of simulation should be same as frequency of interpolation"
+
+                resp_mic = self.mic_array.directivity[mic_pos].get_response(
+                    azimuth=azi_m, colatitude=col_m
+                )
+
+        # else:
+        # txt = "No"
+        # final_fir_IS_len = (fir_length_octave_band + window_length) - 1
+
+        time_arrival_is = time  # For min phase
+
+        # Calculating fraction delay sinc filter
+        sample_frac = time_arrival_is * self.fs  # Find the fractional sample number
+
+        ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
+
+        # Create arrays for fractional delay low pass filter, sum of {damping coeffiecients * octave band filter}, source response, receiver response.
+
+        cpy_ir_len_1 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_2 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_3 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        cpy_ir_len_4 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
+        att_in_dft_scale = np.zeros(
+            (no_imag_src, fir_length_octave_band), dtype=np.complex_
+        )
+
+        # Vectorized sinc filters
+
+        vectorized_interpolated_sinc = np.zeros(
+            (no_imag_src, window_length), dtype=np.double
+        )
+        vectorized_time_ip = np.array(
+            [int(floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
+        )
+        vectorized_time_fp = [
+            sample_frac[img_src] - int(floor(sample_frac[img_src]))
+            for img_src in range(no_imag_src)
+        ]
+        vectorized_time_fp = np.array(vectorized_time_fp, dtype=np.double)
+        vectorized_interpolated_sinc = fast_window_sinc_interpolator(
+            vectorized_time_fp, window_length, vectorized_interpolated_sinc
+        )
+
+        for i in range(no_imag_src):  # Loop through Image source
+
+            att_in_octave_band = attenuations[:, i]
+            att_in_dft_scale_ = att_in_dft_scale[i, :]
+
+            # Interpolating attenuations given in the single octave band to a DFT scale.
+
+            att_in_dft_scale_ = self.octave_bands.octave_band_dft_interpolation(
+                att_in_octave_band,
+                self.air_absorption,
+                dist[i],
+                att_in_dft_scale_,
+                bws,
+                self.min_phase,
+            )
+
+            # time_ip = int(floor(sample_frac[i]))  # Calculating the integer sample
+
+            # time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
+
+            # windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
+
+            cpy_ir_len_1[i, : att_in_dft_scale_.shape[0]] = np.fft.ifft(
+                att_in_dft_scale_
+            )
+            cpy_ir_len_2[i, :window_length] = vectorized_interpolated_sinc[i, :]
+
+            if source_presence and rec_presence:
+
+                cpy_ir_len_3[i, : resp_src[i, :].shape[0]] = resp_src[i, :]
+
+                cpy_ir_len_4[i, : resp_mic[i, :].shape[0]] = resp_mic[i, :]
+
+                out = fast_convolution_4(
+                    cpy_ir_len_1[i, :],
+                    cpy_ir_len_2[i, :],
+                    cpy_ir_len_3[i, :],
+                    cpy_ir_len_4[i, :],
+                    final_fir_IS_len,
+                )
+
+                ir_diff[
+                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
+                ] += np.real(out)
+
+            else:
+                if source_presence:
+                    resp = resp_src[i, :]
+                elif rec_presence:
+                    resp = resp_mic[i, :]
+
+                cpy_ir_len_3[i, : resp.shape[0]] = resp
+
+                out = fast_convolution_3(
+                    cpy_ir_len_1[i, :],
+                    cpy_ir_len_2[i, :],
+                    cpy_ir_len_3[i, :],
+                    final_fir_IS_len,
+                )
+
+                ir_diff[
+                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
+                ] += np.real(out)
+
+        return ir_diff
 
     def simulate(
         self,
@@ -2766,6 +3135,7 @@ class ShoeBox(Room):
         ray_tracing=False,
         use_rand_ism=False,
         max_rand_disp=0.08,
+        min_phase=False,
     ):
 
         p = np.array(p, dtype=np.float32)
@@ -2790,6 +3160,7 @@ class ShoeBox(Room):
             ray_tracing,
             use_rand_ism,
             max_rand_disp,
+            min_phase,
         )
 
         # Keep the correctly ordered naming of walls

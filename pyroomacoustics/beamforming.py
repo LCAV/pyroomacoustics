@@ -23,23 +23,20 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
-
-import copy
-
 import numpy as np
 import scipy.linalg as la
-
-from . import transform
-from . import utilities as u
-from . import windows
 from .directivities import (
-    CardioidFamily,
     DirectionVector,
     Directivity,
+    CardioidFamily,
     DirectivityPattern,
 )
 from .parameters import constants
+from . import utilities as u
 from .soundsource import build_rir_matrix
+from . import windows
+from . import transform
+
 
 # =========================================================================
 # Free (non-class-member) functions related to beamformer design
@@ -168,7 +165,7 @@ def poisson_2D_array(center, M, d):
         The array of points
     """
 
-    from numpy.random import randint, standard_exponential
+    from numpy.random import standard_exponential, randint
 
     R = d * standard_exponential((2, M)) * (2 * randint(0, 2, (2, M)) - 1)
     R = R.cumsum(axis=1)
@@ -347,6 +344,7 @@ def circular_microphone_array_xyplane(
 # =========================================================================
 # Classes (microphone array and beamformer related)
 # =========================================================================
+import copy
 
 
 class MicrophoneArray(object):
@@ -452,7 +450,7 @@ class MicrophoneArray(object):
         else:
             self.signals = signals
 
-    def to_wav(self, filename, mono=False, norm=False, bitdepth=float):
+    def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
         """
         Save all the signals to wav files.
 
@@ -477,7 +475,7 @@ class MicrophoneArray(object):
         else:
             signal = self.signals.T  # each column is a channel
 
-        float_types = [float, np.float32, np.float64]
+        float_types = [float, np.float, np.float32, np.float64]
 
         if bitdepth in float_types:
             bits = None
