@@ -31,7 +31,6 @@ import abc
 import math
 from typing import Optional
 import numpy as np
-from .room import Room
 from .parameters import constants
 from . import transform
 from .windows import hamming
@@ -134,7 +133,7 @@ class Noise(abc.ABC):
     def add(
         self,
         mix: np.ndarray,
-        room: Optional[Room] = None,
+        room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ):
         raise NotImplementedError
@@ -151,7 +150,7 @@ class WhiteNoise(Noise):
     def add(
         self,
         mix: np.ndarray,
-        room: Optional[Room] = None,
+        room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         noise = self.generate(mix)
@@ -358,7 +357,7 @@ class DiffuseNoise(Noise):
     def add(
         self,
         mix: np.ndarray,
-        room: Optional[Room] = None,
+        room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ) -> np.ndarray:
 
@@ -394,7 +393,7 @@ class WindNoise:
     def add(
         self,
         mix: np.ndarray,
-        room: Optional[Room] = None,
+        room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         raise NotImplementedError

@@ -98,7 +98,7 @@ def test_diffuse_noise(
     assert abs(snr - snr_est) < tol
 
     if plot:
-        print(f"{mse=} {smoothness=} {balance=}")
+        print(f"mse={mse} smoothness={smoothness} balance={balance}")
 
         discrete_freqs = np.arange(n_fft_a // 2 + 1) / n_fft_a * fs
 
