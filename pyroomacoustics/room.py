@@ -672,6 +672,7 @@ from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import angle_function, fractional_delay
+from .noise import Noise
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1964,10 +1965,16 @@ class Room(object):
             for m in range(len(obj)):
                 self.room_engine.add_mic(obj.R[:, None, m])
 
+        elif isinstance(obj, Noise):
+            if not hasattr(self, "noise") or self.noise is None:
+                self.noise = [obj]
+            else:
+                self.noise.append(obj)
+
         else:
             raise TypeError(
-                "The add method from Room only takes SoundSource or "
-                "MicrophoneArray objects as parameter"
+                "The add method from Room only takes SoundSource, "
+                "MicrophoneArray, or Noise objects as parameter"
             )
 
         return self
@@ -2355,6 +2362,7 @@ class Room(object):
         callback_mix_kwargs={},
         return_premix=False,
         recompute_rir=False,
+        full_output=False,
     ):
         r"""
         Simulates the microphone signal at every microphone in the array
@@ -2365,7 +2373,7 @@ class Room(object):
             The index of the reference microphone to use for SNR computations.
             The default reference microphone is the first one (index 0)
         snr: float, optional
-            The target signal-to-noise ratio (SNR) in decibels at the reference microphone.
+            Deprecated - The target signal-to-noise ratio (SNR) in decibels at the reference microphone.
             When this option is used the argument
             :py:attr:`pyroomacoustics.room.Room.sigma2_awgn` is ignored. The variance of
             every source at the reference microphone is normalized to one and
@@ -2390,13 +2398,17 @@ class Room(object):
             A dictionary that contains optional arguments for ``callback_mix``
             function
         return_premix: bool, optional
-            If set to ``True``, the function will return an array of shape
+            Deprecated - If set to ``True``, the function will return an array of shape
             ``(n_sources, n_mics, n_samples)`` containing the microphone
             signals with individual sources, convolved with the room impulse
-            response but prior to mixing
+            response but prior to mixing. This option is replaced by `full_output`.
         recompute_rir: bool, optional
             If set to ``True``, the room impulse responses will be recomputed
             prior to simulation
+        full_output: bool, optional
+            If set to ``True``, the function will return the (noisy) mixture,
+            the microphone signals with individual sources, and the noise.
+            (default: `False`)
 
         Returns
         -------
@@ -2456,6 +2468,14 @@ class Room(object):
             self.sigma2_awgn = None
 
         elif snr is not None:
+            warnings.warn(
+                "deprecated",
+                DeprecationWarning(
+                    "The argument 'snr' of Room.simulate is deprecated "
+                    "and will be removed. Please use a `room.add(WhiteNoise(snr=snr))` "
+                    "instead."
+                ),
+            )
             # Normalize all signals so that
             denom = np.std(premix_signals[:, reference_mic, :], axis=1)
             premix_signals /= denom[:, None, None]
@@ -2467,18 +2487,51 @@ class Room(object):
         else:
             signals = np.sum(premix_signals, axis=0)
 
+        if hasattr(self, "noise") and self.noise is not None:
+            noise = []
+            for noise_obj in self.noise:
+                noise.append(
+                    noise_obj.generate(mix=signals, room=self, premix=premix_signals)
+                )
+            noise = sum(noise, start=np.zeros(signals.shape))
+            signals += noise
+
         # add white gaussian noise if necessary
-        if self.sigma2_awgn is not None:
-            signals += np.random.normal(0.0, np.sqrt(self.sigma2_awgn), signals.shape)
+        elif self.sigma2_awgn is not None:
+            warnings.warn(
+                "The argument 'sigma2_awgn' of Room is deprecated "
+                "and will be removed. Please use a Noise object instead.",
+                DeprecationWarning,
+            )
+            noise = np.random.normal(0.0, np.sqrt(self.sigma2_awgn), signals.shape)
+            signals += noise
+
+        else:
+            noise = np.zeros(signals.shape)
 
         # record the signals in the microphones
         self.mic_array.record(signals, self.fs)
 
         if return_premix:
+            warnings.warn(
+                "The argument `return_premix` of `Room.simulate` is deprecated "
+                "and will be removed. Please use `full_output`.",
+                DeprecationWarning,
+            )
             return premix_signals
+
+        if full_output:
+            return signals, premix_signals, noise
+        else:
+            return signals
 
     def direct_snr(self, x, source=0):
         """Computes the direct Signal-to-Noise Ratio"""
+        warnings.warn(
+            "The function `Room.direct_snr` is deprecated and will "
+            "be removed in a future version",
+            DeprecationWarning,
+        )
 
         if source >= len(self.sources):
             raise ValueError("No such source")
@@ -2978,6 +3031,9 @@ class ShoeBox(Room):
             self.add_microphone_array(mics)
         else:
             self.mic_array = None
+
+        # add the noise objects
+        self.noise = None
 
     def extrude(self, height):
         """Overload the extrude method from 3D rooms"""

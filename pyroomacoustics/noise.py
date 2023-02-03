@@ -57,7 +57,14 @@ def compute_rmse(signal):
 
 
 def compute_snr(signal, noise):
-    return 10.0 * np.log10(np.mean(signal**2) / np.mean(noise**2))
+    sig_pwr = np.mean(signal**2)
+    noz_pwr = np.mean(noise**2)
+    if sig_pwr == 0.0:
+        return -np.inf
+    elif noz_pwr == 0.0:
+        return np.inf
+    else:
+        return 10.0 * np.log10(sig_pwr / noz_pwr)
 
 
 def scale_signal(signal, reference, snr):
@@ -130,7 +137,7 @@ class Noise(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def add(
+    def generate(
         self,
         mix: np.ndarray,
         room: Optional["Room"] = None,
@@ -140,21 +147,33 @@ class Noise(abc.ABC):
 
 
 class WhiteNoise(Noise):
+    r"""
+
+    Parameters
+    ----------
+    snr: float
+        The desired signal-to-noise ratio.
+
+        .. math::
+
+            \mathsf{SNR} = 10 \log_{10} \frac{ K }{ \sigma_n^2 }
+
+    """
+
     def __init__(self, snr: float):
         self.snr = snr
 
-    def generate(self, signal):
+    def generate_fn(self, signal: np.ndarray) -> np.ndarray:
         noise = np.random.randn(*signal.shape)
         return scale_signal(noise, signal, snr=-self.snr)
 
-    def add(
+    def generate(
         self,
         mix: np.ndarray,
         room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        noise = self.generate(mix)
-        return mix + noise
+        return self.generate_fn(mix)
 
 
 class DiffuseNoise(Noise):
@@ -231,10 +250,22 @@ class DiffuseNoise(Noise):
             self.signal = self.signal[:, 0]
 
     def _stft(self, x):
-        return transform.stft.analysis(x, self.n_fft, self.hop, win=self.win_a)
+        mono = x.ndim == 2 and x.shape[-1] == 1
+        if mono:
+            x = x[..., 0]
+        out = transform.stft.analysis(x, self.n_fft, self.hop, win=self.win_a)
+        if mono:
+            out = out[..., None]
+        return out
 
     def _istft(self, x):
-        return transform.stft.synthesis(x, self.n_fft, self.hop, win=self.win_s)
+        mono = x.ndim == 3 and x.shape[-1] == 1
+        if mono:
+            x = x[..., 0]
+        out = transform.stft.synthesis(x, self.n_fft, self.hop, win=self.win_s)
+        if mono:
+            out = out[..., None]
+        return out
 
     def _get_padded_signal(self, n_samples):
         slen = self.signal.shape[0]
@@ -279,7 +310,7 @@ class DiffuseNoise(Noise):
     def compute_coherence_empirical(self, noise):
         """used in tests"""
         # empirical coherence
-        N = self._stft(noise)
+        N = self._stft(noise.T)
         coh_data = np.einsum("nfc,nfd->fcd", N, N.conj()) / N.shape[0]
 
         coh_diag = np.sqrt(abs(np.diagonal(coh_data, axis1=-2, axis2=-1)))
@@ -325,7 +356,7 @@ class DiffuseNoise(Noise):
 
         return shaping_matrix
 
-    def generate(
+    def generate_fn(
         self,
         signal: np.ndarray,
         mic_array: np.ndarray,
@@ -347,14 +378,14 @@ class DiffuseNoise(Noise):
         # shape the diffuse noise and bring back to time domain
         diffuse_fd = np.einsum("fcd,nfd->nfc", shaping_matrix, N)
         diffuse = self._istft(diffuse_fd)
-        diffuse = diffuse[:n_samples, :]
+        diffuse = diffuse[:n_samples, :].T
 
         # scale the noise to achieve the target snr
         diffuse = scale_signal(diffuse, signal, snr=-self.snr)
 
         return diffuse
 
-    def add(
+    def generate(
         self,
         mix: np.ndarray,
         room: Optional["Room"] = None,
@@ -373,9 +404,7 @@ class DiffuseNoise(Noise):
         c = constants.get("c")
         n_samples = mix.shape[-1]
 
-        diffuse_noise = self.generate(n_samples, mic_array, fs, c)
-
-        return mix_signal_noise(mix, diffuse_noise.T, snr=self.snr)
+        return self.generate_fn(mix, mic_array, fs, c)
 
 
 class WindNoise:

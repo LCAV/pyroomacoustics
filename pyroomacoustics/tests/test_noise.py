@@ -72,7 +72,7 @@ def test_diffuse_noise(
     hop_a = n_fft_a // 4
     dn_obj_analysis = pra.DiffuseNoise(snr=snr, signal=None, n_fft=n_fft_a, hop=hop_a)
 
-    diffuse_noise = diffuse_noise_obj.generate(signal, mic_array, fs, c)
+    diffuse_noise = diffuse_noise_obj.generate_fn(signal, mic_array, fs, c)
     filters = diffuse_noise_obj.make_filters(mic_array, fs, c)
 
     # compute the coherence matrix
@@ -170,15 +170,67 @@ def test_white_noise(snr, siglen):
 
     # test generate function
     signal = np.random.randn(siglen)
+
     noise = white_noise.generate(signal)
 
-    noisy_signal = white_noise.add(signal)
-
     snr_est = pra.compute_snr(signal, noise)
-    snr_est_2 = pra.compute_snr(signal, noisy_signal - signal)
 
     assert abs(snr - snr_est) < tol
-    assert abs(snr - snr_est_2) < tol
+
+
+@pytest.mark.parametrize(
+    "snr,siglen,noise_type",
+    [
+        (-5, 1000, "white"),
+        (0, 1000, "white"),
+        (10, 1000, "white"),
+        (40, 1000, "white"),
+        (100, 1000, "white"),
+        (-5, 1000, "diffuse"),
+        (0, 1000, "diffuse"),
+        (10, 1000, "diffuse"),
+        (40, 1000, "diffuse"),
+        (100, 1000, "diffuse"),
+        (-5, 1000, "both"),
+        (0, 1000, "both"),
+        (10, 1000, "both"),
+        (40, 1000, "both"),
+        (100, 1000, "both"),
+    ],
+)
+def test_room_noise(snr, siglen, noise_type):
+
+    tol = 1e-5
+
+    # test generate function
+    np.random.seed(0)
+    signal = np.random.randn(siglen)
+
+    room = pra.ShoeBox(
+        [10.0, 8.0, 3.0], max_order=3, materials=pra.Material(energy_absorption=0.3)
+    )
+    room.add_source([1.0, 1.0, 1.0], signal=signal)
+    room.add_microphone([5.0, 5.0, 2.5])
+    if noise_type == "white":
+        room.add(pra.WhiteNoise(snr=snr))
+    elif noise_type == "diffuse":
+        room.add(pra.DiffuseNoise(snr=snr))
+    elif noise_type == "both":
+        # the snr for each noise is computed independently
+        # with respect to the mix. This means that when added
+        # together, the SNR approximately falls by 3 dB (noise doubles)
+        room.add(pra.WhiteNoise(snr=snr + 3.0))
+        room.add(pra.DiffuseNoise(snr=snr + 3.0))
+        tol = 0.5  # this is approximate since both noises are not truly orthogonal
+
+    noisy_mix, premix, noise = room.simulate(full_output=True)
+
+    clean_mix = premix.sum(axis=0)
+
+    snr_est = pra.compute_snr(clean_mix, noise)
+
+    assert np.allclose(clean_mix + noise, noisy_mix)
+    assert abs(snr - snr_est) < tol
 
 
 if __name__ == "__main__":
