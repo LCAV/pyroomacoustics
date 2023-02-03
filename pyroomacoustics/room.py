@@ -2459,12 +2459,11 @@ class Room(object):
             signals = np.sum(premix_signals, axis=0)
 
         if hasattr(self, "noise") and self.noise is not None:
-            noise = []
+            noise = np.zeros(signals.shape)
             for noise_obj in self.noise:
-                noise.append(
-                    noise_obj.generate(mix=signals, room=self, premix=premix_signals)
+                noise += noise_obj.generate(
+                    mix=signals, room=self, premix=premix_signals
                 )
-            noise = sum(noise, start=np.zeros(signals.shape))
             signals += noise
 
         # add white gaussian noise if necessary
