@@ -92,6 +92,7 @@ extensions = [
 
 numpydoc_show_class_members = False
 
+
 # Custom function to define some 'noisy' class members to skip
 def skip_member(app, what, name, obj, skip, options):
     exclusions = (

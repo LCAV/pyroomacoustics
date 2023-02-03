@@ -27,20 +27,17 @@ def format_freq(f):
 
 
 def print_section(title, data, headers, file):
-
     print(title, file=file)
     print("-" * len(title), file=file)
     print(file=file)
 
     for subtitle, materials in data.items():
-
         print(subtitle, file=file)
         print("^" * len(subtitle), file=file)
         print(file=file)
 
         table = []
         for keyword, p in materials.items():
-
             # fill the table
             row = [keyword, p["description"]]
             for c in p["coeffs"]:
@@ -57,7 +54,6 @@ def print_section(title, data, headers, file):
 
 
 if __name__ == "__main__":
-
     with open(datafile, "r") as f:
         data = json.load(f)
 
@@ -66,7 +62,6 @@ if __name__ == "__main__":
     ]
 
     with open(docfile, "w") as f:
-
         print("Materials Database", file=f)
         print("==================", file=f)
         print(file=f)
@@ -77,7 +72,6 @@ if __name__ == "__main__":
         }
 
         for key, sectitle in sections.items():
-
             print_section(
                 title=sectitle,
                 data=data[key],
