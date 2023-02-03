@@ -96,7 +96,6 @@ class TestDOA(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     """
     algo_names = sorted(pra.doa.algorithms.keys())
 

@@ -1627,7 +1627,6 @@ def dirac_recon_ri_inner(
     mtx_brecon[:sz_Rc1, :sz_Rc1] = GtG
 
     for inner in range(max_iter):
-
         # update the mtx_loop matrix
         mtx_loop[row_s1:row_e1, col_s1:col_e1] = -R_loop
         mtx_loop[row_s2:row_e2, col_s2:col_e2] = -R_loop.T
@@ -1709,7 +1708,6 @@ def make_G(p_mic_x, p_mic_y, omega_bands, sound_speed, M, signal_type="visibilit
 
 
 def make_GtG_and_inv(G_lst):
-
     GtG_lst = []
     GtG_inv_lst = []
     for loop in range(len(G_lst)):

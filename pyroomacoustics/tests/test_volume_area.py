@@ -3,7 +3,6 @@ import pyroomacoustics as pra
 
 
 def test_room_volume():
-
     eps = 0.00001
 
     # Create the 2D L-shaped room from the floor polygon

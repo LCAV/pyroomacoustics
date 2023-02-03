@@ -40,6 +40,7 @@ def compute_error(X_mag, y):
 np.random.seed(0)
 ini = [None, "random", X]
 
+
 # The actual test case
 # We use deterministic phase initialization (to zero)
 class TestGL(unittest.TestCase):
@@ -61,7 +62,6 @@ class TestGL(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     # monitor convergence

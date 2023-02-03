@@ -215,7 +215,6 @@ class CardioidFamily(Directivity):
             azimuth = np.radians(azimuth)
 
         if colatitude is not None:
-
             if degrees:
                 colatitude = np.radians(colatitude)
 
@@ -262,7 +261,6 @@ class CardioidFamily(Directivity):
             ax.set_zlabel("z")
 
         else:
-
             if ax is None:
                 fig = plt.figure()
                 ax = plt.subplot(111)

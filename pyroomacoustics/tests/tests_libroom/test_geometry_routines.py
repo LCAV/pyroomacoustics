@@ -226,7 +226,6 @@ class TestGeometryRoutines(unittest.TestCase):
         self.assertTrue(np.allclose(result, 0.956345613, atol=eps))
 
     def test_dist_line_point2D(self):
-
         start = [3, 3]
         end = [6, 9]
         point = [11, 4]
@@ -236,7 +235,6 @@ class TestGeometryRoutines(unittest.TestCase):
         self.assertTrue(abs(res - np.sqrt(6 * 6 + 3 * 3)) < eps)
 
     def test_dist_line_point2D_vert(self):
-
         start = [-4, 12]
         end = [-4, 27]
         point = [7, 10]
@@ -246,7 +244,6 @@ class TestGeometryRoutines(unittest.TestCase):
         self.assertTrue(abs(res - 11) < eps)
 
     def test_dist_line_point3D(self):
-
         start = [0, 0, 0]
         end = [1, 2, 3]
         point = [4, 5, 6]
@@ -256,7 +253,6 @@ class TestGeometryRoutines(unittest.TestCase):
         self.assertTrue(abs(res - 1.963961012) < eps)
 
     def test_dist_line_point3D_online(self):
-
         start = [0, 0, 0]
         end = [0, 0, 3]
         point = [0, 0, 6]

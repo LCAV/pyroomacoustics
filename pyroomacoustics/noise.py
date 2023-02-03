@@ -273,7 +273,6 @@ class DiffuseNoise(Noise):
             return self.signal[:n_samples]
 
         elif slen < n_samples:
-
             if self.padding == "none":
                 signal = np.concatenate((self.signal, np.zeros(n_samples - slen)))
 
@@ -283,7 +282,6 @@ class DiffuseNoise(Noise):
                 signal = signal[:n_samples]
 
             elif self.padding == "reflect":
-
                 sigs = []
                 for i in range(math.ceil(n_samples / slen)):
                     if i % 2 == 0:
@@ -319,7 +317,6 @@ class DiffuseNoise(Noise):
         return coh_norm
 
     def _shape_noise_envelope(self, N, n_samples):
-
         if self.signal is not None:
             padded_signal = self._get_padded_signal(n_samples)
             A = self._stft(padded_signal)
@@ -391,7 +388,6 @@ class DiffuseNoise(Noise):
         room: Optional["Room"] = None,
         premix: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-
         if room is None:
             raise ValueError(
                 "The room argument is required for DiffuseNoise "

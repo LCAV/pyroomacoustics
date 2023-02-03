@@ -26,7 +26,6 @@ class NLMS(AdaptiveFilter):
     """
 
     def __init__(self, length, mu=0.5):
-
         self.mu = mu
         AdaptiveFilter.__init__(self, length)
 
@@ -65,7 +64,6 @@ class BlockLMS(NLMS):
     """
 
     def __init__(self, length, mu=0.01, L=1, nlms=False):
-
         self.nlms = nlms
 
         # sketching parameters
@@ -103,7 +101,6 @@ class BlockLMS(NLMS):
 
         # Block update
         if self.n % self.L == 0:
-
             # block-update parameters
             X = la.hankel(self.x[: self.L], r=self.x[self.L - 1 :])
 

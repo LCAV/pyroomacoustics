@@ -130,7 +130,6 @@ def test_diffuse_noise(
     "snr,siglen", [(-5, 1000), (0, 1000), (10, 1000), (40, 1000), (100, 1000)]
 )
 def test_compute_snr(snr, siglen):
-
     signal = np.random.randn(siglen)
     noise = np.random.randn(siglen)
 
@@ -150,7 +149,6 @@ def test_compute_snr(snr, siglen):
     "snr,siglen", [(-5, 1000), (0, 1000), (10, 1000), (40, 1000), (100, 1000)]
 )
 def test_scale_signal(snr, siglen):
-
     reference = np.random.randn(siglen)
     signal = np.random.randn(siglen)
 
@@ -165,7 +163,6 @@ def test_scale_signal(snr, siglen):
     "snr,siglen", [(-5, 1000), (0, 1000), (10, 1000), (40, 1000), (100, 1000)]
 )
 def test_white_noise(snr, siglen):
-
     white_noise = pra.WhiteNoise(snr=snr)
 
     # test generate function
@@ -199,7 +196,6 @@ def test_white_noise(snr, siglen):
     ],
 )
 def test_room_noise(snr, siglen, noise_type):
-
     tol = 1e-5
 
     # test generate function
@@ -234,7 +230,6 @@ def test_room_noise(snr, siglen, noise_type):
 
 
 if __name__ == "__main__":
-
     fs = 16000
     c = 343
     n_samples = 60 * fs  # 1 min. data

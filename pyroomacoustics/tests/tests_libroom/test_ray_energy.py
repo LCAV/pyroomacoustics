@@ -52,7 +52,6 @@ class SimpleHistogram(list):
 
 class TestRayEnergy(unittest.TestCase):
     def test_square_room(self):
-
         """
         This is a cubic room of 2x2x2 meters. The source is placed at [0.5,0.5, 1]
         and the receiver at [1.5, 1.5, 1]. A ray is launched towards [1, 0, 1] so that
