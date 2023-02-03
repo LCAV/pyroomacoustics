@@ -67,7 +67,6 @@ import sounddevice as sd
 
 
 if __name__ == "__main__":
-
     choices = ["ilrma", "auxiva", "sparseauxiva", "fastmnmf", "fastmnmf2"]
 
     import argparse

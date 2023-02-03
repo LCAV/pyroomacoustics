@@ -75,7 +75,6 @@ wav_files = [
 ]
 
 if __name__ == "__main__":
-
     choices = ["ilrma", "auxiva", "sparseauxiva", "fastmnmf", "fastmnmf2"]
 
     import argparse
@@ -153,7 +152,6 @@ if __name__ == "__main__":
     # Record each source separately
     separate_recordings = []
     for source, signal in zip(room.sources, signals):
-
         source.signal[:] = signal
 
         room.simulate()
@@ -293,7 +291,6 @@ if __name__ == "__main__":
             )
 
     if args.gui:
-
         # Make a simple GUI to listen to the separated samples
         from tkinter import Tk, Button, Label
         import sounddevice as sd

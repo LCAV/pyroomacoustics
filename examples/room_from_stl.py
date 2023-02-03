@@ -27,7 +27,6 @@ except ImportError as err:
 default_stl_path = Path(__file__).parent / "data/INRIA_MUSIS.stl"
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Basic room from STL file example")
     parser.add_argument(
         "--file", type=str, default=default_stl_path, help="Path to STL file"

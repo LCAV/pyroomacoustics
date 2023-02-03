@@ -80,7 +80,6 @@ Process as in real-time
 processed_audio = np.zeros(signal.shape)
 n = 0
 while noisy_signal.shape[0] - n >= hop:
-
     # SCNR in frequency domain
     stft.analysis(noisy_signal[n : (n + hop)])
     gain_filt = scnr.compute_gain_filter(stft.X)
