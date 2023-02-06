@@ -1,8 +1,10 @@
 from __future__ import division, print_function
 
 from unittest import TestCase
+
 import numpy as np
 from scipy.signal import fftconvolve
+
 import pyroomacoustics as pra
 
 # fix RNG for a deterministic result

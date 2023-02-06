@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyroomacoustics as pra
 
 room = pra.ShoeBox([4, 6], fs=16000, max_order=1)

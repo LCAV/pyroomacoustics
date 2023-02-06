@@ -1,10 +1,11 @@
 from __future__ import division, print_function
 
-import numpy as np
 import os
-from scipy.stats import multivariate_normal
-import sys
 import struct
+import sys
+
+import numpy as np
+from scipy.stats import multivariate_normal
 
 try:
     import sounddevice as sd

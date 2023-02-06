@@ -8,12 +8,13 @@ try:
 except ImportError:
     has_sofa = False
 
-from scipy.fft import fft, fftfreq, ifft
-import math
 import collections
-from scipy.spatial import KDTree, cKDTree
-from scipy.signal import decimate
+import math
 from timeit import default_timer as timer
+
+from scipy.fft import fft, fftfreq, ifft
+from scipy.signal import decimate
+from scipy.spatial import KDTree, cKDTree
 
 # from numpy import linalg as LA
 # from scipy.signal import find_peaks

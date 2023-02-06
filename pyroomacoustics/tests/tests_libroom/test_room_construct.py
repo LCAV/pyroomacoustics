@@ -24,6 +24,7 @@
 from __future__ import division
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 wall_corners = [

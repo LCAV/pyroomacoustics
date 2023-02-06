@@ -24,7 +24,9 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 eps = 1e-6

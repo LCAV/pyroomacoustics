@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyroomacoustics as pra
 
 sig = np.arange(10)

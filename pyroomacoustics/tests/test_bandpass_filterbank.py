@@ -1,10 +1,10 @@
 """
 This tests the construction of a bank of octave filters
 """
-import pyroomacoustics as pra
-
 import numpy as np
 from scipy.signal import sosfreqz
+
+import pyroomacoustics as pra
 
 tol = 1.0  # decibel
 

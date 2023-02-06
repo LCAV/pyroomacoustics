@@ -1,12 +1,12 @@
 """
 Routines to perform grid search on the sphere
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
-
-from abc import ABCMeta, abstractmethod
 
 from .detect_peaks import detect_peaks
 from .utils import great_circ_dist
@@ -368,10 +368,10 @@ class GridSphere(Grid):
 
         try:
             import matplotlib.colors as colors
+            import matplotlib.pyplot as plt
 
             # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
-            import matplotlib.pyplot as plt
         except ImportError:
             import warnings
 

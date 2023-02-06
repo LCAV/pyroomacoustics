@@ -4,7 +4,6 @@ it works as expected
 """
 import pyroomacoustics as pra
 
-
 scat_test = {
     "coeffs": [0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3],
     "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],

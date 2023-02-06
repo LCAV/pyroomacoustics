@@ -1,9 +1,11 @@
 import abc
-import numpy as np
-from enum import Enum
-from pyroomacoustics.doa import spher2cart
-from pyroomacoustics.utilities import requires_matplotlib, all_combinations
 import sys
+from enum import Enum
+
+import numpy as np
+
+from pyroomacoustics.doa import spher2cart
+from pyroomacoustics.utilities import all_combinations, requires_matplotlib
 
 from . import open_sofa_interpolate
 

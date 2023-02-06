@@ -337,8 +337,8 @@ class PointCloud:
 
     def plot(self, axes=None, show_labels=True, **kwargs):
         try:
-            from mpl_toolkits.mplot3d import Axes3D
             import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
         except ImportError:
             import warnings
 

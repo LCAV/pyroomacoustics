@@ -3,6 +3,7 @@ from __future__ import division, print_function
 from unittest import TestCase
 
 import numpy as np
+
 from pyroomacoustics.denoise import Subspace
 
 tol = 1e-7

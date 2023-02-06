@@ -16,9 +16,10 @@ More on ``mkl_fft`` can be read here:
 https://github.com/IntelPython/mkl_fft
 """
 
-import numpy as np
-from numpy.fft import rfft, irfft
 import warnings
+
+import numpy as np
+from numpy.fft import irfft, rfft
 
 try:
     import pyfftw
@@ -156,7 +157,7 @@ class DFT(object):
 
         if transform == "fftw":
             if pyfftw_available:
-                from pyfftw import empty_aligned, FFTW
+                from pyfftw import FFTW, empty_aligned
 
                 self.transform = transform
                 # allocate input (real) and output for pyfftw

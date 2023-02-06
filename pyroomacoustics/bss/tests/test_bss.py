@@ -1,7 +1,9 @@
-import numpy as np
-import pyroomacoustics as pra
-from scipy.io import wavfile
 import unittest
+
+import numpy as np
+from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 np.random.seed(0)
 

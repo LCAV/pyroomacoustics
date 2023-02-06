@@ -130,7 +130,7 @@ from .metrics import *
 from .multirate import *
 from .parameters import *
 from .recognition import *
-from .room import *
+from .simulation import *
 from .soundsource import *
 from .sync import *
 from .utilities import *

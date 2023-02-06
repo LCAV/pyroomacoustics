@@ -39,7 +39,7 @@ class get_pybind_include(object):
 
 
 # build C extension for image source model
-libroom_src_dir = "pyroomacoustics/libroom_src"
+libroom_src_dir = "src"
 libroom_files = [
     os.path.join(libroom_src_dir, f)
     for f in [

@@ -15,6 +15,7 @@ If the C module is not installed (pure python
 fallback version), then nothing is done.
 """
 import numpy as np
+
 import pyroomacoustics
 
 
