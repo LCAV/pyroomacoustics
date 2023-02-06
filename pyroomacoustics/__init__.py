@@ -128,6 +128,16 @@ from .beamforming import *
 from .directivities import *
 from .metrics import *
 from .multirate import *
+from .noise import (
+    Noise,
+    WhiteNoise,
+    DiffuseNoise,
+    mix_signal_noise,
+    compute_power,
+    compute_rmse,
+    compute_snr,
+    scale_signal,
+)
 from .parameters import *
 from .recognition import *
 from .room import *
