@@ -3,9 +3,10 @@ from __future__ import division, print_function
 from unittest import TestCase
 
 import numpy as np
+from scipy.signal import fftconvolve
+
 import pyroomacoustics as pra
 from pyroomacoustics.transform import STFT
-from scipy.signal import fftconvolve
 
 """
 We create a signal, a simple filter and compute their convolution.

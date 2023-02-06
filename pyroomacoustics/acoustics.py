@@ -30,14 +30,13 @@ import math
 
 import numpy as np
 from scipy import signal
+from scipy.fft import fft, fftfreq, fftshift, ifft
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
-from scipy.signal import butter, fftconvolve, sosfiltfilt
+from scipy.signal import butter, fftconvolve, hilbert, sosfiltfilt
 
 from .parameters import constants
 from .transform import stft
-from scipy.fft import fft, fftfreq, fftshift, ifft
-from scipy.signal import hilbert
 
 
 def binning(S, bands):

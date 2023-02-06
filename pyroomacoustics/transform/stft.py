@@ -27,6 +27,7 @@ from __future__ import division
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
+
 from .dft import DFT
 
 

@@ -1,10 +1,12 @@
 from __future__ import division, print_function
 
-import numpy as np
-import pyroomacoustics as pra
-from pyroomacoustics.transform import STFT
 import time
 import warnings
+
+import numpy as np
+
+import pyroomacoustics as pra
+from pyroomacoustics.transform import STFT
 
 # test signal
 np.random.seed(0)

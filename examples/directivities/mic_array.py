@@ -1,12 +1,12 @@
-import pyroomacoustics as pra
-import numpy as np
 import matplotlib.pyplot as plt
-from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
-    CardioidFamily,
-)
+import numpy as np
 
+import pyroomacoustics as pra
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 pattern = DirectivityPattern.HYPERCARDIOID
 orientation = DirectionVector(azimuth=0, colatitude=0, degrees=True)

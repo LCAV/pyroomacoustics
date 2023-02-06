@@ -1,9 +1,12 @@
 from __future__ import division, print_function
-from unittest import TestCase
-import numpy as np
+
 import os
-from pyroomacoustics import create_noisy_signal, rms, normalize
+from unittest import TestCase
+
+import numpy as np
 from scipy.io import wavfile
+
+from pyroomacoustics import create_noisy_signal, normalize, rms
 
 tol = 1e-5
 

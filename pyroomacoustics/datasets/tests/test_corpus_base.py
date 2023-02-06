@@ -2,7 +2,7 @@
 Example of the basic operations with ``pyroomacoustics.datasets.Dataset``
 and ``pyroomacoustics.datasets.Sample`` classes
 """
-from pyroomacoustics.datasets import Sample, Dataset
+from pyroomacoustics.datasets import Dataset, Sample
 
 
 def test_dataset():

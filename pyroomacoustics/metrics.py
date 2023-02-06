@@ -2,9 +2,9 @@ import os
 import platform
 
 import numpy as np
+from scipy.signal import hann
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
-from scipy.signal import hann
 
 from .transform import stft
 

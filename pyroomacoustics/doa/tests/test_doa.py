@@ -5,8 +5,9 @@
 import unittest
 
 import numpy as np
-import pyroomacoustics as pra
 from scipy.signal import fftconvolve
+
+import pyroomacoustics as pra
 
 # fix the RNG seed for repeatability
 np.random.seed(0)

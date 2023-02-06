@@ -9,8 +9,9 @@ MIT License
 import unittest
 
 import numpy as np
-import pyroomacoustics as pra
 from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 test_tol = 1e-2
 

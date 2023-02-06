@@ -666,12 +666,12 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
+from .directivities import CardioidFamily, DIRPATRir, source_angle_shoebox
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import angle_function
-from .directivities import CardioidFamily, source_angle_shoebox, DIRPATRir
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -2508,9 +2508,9 @@ class Room(object):
         fir_length_octave_band = self.octave_bands.n_fft
 
         from .build_rir import (
-            fast_window_sinc_interpolator,
-            fast_convolution_4,
             fast_convolution_3,
+            fast_convolution_4,
+            fast_window_sinc_interpolator,
         )
 
         rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False

@@ -23,6 +23,7 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 cases = {

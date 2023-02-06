@@ -1,14 +1,15 @@
+import os
+from unittest import TestCase
+
 import numpy as np
+
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
     CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
     DIRPATRir,
 )
-from unittest import TestCase
-import os
-
 
 room_dim = [6, 6, 2.4]
 

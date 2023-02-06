@@ -1,5 +1,6 @@
-import pyroomacoustics as pra
 import matplotlib
+
+import pyroomacoustics as pra
 
 matplotlib.use("Agg")
 

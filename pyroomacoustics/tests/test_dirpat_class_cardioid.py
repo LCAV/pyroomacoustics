@@ -1,12 +1,14 @@
+import os
+
 import numpy as np
+
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
     CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
     DIRPATRir,
 )
-import os
 
 room_dim = [6, 6, 2.4]
 

@@ -1,12 +1,20 @@
 # cython: infer_types=True
 
 import numpy as np
+
 cimport cython
-from scipy.fft import fft , ifft
-from libc.math cimport floor, ceil
-from .directivities import DIRPATRir
-from scipy.signal import hilbert
+
+from scipy.fft import fft, ifft
+
+from libc.math cimport ceil, floor
+
 from timeit import default_timer as timer
+
+from scipy.signal import hilbert
+
+from .directivities import DIRPATRir
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def fast_rir_builder(
@@ -124,6 +132,7 @@ def fast_window_sinc_interpolator(double [:] vectorized_time_fp, int window_leng
 
 cdef int val_i
 import multiprocessing
+
 nthread = multiprocessing.cpu_count()
 
 def fast_convolution_4 (

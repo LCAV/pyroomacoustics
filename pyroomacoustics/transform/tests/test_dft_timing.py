@@ -1,7 +1,10 @@
 from __future__ import division, print_function
-import numpy as np
-import pyroomacoustics as pra
+
 import time
+
+import numpy as np
+
+import pyroomacoustics as pra
 
 try:
     import pyfftw

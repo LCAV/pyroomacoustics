@@ -26,6 +26,7 @@ from __future__ import division
 import unittest
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 c0 = np.array(
