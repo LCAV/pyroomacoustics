@@ -86,6 +86,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
 
 ### Build Tools (taken from pybind11 example) ###
 
+
 # As of Python 3.6, CCompiler has a `has_flag` method.
 # cf http://bugs.python.org/issue26689
 def has_flag(compiler, flagname):
