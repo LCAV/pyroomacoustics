@@ -6,9 +6,10 @@ In this example, we will run adaptive filters for system identification.
 """
 from __future__ import division, print_function
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import fftconvolve
-import matplotlib.pyplot as plt
+
 import pyroomacoustics as pra
 
 # parameters

@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 room_dim = [15, 14, 16]

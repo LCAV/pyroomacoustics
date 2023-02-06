@@ -5,6 +5,7 @@
 import unittest
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 fs = 8000

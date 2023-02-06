@@ -1,6 +1,7 @@
 import numpy as np
-import pyroomacoustics as pra
 from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 # We use several sound samples for each source to have a long enough length
 wav_files = [

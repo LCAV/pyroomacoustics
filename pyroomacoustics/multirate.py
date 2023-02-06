@@ -27,7 +27,7 @@ def frac_delay(delta, N, w_max=0.9, C=4):
     n = np.arange(N)
 
     try:
-        from cvxopt import solvers, matrix
+        from cvxopt import matrix, solvers
     except:
         raise ValueError(
             "To use the frac_delay function, the cvxopt module is necessary."

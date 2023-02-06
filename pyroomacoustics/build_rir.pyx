@@ -1,9 +1,10 @@
 # cython: infer_types=True
 
 import numpy as np
-cimport cython
 
-from libc.math cimport floor, ceil
+cimport cython
+from libc.math cimport ceil, floor
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

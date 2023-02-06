@@ -1,7 +1,8 @@
-import numpy as np
-from pyroomacoustics import angle_function
 from unittest import TestCase
 
+import numpy as np
+
+from pyroomacoustics import angle_function
 
 pi = np.pi
 

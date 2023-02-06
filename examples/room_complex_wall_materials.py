@@ -6,6 +6,7 @@ with rich wall materials.
 """
 import matplotlib.pyplot as plt
 import numpy as np
+
 import pyroomacoustics as pra
 
 # Define the materials array

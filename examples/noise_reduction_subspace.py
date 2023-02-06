@@ -10,12 +10,14 @@ data. For fixed WAV files, the one-shot function
 `pyroomacoustics.denoise.apply_subspace` can be used.
 """
 
+import os
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import os
+
 import pyroomacoustics as pra
-import matplotlib.pyplot as plt
-import time
 from pyroomacoustics.denoise import Subspace
 
 """

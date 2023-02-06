@@ -6,13 +6,13 @@ In this example, we will show the benefits of using the randomized
 image method to remove sweeping echoes in RIRs simulated with ISM.
 """
 
-import numpy as np
-import pyroomacoustics as pra
 import matplotlib.pyplot as plt
-from pyroomacoustics.transform import stft
-from pyroomacoustics import metrics as met
+import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
+import pyroomacoustics as pra
+from pyroomacoustics import metrics as met
+from pyroomacoustics.transform import stft
 
 # create an example with sweeping echo - from Enzo's paper
 room_size = [4, 4, 4]

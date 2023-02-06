@@ -240,9 +240,9 @@ def sph_plot_diracs_plotly(
     """
 
     try:
-        from plotly.offline import plot
-        import plotly.graph_objs as go
         import plotly
+        import plotly.graph_objs as go
+        from plotly.offline import plot
     except ImportError:
         import warnings
 

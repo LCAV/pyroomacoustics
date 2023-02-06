@@ -4,6 +4,7 @@ Tests the mixing function of ``Room.simulate``
 import unittest
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 e_abs = 1.0 - (1.0 - 0.25) ** 2

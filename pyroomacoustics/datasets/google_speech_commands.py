@@ -19,7 +19,9 @@ Tutorial on creating a word classifier:
 https://www.tensorflow.org/versions/master/tutorials/audio_recognition
 """
 
-import os, glob
+import glob
+import os
+
 import numpy as np
 from scipy.io import wavfile
 
@@ -30,8 +32,8 @@ try:
 except:
     have_sounddevice = False
 
+from .base import AudioSample, Dataset, Meta
 from .utils import download_uncompress
-from .base import Meta, AudioSample, Dataset
 
 url = "http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz"
 

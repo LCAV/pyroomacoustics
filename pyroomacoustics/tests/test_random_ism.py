@@ -8,7 +8,6 @@ Script to test removal of sweeping echoes with randomized image method
 import pyroomacoustics as pra
 from pyroomacoustics import metrics as met
 
-
 # create an example with sweeping echo - from Enzo's paper
 room_size = [4, 4, 4]
 source_loc = [1, 2, 2]
