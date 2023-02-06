@@ -1,8 +1,9 @@
 from __future__ import division, print_function
 
+import numpy as np
 from scipy import linalg as la
 
-from .doa import *
+from .doa import DOA
 from .tools_fri_doa_plane import (
     cov_mtx_est,
     extract_off_diag,
@@ -11,9 +12,6 @@ from .tools_fri_doa_plane import (
     polar2cart,
     pt_src_recon_multiband,
 )
-
-# import numpy as np
-
 
 
 class FRIDA(DOA):
