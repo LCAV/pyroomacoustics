@@ -6,3 +6,4 @@ matplotlib
 sounddevice
 samplerate
 mir_eval
+python-sofa

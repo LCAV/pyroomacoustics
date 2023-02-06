@@ -29,12 +29,15 @@ import itertools
 import math
 
 import numpy as np
+from scipy import signal
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
 from scipy.signal import butter, fftconvolve, sosfiltfilt
 
 from .parameters import constants
 from .transform import stft
+from scipy.fft import fft, fftfreq, fftshift, ifft
+from scipy.signal import hilbert
 
 
 def binning(S, bands):
@@ -288,22 +291,35 @@ class OctaveBandsFactory(object):
         n = len(self.centers)
 
         new_bands = [[centers[0] / 2, centers[1]]]
+
         for i in range(1, n - 1):
             new_bands.append([centers[i - 1], centers[i + 1]])
         new_bands.append([centers[-2], self.fs / 2])
 
         n_freq = self.n_fft // 2 + 1
         freq_resp = np.zeros((n_freq, n))
-        freq = np.arange(n_freq) / self.n_fft * self.fs
+
+        freq = (
+            np.arange(n_freq) / self.n_fft * self.fs
+        )  # This only contains positive newfrequencies
 
         for b, (band, center) in enumerate(zip(new_bands, centers)):
+
+            if (
+                b == 0
+            ):  # Converting Octave bands so that the minimum phase filters do not have ripples.
+                make_one = freq < center
+                freq_resp[make_one, b] = 1.0
+
             lo = np.logical_and(band[0] <= freq, freq < center)
+
             freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
 
             if b != n - 1:
                 hi = np.logical_and(center <= freq, freq < band[1])
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
+
                 hi = center <= freq
                 freq_resp[hi, b] = 1.0
 
@@ -311,9 +327,55 @@ class OctaveBandsFactory(object):
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
             axes=[0],
         )
-
         # remove the first sample to make them odd-length symmetric filters
         self.filters = filters[1:, :]
+
+        # Octave band filters in frequency domain used in the following method "octave_band_dft_interpolation"
+        self.filters_freq_domain = fft(filters, axis=0)
+
+    def octave_band_dft_interpolation(
+        self,
+        att_in_octave_band,
+        air_abs_band,
+        distance_is,
+        att_in_dft_scale,
+        bws,
+        min_phase,
+    ):
+        """
+        Convert octave band dampings to dft scale, interpolates octave band values to full dft scale values.
+
+        Parameters:
+        -------------
+        att_in_octave_band : np.ndarray
+            Dampings in octave band Shape : (no_of_octave_band)
+        air_abs_band : np.ndarray
+            air absorption in octave band Shape : (no_of_octave_band)
+        distance_is : float
+            distance of the image source from the mic
+        min_phase : Boolean
+            decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
+
+        Returns:
+        -------------
+        att_in_dft_scale : np.ndarray
+            Dampings in octave bands interpolated to full scale frequency domain.
+
+        """
+
+        u_ = [
+            att_in_octave_band[i] * np.exp(-0.5 * air_abs_band[i] * distance_is)
+            for i in range(len(bws))
+        ]
+
+        for b in range(len(bws)):
+            att_in_dft_scale += u_[b] * self.filters_freq_domain[:, b]
+
+        if min_phase:
+            att_in_dft_scale += 1e-07  # To avoid divide by zero error when performing hilbert transform.
+            m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale))))
+            att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
+        return att_in_dft_scale
 
 
 def critical_bands():

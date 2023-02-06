@@ -11,7 +11,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+- Simulation with measured directivity responses from the DIRPAT dataset for shoebox rooms
 
 `0.7.3`_ - 2022-12-05
 ---------------------
