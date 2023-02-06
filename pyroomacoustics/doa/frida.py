@@ -94,7 +94,6 @@ class FRIDA(DOA):
         use_cache=False,
         **kwargs
     ):
-
         DOA.__init__(self, L, fs, nfft, c=c, num_src=num_src, mode="far", **kwargs)
 
         # intialize some attributes
@@ -155,7 +154,6 @@ class FRIDA(DOA):
         self.num_freq = self.freq_bins.shape[0]
 
         if self.dim == 2:
-
             # build the G matrix if necessary
             if self.G is None:
                 self.G = make_G(
@@ -190,7 +188,6 @@ class FRIDA(DOA):
             )
 
         elif self.dim == 3:
-
             raise ValueError("3D reconstruction is not yet available with FRIDA.")
 
     def _raw_average(self, X):
@@ -208,7 +205,6 @@ class FRIDA(DOA):
         return np.mean(X[:, self.freq_bins, :] * phaser, axis=2)
 
     def _visibilities(self, X):
-
         visi_noisy_all = []
         for band_count in range(self.num_freq):
             # Estimate the covariance matrix and extract off-diagonal entries
@@ -245,14 +241,12 @@ class FRIDA(DOA):
         num_mic = self.M
 
         if self.dim == 2:
-
             x_plt, y_plt = polar2cart(1, self.grid.azimuth)
             img = np.zeros(self.grid.n_points, dtype=complex)
 
             pos_mic_x = self.L[0, :]
             pos_mic_y = self.L[1, :]
             for i in range(self.num_freq):
-
                 visi = self.visi_noisy_all[:, i]
                 omega_band = 2 * np.pi * self.freq_hz[i]
 
@@ -276,7 +270,6 @@ class FRIDA(DOA):
             return img / (num_mic * (num_mic - 1))
 
         elif self.dim == 3:
-
             raise ValueError("3D reconstruction is not yet available with FRIDA.")
 
 

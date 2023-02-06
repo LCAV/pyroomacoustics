@@ -55,7 +55,6 @@ class MUSIC(DOA):
         frequency_normalization=False,
         **kwargs
     ):
-
         DOA.__init__(
             self,
             L=L,
@@ -123,7 +122,6 @@ class MUSIC(DOA):
 
         # plot
         for k in range(self.num_freq):
-
             freq = float(self.freq_bins[k]) / self.nfft * self.fs
             azimuth = self.grid.azimuth * 180 / np.pi
 
@@ -146,7 +144,6 @@ class MUSIC(DOA):
         return 1.0 / abs(denom[..., 0, 0])
 
     def _compute_spatial_spectrum(self, cross, k):
-
         P = np.zeros(self.grid.n_points)
 
         for n in range(self.grid.n_points):

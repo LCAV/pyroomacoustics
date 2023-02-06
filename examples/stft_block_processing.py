@@ -51,7 +51,6 @@ processed_audio = np.zeros(audio.shape)
 # process the signals while full blocks are available
 n = 0
 while audio.shape[0] - n > hop:
-
     # go to frequency domain
     stft.analysis(audio[n : n + hop])
 

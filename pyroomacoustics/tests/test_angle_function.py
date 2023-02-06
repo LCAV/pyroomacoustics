@@ -78,7 +78,6 @@ def find_error(type_coordinates):
         a_b_index = 0
         for a in a_range:
             for b in b_range:
-
                 error_azimuth = (angle_function(a, b) - a_b_range[a_b_index])[0]
                 error_colatitude = (angle_function(a, b) - a_b_range[a_b_index])[1]
 
@@ -108,7 +107,6 @@ def find_error(type_coordinates):
         c_d_index = 0
         for c in c_range:
             for d in d_range:
-
                 error_azimuth = (angle_function(c, d) - c_d_range[c_d_index])[0]
                 error_colatitude = (angle_function(c, d) - c_d_range[c_d_index])[1]
 

@@ -109,7 +109,6 @@ class DelayCalibration:
 
 
 if __name__ == "__main__":
-
     try:
         import sounddevice as sd
 

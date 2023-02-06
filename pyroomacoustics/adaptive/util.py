@@ -51,9 +51,7 @@ def toeplitz_multiplication(c, r, A, **kwargs):
 
     Af = np.fft.rfft(A, n=fft_len, axis=0)
 
-    return np.fft.irfft((Af.T * xf).T, n=fft_len, axis=0)[
-        :m,
-    ]
+    return np.fft.irfft((Af.T * xf).T, n=fft_len, axis=0)[:m,]
 
 
 def hankel_multiplication(c, r, A, mkl=True, **kwargs):
@@ -78,9 +76,7 @@ def hankel_multiplication(c, r, A, mkl=True, **kwargs):
         fmul = toeplitz_multiplication
         A = A[: r.shape[0], :]
 
-    return fmul(c[::-1], r, A, **kwargs)[
-        ::-1,
-    ]
+    return fmul(c[::-1], r, A, **kwargs)[::-1,]
 
 
 def mkl_toeplitz_multiplication(c, r, A, A_padded=False, out=None, fft_len=None):
@@ -134,9 +130,7 @@ def mkl_toeplitz_multiplication(c, r, A, A_padded=False, out=None, fft_len=None)
     else:
         A = fft.irfft(out, n=fft_len, axis=0)
 
-    return A[
-        :m,
-    ]
+    return A[:m,]
 
 
 def naive_toeplitz_multiplication(c, r, A):
@@ -232,7 +226,6 @@ def toeplitz_opt_circ_approx(r, matrix=False):
 
 
 if __name__ == "__main__":
-
     import time
 
     try:

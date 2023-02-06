@@ -3,7 +3,6 @@ import pyroomacoustics as pra
 
 
 def test_soundsource_basic():
-
     the_signal = np.ones(10)
     source = pra.SoundSource([1.0, 1.0], signal=the_signal)
 
@@ -12,5 +11,4 @@ def test_soundsource_basic():
 
 
 if __name__ == "__main__":
-
     test_soundsource_basic()
