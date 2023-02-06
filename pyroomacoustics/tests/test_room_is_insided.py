@@ -66,5 +66,4 @@ def test_room_is_inside():
 
 
 if __name__ == "__main__":
-
     test_room_is_inside()

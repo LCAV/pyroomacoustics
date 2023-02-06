@@ -252,7 +252,6 @@ class Dataset(object):
         r = "The dataset contains {} samples.\n".format(len(self))
         r += "Metadata attributes are:\n"
         for field, values in self.info.items():
-
             r += "  {} ({}) :\n".format(field, len(values))
 
             # for attributes with lots of values, we just print a few

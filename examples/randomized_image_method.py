@@ -79,7 +79,6 @@ analysis_window = pra.hann(fft_size)
 
 print("Sweeping echo measure for ISM is :")
 for n in range(M):
-
     if n == 0:
         S = stft.analysis(
             room.rir[n][0], fft_size, fft_hop, win=analysis_window, zp_back=fft_zp
@@ -133,7 +132,6 @@ room.compute_rir()
 
 print("Sweeping echo measure for randomized ISM is:")
 for n in range(M):
-
     if n == 0:
         S = stft.analysis(
             room.rir[n][0], fft_size, fft_hop, win=analysis_window, zp_back=fft_zp

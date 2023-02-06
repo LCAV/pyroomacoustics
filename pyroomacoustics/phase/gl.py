@@ -168,12 +168,9 @@ def griffin_lim(
     # the successive application of analysis/synthesis introduces
     # a shift of ``fft_size - hop`` that we must correct
     the_shift = fft_size - hop
-    y[:-the_shift,] = y[
-        the_shift:,
-    ]
+    y[:-the_shift,] = y[the_shift:,]
 
     for epoch in range(n_iter):
-
         # possibly monitor the reconstruction
         if callback is not None:
             callback(epoch, Y, y)
@@ -185,9 +182,7 @@ def griffin_lim(
         Y *= X / np.abs(Y)
 
         # back to time domain
-        y[:-the_shift,] = engine.synthesis(Y)[
-            the_shift:,
-        ]
+        y[:-the_shift,] = engine.synthesis(Y)[the_shift:,]
 
     # last callback
     if callback is not None:

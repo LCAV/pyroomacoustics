@@ -4,7 +4,6 @@ import pyroomacoustics as pra
 
 
 def test_median():
-
     # simple tests
     x = np.arange(1, 11)
     m = pra.median(x)
@@ -42,7 +41,6 @@ def test_median():
 
     for n in N:
         for a in alpha:
-
             failures = np.zeros(R, dtype=bool)
 
             for r in range(R):
@@ -56,5 +54,4 @@ def test_median():
 
 
 if __name__ == "__main__":
-
     test_median()

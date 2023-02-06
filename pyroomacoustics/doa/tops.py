@@ -61,7 +61,6 @@ class TOPS(MUSIC):
         colatitude=None,
         **kwargs
     ):
-
         MUSIC.__init__(
             self,
             L=L,

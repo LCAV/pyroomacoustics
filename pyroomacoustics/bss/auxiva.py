@@ -84,7 +84,6 @@ def auxiva(
     return_filters=False,
     callback=None,
 ):
-
     """
     This is an implementation of AuxIVA/OverIVA that separates the input
     signal into statistically independent sources. The separation is done
@@ -159,7 +158,6 @@ def auxiva(
 
     # initialize A and W
     if W0 is None:
-
         if init_eig:
             # Initialize the demixing matrices with the principal
             # eigenvectors of the input covariance
@@ -198,7 +196,6 @@ def auxiva(
         Y[:, :, :] = np.matmul(W, X)
 
     for epoch in range(n_iter):
-
         demix(Y, X, W)
 
         if callback is not None and epoch % 10 == 0:

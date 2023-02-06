@@ -11,7 +11,6 @@ class AdaptiveFilter:
     """
 
     def __init__(self, length):
-
         # filter length
         self.length = length
 
@@ -54,5 +53,4 @@ class AdaptiveFilter:
         self.d = d_n
 
     def name(self):
-
         return self.__class__.__name__

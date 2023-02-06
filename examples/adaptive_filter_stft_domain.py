@@ -41,12 +41,7 @@ n = 0
 num_blocks = 0
 X_concat = np.zeros((num_bands, n_samples // hop), dtype=np.complex64)
 while n_samples - n > hop:
-
-    stft_in.analysis(
-        x[
-            n : n + hop,
-        ]
-    )
+    stft_in.analysis(x[n : n + hop,])
     X_concat[:, num_blocks] = stft_in.X
 
     n += hop
@@ -73,7 +68,6 @@ aec_out = np.zeros(n_samples)
 error_per_band = np.zeros((num_bands, num_blocks), dtype=np.complex64)
 time_idx = 0
 for n in range(num_blocks):
-
     # update filter with new samples
     adaptive_filters.update(X_concat[:, n], D_concat[:, n])
     error_per_band[:, n] = np.linalg.norm(adaptive_filters.W.conj() - W, axis=0)

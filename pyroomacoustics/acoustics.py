@@ -82,7 +82,6 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     nyquist = fs / 2.0
 
     for band in bands:
-
         # remove bands above nyquist frequency
         if band[0] >= nyquist:
             raise ValueError("Bands should be below Nyquist frequency")
@@ -161,7 +160,6 @@ class OctaveBandsFactory(object):
     """
 
     def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
-
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft

@@ -67,6 +67,5 @@ def test_rt60_plot():
 
 
 if __name__ == "__main__":
-
     test_rt60()
     test_rt60_plot()

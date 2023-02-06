@@ -39,7 +39,6 @@ def sparseauxiva(
     return_filters=False,
     callback=None,
 ):
-
     """
     Implementation of sparse AuxIVA algorithm for BSS presented in
 

@@ -25,7 +25,6 @@ x = np.random.randn(nfft, D).astype("float32")
 
 
 def timing(transform, n_trials):
-
     dft = pra.transform.DFT(nfft, D, transform=transform)
     start_time = time.time()
     for k in range(n_trials):
@@ -66,7 +65,6 @@ print(
 )
 
 if pyfftw_available:
-
     # prepare
     a = pyfftw.empty_aligned([nfft, D], dtype="float32")
     b = pyfftw.empty_aligned([nfft // 2 + 1, D], dtype="complex64")

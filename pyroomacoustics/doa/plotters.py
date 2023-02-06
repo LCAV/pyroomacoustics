@@ -50,13 +50,11 @@ def polar_plt_dirac(
     from fri import FRI
 
     if not isinstance(self, FRI):  # use spatial spectrum
-
         dirty_img = self.grid.values
         alpha_recon = self.grid.values[self.src_idx]
         alpha_ref = alpha_recon
 
     else:  # create dirty image
-
         dirty_img = self._gen_dirty_img()
         alpha_recon = np.mean(np.abs(self.alpha_recon), axis=1)
         alpha_recon /= alpha_recon.max()
@@ -260,7 +258,6 @@ def sph_plot_diracs_plotly(
         and azimuth_grid is not None
         and colatitude_grid is not None
     ):
-
         surfacecolor = np.abs(dirty_img)  # for plotting purposes
 
         base = surface_base
@@ -296,7 +293,6 @@ def sph_plot_diracs_plotly(
         traces.append(trace1)
 
     if colatitude_ref is not None and azimuth_ref is not None:
-
         x_ref = np.sin(colatitude_ref) * np.cos(azimuth_ref)
         y_ref = np.sin(colatitude_ref) * np.sin(azimuth_ref)
         z_ref = np.cos(colatitude_ref)
@@ -335,7 +331,6 @@ def sph_plot_diracs_plotly(
         traces.append(trace2)
 
     if colatitude is not None and azimuth is not None:
-
         x_recon = np.sin(colatitude) * np.cos(azimuth)
         y_recon = np.sin(colatitude) * np.sin(azimuth)
         z_recon = np.cos(colatitude)
@@ -441,7 +436,6 @@ def sph_plot_diracs(
         and colatitude_grid is not None
         and azimuth_grid is not None
     ):
-
         azimuth_plt_internal = azimuth_grid.copy()
         azimuth_plt_internal[azimuth_grid > np.pi] -= np.pi * 2
         p_hd = ax.pcolormesh(
@@ -469,7 +463,6 @@ def sph_plot_diracs(
         p_hdc.update_ticks()
 
     if colatitude_ref is not None and azimuth_ref is not None:
-
         if hasattr(colatitude_ref, "__iter__"):
             K = colatitude_ref.size
             x_ref = azimuth_ref.copy()
@@ -501,7 +494,6 @@ def sph_plot_diracs(
         )
 
     if colatitude is not None and azimuth is not None:
-
         if hasattr(colatitude, "__iter__"):
             K_est = colatitude.size
             x = azimuth.copy()

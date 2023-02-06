@@ -54,7 +54,6 @@ def random_room_ism(max_order=10, eps=1e-6, verbose=False):
 
 
 def test_ism_shoebox_vs_general(verbose=False):
-
     np.random.seed(0)
     n_repeat = 100
     max_order = 10

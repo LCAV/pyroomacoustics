@@ -3,7 +3,6 @@ import pyroomacoustics as pra
 
 
 def test_anechoic_room(debug=False):
-
     # sound signal
     fs = 40000
     freq = 440
@@ -11,7 +10,6 @@ def test_anechoic_room(debug=False):
     signal = np.sin(2 * np.pi * freq * times)
 
     for dim in [2, 3]:
-
         # create Anechoic room using the correct class
         room_infinite = pra.AnechoicRoom(fs=fs, dim=dim)
 

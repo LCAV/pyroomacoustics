@@ -124,7 +124,6 @@ class Subspace(object):
         thresh=0.01,
         data_type="float32",
     ):
-
         if frame_len % 2:
             raise ValueError(
                 "Frame length should be even as this method " "performs 50% overlap."
@@ -199,7 +198,6 @@ class Subspace(object):
         return self.current_out
 
     def compute_signal_projection(self):
-
         sigma = np.linalg.lstsq(self.cov_n, self.cov_sn, rcond=None)[0] - np.eye(
             self.frame_len
         )
@@ -217,7 +215,6 @@ class Subspace(object):
         # self.h_opt = np.dot(np.linalg.lstsq(v_t, q1, rcond=None)[0], v_t)
 
     def update_cov_matrices(self, new_samples):
-
         # remove cov of old samples
         self.cov_sn *= self.n_frames
         self.cov_sn -= self._cov_sn[0]
@@ -309,10 +306,7 @@ def apply_subspace(
     n = 0
     hop = frame_len // 2
     while noisy_signal.shape[0] - n >= hop:
-
-        processed_audio[
-            n : n + hop,
-        ] = scnr.apply(noisy_signal[n : n + hop])
+        processed_audio[n : n + hop,] = scnr.apply(noisy_signal[n : n + hop])
 
         # update step
         n += hop

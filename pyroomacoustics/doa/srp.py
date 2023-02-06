@@ -51,7 +51,6 @@ class SRP(DOA):
         colatitude=None,
         **kwargs
     ):
-
         DOA.__init__(
             self,
             L=L,
@@ -109,7 +108,6 @@ class SRP(DOA):
         DC_offset = pX.shape[-1] * self.L.shape[1] * len(self.freq_bins)
 
         for n in range(self.grid.n_points):
-
             # In the loop, this is just a fancy way of computing
             # the quadratic form:
             # mode_vec^H @ CC @ mode_vec
