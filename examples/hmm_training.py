@@ -12,7 +12,6 @@ import numpy as np
 from pyroomacoustics import HMM, CircularGaussianEmission, GaussianEmission
 
 if __name__ == "__main__":
-
     K = 4  # number of states
     O = 6  # dimension of the emission vector
     model = "left-right"  # transition matrix model

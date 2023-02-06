@@ -11,7 +11,6 @@ import pyroomacoustics as pra
 methods = ["MUSIC", "FRIDA", "WAVES", "TOPS", "CSSM", "SRP", "NormMUSIC"]
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Estimates the direction of arrival of a sound source."
     )

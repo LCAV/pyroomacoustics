@@ -13,7 +13,6 @@ S = 2 * (
 
 
 def test_rt60_theory_single_band():
-
     # The desired reverberation time and dimensions of the room
     rt60_tgt = 0.3  # seconds
 
@@ -33,7 +32,6 @@ def test_rt60_theory_single_band():
 
 
 def test_rt60_theory_multi_band():
-
     # Create the room
     room = pra.ShoeBox(
         room_dim,
@@ -47,7 +45,6 @@ def test_rt60_theory_multi_band():
 
 
 def test_rt60_measure():
-
     # Create the room
     room = pra.ShoeBox(
         room_dim,
@@ -68,7 +65,6 @@ def test_rt60_measure():
 
 
 if __name__ == "__main__":
-
     test_rt60_theory_single_band()
     test_rt60_theory_multi_band()
     test_rt60_measure()

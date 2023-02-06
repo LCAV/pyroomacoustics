@@ -14,7 +14,6 @@ from scipy.io import wavfile
 methods = ["ism", "hybrid"]
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Simulates and adds reverberation to a dry sound sample. Saves it into `./examples/samples`."
     )

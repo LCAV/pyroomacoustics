@@ -85,7 +85,6 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     nyquist = fs / 2.0
 
     for band in bands:
-
         # remove bands above nyquist frequency
         if band[0] >= nyquist:
             raise ValueError("Bands should be below Nyquist frequency")
@@ -164,7 +163,6 @@ class OctaveBandsFactory(object):
     """
 
     def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
-
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
@@ -304,7 +302,6 @@ class OctaveBandsFactory(object):
         )  # This only contains positive newfrequencies
 
         for b, (band, center) in enumerate(zip(new_bands, centers)):
-
             if (
                 b == 0
             ):  # Converting Octave bands so that the minimum phase filters do not have ripples.
@@ -319,7 +316,6 @@ class OctaveBandsFactory(object):
                 hi = np.logical_and(center <= freq, freq < band[1])
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
-
                 hi = center <= freq
                 freq_resp[hi, b] = 1.0
 

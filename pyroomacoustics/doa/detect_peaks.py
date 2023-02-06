@@ -25,7 +25,6 @@ def detect_peaks(
     show=False,
     ax=None,
 ):
-
     """
     Detect peaks in data based on their amplitude and other features.
 

@@ -63,7 +63,6 @@ class Constants:
         _constants[name] = val
 
     def get(self, name):
-
         try:
             v = _constants[name]
         except KeyError:
@@ -77,6 +76,7 @@ class Constants:
 
 # the instanciation of the class
 constants = Constants()
+
 
 # Compute the speed of sound as a function
 # of temperature, humidity, and pressure
@@ -151,7 +151,6 @@ class Physics(object):
     """
 
     def __init__(self, temperature=None, humidity=None):
-
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
         if humidity is None:
             self.H = 0.0
@@ -289,7 +288,6 @@ class Material(object):
     """
 
     def __init__(self, energy_absorption, scattering=None):
-
         # Handle the energy absorption input based on its type
         if isinstance(energy_absorption, (float, np.float32, np.float64)):
             # This material is flat over frequencies

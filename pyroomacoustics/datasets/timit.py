@@ -129,7 +129,6 @@ class Word:
     """
 
     def __init__(self, word, boundaries, data, fs, phonems=None):
-
         self.word = word
         self.phonems = phonems
         self.boundaries = boundaries
@@ -257,14 +256,12 @@ class Sentence:
 
             # just a sanity check
             if len(t) == 3:
-
                 # the word boundary
                 w_bnd = np.array([int(t[0]), int(t[1])])
 
                 # recover the phonems making up the word
                 w_ph_list = []
                 while ph_l_index < len(ph_lines):
-
                     ph_line = ph_lines[ph_l_index]
                     u = ph_line.split()
 
@@ -319,7 +316,6 @@ class Sentence:
             print("Warning: sounddevice package is required to play audiofiles.")
 
     def plot(self, L=512, hop=128, zpb=0, phonems=False, **kwargs):
-
         try:
             import matplotlib.pyplot as plt
             import seaborn as sns

@@ -19,7 +19,6 @@ angles = np.radians(angles)
 fig = plt.figure()
 ax = plt.subplot(111, projection="polar")
 for pattern in DirectivityPattern:
-
     dir_obj = CardioidFamily(orientation=orientation, pattern_enum=pattern)
     resp = dir_obj.get_response(azimuth=angles, magnitude=True, degrees=False)
     resp_db = dB(np.array(resp))

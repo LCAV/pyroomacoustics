@@ -115,7 +115,6 @@ def test_wall_3d_normal_1():
 
 
 if __name__ == "__main__":
-
     test_wall_3d_construct_0()
     test_wall_3d_normal_0()
     test_wall_3d_area_0()

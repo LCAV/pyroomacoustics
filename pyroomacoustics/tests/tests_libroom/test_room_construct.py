@@ -70,5 +70,4 @@ def test_room_construct():
 
 
 if __name__ == "__main__":
-
     room = test_room_construct()

@@ -222,7 +222,6 @@ class CardioidFamily(Directivity):
             azimuth = np.radians(azimuth)
 
         if colatitude is not None:
-
             if degrees:
                 colatitude = np.radians(colatitude)
 
@@ -269,7 +268,6 @@ class CardioidFamily(Directivity):
             ax.set_zlabel("z")
 
         else:
-
             if ax is None:
                 fig = plt.figure()
                 ax = plt.subplot(111)
@@ -360,7 +358,6 @@ class DIRPATRir(Directivity):
         fs=16000,
         no_points_on_fibo_sphere=1000,
     ):
-
         assert isinstance(orientation, DirectionVector)
         Directivity.__init__(
             self, orientation

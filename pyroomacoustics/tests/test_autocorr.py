@@ -10,7 +10,6 @@ tol = 1e-12
 
 
 def consistent_results(p, biased=True):
-
     r_time = autocorr(x, p, method="time", biased=biased)
     r_fft = autocorr(x, p, method="fft", biased=biased)
     r_np = autocorr(x, p, method="numpy", biased=biased)

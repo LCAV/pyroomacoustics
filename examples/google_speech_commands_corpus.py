@@ -13,7 +13,6 @@ import os
 import pyroomacoustics as pra
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Example of using the GoogleSpeechCommands wrapper"
     )

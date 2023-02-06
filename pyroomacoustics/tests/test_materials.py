@@ -112,7 +112,6 @@ def test_empty():
 
 
 if __name__ == "__main__":
-
     test_material_e_float()
     test_material_es_float()
     test_material_es_dict

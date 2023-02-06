@@ -23,6 +23,7 @@ x = np.random.randn(n_samples)
 # convolve with the unknown filter
 d_clean = fftconvolve(x, w)[:n_samples]
 
+
 # a function to the adaptive filter on all the samples
 def run_filter(algorithm, x, d):
     for i in range(x.shape[0]):

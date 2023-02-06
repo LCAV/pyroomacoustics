@@ -267,7 +267,6 @@ class DIRPATInterpolate:
         azimuth_simulation=0,
         colatitude_simulation=0,
     ):
-
         self.path = path
         self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source)
         self.source = source
@@ -363,7 +362,6 @@ class DIRPATInterpolate:
             self.cal_spherical_coeffs_grid_and_interpolate()
 
         else:
-
             self.freq_angles_fft = np.zeros(
                 (self.no_of_nodes, self.samples_size_ir), dtype=np.complex_
             )
@@ -394,7 +392,6 @@ class DIRPATInterpolate:
             )
 
     def cal_spherical_coeffs_grid_and_interpolate(self):
-
         """
         Weighted least square solution to calculate discrete sphreical harmonic coeffs , Using the spherical harmonic coeffs
         interpolation is done on fibonacci sphere
@@ -574,7 +571,6 @@ class DIRPATInterpolate:
             )
 
     def cal_index_knn(self, azimuth, colatitude):
-
         """
         Calculates nearest neighbour for all the image source for the source and the receiver
         This method exist so that we don't have to query each image source , nearest neighbour for all the incoming angles (mic) and departure angles(sources)
@@ -679,7 +675,6 @@ class DIRPATInterpolate:
         fg = plt.figure(figsize=plt.figaspect(0.5))
 
         if self.interpolate:
-
             ax1 = fg.add_subplot(1, 4, 1, projection="3d")
             ax_ = ax1.scatter(
                 self.sofa_x,
@@ -732,7 +727,6 @@ class DIRPATInterpolate:
             ax4.set_title("Interpolated Fibo Grid")
             fg.colorbar(ax_3, shrink=0.5, aspect=5)
         else:
-
             ax1 = fg.add_subplot(1, 2, 1, projection="3d")
             ax_ = ax1.scatter(
                 self.sofa_x,

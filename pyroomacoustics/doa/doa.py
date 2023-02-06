@@ -95,7 +95,6 @@ class ModeVector(object):
             self.mode_vec = None
 
     def __getitem__(self, ref):
-
         # If the look up table was precomputed
         if self.precompute:
             return self.mode_vec[ref]
@@ -192,7 +191,6 @@ class DOA(object):
         *args,
         **kwargs
     ):
-
         if dim > L.shape[0]:
             raise ValueError("Microphones locations missing dimensions.")
 
@@ -236,37 +234,30 @@ class DOA(object):
         # Some logic to create a grid for search
         self.grid = None
         if azimuth is None and colatitude is None:
-
             # Use a default grid size
             if dim == 2:
-
                 if n_grid is None:
                     n_grid = 360
 
                 self.grid = GridCircle(n_points=n_grid)
 
             elif dim == 3:
-
                 if n_grid is None:
                     n_grid = 180 * 90
 
                 self.grid = GridSphere(n_points=n_grid)
 
         elif azimuth is None and colatitude is not None:
-
             raise ValueError("Azimuth should always be specified.")
 
         else:
-
             if dim == 2:
-
                 if colatitude is not None:
                     warnings.warn("Colatitude is ignored for 2D problems.")
 
                 self.grid = GridCircle(azimuth=azimuth)
 
             elif dim == 3:
-
                 if azimuth.ndim != 1:
                     raise ValueError("Azimuth should be a 1D ndarray.")
 
@@ -281,7 +272,6 @@ class DOA(object):
                     self.grid = GridSphere(spherical_points=grid_points)
 
                 else:
-
                     # when both azimuth and theta are specified,
                     # we assume we want the cartesian product
                     A, C = np.meshgrid(np.unique(azimuth), np.unique(colatitude))
@@ -366,7 +356,6 @@ class DOA(object):
         from .frida import FRIDA
 
         if not isinstance(self, FRIDA):
-
             self.src_idx = self.grid.find_peaks(k=self.num_src)
 
             self.num_src = len(self.src_idx)
@@ -423,13 +412,11 @@ class DOA(object):
         from .frida import FRIDA
 
         if not isinstance(self, FRIDA):  # use spatial spectrum
-
             dirty_img = self.grid.values
             alpha_recon = self.grid.values[self.src_idx]
             alpha_ref = alpha_recon
 
         else:  # create dirty image
-
             dirty_img = self._gen_dirty_img()
             alpha_recon = np.mean(np.abs(self.alpha_recon), axis=1)
             alpha_recon /= alpha_recon.max()

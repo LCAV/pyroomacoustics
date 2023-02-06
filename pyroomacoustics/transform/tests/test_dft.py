@@ -22,7 +22,6 @@ except ImportError:
 
 
 def no_window(nfft, D, transform, axis=0):
-
     if D == 1:
         x_local = x[:, 0]
         X_local = X_numpy[:, 0]
@@ -49,7 +48,6 @@ def no_window(nfft, D, transform, axis=0):
 
 
 def window(nfft, D, analysis_window, synthesis_window, axis=0):
-
     if D == 1:
         x_local = x[:, 0]
         X_local = X_numpy[:, 0]
@@ -127,7 +125,6 @@ class TestDFT(TestCase):
 
 
 if __name__ == "__main__":
-
     print()
     print("1D")
     res = no_window(nfft, D=1, transform="numpy")

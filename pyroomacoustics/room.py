@@ -685,7 +685,6 @@ def wall_factory(corners, absorption, scattering, name=""):
 
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
-
     # repeated constant
     fpcv = 4 * np.pi * c**3 / volume
 
@@ -694,7 +693,6 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
     times = [t0]
 
     while times[-1] < t0 + duration:
-
         # uniform random variable
         z = np.random.rand()
         # rate of the point process at this time
@@ -855,7 +853,6 @@ class Room(object):
         max_rand_disp=0.08,
         min_phase=False,
     ):
-
         self.walls = walls
 
         # Get the room dimension from that of the walls
@@ -908,7 +905,6 @@ class Room(object):
         max_rand_disp,
         min_phase,
     ):
-
         self.fs = fs
 
         if t0 != 0.0:
@@ -964,7 +960,6 @@ class Room(object):
         self.min_phase = min_phase
 
     def _init_room_engine(self, *args):
-
         args = list(args)
 
         if len(args) == 0:
@@ -995,7 +990,6 @@ class Room(object):
             self.room_engine = libroom.Room(*args)
 
     def _update_room_engine_params(self):
-
         # Now, if it exists, set the parameters of room engine
         if self.room_engine is not None:
             self.room_engine.set_params(
@@ -1164,7 +1158,6 @@ class Room(object):
         self._update_room_engine_params()
 
     def _wall_mapping(self):
-
         # mapping between wall names and indices
         self.wallsId = {}
         for i in range(len(self.walls)):
@@ -1254,7 +1247,6 @@ class Room(object):
         ############################
 
         if materials is not None:
-
             if absorption_compatibility_request:
                 import warnings
 
@@ -1406,7 +1398,6 @@ class Room(object):
         ##########################
 
         if materials is not None:
-
             if absorption_compatibility_request:
                 import warnings
 
@@ -1425,7 +1416,6 @@ class Room(object):
                 ), "Material not specified using correct class"
 
         elif absorption_compatibility_request:
-
             import warnings
 
             warnings.warn(
@@ -1526,7 +1516,6 @@ class Room(object):
             ax.add_collection(p)
 
             if self.mic_array is not None:
-
                 for i in range(self.mic_array.nmic):
                     ax.scatter(
                         self.mic_array.R[0][i],
@@ -1557,7 +1546,6 @@ class Room(object):
                         or self.mic_array.filters is not None
                     )
                 ):
-
                     freq = np.array(freq)
                     if freq.ndim == 0:
                         freq = np.array([freq])
@@ -1659,7 +1647,6 @@ class Room(object):
             return fig, ax
 
         if self.dim == 3:
-
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
             import mpl_toolkits.mplot3d as a3
@@ -1741,7 +1728,6 @@ class Room(object):
 
             # draw the microphones
             if self.mic_array is not None:
-
                 for i in range(self.mic_array.nmic):
                     ax.scatter(
                         self.mic_array.R[0][i],
@@ -1941,7 +1927,6 @@ class Room(object):
         """
 
         if isinstance(obj, SoundSource):
-
             if obj.dim != self.dim:
                 raise ValueError(
                     (
@@ -1957,7 +1942,6 @@ class Room(object):
             self.sources.append(obj)
 
         elif isinstance(obj, MicrophoneArray):
-
             if obj.dim != self.dim:
                 raise ValueError(
                     (
@@ -2124,18 +2108,15 @@ class Room(object):
         return self.add(sndsrc)
 
     def image_source_model(self):
-
         if not self.simulator_state["ism_needed"]:
             return
 
         self.visibility = []
 
         for source in self.sources:
-
             n_sources = self.room_engine.image_source_model(source.position)
 
             if n_sources > 0:  # Number of image source that are generated
-
                 # Copy to python managed memory
 
                 source.images = (
@@ -2159,7 +2140,6 @@ class Room(object):
                 # displacement to the image sources
 
                 if self.simulator_state["random_ism_needed"]:
-
                     n_images = np.shape(source.images)[1]
 
                     # maximum allowed displacement is 8cm
@@ -2181,7 +2161,6 @@ class Room(object):
         self.simulator_state["ism_done"] = True
 
     def ray_tracing(self):
-
         if not self.simulator_state["rt_needed"]:
             return
 
@@ -2224,7 +2203,6 @@ class Room(object):
         ):  # Loop over ever microphone present in the room and then for each microphone and source pair present in the room
             self.rir.append([])
             for s, src in enumerate(self.sources):
-
                 """
                 Compute the room impulse response between the source
                 and the microphone whose position is given as an
@@ -2239,7 +2217,6 @@ class Room(object):
                 N = fdl
 
                 if self.simulator_state["ism_needed"]:
-
                     # compute azimuth and colatitude angles for receiver
                     if self.mic_array.directivity is not None:
                         angle_function_array = angle_function(src.images, mic)
@@ -2280,7 +2257,6 @@ class Room(object):
                     t_max = 0.0
 
                 if self.simulator_state["rt_needed"]:
-
                     # get the maximum length from the histograms
                     nz_bins_loc = np.nonzero(self.rt_histograms[m][s][0].sum(axis=0))[
                         0
@@ -2334,14 +2310,11 @@ class Room(object):
                         or isinstance(self.sources[s].directivity, CardioidFamily)
                     )
                 ) or self.simulator_state["rt_needed"]:
-
                     for b, bw in enumerate(bws):  # Loop through every band
-
                         ir_loc = np.zeros_like(ir)  # ir for every band
 
                         # IS method
                         if self.simulator_state["ism_needed"]:
-
                             alpha = (
                                 src.damping[b, :] / dist
                             )  # calculate alpha according to every octave band and for all the image sources for this particular microphone
@@ -2393,7 +2366,6 @@ class Room(object):
 
                         # Ray Tracing
                         if self.simulator_state["rt_needed"]:
-
                             if is_multi_band:
                                 seq_bp = self.octave_bands.analysis(seq, band=b)
 
@@ -2436,7 +2408,6 @@ class Room(object):
 
                     # Do Air absorption
                     if self.simulator_state["air_abs_needed"]:
-
                         # In case this was not multi-band, do the band pass filtering
                         if len(rir_bands) == 1:
                             rir_bands = self.octave_bands.analysis(rir_bands[0]).T
@@ -2557,7 +2528,6 @@ class Room(object):
         ) - 3
 
         if rec_presence and source_presence:
-
             resp_mic = self.mic_array.directivity[mic_pos].get_response(
                 azimuth=azi_m, colatitude=col_m
             )  # Return response as an array of number of (img_sources * length of filters)
@@ -2582,7 +2552,6 @@ class Room(object):
 
         else:
             if source_presence:
-
                 assert (
                     self.fs == self.sources[src_pos].directivity.fs
                 ), "Directivity source frequency of simulation should be same as frequency of interpolation"
@@ -2592,7 +2561,6 @@ class Room(object):
                 )
 
             elif rec_presence:
-
                 assert (
                     self.fs == self.mic_array.directivity[mic_pos].fs
                 ), "Directivity mic frequency of simulation should be same as frequency of interpolation"
@@ -2640,7 +2608,6 @@ class Room(object):
         )
 
         for i in range(no_imag_src):  # Loop through Image source
-
             att_in_octave_band = attenuations[:, i]
             att_in_dft_scale_ = att_in_dft_scale[i, :]
 
@@ -2667,7 +2634,6 @@ class Room(object):
             cpy_ir_len_2[i, :window_length] = vectorized_interpolated_sinc[i, :]
 
             if source_presence and rec_presence:
-
                 cpy_ir_len_3[i, : resp_src[i, :].shape[0]] = resp_src[i, :]
 
                 cpy_ir_len_4[i, : resp_mic[i, :].shape[0]] = resp_mic[i, :]
@@ -2921,7 +2887,6 @@ class Room(object):
         # re-run until we get a non-ambiguous result
         it = 0
         while it < constants.get("room_isinside_max_iter"):
-
             # Get random point outside the bounding box
             random_vec = np.random.randn(self.dim)
             random_vec /= np.linalg.norm(random_vec)
@@ -2977,7 +2942,6 @@ class Room(object):
         )
 
     def wall_area(self, wall):
-
         """Computes the area of a 3D planar wall.
 
         Parameters
@@ -3059,7 +3023,6 @@ class Room(object):
         c = self.c
 
         for i, bw in enumerate(bandwidths):
-
             # average absorption coefficients
             a = 0.0
             for w in self.walls:
@@ -3190,7 +3153,6 @@ class ShoeBox(Room):
         max_rand_disp=0.08,
         min_phase=False,
     ):
-
         p = np.array(p, dtype=np.float32)
 
         if len(p.shape) > 1 and (len(p) != 2 or len(p) != 3):
@@ -3244,7 +3206,6 @@ class ShoeBox(Room):
         ##########################
 
         if materials is not None:
-
             if absorption_compatibility_request:
                 warnings.warn(
                     "Because `materials` were specified, deprecated "
@@ -3268,7 +3229,6 @@ class ShoeBox(Room):
                 ), "Material not specified using correct class"
 
         elif absorption_compatibility_request:
-
             warnings.warn(
                 "Using absorption parameter is deprecated. Use `materials` with "
                 "`Material` object instead.",
@@ -3298,7 +3258,6 @@ class ShoeBox(Room):
                         "'north', 'south', 'ceiling' (3d), 'floor' (3d)."
                     )
         else:
-
             # In this case, no material is provided, use totally reflective
             # walls, no scattering
             materials = dict(
@@ -3457,7 +3416,6 @@ class AnechoicRoom(ShoeBox):
         )
 
     def __str__(self):
-
         return "AnechoicRoom instance in {}D.".format(self.dim)
 
     def is_inside(self, p):

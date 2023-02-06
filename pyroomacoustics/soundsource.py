@@ -31,7 +31,6 @@ class SoundSource(object):
         delay=0,
         directivity=None,
     ):
-
         position = np.array(position)
         self.dim = position.shape[0]
 
@@ -119,7 +118,6 @@ class SoundSource(object):
         self.signal = signal
 
     def distance(self, ref_point):
-
         return np.sqrt(np.sum((self.images - ref_point[:, np.newaxis]) ** 2, axis=0))
 
     def set_ordering(self, ordering, ref_point=None):
@@ -135,14 +133,12 @@ class SoundSource(object):
             ref_point = ref_point[:, 0]
 
         if ordering == "nearest":
-
             if ref_point is None:
                 raise NameError("For nearest ordering, a reference point is needed.")
 
             self.I = self.distance(ref_point).argsort()
 
         elif ordering == "strongest":
-
             if ref_point is None:
                 raise NameError("For strongest ordering, a reference point is needed.")
 
@@ -150,7 +146,6 @@ class SoundSource(object):
             self.I = strength.argsort()
 
         elif ordering == "order":
-
             self.ordering = "order"
 
         else:
@@ -391,7 +386,6 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
 
     for s in range(len(sources)):
         for r in np.arange(mics.shape[1]):
-
             dist = sources[s].distance(mics[:, r])
             time = dist / constants.get("c") - t_min + offset
             if unit_damping == True:

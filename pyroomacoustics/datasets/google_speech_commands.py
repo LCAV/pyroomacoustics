@@ -69,7 +69,6 @@ class GoogleSpeechCommands(Dataset):
     def __init__(
         self, basedir=None, download=False, build=True, subset=None, seed=0, **kwargs
     ):
-
         # initialize
         Dataset.__init__(self)
         self.size_by_samples = {}
@@ -108,7 +107,6 @@ class GoogleSpeechCommands(Dataset):
 
         # go through all subdirectories / soundtypes
         for idx, word in enumerate(self.classes):
-
             if word == "_background_noise_":
                 speech = False
             else:
@@ -129,7 +127,6 @@ class GoogleSpeechCommands(Dataset):
 
             # add each file to the corpus
             for filename in files:
-
                 file_loc = os.path.join(self.basedir, word, os.path.basename(filename))
 
                 # could also add score of original model for each word?

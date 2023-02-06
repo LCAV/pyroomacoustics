@@ -39,7 +39,6 @@ def test_bandpass_filterbank():
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     f0 = 125.0 / 2.0

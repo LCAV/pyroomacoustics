@@ -177,7 +177,6 @@ def measure_ir(
 
 
 if __name__ == "__main__":
-
     """
     This is just an interface to measure impulse responses easily
     """
