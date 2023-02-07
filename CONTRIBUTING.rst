@@ -24,9 +24,16 @@ We try to stick to `PEP8 <https://www.python.org/dev/peps/pep-0008/>`__
 as much as possible. Variables, functions, modules and packages should
 be in lowercase with underscores. Class names in CamelCase.
 
-We use `Black <https://github.com/psf/black>`__ to format the code.
+We use `Black <https://github.com/psf/black>`__ to format the code and `isort <https://pycqa.github.io/isort/>`__ to sort the imports.
 The format will be automatically checked when doing a pull request so it is
 recommended to regularly run Black on the code.
+Please format your code as follows prior to commiting.
+
+.. code-block:: shell
+
+  pip install black isort
+  black setup.py ./docs ./pyroomacoustics ./examples
+  isort --profile black
 
 Documentation
 ~~~~~~~~~~~~~
