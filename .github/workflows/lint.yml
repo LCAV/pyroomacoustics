@@ -40,3 +40,5 @@ jobs:
 
       - name: Sort imports
         uses: isort/isort-action@v1.0.0
+        with:
+          configuration: --check-only --diff --black
