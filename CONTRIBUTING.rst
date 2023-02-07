@@ -32,8 +32,8 @@ Please format your code as follows prior to commiting.
 .. code-block:: shell
 
   pip install black isort
-  black setup.py ./docs ./pyroomacoustics ./examples
-  isort --profile black
+  black .
+  isort --profile black .
 
 Documentation
 ~~~~~~~~~~~~~
