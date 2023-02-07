@@ -1,7 +1,8 @@
-import pyroomacoustics as pra
-import numpy as np
 from unittest import TestCase
 
+import numpy as np
+
+import pyroomacoustics as pra
 import pyroomacoustics.directivities
 
 

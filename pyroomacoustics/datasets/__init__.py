@@ -137,7 +137,7 @@ Example 3 (Google's Speech Commands Dataset)
   
 """
 
-from .base import Meta, Sample, AudioSample, Dataset
-from .timit import Word, Sentence, TimitCorpus
+from .base import AudioSample, Dataset, Meta, Sample
 from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence, cmu_arctic_speakers
-from .google_speech_commands import GoogleSpeechCommands, GoogleSample
+from .google_speech_commands import GoogleSample, GoogleSpeechCommands
+from .timit import Sentence, TimitCorpus, Word

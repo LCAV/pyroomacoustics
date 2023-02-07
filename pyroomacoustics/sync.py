@@ -105,7 +105,7 @@ def time_align(ref, deg, L=4096):
     """
 
     # estimate delay of signal
-    from numpy import zeros, minimum
+    from numpy import minimum, zeros
 
     delay = delay_estimation(ref, deg, L)
 

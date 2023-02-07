@@ -103,11 +103,11 @@ Utilities
 """
 
 from .adaptive_filter import *
+from .data_structures import *
 from .lms import *
 from .rls import *
 from .subband_lms import *
 from .util import *
-from .data_structures import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {

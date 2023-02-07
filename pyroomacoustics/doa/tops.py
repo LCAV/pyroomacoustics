@@ -2,10 +2,10 @@
 # Date: July 15, 2016
 
 import numpy as np
-from .music import MUSIC
+from scipy import linalg
 from scipy.linalg import svdvals
 
-from scipy import linalg
+from .music import MUSIC
 
 
 class TOPS(MUSIC):

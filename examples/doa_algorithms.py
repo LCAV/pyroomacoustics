@@ -42,9 +42,9 @@ Then we perform DOA estimation and compare the errors for different algorithms
 
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import fftconvolve
-import matplotlib.pyplot as plt
 
 import pyroomacoustics as pra
 from pyroomacoustics.doa import circ_dist

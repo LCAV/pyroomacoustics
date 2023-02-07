@@ -55,10 +55,10 @@ Depending on the input arguments running this script will do these actions:.
 This script requires the `mir_eval` to run, and `tkinter` and `sounddevice` packages for the GUI option.
 """
 import time
-import numpy as np
-from scipy.io import wavfile
 
+import numpy as np
 from mir_eval.separation import bss_eval_sources
+from scipy.io import wavfile
 
 # We concatenate a few samples to make them long enough
 wav_files = [
@@ -292,7 +292,8 @@ if __name__ == "__main__":
 
     if args.gui:
         # Make a simple GUI to listen to the separated samples
-        from tkinter import Tk, Button, Label
+        from tkinter import Button, Label, Tk
+
         import sounddevice as sd
 
         # Now comes the GUI part

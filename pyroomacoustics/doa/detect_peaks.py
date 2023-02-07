@@ -7,6 +7,7 @@ License: MIT
 """
 
 from __future__ import division, print_function
+
 import numpy as np
 
 __author__ = "Marcos Duarte, https://github.com/demotu/BMC"

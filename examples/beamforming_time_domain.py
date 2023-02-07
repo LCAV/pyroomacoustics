@@ -6,8 +6,9 @@ of interest in the presence of a strong interfering source.
 from __future__ import division, print_function
 
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.io import wavfile
 
 import pyroomacoustics as pra

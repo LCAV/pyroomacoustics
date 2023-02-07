@@ -1,7 +1,9 @@
-import numpy as np
-from pyroomacoustics import autocorr
-from unittest import TestCase
 import time
+from unittest import TestCase
+
+import numpy as np
+
+from pyroomacoustics import autocorr
 
 N = 256
 n_iter = 100

@@ -6,10 +6,12 @@ Implementations of adaptive filters from the RLS class. These algorithms
 typically have a higher computational complexity, but a faster convergence.
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
-from .data_structures import Buffer, Powers
+
 from .adaptive_filter import AdaptiveFilter
+from .data_structures import Buffer, Powers
 from .util import hankel_stride_trick
 
 

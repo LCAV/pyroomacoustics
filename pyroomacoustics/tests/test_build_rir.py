@@ -1,6 +1,8 @@
 from __future__ import division, print_function
-import pyroomacoustics as pra
+
 import numpy as np
+
+import pyroomacoustics as pra
 
 try:
     from pyroomacoustics import build_rir

@@ -8,8 +8,9 @@ It was created to address Issue #293 on github.
 https://github.com/LCAV/pyroomacoustics/issues/293<Paste>
 """
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 
 
 def test_issu293_segfault_2d():

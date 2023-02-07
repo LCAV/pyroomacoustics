@@ -14,11 +14,14 @@ after filtering.
 """
 
 from __future__ import division, print_function
+
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import matplotlib.pyplot as plt
+
 import pyroomacoustics as pra
-import os
 
 # filter to apply
 h_len = 99

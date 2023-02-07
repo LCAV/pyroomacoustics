@@ -2,6 +2,7 @@ import warnings
 
 import numpy
 import numpy as np
+
 import pyroomacoustics as pra
 
 warnings.filterwarnings(action="ignore", category=UserWarning)

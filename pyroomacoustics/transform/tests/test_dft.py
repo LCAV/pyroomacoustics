@@ -1,6 +1,9 @@
 from __future__ import division, print_function
+
 from unittest import TestCase
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 tol = -80  # dB

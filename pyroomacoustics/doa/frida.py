@@ -1,17 +1,16 @@
 from __future__ import division, print_function
 
+import numpy as np
 from scipy import linalg as la
 
-# import numpy as np
-
-from .doa import *
+from .doa import DOA
 from .tools_fri_doa_plane import (
-    pt_src_recon_multiband,
-    extract_off_diag,
     cov_mtx_est,
-    polar2cart,
+    extract_off_diag,
     make_G,
     make_GtG_and_inv,
+    polar2cart,
+    pt_src_recon_multiband,
 )
 
 

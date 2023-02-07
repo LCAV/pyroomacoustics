@@ -53,18 +53,17 @@ Depending on the input arguments running this script will do these actions:.
 This script requires the `sounddevice` packages to run.
 """
 
-import numpy as np
-
 # important to avoid a crash when tkinter is called
 import matplotlib
+import numpy as np
 
 matplotlib.use("TkAgg")
 
-import pyroomacoustics as pra
+from tkinter import Button, Label, Tk
 
-from tkinter import Tk, Label, Button
 import sounddevice as sd
 
+import pyroomacoustics as pra
 
 if __name__ == "__main__":
     choices = ["ilrma", "auxiva", "sparseauxiva", "fastmnmf", "fastmnmf2"]

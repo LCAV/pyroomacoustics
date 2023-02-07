@@ -4,8 +4,9 @@
 from __future__ import division, print_function
 
 import numpy as np
-from .parameters import constants
+
 from .directivities import Directivity
+from .parameters import constants
 
 
 class SoundSource(object):
@@ -348,7 +349,7 @@ def build_rir_matrix(mics, sources, Lg, Fs, epsilon=5e-3, unit_damping=False):
     """
 
     from .beamforming import distance
-    from .utilities import low_pass_dirac, convmtx
+    from .utilities import convmtx, low_pass_dirac
 
     for s in sources:
         if s.damping.shape[0] > 1:
