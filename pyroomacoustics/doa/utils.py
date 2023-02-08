@@ -166,3 +166,35 @@ def polar_distance(x1, x2):
         else:
             index = np.array([index, 1])
     return d, index
+
+
+def fibonacci_spherical_sampling(n_points):
+    """
+    Creates a pseudo-uniform sampling of the sphere following the Fibonacci method.
+
+    Parameter
+    ---------
+    n_points: (int)
+        Number of points to sample
+
+    Return
+    --------
+    points : (np.ndarray), shape: (n_points, 3)
+        Cartesian coordinates of the points
+    """
+
+    points = np.zeros((n_points, 3))
+
+    # Fibonnaci sampling
+    offset = 2.0 / n_points
+    increment = np.pi * (3.0 - np.sqrt(5.0))
+
+    points[:, 2] = (np.arange(n_points) * offset - 1) + offset / 2  # z
+    rho = np.sqrt(1.0 - points[:, 2] ** 2)
+
+    phi = np.arange(n_points) * increment
+
+    points[:, 0] = np.cos(phi) * rho  # x
+    points[:, 1] = np.sin(phi) * rho  # y
+
+    return points

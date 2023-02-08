@@ -61,20 +61,21 @@ We can also use the objects separately.
 """
 
 
-import pyroomacoustics as pra
-import numpy as np
-from scipy.io import wavfile
-from scipy import signal
-from scipy.fft import fftfreq, fft
-from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
-    CardioidFamily,
-    DIRPATRir,
-)
-from scipy.signal import fftconvolve
 import os
 
+import numpy as np
+from scipy import signal
+from scipy.fft import fft, fftfreq
+from scipy.io import wavfile
+from scipy.signal import fftconvolve
+
+import pyroomacoustics as pra
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+    DIRPATRir,
+)
 
 path_DIRPAT_file = os.path.join(
     os.path.dirname(__file__).replace("examples", ""),

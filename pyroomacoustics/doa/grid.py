@@ -9,7 +9,7 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import great_circ_dist
+from .utils import great_circ_dist, fibonacci_spherical_sampling
 
 
 class Grid:
@@ -184,6 +184,7 @@ class GridSphere(Grid):
         else:
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
+            self.x[:], self.y[:], self.z[:] = fibonacci_spherical_sampling(n_points).T
 
             # Fibonnaci sampling
             offset = 2.0 / n_points

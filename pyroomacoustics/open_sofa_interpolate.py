@@ -16,53 +16,19 @@ from scipy.fft import fft, fftfreq, ifft
 from scipy.signal import decimate
 from scipy.spatial import KDTree, cKDTree
 
-# from numpy import linalg as LA
-# from scipy.signal import find_peaks
+from .doa import fibonacci_spherical_sampling
 
 
-def fibonacci_sphere(samples):
-    """
-    Creates a uniform fibonacci sphere.
-
-    Parameter
-    ---------
-    samples : (int)
-        Points on the sphere
-
-    Return
-    --------
-    Points : (np.array) shape(Points) = [no_of_points * 3]
-        Cartesian coordinates of the points
-
-    """
-
-    points = []
-    phi = math.pi * (3.0 - math.sqrt(5.0))  # golden angle in radians
-
-    for i in range(samples):
-        y = 1 - (i / float(samples - 1)) * 2  # y goes from 1 to -1
-        radius = math.sqrt(1 - y * y)  # radius at y
-
-        theta = phi * i  # golden angle increment
-
-        x = math.cos(theta) * radius
-        z = math.sin(theta) * radius
-
-        points.append((x, y, z))
-
-    return points
-
-
-def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
+def cal_sph_basis(azimuth, colatitude, degree, no_of_nodes):  # theta_target,phi_target
     """
      Calculate a spherical basis matrix
 
      Parameters
      -----------
-     theta: array_like
-        Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
-     phi: array_like
-        Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
+     azimuth: array_like
+        Azimuth of the spherical coordinates grid
+     colatitude: array_like
+        Colatitude of the spherical coordinates grid
      degree:(int)
         spherical harmonic degree
      no_of_nodes: (int)
@@ -77,14 +43,15 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
 
     """
 
-    Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
+    Ysh = np.zeros((len(azimuth), (degree + 1) ** 2), dtype=np.complex_)
 
     ny0 = 1
     for j in range(no_of_nodes):
         for i in range(degree + 1):
             m = np.linspace(0, i, int((i - 0) / 1.0 + 1), endpoint=True, dtype=int)
             sph_vals = [
-                scipy.special.sph_harm(order, i, theta[j], phi[j]) for order in m
+                scipy.special.sph_harm(order, i, azimuth[j], colatitude[j])
+                for order in m
             ]
             cal_index_Ysh_positive_order = (ny0 + m) - 1
 
@@ -94,7 +61,7 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
                     -i, -1, int((-1 - -i) / 1.0 + 1), endpoint=True, dtype=int
                 )
                 sph_vals_neg = [
-                    scipy.special.sph_harm(order, i, theta[j], phi[j])
+                    scipy.special.sph_harm(order, i, azimuth[j], colatitude[j])
                     for order in m_neg
                 ]
                 cal_index_Ysh_negative_order = (ny0 + m_neg) - 1
@@ -307,7 +274,9 @@ class DIRPATInterpolate:
         if interpolate:
             self.degree = 12
 
-            self.points = np.array(fibonacci_sphere(samples=no_of_points_fibo_sphere))
+            self.points = np.array(
+                fibonacci_spherical_sampling(n_points=no_of_points_fibo_sphere)
+            )
             self.phi_fibo, self.theta_fibo, self.r_fibo = cart2sphere(self.points)
 
             # All the computations are in radians for phi = range (0, 2*np.pi) and theta = range (0, np.pi)

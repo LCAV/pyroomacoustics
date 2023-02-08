@@ -1786,7 +1786,7 @@ class Room(object):
         fp_im = N
         fir_length_octave_band = self.octave_bands.n_fft
 
-        from .build_rir import (
+        from ..build_rir import (
             fast_convolution_3,
             fast_convolution_4,
             fast_window_sinc_interpolator,

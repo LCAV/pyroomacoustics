@@ -1,10 +1,11 @@
 """
 This example shows how to create delay and sum beamformers
 """
-from __future__ import print_function, division
+from __future__ import division, print_function
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 import pyroomacoustics as pra
 
 # Create a 4 by 6 metres anechoic room

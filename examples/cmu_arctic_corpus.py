@@ -13,9 +13,10 @@ demonstrated here.
     CMU, 2003.
 """
 
-import pyroomacoustics as pra
 import argparse
 import os
+
+import pyroomacoustics as pra
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
