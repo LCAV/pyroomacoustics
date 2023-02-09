@@ -704,7 +704,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     # convert from continuous to discrete time
 
-    indices = (np.array(times) * fs).astype(np.int)
+    indices = (np.array(times) * fs).astype(np.int64)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
@@ -2251,7 +2251,6 @@ class Room(object):
                     N = int(
                         math.ceil(t_max * self.fs)
                     )  # What will be the length of RIR according to t_max
-                    print("Minimum Time", time.min() * self.fs)
 
                 else:
                     t_max = 0.0
@@ -2328,7 +2327,6 @@ class Room(object):
                                     frequency=bw,
                                     degrees=False,
                                 )
-                                print("Cmic")
 
                             if self.sources[s].directivity is not None and isinstance(
                                 self.sources[s].directivity, CardioidFamily
@@ -2339,7 +2337,6 @@ class Room(object):
                                     frequency=bw,
                                     degrees=False,
                                 )
-                                print("Csrc")
 
                             # Use the Cython extension for the fractional delays
                             from .build_rir import fast_rir_builder

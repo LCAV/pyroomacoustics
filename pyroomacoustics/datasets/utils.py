@@ -25,11 +25,13 @@
 import bz2
 import os
 import tarfile
+from pathlib import Path
 
 try:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, urlretrieve
 except ImportError:
-    from urllib import urlopen
+    # support for python 2.7, should be able to remove by now
+    from urllib import urlopen, urlretrieve
 
 
 def download_uncompress(url, path=".", compression=None, context=None):
@@ -69,3 +71,35 @@ def download_uncompress(url, path=".", compression=None, context=None):
         stream = urlopen(url)
     tf = tarfile.open(fileobj=stream, mode=mode)
     tf.extractall(path)
+
+
+def download_multiple(files_dict, overwrite=False, verbose=False):
+    """
+    A utility to download multiple files
+
+    Parameters
+    ----------
+    files_dict: dict
+        A dictionary of files to download with key=local_path and value=url
+    overwrite: bool
+        If `True` if the local file exists, it will be overwritten. If `False`
+        (default), existing files are skipped.
+    """
+    skip_ok = not overwrite
+
+    for path, url in files_dict.items():
+        path = Path(path)
+        if path.exists() and skip_ok:
+            if verbose:
+                print(
+                    f"{path} exists: skip. Use `overwrite` option to download anyway."
+                )
+            continue
+
+        if verbose:
+            print(f"Download {url} -> {path}...", end="")
+
+        urlretrieve(url, path)
+
+        if verbose:
+            print(" done.")

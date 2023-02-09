@@ -1,6 +1,7 @@
 import abc
 import sys
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 
@@ -369,13 +370,14 @@ class DIRPATRir(Directivity):
             DIRPAT_pattern_enum is not None
         ), "Please specifiy directivity pattern from the DIRPAT dataset "
 
-        if "AKG_c480_c414_CUBE.sofa" in path:
+        path = Path(path)
+        if "AKG_c480_c414_CUBE.sofa" in path.name:
             self.path = path
             self.source = False
-        elif "EM32" in path:
+        elif "EM32" in path.name:
             self.path = path
             self.source = False
-        elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path:
+        elif "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa" in path.name:
             self.path = path
             self.source = True
         else:

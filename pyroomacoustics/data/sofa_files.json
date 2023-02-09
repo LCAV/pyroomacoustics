@@ -1,0 +1,94 @@
+{
+  "Oktava_MK4012_CUBE.sofa": {
+    "supported": false,
+    "type": "receivers",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Oktava_MK4012_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": {}
+  },
+  "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa": {
+    "supported": true,
+    "type": "sources",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": {
+      "Genelec_8020": 0,
+      "Lambda_labs_CX-1A": 1,
+      "HATS_4128C": 2,
+      "Tannoy_System_1200": 3,
+      "Neumann_KH120A": 4,
+      "Yamaha_DXR8": 5,
+      "BM_1x12inch_driver_closed_cabinet": 6,
+      "BM_1x12inch_driver_open_cabinet": 7,
+      "BM_open_stacked_on_closed_withCrossoverNetwork": 8,
+      "BM_open_stacked_on_closed_fullrange": 9,
+      "Palmer_1x12inch": 10,
+      "Vibrolux_2x10inch": 11
+    }
+  },
+  "Soundfield_ST450_CUBE.sofa":  {
+    "supported": false,
+    "type": "receivers",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Soundfield_ST450_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": {}
+  },
+  "AKG_c480_c414_CUBE.sofa": {
+    "supported": true,
+    "type": "receivers",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=AKG_c480_c414_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": {
+      "AKG_c480": 0,
+      "AKG_c414K": 1,
+      "AKG_c414N": 2,
+      "AKG_c414S": 3,
+      "AKG_c414A": 4
+    }
+  },
+  "EM32_Directivity.sofa": {
+    "supported": true,
+    "type": "receivers",
+    "url": "https://github.com/LCAV/pyroomacoustics/raw/dev/dirpat/pyroomacoustics/data/EM32_Directivity.sofa",
+    "homepage": "??",
+    "license": "??",
+    "contains": {
+      "EM_32_0": 0,
+      "EM_32_1": 1,
+      "EM_32_2": 2,
+      "EM_32_3": 3,
+      "EM_32_4": 4,
+      "EM_32_5": 5,
+      "EM_32_6": 6,
+      "EM_32_7": 7,
+      "EM_32_8": 8,
+      "EM_32_9": 9,
+      "EM_32_10": 10,
+      "EM_32_11": 11,
+      "EM_32_12": 12,
+      "EM_32_13": 13,
+      "EM_32_14": 14,
+      "EM_32_15": 15,
+      "EM_32_16": 16,
+      "EM_32_17": 17,
+      "EM_32_18": 18,
+      "EM_32_19": 19,
+      "EM_32_20": 20,
+      "EM_32_21": 21,
+      "EM_32_22": 22,
+      "EM_32_23": 23,
+      "EM_32_24": 24,
+      "EM_32_25": 25,
+      "EM_32_26": 26,
+      "EM_32_27": 27,
+      "EM_32_28": 28,
+      "EM_32_29": 29,
+      "EM_32_30": 30,
+      "EM_32_31": 31
+    }
+  }
+}

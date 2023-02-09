@@ -15,7 +15,6 @@ from .tools_fri_doa_plane import (
 # import numpy as np
 
 
-
 class FRIDA(DOA):
     """
     Implements the FRI-based direction of arrival finding algorithm [FRIDA]_.
