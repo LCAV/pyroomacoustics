@@ -53,7 +53,7 @@
   "EM32_Directivity.sofa": {
     "supported": true,
     "type": "receivers",
-    "url": "https://github.com/LCAV/pyroomacoustics/raw/dev/dirpat/pyroomacoustics/data/EM32_Directivity.sofa",
+    "url": "https://phaidra.kug.ac.at/download/o:69292",
     "homepage": "??",
     "license": "??",
     "contains": {
