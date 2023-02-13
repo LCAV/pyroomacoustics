@@ -110,7 +110,62 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
     return Ysh
 
 
-def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
+def _detect_regular_grid(azimuth, colatitude):
+    """
+    This function checks that the linearized azimuth/colatitude where sampled
+    from a regular grid.
+
+    It also checks that the azimuth are uniformly spread in [0, 2 * np.pi).
+    The colatitudes can have arbitrary positions.
+
+    Parameters
+    ----------
+    azimuth: numpy.ndarray (npoints,)
+        The azimuth values in radian
+    colatitude: numpy.ndarray (npoints,)
+        The colatitude values in radian
+
+    Returns
+    -------
+    regular_grid: dict["azimuth", "colatitude"] or None
+        A dictionary with entries for the sorted distinct azimuth an colatitude values
+        of the grid, if the points form a grid.
+        Returns `None` if the points do not form a grid.
+    """
+    azimuth_unique = np.unique(azimuth)
+    colatitude_unique = np.unique(colatitude)
+    regular_grid = None
+    if len(azimuth_unique) * len(colatitude_unique) == azimuth.shape[0]:
+        # check that the azimuth are uniformly spread
+        az_loop = np.insert(
+            azimuth_unique, azimuth_unique.shape[0], azimuth_unique[0] + 2 * np.pi
+        )
+        delta_az = np.diff(az_loop)
+        if np.allclose(delta_az, 2 * np.pi / len(azimuth_unique)):
+
+            # remake the grid from the unique points and check
+            # that it matches the original
+            A, C = np.meshgrid(azimuth_unique, colatitude_unique)
+            regrid = np.column_stack([A.flatten(), C.flatten()])
+            regrid = regrid[np.lexsort(regrid.T), :]
+            ogrid = np.column_stack([azimuth, colatitude])
+            ogrid = ogrid[np.lexsort(ogrid.T), :]
+            if np.allclose(regrid, ogrid):
+                regular_grid = {
+                    "azimuth": azimuth_unique,
+                    "colatitude": colatitude_unique,
+                }
+
+    return regular_grid
+
+
+def _weighted_pinv(weights, Y, rcond=1e-2):
+    return np.linalg.pinv(
+        weights[:, None] * Y, rcond=rcond
+    )  # rcond is inverse of the condition number
+
+
+def calculation_pinv_voronoi_cells(Ysh, colatitude, colatitude_grid, len_azimuth_grid):
     """
     Weighted least square solution "Analysis and Synthesis of Sound-Radiation with Spherical Arrays: Franz Zotter Page 76"
 
@@ -120,10 +175,12 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
     -----------
     Ysh: (np.ndarray)
         Spherical harmonic basis matrix
-    theta_16: (int)
-        Number of longitude on the original grid
-    no_of_lat:
-        Number of latitude on the original grid
+    colatitude: (np.ndarray)
+        The colatitudes of the measurements
+    colatitude_grid: (int)
+        the colatitudes of the grid lines
+    len_azimuth_grid:
+        The number of distinct azimuth values in the grid
 
     Returns:
     -------------------------------
@@ -131,26 +188,20 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
         Weighted psuedo inverse of spherical harmonic basis matrix Ysh
     w_ : (np.ndarray)
         Weight on the original grid
-
     """
-
-    res = (theta_16[:-1] + theta_16[1:]) / 2
+    # compute the areas of the voronoi regions of the grid analytically
+    # assuming that the grid is regular in azimuth/colatitude
+    res = (colatitude_grid[:-1] + colatitude_grid[1:]) / 2
     res = np.insert(res, len(res), np.pi)
     res = np.insert(res, 0, 0)
+    w = -np.diff(np.cos(res)) * (2 * np.pi / len_azimuth_grid)
+    w_dict = {t: ww for t, ww in zip(colatitude_grid, w)}
 
-    w = -np.diff(np.cos(res))
+    # select the weights
+    w_ = np.array([w_dict[col] for col in colatitude])
+    w_ /= 4 * np.pi  # normalizing by unit sphere area
 
-    w_ = np.tile(w, no_of_lat)  # Repeat matrice n times
-    # w_ /= w_.sum()  # normalize
-
-    # the following is equivalent to multiplication by diagonal matrix of weights
-    Ysh_tilda = w_[:, None] * Ysh
-
-    Ysh_tilda_inv = np.linalg.pinv(
-        Ysh_tilda, rcond=1e-2
-    )  # rcond is inverse of the condition number
-
-    return Ysh_tilda_inv, w_
+    return _weighted_pinv(w_, Ysh), w_
 
 
 def calculation_pinv_voronoi_cells_general(Ysh, points):
@@ -178,13 +229,13 @@ def calculation_pinv_voronoi_cells_general(Ysh, points):
     # The weights are the areas of the voronoi cells
     sv = SphericalVoronoi(points)
     w_ = sv.calculate_areas()
-    w_ /= w_.sum()  # normalize
+    w_ /= 4 * np.pi  # normalizing by unit sphere area
 
     Ysh_tilda_inv = np.linalg.pinv(
         w_[:, None] * Ysh, rcond=1e-2
     )  # rcond is inverse of the condition number
 
-    return Ysh_tilda_inv, w_
+    return _weighted_pinv(w_, Ysh), w_
 
 
 def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
@@ -291,11 +342,10 @@ class DIRPATInterpolate:
             self.phi_sofa,  # azimuth
             self.theta_sofa,  # colatitude
             self.r_sofa,
-            self.theta_16,
+            self.regular_grid,
             self.sofa_msr_fir,
             self.no_of_nodes,
             self.samples_size_ir,
-            self.no_of_lat,
         ) = self.open_sofa_database(path=self.path, fs=self.fs)
 
         self.sofa_x, self.sofa_y, self.sofa_z = spher2cart(
@@ -344,17 +394,19 @@ class DIRPATInterpolate:
             )
 
             # calculate pinv and voronoi cells for least square solution for the whole grid
-
-            self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells(
-                self.Ysh, self.theta_16, self.no_of_lat
-            )
-            """
-            points = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
-            points /= np.linalg.norm(points, axis=1, keepdims=True)
-            self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells_general(
-                self.Ysh, points
-            )
-            """
+            if self.regular_grid is not None:
+                self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells(
+                    self.Ysh,
+                    self.theta_sofa,
+                    self.regular_grid["colatitude"],
+                    len(self.regular_grid["azimuth"]),
+                )
+            else:
+                points = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
+                points /= np.linalg.norm(points, axis=1, keepdims=True)
+                self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells_general(
+                    self.Ysh, points
+                )
 
             self.freq_angles_fft = np.zeros(
                 (self.no_of_nodes, self.samples_size_ir), dtype=np.complex_
@@ -428,24 +480,14 @@ class DIRPATInterpolate:
 
         g_tilda = self.w_[:, None] * self.freq_angles_fft
 
-        # Shape w_ : (540*540) or (480*480)
+        # Shape w_ : (540,) or (480,)
         # Shape g_tilda : (480*256),(480*128),(540*2048),(540*1048),(540,683)
 
         gamma_full_scale = np.matmul(
             self.Ysh_tilda_inv, g_tilda
         )  # Coeffs for every freq band , for all the nodes present in the sphere
 
-        """
-        #Shape gamma_full_scale : ((deg+1)^2 * 256 | 128 | 2048 | 1024 | 683) Coeffs for every frequency bin
-
-        #Select coeffs for particular frequency for plotting purpose
-        #For sources select between (0-1023), receivers (0-128)
-
-        #freq_bin=20
-        #gamma = gamma_full_scale[:, freq_bin] #[:(self.samples_size_ir//2)]
-
-        #Shape gamma : ((deg+1)^2) Coeffs for a particular frequency bin .
-        """
+        # Shape gamma_full_scale : ((deg+1)^2 * 256 | 128 | 2048 | 1024 | 683) Coeffs for every frequency bin
 
         self.sh_coeffs_expanded_original_grid = np.fft.ifft(
             np.matmul(self.Ysh, gamma_full_scale), axis=-1
@@ -461,135 +503,84 @@ class DIRPATInterpolate:
                 "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
             )
 
+        file_sofa = sofa.Database.open(path)
+
+        # read the mesurements
+        IR_S = file_sofa.Data.IR.get_values()
+
         if self.source == True:
-            file_sofa = sofa.Database.open(path)
-
             # Receiver positions
+            pos = file_sofa.Receiver.Position.get_values()
+            pos_units = file_sofa.Receiver.Position.Units.split(",")
 
-            rcv_pos = file_sofa.Receiver.Position.get_values()
-
-            # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
-
-            rcv_pos_RS = np.reshape(rcv_pos, [36, 15, 3])
-
-            rcv_pos = np.swapaxes(rcv_pos_RS, 0, 1).reshape([540, -1])
-
-            ###########################
-
-            # Get impulse responses from all the measurements
-
-            IR_S = file_sofa.Data.IR.get_values()
-
-            # Look for source of specific type requested by user"
-
-            rcv_msr = IR_S[
+            # Look for source of specific type requested by user
+            msr = IR_S[
                 self.id, :, :
             ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
 
-            # downsample the fir filter.
-
-            rcv_msr = decimate(
-                rcv_msr,
-                int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-                axis=-1,
-            )
-
-            no_of_nodes = 540
-
-            # samples = file_sofa.Dimensions.N  # Samples per IR
-            samples = rcv_msr.shape[
-                1
-            ]  # Number of samples changed after downsampling the FIR filter
-
-            # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
-
-            phi_rcv = rcv_pos[:, 0]
-            theta_rcv = rcv_pos[:, 1]
-            r_rcv = rcv_pos[:, 2]
-
-            # Calculate no of latitudes and longitudes in the grid
-
-            no_of_lat = list(collections.Counter(theta_rcv).values())[0]
-
-            # no_of_long = len(no_of_lat)
-
-            theta_16 = np.array(
-                [theta_rcv[i] for i in range(len(theta_rcv)) if i % no_of_lat == 0]
-            )
-
-            return (
-                phi_rcv,
-                theta_rcv,
-                r_rcv,
-                theta_16,
-                rcv_msr,
-                no_of_nodes,
-                samples,
-                no_of_lat,
-            )
         else:
-            file_sofa = sofa.Database.open(path)
             # Source positions
+            pos = file_sofa.Source.Position.get_values()
+            pos_units = file_sofa.Source.Position.Units.split(",")
 
-            src_pos = file_sofa.Source.Position.get_values()
-
-            if "EM_32" in self.DIRPAT_pattern_enum:
-                src_pos = np.deg2rad(src_pos)
-
-            else:
-                # CHEAP HACCCKK SPECIFICALLY FOR DIRPAT
-
-                src_pos_RS = np.reshape(src_pos, [30, 16, 3])
-
-                src_pos = np.swapaxes(src_pos_RS, 0, 1).reshape([480, -1])
-
-                ###########################
-
-            # Get impulse responses from all the measurements
-
-            IR_S = file_sofa.Data.IR.get_values()
-
-            # Look for receiver of specific type requested by user"
-
-            rcv_msr = IR_S[
+            # Look for receiver of specific type requested by user
+            msr = IR_S[
                 :, self.id, :
-            ]  # First receiver #Shape (no_measurement_points * no_receivers * no_samples_IR)
+            ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
 
-            rcv_msr = decimate(
-                rcv_msr,
-                int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-                axis=-1,
-            )
+        # downsample the fir filter.
+        msr = decimate(
+            msr,
+            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+            axis=-1,
+        )
 
-            no_of_nodes = file_sofa.Dimensions.M  # Number of measurement points
+        no_of_nodes, samples = msr.shape
 
-            # samples = file_sofa.Dimensions.N  # Samples per IR
-            samples = rcv_msr.shape[1]
+        is_dirpat = path.name in [
+            "Soundfield_ST450_CUBE.sofa",
+            "AKG_c480_c414_CUBE.sofa",
+            "Oktava_MK4012_CUBE.sofa",
+            "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        ]
+        if is_dirpat:
+            # There is a bug in the DIRPAT measurement files where the array of
+            # measurement locations were not flattened correctly
+            pos_units[0:1] = "radian"
+            if path.name == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
+                pos_RS = np.reshape(pos, [36, -1, 3])
+                pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
+            else:
+                pos_RS = np.reshape(pos, [30, -1, 3])
+                pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
 
-            # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
+        azimuth = pos[:, 0]
+        colatitude = pos[:, 1]
+        distance = pos[:, 2]
 
-            phi_src = src_pos[:, 0]
-            theta_src = src_pos[:, 1]
-            r_src = src_pos[:, 2]
+        # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
+        if not is_dirpat:
+            if pos_units[0] == "degree":
+                azimuth = np.deg2rad(azimuth)
+            if pos_units[1] == "degree":
+                colatitude = np.deg2rad(colatitude)
 
-            no_of_lat = list(collections.Counter(theta_src).values())[0]
+        if np.any(colatitude < 0.0):
+            # it looks like the data is using elevation format
+            colatitude = np.pi / 2.0 - colatitude
 
-            # no_of_long = len(no_of_lat)
+        # Calculate no of latitudes and longitudes in the grid
+        regular_grid = _detect_regular_grid(azimuth, colatitude)
 
-            theta_16 = np.array(
-                [theta_src[i] for i in range(len(theta_src)) if i % no_of_lat == 0]
-            )
-
-            return (
-                phi_src,
-                theta_src,
-                r_src,
-                theta_16,
-                rcv_msr,
-                no_of_nodes,
-                samples,
-                no_of_lat,
-            )
+        return (
+            azimuth,
+            colatitude,
+            distance,
+            regular_grid,
+            msr,
+            no_of_nodes,
+            samples,
+        )
 
     def cal_index_knn(self, azimuth, colatitude):
         """

@@ -24,11 +24,20 @@ from pyroomacoustics.directivities import (
     DirectivityPattern,
     DIRPATRir,
 )
+from pyroomacoustics.open_sofa_interpolate import (
+    calculation_pinv_voronoi_cells,
+    calculation_pinv_voronoi_cells_general,
+    _detect_regular_grid,
+)
 
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]
 
 TEST_DATA = Path(__file__).parent / "data"
+
+# tolerances for the regression tests
+atol = 5e-5
+rtol = 1e-8
 
 room_dim = [6, 6, 2.4]
 
@@ -159,8 +168,11 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag):
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
         print("Max diff.:", abs(reference_data - rir_1_0).max())
-        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
-        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
+        print(
+            "Rel diff.:",
+            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
+        )
+        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -268,8 +280,11 @@ def test_sofa_two_sides(
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
         print("Max diff.:", abs(reference_data - rir_1_0).max())
-        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
-        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
+        print(
+            "Rel diff.:",
+            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
+        )
+        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -355,13 +370,133 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag):
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
         print("Max diff.:", abs(reference_data - rir_1_0).max())
-        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
-        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
+        print(
+            "Rel diff.:",
+            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
+        )
+        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
 
+PINV_PARAMETERS = [
+    (30, 16, np.pi / 32, np.pi - np.pi / 32, "F", 5e-5, 1e-8),
+    (30, 16, np.pi / 32, np.pi - np.pi / 32, "C", 5e-5, 1e-8),
+    (30, 16, 1e-5, np.pi - np.pi / 32, "C", 5e-5, 1e-8),
+    (30, 16, 1e-5, np.pi - np.pi / 32, "F", 5e-5, 1e-8),
+    (30, 16, np.pi / 32, np.pi - 1e-5, "C", 5e-5, 1e-8),
+    (30, 16, np.pi / 32, np.pi - 1e-5, "F", 5e-5, 1e-8),
+    (35, 17, np.pi / 32, np.pi - np.pi / 32, "F", 5e-5, 1e-8),
+    (24, 24, np.pi / 32, np.pi - np.pi / 32, "C", 5e-5, 1e-8),
+    (40, 20, np.pi / 32, np.pi - 1e-5, "C", 5e-5, 1e-8),
+    (40, 20, np.pi / 32, np.pi - 1e-5, "F", 5e-5, 1e-8),
+]
+
+
+@pytest.mark.parametrize(
+    "n_azimuth, n_col, col_start, col_end, order, atol, rtol",
+    PINV_PARAMETERS,
+)
+def test_weighted_pinv(n_azimuth, n_col, col_start, col_end, order, atol, rtol):
+    azimuth = np.linspace(0, 2 * np.pi, n_azimuth, endpoint=False)
+    colatitude = np.linspace(col_start, col_end, n_col)
+    A, C = np.meshgrid(azimuth, colatitude)
+    alin = A.flatten(order=order)
+    clin = C.flatten(order=order)
+
+    Ysh = np.random.randn(alin.shape[0])
+
+    points = np.array(
+        [
+            np.cos(alin) * np.sin(clin),
+            np.sin(alin) * np.sin(clin),
+            np.cos(clin),
+        ]
+    ).T
+
+    Y_reg, w_reg = calculation_pinv_voronoi_cells(Ysh, clin, colatitude, len(azimuth))
+    Y_gen, w_gen = calculation_pinv_voronoi_cells_general(Ysh, points)
+
+    assert np.allclose(w_reg, w_gen, rtol=rtol, atol=atol)
+    assert np.allclose(Y_reg, Y_gen, rtol=rtol, atol=atol)
+
+
+@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
+def test_detect_grid_regular(n_az, n_co):
+
+    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
+    colatitude = np.linspace(np.pi / 2.0 / n_co, np.pi - np.pi / 2.0 / n_co, n_co)
+    A, C = np.meshgrid(azimuth, colatitude)
+    alin = A.flatten()
+    clin = C.flatten()
+
+    dic = _detect_regular_grid(alin, clin)
+
+    assert isinstance(dic, dict)
+    assert np.allclose(dic["azimuth"], azimuth)
+    assert np.allclose(dic["colatitude"], colatitude)
+
+
+@pytest.mark.parametrize(
+    "n_points", [(36 * 12), (72 * 11), (360 * 180), (36 * 12 + 3), (178)]
+)
+def test_detect_not_grid(n_points):
+    alin = np.random.rand(n_points) * 2 * np.pi
+    clin = np.random.rand(n_points) * np.pi
+    dic = _detect_regular_grid(alin, clin)
+    assert dic is None
+
+
+@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
+def test_detect_grid_irregular_azimuth(n_az, n_co):
+    azimuth = np.sort(np.random.rand(n_az) * 2.0 * np.pi)
+    colatitude = np.linspace(np.pi / 2.0 / n_co, np.pi - np.pi / 2.0 / n_co, n_co)
+    A, C = np.meshgrid(azimuth, colatitude)
+    alin = A.flatten()
+    clin = C.flatten()
+
+    dic = _detect_regular_grid(alin, clin)
+
+    assert dic is None  # should fail when azimuth is irregular
+
+
+@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
+def test_detect_grid_irregular_colatitude(n_az, n_co):
+    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
+    colatitude = np.sort(np.random.rand(n_co) * np.pi)
+    A, C = np.meshgrid(azimuth, colatitude)
+    alin = A.flatten()
+    clin = C.flatten()
+
+    dic = _detect_regular_grid(alin, clin)
+
+    # should succeed when azimuth is regular
+    assert isinstance(dic, dict)
+    assert np.allclose(dic["azimuth"], azimuth)
+    assert np.allclose(dic["colatitude"], colatitude)
+
+
+@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
+def test_detect_grid_point_duplicate(n_az, n_co):
+    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
+    colatitude = np.sort(np.random.rand(n_co) * np.pi)
+    A, C = np.meshgrid(azimuth, colatitude)
+    alin = A.flatten()
+    clin = C.flatten()
+
+    i = clin.shape[0] // 2
+    clin[i] = clin[i + 1]
+    alin[i] = alin[i + 1]
+
+    dic = _detect_regular_grid(alin, clin)
+
+    # should fail because this is not a grid
+    assert dic is None
+
+
 if __name__ == "__main__":
+    # generate the test files for regression testing
+    """
     download_sofa_files(verbose=True)
     for params in SOFA_ONE_SIDE_PARAMETERS:
         new_params = params[:-1] + (True,)
@@ -372,3 +507,8 @@ if __name__ == "__main__":
     for params in SOFA_CARDIOID_PARAMETERS:
         new_params = params[:-1] + (True,)
         test_sofa_and_cardioid(*new_params)
+    for params in PINV_PARAMETERS:
+        test_weighted_pinv(*params)
+    """
+    for p in [(36, 12), (72, 11), (360, 180)]:
+        test_detect_grid_irregular_colatitude(*p)
