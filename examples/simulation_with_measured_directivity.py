@@ -81,12 +81,14 @@ path_DIRPAT_file = os.path.join(
     os.path.dirname(__file__).replace("examples", ""),
     "pyroomacoustics",
     "data",
+    "sofa",
     "AKG_c480_c414_CUBE.sofa",
 )
 path_Eigenmic_file = os.path.join(
     os.path.dirname(__file__).replace("examples", ""),
     "pyroomacoustics",
     "data",
+    "sofa",
     "EM32_Directivity.sofa",
 )
 
@@ -175,16 +177,20 @@ room = pra.ShoeBox(
     min_phase=False,
 )
 
+dir_mic = dir_obj_Emic
 
 room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 
 
-room.add_microphone([2.31, 1.65, 1.163], directivity=dir_obj_Emic)
+room.add_microphone([2.31, 1.65, 1.163], directivity=dir_mic)
 
-dir_obj_Emic.set_orientation(54, 73)
+dir_mic.set_orientation(54, 73)
 
 
 room.compute_rir()
+room.plot_rir(FD=True)
+
+dir_mic.obj_open_sofa_inter.plot_new(freq_bin=50, depth=True)
 
 
 rir_1_0 = room.rir[0][0]

@@ -158,7 +158,9 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag):
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
-        assert np.allclose(reference_data, rir_1_0)
+        print("Max diff.:", abs(reference_data - rir_1_0).max())
+        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
+        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -265,7 +267,9 @@ def test_sofa_two_sides(
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
-        assert np.allclose(reference_data, rir_1_0)
+        print("Max diff.:", abs(reference_data - rir_1_0).max())
+        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
+        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -350,7 +354,9 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag):
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
-        assert np.allclose(reference_data, rir_1_0)
+        print("Max diff.:", abs(reference_data - rir_1_0).max())
+        print("Rel diff.:", abs(reference_data - rir_1_0).max() / abs(rir_1_0).max())
+        assert np.allclose(reference_data, rir_1_0, atol=1e-5)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 

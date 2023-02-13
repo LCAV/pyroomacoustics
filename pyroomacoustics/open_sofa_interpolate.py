@@ -14,7 +14,10 @@ from timeit import default_timer as timer
 
 from scipy.fft import fft, fftfreq, ifft
 from scipy.signal import decimate
-from scipy.spatial import KDTree, cKDTree
+from scipy.spatial import KDTree, cKDTree, SphericalVoronoi
+from scipy.interpolate import griddata
+from .utilities import requires_matplotlib
+from .doa import fibonnaci_spherical_sampling, spher2cart, cart2spher
 
 # from numpy import linalg as LA
 # from scipy.signal import find_peaks
@@ -23,6 +26,10 @@ from scipy.spatial import KDTree, cKDTree
 def fibonacci_sphere(samples):
     """
     Creates a uniform fibonacci sphere.
+
+    This version has some point at the pole which leads
+    to a less *uniform* sampling. We should switch to
+    fibonnaci_spherical_sampling
 
     Parameter
     ---------
@@ -39,18 +46,14 @@ def fibonacci_sphere(samples):
     points = []
     phi = math.pi * (3.0 - math.sqrt(5.0))  # golden angle in radians
 
-    for i in range(samples):
-        y = 1 - (i / float(samples - 1)) * 2  # y goes from 1 to -1
-        radius = math.sqrt(1 - y * y)  # radius at y
+    i = np.arange(samples)
+    y = 1 - i / float(samples - 1) * 2
+    radius = np.sqrt(1 - y * y)
+    theta = phi * i
+    x = np.cos(theta) * radius
+    z = np.sin(theta) * radius
 
-        theta = phi * i  # golden angle increment
-
-        x = math.cos(theta) * radius
-        z = math.sin(theta) * radius
-
-        points.append((x, y, z))
-
-    return points
+    return np.column_stack([x, y, z])
 
 
 def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
@@ -111,7 +114,7 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
     """
     Weighted least square solution "Analysis and Synthesis of Sound-Radiation with Spherical Arrays: Franz Zotter Page 76"
 
-    Calculation of psuedo inverse and voronoi cells,
+    Calculation of pseudo inverse and voronoi cells for regular sampling in spherical coordinates
 
     Parameters
     -----------
@@ -120,6 +123,7 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
     theta_16: (int)
         Number of longitude on the original grid
     no_of_lat:
+        Number of latitude on the original grid
 
     Returns:
     -------------------------------
@@ -137,10 +141,10 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
     w = -np.diff(np.cos(res))
 
     w_ = np.tile(w, no_of_lat)  # Repeat matrice n times
+    # w_ /= w_.sum()  # normalize
 
-    w_ = np.diag(w_)  # Diagnol of the matrice (no_of_nodes * no_of_nodes)
-
-    Ysh_tilda = np.matmul(w_, Ysh)
+    # the following is equivalent to multiplication by diagonal matrix of weights
+    Ysh_tilda = w_[:, None] * Ysh
 
     Ysh_tilda_inv = np.linalg.pinv(
         Ysh_tilda, rcond=1e-2
@@ -149,30 +153,38 @@ def calculation_pinv_voronoi_cells(Ysh, theta_16, no_of_lat):
     return Ysh_tilda_inv, w_
 
 
-def cart2sphere(points):
-    # Convert cartesian coordinates into spherical coordinates (radians)
+def calculation_pinv_voronoi_cells_general(Ysh, points):
+    """
+    Weighted least square solution "Analysis and Synthesis of Sound-Radiation with
+    Spherical Arrays: Franz Zotter Page 76"
 
-    r = np.sqrt(
-        np.square(points[:, 0]) + np.square(points[:, 1]) + np.square(points[:, 2])
-    )
+    Calculation of pseudo inverse and voronoi cells for arbitrary sampling of the sphere.
 
-    theta_fibo = np.arccos((points[:, 2] / r))
+    Parameters
+    -----------
+    Ysh: (np.ndarray)
+        Spherical harmonic basis matrix
+    points: numpy.ndarray, (n_points, 3)
+        The sampling points on the sphere
 
-    phi_fibo = np.arctan2(points[:, 1], points[:, 0])
+    Returns:
+    -------------------------------
+    Ysh_tilda_inv : (np.ndarray)
+        Weighted pseudo inverse of spherical harmonic basis matrix Ysh
+    w_ : (np.ndarray)
+        Weight on the original grid
+    """
 
-    # phi_fibo += np.pi  # phi_fibo was in range of [-np.pi,np.pi]
+    # The weights are the areas of the voronoi cells
+    sv = SphericalVoronoi(points)
+    w_ = sv.calculate_areas()
+    w_ /= w_.sum()  # normalize
 
-    return phi_fibo, theta_fibo, r
+    Ysh_tilda_inv = np.linalg.pinv(
+        w_[:, None] * Ysh, rcond=1e-2
+    )  # rcond is inverse of the condition number
 
-
-def sph2cart(phi, theta, r):
-    # Convert spherical cordinates to cartesian cordinates.
-
-    x = np.cos(phi) * np.sin(theta)
-    y = np.sin(phi) * np.sin(theta)
-    z = np.cos(theta)
-
-    return x, y, z
+    return Ysh_tilda_inv, w_
 
 
 def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
@@ -276,8 +288,8 @@ class DIRPATInterpolate:
         self.fs = fs
 
         (
-            self.phi_sofa,
-            self.theta_sofa,
+            self.phi_sofa,  # azimuth
+            self.theta_sofa,  # colatitude
             self.r_sofa,
             self.theta_16,
             self.sofa_msr_fir,
@@ -286,7 +298,7 @@ class DIRPATInterpolate:
             self.no_of_lat,
         ) = self.open_sofa_database(path=self.path, fs=self.fs)
 
-        self.sofa_x, self.sofa_y, self.sofa_z = sph2cart(
+        self.sofa_x, self.sofa_y, self.sofa_z = spher2cart(
             self.phi_sofa, self.theta_sofa, self.r_sofa
         )
 
@@ -308,7 +320,8 @@ class DIRPATInterpolate:
             self.degree = 12
 
             self.points = np.array(fibonacci_sphere(samples=no_of_points_fibo_sphere))
-            self.phi_fibo, self.theta_fibo, self.r_fibo = cart2sphere(self.points)
+            # self.points = fibonnaci_spherical_sampling(no_of_points_fibo_sphere).T
+            self.phi_fibo, self.theta_fibo, self.r_fibo = cart2spher(self.points.T)
 
             # All the computations are in radians for phi = range (0, 2*np.pi) and theta = range (0, np.pi)
             # Just for numpy, the function accepts phi and theta in the opposite way
@@ -335,6 +348,13 @@ class DIRPATInterpolate:
             self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells(
                 self.Ysh, self.theta_16, self.no_of_lat
             )
+            """
+            points = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
+            points /= np.linalg.norm(points, axis=1, keepdims=True)
+            self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells_general(
+                self.Ysh, points
+            )
+            """
 
             self.freq_angles_fft = np.zeros(
                 (self.no_of_nodes, self.samples_size_ir), dtype=np.complex_
@@ -350,7 +370,7 @@ class DIRPATInterpolate:
                 self.rotated_fibo_phi,
                 self.rotated_fibo_theta,
                 self.rotated_fibo_r,
-            ) = cart2sphere(self.rotated_fibo_points.T)
+            ) = cart2spher(self.rotated_fibo_points)
             self.nn_kd_tree_rotated_fibo_grid = cKDTree(
                 np.hstack(
                     (
@@ -380,7 +400,7 @@ class DIRPATInterpolate:
                 self.rotated_sofa_phi,
                 self.rotated_sofa_theta,
                 self.rotated_sofa_r,
-            ) = cart2sphere(self.rotated_sofa_points.T)
+            ) = cart2spher(self.rotated_sofa_points)
 
             # print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
             self.nn_kd_tree_rotated_sofa_grid = cKDTree(
@@ -406,7 +426,7 @@ class DIRPATInterpolate:
                 self.sofa_msr_fir[i, :]
             )  # [:(self.samples_size_ir // 2)] #self.samples_size_ir//2
 
-        g_tilda = np.matmul(self.w_, self.freq_angles_fft)
+        g_tilda = self.w_[:, None] * self.freq_angles_fft
 
         # Shape w_ : (540*540) or (480*480)
         # Shape g_tilda : (480*256),(480*128),(540*2048),(540*1048),(540,683)
@@ -650,7 +670,7 @@ class DIRPATInterpolate:
             self.rotated_fibo_phi,
             self.rotated_fibo_theta,
             self.rotated_fibo_r,
-        ) = cart2sphere(self.rotated_fibo_points.T)
+        ) = cart2spher(self.rotated_fibo_points)
 
         self.nn_kd_tree_rotated_fibo_grid = cKDTree(
             np.hstack(
@@ -752,3 +772,52 @@ class DIRPATInterpolate:
 
         fg.tight_layout(pad=3.0)
         plt.show()
+
+    @requires_matplotlib
+    def plot_new(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
+        import matplotlib.pyplot as plt
+        from matplotlib import cm
+
+        if self.interpolate:
+            cart = self.points
+            length = np.abs(
+                fft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
+            )
+        else:
+            cart = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
+            length = np.abs(self.freq_angles_fft[:, freq_bin])
+
+        # regrid the data on a 2D grid
+        g = np.linspace(-1, 1, n_grid)
+        AZ, COL = np.meshgrid(
+            np.linspace(0, 2 * np.pi, n_grid), np.linspace(0, np.pi, n_grid // 2)
+        )
+        # multiply by 0.99 to make sure the interpolation grid is inside the convex hull
+        # of the original points, otherwise griddata returns NaN
+        X = np.cos(AZ) * np.sin(COL) * 0.99
+        Y = np.sin(AZ) * np.sin(COL) * 0.99
+        Z = np.cos(COL) * 0.99
+        grid = np.column_stack((X.flatten(), Y.flatten(), Z.flatten()))
+        interp_len = griddata(cart, length, grid, method="linear")
+        V = interp_len.reshape((n_grid // 2, n_grid))
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1, projection="3d")
+
+        # Colour the plotted surface according to the sign of Y.
+        cmap = plt.cm.ScalarMappable(cmap=plt.get_cmap("coolwarm"))
+        cmap.set_clim(0, V.max())
+
+        if depth:
+            X *= V
+            Y *= V
+            Z *= V
+
+        surf = ax.plot_surface(
+            X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
+        )
+
+        plt.show()
+
+        return ax

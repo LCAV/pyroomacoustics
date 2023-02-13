@@ -166,3 +166,41 @@ def polar_distance(x1, x2):
         else:
             index = np.array([index, 1])
     return d, index
+
+
+def fibonnaci_spherical_sampling(n_points):
+    """
+    This function computes nearly equidistant points on the sphere
+    using the fibonacci method
+
+    Parameters
+    ----------
+    n_points: int
+        The number of points to sample
+
+    Returns
+    -------
+    points: numpy.ndarray, (3, n_points)
+        The cartesian coordinates of the points
+
+    References
+    ----------
+    http://lgdv.cs.fau.de/uploads/publications/spherical_fibonacci_mapping.pdf
+    http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    """
+
+    points = np.zeros((3, n_points))
+
+    # Fibonnaci sampling
+    offset = 2.0 / n_points
+    increment = np.pi * (3.0 - np.sqrt(5.0))
+
+    points[2, :] = (np.arange(n_points) * offset - 1) + offset / 2
+    rho = np.sqrt(1.0 - points[2] ** 2)
+
+    phi = np.arange(n_points) * increment
+
+    points[0, :] = np.cos(phi) * rho
+    points[1, :] = np.sin(phi) * rho
+
+    return points

@@ -9,7 +9,7 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import great_circ_dist
+from .utils import great_circ_dist, fibonnaci_spherical_sampling
 
 
 class Grid:
@@ -142,8 +142,10 @@ class GridCircle(Grid):
 
 class GridSphere(Grid):
     """
-    This function computes nearly equidistant points on the sphere
-    using the fibonacci method
+    This object represents a grid of points of the sphere.
+
+    If the points are not provided, pseudo-uniform points computed
+    according to the Fibonnaci method are used.
 
     Parameters
     ----------
@@ -185,17 +187,7 @@ class GridSphere(Grid):
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            # Fibonnaci sampling
-            offset = 2.0 / n_points
-            increment = np.pi * (3.0 - np.sqrt(5.0))
-
-            self.z[:] = (np.arange(n_points) * offset - 1) + offset / 2
-            rho = np.sqrt(1.0 - self.z**2)
-
-            phi = np.arange(n_points) * increment
-
-            self.x[:] = np.cos(phi) * rho
-            self.y[:] = np.sin(phi) * rho
+            self.x, self.y, self.z = fibonnaci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
