@@ -956,7 +956,6 @@ class Room(object):
 
         self.min_phase = min_phase
 
-        
     def _init_room_engine(self, *args):
         args = list(args)
 
@@ -2115,7 +2114,6 @@ class Room(object):
             n_sources = self.room_engine.image_source_model(source.position)
 
             if n_sources > 0:  # Number of image source that are generated
-
                 # Copy to python managed memory
 
                 source.images = (

@@ -56,54 +56,41 @@ def fibonacci_sphere(samples):
     return np.array([x, y, z])
 
 
-def cal_sph_basis(theta, phi, degree):  # theta_target,phi_target
+def cal_sph_basis(azimuth, colatitude, degree):  # theta_target,phi_target
     """
     Calculate a spherical basis matrix
 
     Parameters
     -----------
-    theta: array_like
-       Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
+    azimuth: array_like
+       Azimuth of the spherical coordinates of the grid points
     phi: array_like
-       Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
+       Colatitude spherical coordinates of the grid points
     degree:(int)
        spherical harmonic degree
 
     Return
     ------
-    Ysh (np.array) shape(Ysh) = no_of_nodes * (degree + 1)**2
+    Ysh (np.array) shape: (no_of_nodes, (degree + 1)**2)
         Spherical harmonics basis matrix
 
     """
+    # build linear array of indices
+    #        0
+    #     -1 0 1
+    #  -2 -1 0 1 2
+    # ...
+    ms = []
+    ns = []
+    for i in range(degree + 1):
+        for order in range(-i, i + 1):
+            ms.append(order)
+            ns.append(i)
+    m, n = np.array([ms]), np.array([ns])
 
-    no_of_nodes = theta.shape[0]
-    Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
+    # compute all the spherical harmonics at once
+    Ysh = scipy.special.sph_harm(m, n, azimuth[:, None], colatitude[:, None])
 
-    ny0 = 1
-    for j in range(no_of_nodes):
-        for i in range(degree + 1):
-            m = np.linspace(0, i, int((i - 0) / 1.0 + 1), endpoint=True, dtype=int)
-            sph_vals = [
-                scipy.special.sph_harm(order, i, theta[j], phi[j]) for order in m
-            ]
-            cal_index_Ysh_positive_order = (ny0 + m) - 1
-
-            Ysh[j, cal_index_Ysh_positive_order] = sph_vals
-            if i > 0:
-                m_neg = np.linspace(
-                    -i, -1, int((-1 - -i) / 1.0 + 1), endpoint=True, dtype=int
-                )
-                sph_vals_neg = [
-                    scipy.special.sph_harm(order, i, theta[j], phi[j])
-                    for order in m_neg
-                ]
-                cal_index_Ysh_negative_order = (ny0 + m_neg) - 1
-
-                Ysh[j, cal_index_Ysh_negative_order] = sph_vals_neg
-
-            # Update index for next degree
-            ny0 = ny0 + 2 * i + 2
-        ny0 = 1
     return Ysh
 
 
