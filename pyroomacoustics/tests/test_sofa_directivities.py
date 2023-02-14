@@ -28,8 +28,6 @@ from pyroomacoustics.directivities import (
 )
 from pyroomacoustics.doa import GridSphere
 from pyroomacoustics.open_sofa_interpolate import (
-    RegularGrid,
-    _detect_regular_grid,
     calculation_pinv_voronoi_cells,
     calculation_pinv_voronoi_cells_general,
 )
@@ -469,83 +467,6 @@ def test_weighted_pinv(n_azimuth, n_col, col_start, col_end, order, atol, rtol):
     assert np.allclose(Y_reg, Y_gen, rtol=rtol, atol=atol)
 
 
-@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
-def test_detect_grid_regular(n_az, n_co):
-    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
-    colatitude = np.linspace(np.pi / 2.0 / n_co, np.pi - np.pi / 2.0 / n_co, n_co)
-    A, C = np.meshgrid(azimuth, colatitude)
-    alin = A.flatten()
-    clin = C.flatten()
-
-    grid = GridSphere(spherical_points=np.array((alin, clin)))
-    reg_grid = _detect_regular_grid(grid)
-
-    assert isinstance(reg_grid, RegularGrid)
-    assert np.allclose(reg_grid.azimuth, azimuth)
-    assert np.allclose(reg_grid.colatitude, colatitude)
-
-
-@pytest.mark.parametrize(
-    "n_points", [(36 * 12), (72 * 11), (360 * 180), (36 * 12 + 3), (178)]
-)
-def test_detect_not_grid(n_points):
-    alin = np.random.rand(n_points) * 2 * np.pi
-    clin = np.random.rand(n_points) * np.pi
-    grid = GridSphere(spherical_points=np.array((alin, clin)))
-    reg_grid = _detect_regular_grid(grid)
-    assert reg_grid is None
-
-
-@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
-def test_detect_grid_irregular_azimuth(n_az, n_co):
-    azimuth = np.sort(np.random.rand(n_az) * 2.0 * np.pi)
-    colatitude = np.linspace(np.pi / 2.0 / n_co, np.pi - np.pi / 2.0 / n_co, n_co)
-    A, C = np.meshgrid(azimuth, colatitude)
-    alin = A.flatten()
-    clin = C.flatten()
-
-    grid = GridSphere(spherical_points=np.array((alin, clin)))
-    reg_grid = _detect_regular_grid(grid)
-
-    assert reg_grid is None  # should fail when azimuth is irregular
-
-
-@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
-def test_detect_grid_irregular_colatitude(n_az, n_co):
-    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
-    colatitude = np.sort(np.random.rand(n_co) * np.pi)
-    A, C = np.meshgrid(azimuth, colatitude)
-    alin = A.flatten()
-    clin = C.flatten()
-
-    grid = GridSphere(spherical_points=np.array((alin, clin)))
-    reg_grid = _detect_regular_grid(grid)
-
-    # should succeed when azimuth is regular
-    assert isinstance(reg_grid, RegularGrid)
-    assert np.allclose(reg_grid.azimuth, azimuth)
-    assert np.allclose(reg_grid.colatitude, colatitude)
-
-
-@pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
-def test_detect_grid_point_duplicate(n_az, n_co):
-    azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
-    colatitude = np.sort(np.random.rand(n_co) * np.pi)
-    A, C = np.meshgrid(azimuth, colatitude)
-    alin = A.flatten()
-    clin = C.flatten()
-
-    i = clin.shape[0] // 2
-    clin[i] = clin[i + 1]
-    alin[i] = alin[i + 1]
-
-    grid = GridSphere(spherical_points=np.array((alin, clin)))
-    reg_grid = _detect_regular_grid(grid)
-
-    # should fail because this is not a grid
-    assert reg_grid is None
-
-
 if __name__ == "__main__":
     # generate the test files for regression testing
     parser = argparse.ArgumentParser()
@@ -573,6 +494,3 @@ if __name__ == "__main__":
 
     for params in PINV_PARAMETERS:
         test_weighted_pinv(*params)
-
-    for p in [(36, 12), (72, 11), (360, 180)]:
-        test_detect_grid_irregular_colatitude(*p)

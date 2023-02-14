@@ -17,10 +17,14 @@ from scipy.interpolate import griddata
 from scipy.signal import decimate
 from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
-from .doa import GridSphere, cart2spher, fibonnaci_spherical_sampling, spher2cart
+from .doa import (
+    GridSphere,
+    cart2spher,
+    fibonnaci_spherical_sampling,
+    spher2cart,
+    detect_regular_grid,
+)
 from .utilities import requires_matplotlib
-
-RegularGrid = collections.namedtuple("RegularGrid", ["azimuth", "colatitude"])
 
 
 def fibonacci_sphere(samples):
@@ -92,53 +96,6 @@ def cal_sph_basis(azimuth, colatitude, degree):  # theta_target,phi_target
     Ysh = scipy.special.sph_harm(m, n, azimuth[:, None], colatitude[:, None])
 
     return Ysh
-
-
-def _detect_regular_grid(grid):
-    """
-    This function checks that the linearized azimuth/colatitude where sampled
-    from a regular grid.
-
-    It also checks that the azimuth are uniformly spread in [0, 2 * np.pi).
-    The colatitudes can have arbitrary positions.
-
-    Parameters
-    ----------
-    azimuth: numpy.ndarray (npoints,)
-        The azimuth values in radian
-    colatitude: numpy.ndarray (npoints,)
-        The colatitude values in radian
-
-    Returns
-    -------
-    regular_grid: dict["azimuth", "colatitude"] or None
-        A dictionary with entries for the sorted distinct azimuth an colatitude values
-        of the grid, if the points form a grid.
-        Returns `None` if the points do not form a grid.
-    """
-    azimuth_unique = np.unique(grid.azimuth)
-    colatitude_unique = np.unique(grid.colatitude)
-    regular_grid = None
-    if len(azimuth_unique) * len(colatitude_unique) == len(grid):
-        # check that the azimuth are uniformly spread
-        az_loop = np.insert(
-            azimuth_unique, len(azimuth_unique), azimuth_unique[0] + 2 * np.pi
-        )
-        delta_az = np.diff(az_loop)
-        if np.allclose(delta_az, 2 * np.pi / len(azimuth_unique)):
-            # remake the grid from the unique points and check
-            # that it matches the original
-            A, C = np.meshgrid(azimuth_unique, colatitude_unique)
-            regrid = np.column_stack([A.flatten(), C.flatten()])
-            regrid = regrid[np.lexsort(regrid.T), :]
-            ogrid = np.column_stack([grid.azimuth, grid.colatitude])
-            ogrid = ogrid[np.lexsort(ogrid.T), :]
-            if np.allclose(regrid, ogrid):
-                regular_grid = RegularGrid(
-                    azimuth=azimuth_unique, colatitude=colatitude_unique
-                )
-
-    return regular_grid
 
 
 def _weighted_pinv(weights, Y, rcond=1e-2):
@@ -270,7 +227,7 @@ def spherical_interpolation(
     # this will check if the points are on a regular grid.
     # If they are, then the azimuths and colatitudes of the grid
     # are returned
-    regular_grid = _detect_regular_grid(grid)
+    regular_grid = detect_regular_grid(grid.azimuth, grid.colatitude)
 
     # calculate pinv and voronoi cells for least square solution for the whole grid
     if regular_grid is not None:

@@ -3,8 +3,11 @@ This module contains useful functions to compute distances and errors on on
 circles and spheres.
 """
 from __future__ import division
+import collections
 
 import numpy as np
+
+RegularGrid = collections.namedtuple("RegularGrid", ["azimuth", "colatitude"])
 
 
 def circ_dist(azimuth1, azimuth2, r=1.0):
@@ -204,3 +207,53 @@ def fibonnaci_spherical_sampling(n_points):
     points[1, :] = np.sin(phi) * rho
 
     return points
+
+
+def detect_regular_grid(azimuth, colatitude):
+    """
+    This function checks that the linearized azimuth/colatitude where sampled
+    from a regular grid.
+
+    It also checks that the azimuth are uniformly spread in [0, 2 * np.pi).
+    The colatitudes can have arbitrary positions.
+
+    Parameters
+    ----------
+    azimuth: numpy.ndarray (npoints,)
+        The azimuth values in radian
+    colatitude: numpy.ndarray (npoints,)
+        The colatitude values in radian
+
+    Returns
+    -------
+    regular_grid: dict["azimuth", "colatitude"] or None
+        A dictionary with entries for the sorted distinct azimuth an colatitude values
+        of the grid, if the points form a grid.
+        Returns `None` if the points do not form a grid.
+    """
+    if len(azimuth) != len(colatitude):
+        return None
+
+    azimuth_unique = np.unique(azimuth)
+    colatitude_unique = np.unique(colatitude)
+    regular_grid = None
+    if len(azimuth_unique) * len(colatitude_unique) == len(azimuth):
+        # check that the azimuth are uniformly spread
+        az_loop = np.insert(
+            azimuth_unique, len(azimuth_unique), azimuth_unique[0] + 2 * np.pi
+        )
+        delta_az = np.diff(az_loop)
+        if np.allclose(delta_az, 2 * np.pi / len(azimuth_unique)):
+            # remake the grid from the unique points and check
+            # that it matches the original
+            A, C = np.meshgrid(azimuth_unique, colatitude_unique)
+            regrid = np.column_stack([A.flatten(), C.flatten()])
+            regrid = regrid[np.lexsort(regrid.T), :]
+            ogrid = np.column_stack([azimuth, colatitude])
+            ogrid = ogrid[np.lexsort(ogrid.T), :]
+            if np.allclose(regrid, ogrid):
+                regular_grid = RegularGrid(
+                    azimuth=azimuth_unique, colatitude=colatitude_unique
+                )
+
+    return regular_grid
