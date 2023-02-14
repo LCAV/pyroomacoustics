@@ -288,8 +288,7 @@ class CardioidFamily(Directivity):
 
 
 class DIRPATRir(Directivity):
-
-    """
+    r"""
     Open specific DIRPAT files and interpolate the FIR filters on the fibonacci sphere also frequency independent
     cardioid patterns can be called from this function
     This class inherits the base class Directivity and all its functions.
@@ -387,8 +386,10 @@ class DIRPATRir(Directivity):
 
         if no_points_on_fibo_sphere == 0:
             self.interpolate = False
+            interp_order = None
         else:
             self.interpolate = True
+            interp_order = 12
 
         self.fs = fs
 
@@ -401,12 +402,17 @@ class DIRPATRir(Directivity):
             fs=self.fs,
             DIRPAT_pattern_enum=DIRPAT_pattern_enum,
             source=self.source,
-            interpolate=self.interpolate,
-            no_of_points_fibo_sphere=self.points_on_fibo,
-            azimuth_simulation=self._orientation.get_azimuth(degrees=False),
-            colatitude_simulation=self._orientation.get_colatitude(degrees=False),
+            interp_order=interp_order,
+            interp_n_points=self.points_on_fibo,
         )
-        self.filter_len_ir = self.obj_open_sofa_inter.samples_size_ir
+
+        self.obj_open_sofa_inter.change_orientation(
+            azimuth_change=self._orientation.get_azimuth(degrees=False),
+            colatitude_change=self._orientation.get_colatitude(degrees=False),
+            degrees=False,
+        )
+
+        self.filter_len_ir = self.obj_open_sofa_inter.impulse_responses.shape[-1]
         # self.obj_open_sofa_inter.plot(freq_bin=30) For plotting directivity pattern on the sphere for a specific frequency bin
 
     def set_orientation(self, azimuth, colatitude):
@@ -445,13 +451,12 @@ class DIRPATRir(Directivity):
             False : Azimuth and colatitude are provided in radians.
 
         """
+        if degrees:
+            azimuth = np.deg2rad(azimuth)
+            colatitude = np.deg2rad(colatitude)
 
-        indexs = self.obj_open_sofa_inter.cal_index_knn(
-            azimuth, colatitude
-        )  # Using NN search calculates all the indexes for list of azimuth and colitude of all the image sources
-        return self.obj_open_sofa_inter.neareast_neighbour(
-            indexs
-        )  # Returns filter response for the given indexes from the sphere (interpolation (True) : fibonacci sphere , interpolation (False) : original grid )
+        return self.obj_open_sofa_inter.nearest_neighbour(azimuth, colatitude)
+        # Returns filter response for the given indexes from the sphere (interpolation (True) : fibonacci sphere , interpolation (False) : original grid )
 
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):

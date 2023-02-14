@@ -5,10 +5,12 @@ The tests compare the output of the simulation with some pre-generated samples.
 
 To generate the samples run this file: `python ./test_sofa_directivities.py`
 """
+import argparse
 import os
 import warnings
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -24,10 +26,12 @@ from pyroomacoustics.directivities import (
     DirectivityPattern,
     DIRPATRir,
 )
+from pyroomacoustics.doa import GridSphere
 from pyroomacoustics.open_sofa_interpolate import (
+    RegularGrid,
+    _detect_regular_grid,
     calculation_pinv_voronoi_cells,
     calculation_pinv_voronoi_cells_general,
-    _detect_regular_grid,
 )
 
 sofa_info = get_sofa_db_info()
@@ -94,22 +98,27 @@ def test_dirpat_download():
 
 
 SOFA_ONE_SIDE_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False),
-    ("EM_32_0", "EM32_Directivity.sofa", False),
-    ("EM_32_31", "EM32_Directivity.sofa", False),
-    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False),
-    ("Vibrolux_2x10inch", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("EM_32_0", "EM32_Directivity.sofa", False, False),
+    ("EM_32_31", "EM32_Directivity.sofa", False, False),
+    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False, False),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
+        False,
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "pattern_id,sofa_file_name,save_flag", SOFA_ONE_SIDE_PARAMETERS
+    "pattern_id,sofa_file_name,save_flag,plot_flag", SOFA_ONE_SIDE_PARAMETERS
 )
-def test_sofa_one_side(pattern_id, sofa_file_name, save_flag):
+def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
     """
     Tests with only microphone *or* source from a SOFA file
     """
@@ -131,7 +140,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag):
 
     # define source with figure_eight directivity
     directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
+        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
         path=Path(DEFAULT_SOFA_PATH) / sofa_file_name,
         DIRPAT_pattern_enum=pattern_id,
         fs=16000,
@@ -172,6 +181,12 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag):
             "Rel diff.:",
             abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
         )
+        if plot_flag:
+            fig, ax = plt.subplots(1, 1)
+            ax.plot(rir_1_0, label="test")
+            ax.plot(reference_data, label="ref")
+            ax.legend()
+            fig.savefig(test_file_path.with_suffix(".pdf"))
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
@@ -184,12 +199,14 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "AKG_c480",
         "AKG_c480_c414_CUBE.sofa",
         False,
+        False,
     ),
     (
         "Vibrolux_2x10inch",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         "AKG_c414K",
         "AKG_c480_c414_CUBE.sofa",
+        False,
         False,
     ),
     (
@@ -198,6 +215,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "EM_32_0",
         "EM32_Directivity.sofa",
         False,
+        False,
     ),
     (
         "Genelec_8020",
@@ -205,16 +223,23 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "EM_32_31",
         "EM32_Directivity.sofa",
         False,
+        False,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "src_pattern_id, src_sofa_file_name, mic_pattern_id, mic_sofa_file_name, save_flag",
+    "src_pattern_id, src_sofa_file_name, mic_pattern_id, "
+    "mic_sofa_file_name, save_flag, plot_flag",
     SOFA_TWO_SIDES_PARAMETERS,
 )
 def test_sofa_two_sides(
-    src_pattern_id, src_sofa_file_name, mic_pattern_id, mic_sofa_file_name, save_flag
+    src_pattern_id,
+    src_sofa_file_name,
+    mic_pattern_id,
+    mic_sofa_file_name,
+    save_flag,
+    plot_flag,
 ):
     """
     Tests with only microphone *or* source from a SOFA file
@@ -236,14 +261,14 @@ def test_sofa_two_sides(
     )
 
     src_directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
+        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
         path=Path(DEFAULT_SOFA_PATH) / src_sofa_file_name,
         DIRPAT_pattern_enum=src_pattern_id,
         fs=16000,
     )
 
     mic_directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
+        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
         path=Path(DEFAULT_SOFA_PATH) / mic_sofa_file_name,
         DIRPAT_pattern_enum=mic_pattern_id,
         fs=16000,
@@ -279,33 +304,47 @@ def test_sofa_two_sides(
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
+
         print("Max diff.:", abs(reference_data - rir_1_0).max())
         print(
             "Rel diff.:",
             abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
         )
+
+        if plot_flag:
+            fig, ax = plt.subplots(1, 1)
+            ax.plot(rir_1_0, label="test")
+            ax.plot(reference_data, label="ref")
+            ax.legend()
+            fig.savefig(test_file_path.with_suffix(".pdf"))
+
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
 
 SOFA_CARDIOID_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False),
-    ("EM_32_0", "EM32_Directivity.sofa", False),
-    ("EM_32_31", "EM32_Directivity.sofa", False),
-    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False),
-    ("Vibrolux_2x10inch", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False),
+    ("EM_32_0", "EM32_Directivity.sofa", False, False),
+    ("EM_32_31", "EM32_Directivity.sofa", False, False),
+    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False, False),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
+        False,
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "pattern_id,sofa_file_name,save_flag", SOFA_CARDIOID_PARAMETERS
+    "pattern_id,sofa_file_name,save_flag,plot_flag", SOFA_CARDIOID_PARAMETERS
 )
-def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag):
+def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
     """
     Tests with only microphone *or* source from a SOFA file
     """
@@ -327,7 +366,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag):
 
     # define source with figure_eight directivity
     directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=270, colatitude=90, degrees=True),
+        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
         path=Path(DEFAULT_SOFA_PATH) / sofa_file_name,
         DIRPAT_pattern_enum=pattern_id,
         fs=16000,
@@ -369,11 +408,20 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag):
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
+
         print("Max diff.:", abs(reference_data - rir_1_0).max())
         print(
             "Rel diff.:",
             abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
         )
+
+        if plot_flag:
+            fig, ax = plt.subplots(1, 1)
+            ax.plot(rir_1_0, label="test")
+            ax.plot(reference_data, label="ref")
+            ax.legend()
+            fig.savefig(test_file_path.with_suffix(".pdf"))
+
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
@@ -423,18 +471,18 @@ def test_weighted_pinv(n_azimuth, n_col, col_start, col_end, order, atol, rtol):
 
 @pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
 def test_detect_grid_regular(n_az, n_co):
-
     azimuth = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
     colatitude = np.linspace(np.pi / 2.0 / n_co, np.pi - np.pi / 2.0 / n_co, n_co)
     A, C = np.meshgrid(azimuth, colatitude)
     alin = A.flatten()
     clin = C.flatten()
 
-    dic = _detect_regular_grid(alin, clin)
+    grid = GridSphere(spherical_points=np.array((alin, clin)))
+    reg_grid = _detect_regular_grid(grid)
 
-    assert isinstance(dic, dict)
-    assert np.allclose(dic["azimuth"], azimuth)
-    assert np.allclose(dic["colatitude"], colatitude)
+    assert isinstance(reg_grid, RegularGrid)
+    assert np.allclose(reg_grid.azimuth, azimuth)
+    assert np.allclose(reg_grid.colatitude, colatitude)
 
 
 @pytest.mark.parametrize(
@@ -443,8 +491,9 @@ def test_detect_grid_regular(n_az, n_co):
 def test_detect_not_grid(n_points):
     alin = np.random.rand(n_points) * 2 * np.pi
     clin = np.random.rand(n_points) * np.pi
-    dic = _detect_regular_grid(alin, clin)
-    assert dic is None
+    grid = GridSphere(spherical_points=np.array((alin, clin)))
+    reg_grid = _detect_regular_grid(grid)
+    assert reg_grid is None
 
 
 @pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
@@ -455,9 +504,10 @@ def test_detect_grid_irregular_azimuth(n_az, n_co):
     alin = A.flatten()
     clin = C.flatten()
 
-    dic = _detect_regular_grid(alin, clin)
+    grid = GridSphere(spherical_points=np.array((alin, clin)))
+    reg_grid = _detect_regular_grid(grid)
 
-    assert dic is None  # should fail when azimuth is irregular
+    assert reg_grid is None  # should fail when azimuth is irregular
 
 
 @pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
@@ -468,12 +518,13 @@ def test_detect_grid_irregular_colatitude(n_az, n_co):
     alin = A.flatten()
     clin = C.flatten()
 
-    dic = _detect_regular_grid(alin, clin)
+    grid = GridSphere(spherical_points=np.array((alin, clin)))
+    reg_grid = _detect_regular_grid(grid)
 
     # should succeed when azimuth is regular
-    assert isinstance(dic, dict)
-    assert np.allclose(dic["azimuth"], azimuth)
-    assert np.allclose(dic["colatitude"], colatitude)
+    assert isinstance(reg_grid, RegularGrid)
+    assert np.allclose(reg_grid.azimuth, azimuth)
+    assert np.allclose(reg_grid.colatitude, colatitude)
 
 
 @pytest.mark.parametrize("n_az, n_co", [(36, 12), (72, 11), (360, 180)])
@@ -488,27 +539,40 @@ def test_detect_grid_point_duplicate(n_az, n_co):
     clin[i] = clin[i + 1]
     alin[i] = alin[i + 1]
 
-    dic = _detect_regular_grid(alin, clin)
+    grid = GridSphere(spherical_points=np.array((alin, clin)))
+    reg_grid = _detect_regular_grid(grid)
 
     # should fail because this is not a grid
-    assert dic is None
+    assert reg_grid is None
 
 
 if __name__ == "__main__":
     # generate the test files for regression testing
-    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--save", action="store_true", help="save the signal as a reference"
+    )
+    parser.add_argument(
+        "--plot", action="store_true", help="plot the generated signals"
+    )
+    args = parser.parse_args()
+
     download_sofa_files(verbose=True)
+
     for params in SOFA_ONE_SIDE_PARAMETERS:
-        new_params = params[:-1] + (True,)
+        new_params = params[:-2] + (args.save, args.plot)
         test_sofa_one_side(*new_params)
+
     for params in SOFA_TWO_SIDES_PARAMETERS:
-        new_params = params[:-1] + (True,)
+        new_params = params[:-2] + (args.save, args.plot)
         test_sofa_two_sides(*new_params)
+
     for params in SOFA_CARDIOID_PARAMETERS:
-        new_params = params[:-1] + (True,)
+        new_params = params[:-2] + (args.save, args.plot)
         test_sofa_and_cardioid(*new_params)
+
     for params in PINV_PARAMETERS:
         test_weighted_pinv(*params)
-    """
+
     for p in [(36, 12), (72, 11), (360, 180)]:
         test_detect_grid_irregular_colatitude(*p)

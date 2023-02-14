@@ -63,6 +63,7 @@ We can also use the objects separately.
 
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
 from scipy.fft import fft, fftfreq
@@ -104,6 +105,7 @@ dir_obj_Emic = DIRPATRir(
     path=path_Eigenmic_file,
     DIRPAT_pattern_enum="EM_32_9",
     fs=16000,
+    no_points_on_fibo_sphere=0,
 )
 
 dir_obj_Cmic = CardioidFamily(
@@ -170,8 +172,8 @@ all_materials = {
 room = pra.ShoeBox(
     room_dim,
     fs=16000,
-    max_order=2,
-    materials=pra.Material(0.99),
+    max_order=20,
+    materials=pra.Material(0.5),
     air_absorption=True,
     ray_tracing=False,
     min_phase=False,
@@ -190,7 +192,20 @@ dir_mic.set_orientation(54, 73)
 room.compute_rir()
 room.plot_rir(FD=True)
 
-dir_mic.obj_open_sofa_inter.plot_new(freq_bin=50, depth=True)
+# print(dir_mic.obj_open_sofa_inter.freq_angles_fft.shape)
+# dir_mic.obj_open_sofa_inter.interpolate = False
+
+fig = plt.figure()
+for idx, fb in enumerate(range(44)):
+    if idx >= 5 * 10:
+        break
+    ax = fig.add_subplot(5, 10, idx + 1, projection="3d")
+    dir_mic.obj_open_sofa_inter.plot_new(freq_bin=fb, ax=ax, depth=True)
+    # ax.set_xticks([])
+    # ax.set_yticks([])
+    # ax.set_zticks([])
+    ax.set_title(idx)
+plt.show()
 
 
 rir_1_0 = room.rir[0][0]

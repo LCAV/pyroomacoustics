@@ -13,14 +13,14 @@ import math
 from timeit import default_timer as timer
 
 from scipy.fft import fft, fftfreq, ifft
-from scipy.signal import decimate
-from scipy.spatial import KDTree, cKDTree, SphericalVoronoi
 from scipy.interpolate import griddata
-from .utilities import requires_matplotlib
-from .doa import fibonnaci_spherical_sampling, spher2cart, cart2spher
+from scipy.signal import decimate
+from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
-# from numpy import linalg as LA
-# from scipy.signal import find_peaks
+from .doa import GridSphere, cart2spher, fibonnaci_spherical_sampling, spher2cart
+from .utilities import requires_matplotlib
+
+RegularGrid = collections.namedtuple("RegularGrid", ["azimuth", "colatitude"])
 
 
 def fibonacci_sphere(samples):
@@ -53,33 +53,30 @@ def fibonacci_sphere(samples):
     x = np.cos(theta) * radius
     z = np.sin(theta) * radius
 
-    return np.column_stack([x, y, z])
+    return np.array([x, y, z])
 
 
-def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
+def cal_sph_basis(theta, phi, degree):  # theta_target,phi_target
     """
-     Calculate a spherical basis matrix
+    Calculate a spherical basis matrix
 
-     Parameters
-     -----------
-     theta: array_like
-        Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
-     phi: array_like
-        Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
-     degree:(int)
-        spherical harmonic degree
-     no_of_nodes: (int)
-        Length (theta)
+    Parameters
+    -----------
+    theta: array_like
+       Phi (Azimuth) spherical coordinates of the SOFA file / fibonacci sphere
+    phi: array_like
+       Theta (Colatitude) spherical coordinates of the SOFA file / fibonacci sphere
+    degree:(int)
+       spherical harmonic degree
 
-
-     Return
-    --------
-
+    Return
+    ------
     Ysh (np.array) shape(Ysh) = no_of_nodes * (degree + 1)**2
         Spherical harmonics basis matrix
 
     """
 
+    no_of_nodes = theta.shape[0]
     Ysh = np.zeros((len(theta), (degree + 1) ** 2), dtype=np.complex_)
 
     ny0 = 1
@@ -110,7 +107,7 @@ def cal_sph_basis(theta, phi, degree, no_of_nodes):  # theta_target,phi_target
     return Ysh
 
 
-def _detect_regular_grid(azimuth, colatitude):
+def _detect_regular_grid(grid):
     """
     This function checks that the linearized azimuth/colatitude where sampled
     from a regular grid.
@@ -132,29 +129,27 @@ def _detect_regular_grid(azimuth, colatitude):
         of the grid, if the points form a grid.
         Returns `None` if the points do not form a grid.
     """
-    azimuth_unique = np.unique(azimuth)
-    colatitude_unique = np.unique(colatitude)
+    azimuth_unique = np.unique(grid.azimuth)
+    colatitude_unique = np.unique(grid.colatitude)
     regular_grid = None
-    if len(azimuth_unique) * len(colatitude_unique) == azimuth.shape[0]:
+    if len(azimuth_unique) * len(colatitude_unique) == len(grid):
         # check that the azimuth are uniformly spread
         az_loop = np.insert(
-            azimuth_unique, azimuth_unique.shape[0], azimuth_unique[0] + 2 * np.pi
+            azimuth_unique, len(azimuth_unique), azimuth_unique[0] + 2 * np.pi
         )
         delta_az = np.diff(az_loop)
         if np.allclose(delta_az, 2 * np.pi / len(azimuth_unique)):
-
             # remake the grid from the unique points and check
             # that it matches the original
             A, C = np.meshgrid(azimuth_unique, colatitude_unique)
             regrid = np.column_stack([A.flatten(), C.flatten()])
             regrid = regrid[np.lexsort(regrid.T), :]
-            ogrid = np.column_stack([azimuth, colatitude])
+            ogrid = np.column_stack([grid.azimuth, grid.colatitude])
             ogrid = ogrid[np.lexsort(ogrid.T), :]
             if np.allclose(regrid, ogrid):
-                regular_grid = {
-                    "azimuth": azimuth_unique,
-                    "colatitude": colatitude_unique,
-                }
+                regular_grid = RegularGrid(
+                    azimuth=azimuth_unique, colatitude=colatitude_unique
+                )
 
     return regular_grid
 
@@ -236,6 +231,94 @@ def calculation_pinv_voronoi_cells_general(Ysh, points):
     )  # rcond is inverse of the condition number
 
     return _weighted_pinv(w_, Ysh), w_
+
+
+def spherical_interpolation(
+    grid,
+    impulse_responses,
+    new_grid,
+    spherical_harmonics_order=12,
+    axis=-2,
+    nfft=None,
+):
+    """
+    Parameters
+    ----------
+    grid: pyroomacoustics.doa.GridSphere
+        The grid of the measurements
+    impulse_responses: numpy.ndarray, (..., n_measurements, ..., n_samples)
+        The impulse responses to interpolate, the last axis is time and one other
+        axis should have dimension matching the length of the grid. By default,
+        it is assumed to be second from the end, but can be specified with the
+        `axis` argument.
+    new_grid: pyroomacoustics.doa.GridSphere
+        Grid of points at which to interpolate
+    spherical_harmonics_order: int
+        The order of spherical harmonics to use for interpolation
+    axis: int
+        The axis of the grid in the impulse responses array
+    nfft: int
+        The length of the FFT to use for the interpolation (default ``n_samples``)
+    """
+    ir = np.swapaxes(impulse_responses, axis, -2)
+    if nfft is None:
+        nfft = ir.shape[-1]
+
+    if len(grid) != ir.shape[-2]:
+        raise ValueError(
+            "The length of the grid should be the same as the number of impulse"
+            f"responses provide (grid={len(grid)}, impulse response={ir.shape[-2]})"
+        )
+
+    # Calculate spherical basis for the original grid
+    Ysh = cal_sph_basis(grid.azimuth, grid.colatitude, spherical_harmonics_order)
+
+    # Calculate spherical basis for the target grid (fibonacci grid)
+    Ysh_fibo = cal_sph_basis(
+        new_grid.azimuth,
+        new_grid.colatitude,
+        spherical_harmonics_order,
+    )
+
+    # this will check if the points are on a regular grid.
+    # If they are, then the azimuths and colatitudes of the grid
+    # are returned
+    regular_grid = _detect_regular_grid(grid)
+
+    # calculate pinv and voronoi cells for least square solution for the whole grid
+    if regular_grid is not None:
+        Ysh_tilda_inv, w_ = calculation_pinv_voronoi_cells(
+            Ysh,
+            grid.colatitude,
+            regular_grid.colatitude,
+            len(regular_grid.azimuth),
+        )
+    else:
+        Ysh_tilda_inv, w_ = calculation_pinv_voronoi_cells_general(
+            Ysh, grid.cartesian.T
+        )
+
+    # Do the interpolation in the frequency domain
+
+    # shape: (..., n_measurements, n_samples // 2 + 1)
+    tf = np.fft.rfft(ir, axis=-1, n=nfft)
+
+    g_tilda = w_[:, None] * tf
+
+    gamma_full_scale = np.matmul(Ysh_tilda_inv, g_tilda)
+
+    interpolated_original_grid = np.fft.irfft(
+        np.matmul(Ysh, gamma_full_scale), n=nfft, axis=-1
+    )
+    interpolated_target_grid = np.fft.irfft(
+        np.matmul(Ysh_fibo, gamma_full_scale), n=nfft, axis=-1
+    )
+
+    # restore the order of the axes
+    interpolated_target_grid = np.swapaxes(interpolated_target_grid, -2, axis)
+    interpolated_original_grid = np.swapaxes(interpolated_original_grid, -2, axis)
+
+    return interpolated_target_grid, interpolated_original_grid
 
 
 def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
@@ -337,8 +420,6 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
         axis=-1,
     )
 
-    no_of_nodes, samples = msr.shape
-
     is_dirpat = path.name in [
         "Soundfield_ST450_CUBE.sofa",
         "AKG_c480_c414_CUBE.sofa",
@@ -371,18 +452,10 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
         # it looks like the data is using elevation format
         colatitude = np.pi / 2.0 - colatitude
 
-    # Calculate no of latitudes and longitudes in the grid
-    regular_grid = _detect_regular_grid(azimuth, colatitude)
+    # encapsulate the spherical grid points in a grid object
+    grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
 
-    return (
-        azimuth,
-        colatitude,
-        distance,
-        regular_grid,
-        msr,
-        no_of_nodes,
-        samples,
-    )
+    return grid, distance, msr
 
 
 class DIRPATInterpolate:
@@ -419,10 +492,8 @@ class DIRPATInterpolate:
         fs,
         DIRPAT_pattern_enum=None,
         source=False,
-        interpolate=True,
-        no_of_points_fibo_sphere=1000,
-        azimuth_simulation=0,
-        colatitude_simulation=0,
+        interp_order=None,
+        interp_n_points=1000,
     ):
         self.path = path
         self.source = source
@@ -430,13 +501,9 @@ class DIRPATInterpolate:
         self.fs = fs
 
         (
-            self.phi_sofa,  # azimuth
-            self.theta_sofa,  # colatitude
-            self.r_sofa,
-            self.regular_grid,
-            self.sofa_msr_fir,
-            self.no_of_nodes,
-            self.samples_size_ir,
+            self.grid_sofa,  # azimuth
+            self.distance_sofa,
+            self.impulse_responses_sofa,
         ) = open_sofa_file(
             path=self.path,
             measurement_id=DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source),
@@ -444,216 +511,74 @@ class DIRPATInterpolate:
             fs=self.fs,
         )
 
-        self.sofa_x, self.sofa_y, self.sofa_z = spher2cart(
-            self.phi_sofa, self.theta_sofa, self.r_sofa
-        )
+        self.interpolation_order = interp_order
 
-        self.interpolate = interpolate
-
-        # Rotation matrix
-
-        n_c = colatitude_simulation
-        n_a = azimuth_simulation
-        R_y = np.array(
-            [[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]]
-        )
-        R_z = np.array(
-            [[np.cos(n_a), -np.sin(n_a), 0], [np.sin(n_a), np.cos(n_a), 0], [0, 0, 1]]
-        )
-        res = np.matmul(R_z, R_y)
-
-        if interpolate:
-            self.degree = 12
-
-            self.points = np.array(fibonacci_sphere(samples=no_of_points_fibo_sphere))
-            # self.points = fibonnaci_spherical_sampling(no_of_points_fibo_sphere).T
-            self.phi_fibo, self.theta_fibo, self.r_fibo = cart2spher(self.points.T)
-
-            # All the computations are in radians for phi = range (0, 2*np.pi) and theta = range (0, np.pi)
-            # Just for numpy, the function accepts phi and theta in the opposite way
-
-            self.theta_sofa_np = self.phi_sofa
-            self.phi_sofa_np = self.theta_sofa
-            self.Ysh = cal_sph_basis(
-                self.theta_sofa_np, self.phi_sofa_np, self.degree, self.no_of_nodes
+        if interp_order is not None:
+            self.grid = GridSphere(
+                cartesian_points=fibonacci_sphere(samples=interp_n_points)
             )
 
-            # Calculate spherical basis for the target grid (fibonacci grid)
-            self.theta_fibo_np = self.phi_fibo
-            self.phi_fibo_np = self.theta_fibo
-
-            self.Ysh_fibo = cal_sph_basis(
-                self.theta_fibo_np,
-                self.phi_fibo_np,
-                self.degree,
-                no_of_points_fibo_sphere,
+            self.impulse_responses, _ = spherical_interpolation(
+                self.grid_sofa,
+                self.impulse_responses_sofa,
+                self.grid,
+                spherical_harmonics_order=self.interpolation_order,
+                axis=-2,
             )
-
-            # calculate pinv and voronoi cells for least square solution for the whole grid
-            if self.regular_grid is not None:
-                self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells(
-                    self.Ysh,
-                    self.theta_sofa,
-                    self.regular_grid["colatitude"],
-                    len(self.regular_grid["azimuth"]),
-                )
-            else:
-                points = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
-                points /= np.linalg.norm(points, axis=1, keepdims=True)
-                self.Ysh_tilda_inv, self.w_ = calculation_pinv_voronoi_cells_general(
-                    self.Ysh, points
-                )
-
-            self.freq_angles_fft = np.zeros(
-                (self.no_of_nodes, self.samples_size_ir // 2 + 1), dtype=np.complex_
-            )  # N-point FFT
-            self.sh_coeffs_expanded_original_grid = 0
-            self.sh_coeffs_expanded_target_grid = 0
-
-            # Rotate the target grid (Fibonacci grid)
-
-            self.rotated_fibo_points = np.matmul(res, self.points.T)
-
-            (
-                self.rotated_fibo_phi,
-                self.rotated_fibo_theta,
-                self.rotated_fibo_r,
-            ) = cart2spher(self.rotated_fibo_points)
-            self.nn_kd_tree_rotated_fibo_grid = cKDTree(
-                np.hstack(
-                    (
-                        self.rotated_fibo_phi.reshape(-1, 1),
-                        self.rotated_fibo_theta.reshape(-1, 1),
-                    )
-                )
-            )
-
-            self.cal_spherical_coeffs_grid_and_interpolate()
 
         else:
-            self.freq_angles_fft = np.zeros(
-                (self.no_of_nodes, self.samples_size_ir), dtype=np.complex_
-            )
-            for i in range(self.no_of_nodes):
-                self.freq_angles_fft[i, :] = fft(self.sofa_msr_fir[i, :])
+            self.impulse_responses = self.impulse_responses_sofa
+            self.grid = self.grid_sofa
 
-            self.points = np.empty((self.phi_sofa.shape[0], 3))
-            self.points[:, 0] = self.sofa_x
-            self.points[:, 1] = self.sofa_y
-            self.points[:, 2] = self.sofa_z
+        self.original_grid = self.grid
+        self._build_kdtree()
 
-            self.rotated_sofa_points = np.matmul(res, self.points.T)
-
-            (
-                self.rotated_sofa_phi,
-                self.rotated_sofa_theta,
-                self.rotated_sofa_r,
-            ) = cart2spher(self.rotated_sofa_points)
-
-            # print(np.max(self.rotated_sofa_phi), np.min(self.rotated_sofa_phi))
-            self.nn_kd_tree_rotated_sofa_grid = cKDTree(
-                np.hstack(
-                    (
-                        self.rotated_sofa_phi.reshape(-1, 1),
-                        self.rotated_sofa_theta.reshape(-1, 1),
-                    )
+    def _build_kdtree(self):
+        self.kdtree = cKDTree(
+            np.column_stack(
+                (
+                    self.grid.azimuth,
+                    self.grid.colatitude,
                 )
             )
-
-    def cal_spherical_coeffs_grid_and_interpolate(self):
-        """
-        Weighted least square solution to calculate discrete sphreical harmonic coeffs , Using the spherical harmonic coeffs
-        interpolation is done on fibonacci sphere
-        """
-
-        # freq_angles_fft = np.zeros((self.no_of_nodes, self.samples_size_ir// 2), dtype=np.complex_)
-
-        # Take n-point dft of the FIR's on the grid
-        self.freq_angles_fft[:] = np.fft.rfft(self.sofa_msr_fir, axis=-1)
-
-        g_tilda = self.w_[:, None] * self.freq_angles_fft
-
-        # Shape w_ : (540,) or (480,)
-        # Shape g_tilda : (480*256),(480*128),(540*2048),(540*1048),(540,683)
-
-        gamma_full_scale = np.matmul(
-            self.Ysh_tilda_inv, g_tilda
-        )  # Coeffs for every freq band , for all the nodes present in the sphere
-
-        # Shape gamma_full_scale : ((deg+1)^2 * 256 | 128 | 2048 | 1024 | 683) Coeffs for every frequency bin
-
-        self.sh_coeffs_expanded_original_grid = np.fft.irfft(
-            np.matmul(self.Ysh, gamma_full_scale), n=self.samples_size_ir, axis=-1
-        )
-        self.sh_coeffs_expanded_target_grid = np.fft.irfft(
-            np.matmul(self.Ysh_fibo, gamma_full_scale), n=self.samples_size_ir, axis=-1
         )
 
-    def cal_index_knn(self, azimuth, colatitude):
+    def nearest_neighbour(self, azimuth, colatitude):
         """
         Calculates nearest neighbour for all the image source for the source and the receiver
-        This method exist so that we don't have to query each image source , nearest neighbour for all the incoming angles (mic) and departure angles(sources)
-        are calculated at once.
+
+        Retrives the FIR in frequency resolution according to the given index
+        parameter. Index is found using query on kdtree based on incoming or
+        outgoing angles of the image sources
+
         Parameters
         ----------
-
         azimuth: (np.ndarray)
-             list of azimuth angles [-pi,pi]
+             list of azimuth angles in radians [0,2 * pi]
         colatitude: (np.ndarray)
-            list of colatitude angles [0,pi]
+            list of colatitude angles in radians [0,pi]
 
-        Return : (np.ndarray)
+        Returns
         -------
-          Return nearest index on the grid based on the input angles using kDtree
-        """
-
-        longitude = azimuth.reshape(-1, 1)
-        latitude = colatitude.reshape(-1, 1)
-
-        start = timer()
-        if self.interpolate:
-            dd, ii = self.nn_kd_tree_rotated_fibo_grid.query(
-                np.hstack((longitude, latitude))
-            )
-        else:
-            dd, ii = self.nn_kd_tree_rotated_sofa_grid.query(
-                np.hstack((longitude, latitude))
-            )  # Query on the rotated set of points
-        end = timer()
-        # print("Time taken For Query Once ", end - start)
-        return ii
-
-    def neareast_neighbour(self, index):
-        """
-        Retrives the FIR in frequency resolution according to the given index parameter. Index is found using query on kdtree based on incoming or outgoing angles of the image sources
-
-        Parameters
-        -------------------------
-        index : (np.ndarray)
-            Index of the points on the grid
-
-        :Return (np.ndarray) [Coeffs of DFT]
-        -------------------------
+        np.ndarray
             FIR in frequency resolution for the particular query angle.
-
         """
+        _, index = self.kdtree.query(np.column_stack((azimuth, colatitude)))
+        return self.impulse_responses[index, :]
 
-        if self.interpolate:
-            # dd, ii = self.nn_kd_tree_rotated_fibo_grid.query([longitude, latitude])  #Query on the rotated set of points
-            return self.sh_coeffs_expanded_target_grid[index, :]
-        else:
-            # dd, ii = self.nn_kd_tree_rotated_sofa_grid.query([longitude, latitude])  # Query on the rotated set of points
-            return self.sofa_msr_fir[index, :]
-
-    def change_orientation(self, azimuth_change, colatitude_change):
+    def change_orientation(self, azimuth_change, colatitude_change, degrees=True):
         """
         Change of rotation without repeating the whole process only works for the sofa file where we are doing interpolation on fibo sphere
         Made for IWAENC.
-
         """
 
-        n_c = np.radians(colatitude_change)
-        n_a = np.radians(azimuth_change)
+        if degrees:
+            n_c = np.radians(colatitude_change)
+            n_a = np.radians(azimuth_change)
+        else:
+            n_c = colatitude_change
+            n_a = azimuth_change
+
         R_y = np.array(
             [[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]]
         )
@@ -662,22 +587,11 @@ class DIRPATInterpolate:
         )
         res = np.matmul(R_z, R_y)
 
-        self.rotated_fibo_points = np.matmul(res, self.points.T)
-
-        (
-            self.rotated_fibo_phi,
-            self.rotated_fibo_theta,
-            self.rotated_fibo_r,
-        ) = cart2spher(self.rotated_fibo_points)
-
-        self.nn_kd_tree_rotated_fibo_grid = cKDTree(
-            np.hstack(
-                (
-                    self.rotated_fibo_phi.reshape(-1, 1),
-                    self.rotated_fibo_theta.reshape(-1, 1),
-                )
-            )
+        # rotate the grid and re-build the KD-tree
+        self.grid = GridSphere(
+            cartesian_points=np.matmul(res, self.original_grid.cartesian)
         )
+        self._build_kdtree()
 
     def plot(self, freq_bin=0):
         """
@@ -696,9 +610,9 @@ class DIRPATInterpolate:
         if self.interpolate:
             ax1 = fg.add_subplot(1, 4, 1, projection="3d")
             ax_ = ax1.scatter(
-                self.sofa_x,
-                self.sofa_y,
-                self.sofa_z,
+                self.grid_sofa.x,
+                self.grid_sofa.y,
+                self.grid_sofa.z,
                 c=np.abs(self.freq_angles_fft[:, freq_bin]),
                 s=100,
             )
@@ -772,18 +686,20 @@ class DIRPATInterpolate:
         plt.show()
 
     @requires_matplotlib
-    def plot_new(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
+    def plot_new(
+        self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None, original=False
+    ):
         import matplotlib.pyplot as plt
         from matplotlib import cm
 
-        if self.interpolate:
-            cart = self.points
+        if original:
+            cart = self.grid_sofa.cartesian.T
             length = np.abs(
-                np.fft.rfft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
+                np.fft.rfft(self.impulse_responses_sofa, axis=-1)[:, freq_bin]
             )
         else:
-            cart = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
-            length = np.abs(self.freq_angles_fft[:, freq_bin])
+            cart = self.grid.cartesian.T
+            length = np.abs(np.fft.rfft(self.impulse_responses, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
         g = np.linspace(-1, 1, n_grid)
@@ -792,12 +708,20 @@ class DIRPATInterpolate:
         )
         # multiply by 0.99 to make sure the interpolation grid is inside the convex hull
         # of the original points, otherwise griddata returns NaN
-        X = np.cos(AZ) * np.sin(COL) * 0.99
-        Y = np.sin(AZ) * np.sin(COL) * 0.99
-        Z = np.cos(COL) * 0.99
-        grid = np.column_stack((X.flatten(), Y.flatten(), Z.flatten()))
-        interp_len = griddata(cart, length, grid, method="linear")
-        V = interp_len.reshape((n_grid // 2, n_grid))
+        shrink_factor = 0.99
+        while True:
+            X = np.cos(AZ) * np.sin(COL) * 0.95
+            Y = np.sin(AZ) * np.sin(COL) * 0.95
+            Z = np.cos(COL) * 0.95
+            grid = np.column_stack((X.flatten(), Y.flatten(), Z.flatten()))
+            interp_len = griddata(cart, length, grid, method="linear")
+            V = interp_len.reshape((n_grid // 2, n_grid))
+
+            # there may be some nan
+            if np.any(np.isnan(V)):
+                shrink_factor *= 0.99
+            else:
+                break
 
         if ax is None:
             fig = plt.figure()
