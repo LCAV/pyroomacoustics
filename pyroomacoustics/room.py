@@ -954,11 +954,9 @@ class Room(object):
         # initialize the attribute for the impulse responses
         self.rir = None
 
-        # self.sh_deg = 12
-        # self.print_filter = 0
-
         self.min_phase = min_phase
 
+        
     def _init_room_engine(self, *args):
         args = list(args)
 
@@ -2117,6 +2115,7 @@ class Room(object):
             n_sources = self.room_engine.image_source_model(source.position)
 
             if n_sources > 0:  # Number of image source that are generated
+
                 # Copy to python managed memory
 
                 source.images = (
@@ -2365,7 +2364,6 @@ class Room(object):
                         if self.simulator_state["rt_needed"]:
                             if is_multi_band:
                                 seq_bp = self.octave_bands.analysis(seq, band=b)
-
                             else:
                                 seq_bp = seq.copy()
 
@@ -2398,7 +2396,6 @@ class Room(object):
                             ir_loc[fdl2 : fdl2 + N] += seq_bp
 
                         # keep for further processing
-
                         rir_bands.append(
                             ir_loc
                         )  # Impulse response for every octave band for each microphone

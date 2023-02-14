@@ -3,6 +3,7 @@
 import numpy as np
 
 cimport cython
+from libc.math cimport ceil, floor
 
 from scipy.fft import fft, ifft
 

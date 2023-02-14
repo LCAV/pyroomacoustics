@@ -3,6 +3,7 @@ import sys
 from enum import Enum
 from pathlib import Path
 
+
 import numpy as np
 
 from pyroomacoustics.doa import spher2cart
