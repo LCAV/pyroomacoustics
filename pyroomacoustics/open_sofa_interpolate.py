@@ -292,6 +292,99 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
     return id
 
 
+def open_sofa_file(path, measurement_id, is_source, fs=16000):
+    # Memo for notation of SOFA dimensions
+    # From: https://www.sofaconventions.org/mediawiki/index.php/SOFA_conventions#AnchorDimensions
+    # M 	number of measurements 	integer >0
+    # R 	number of receivers or harmonic coefficients describing receivers 	integer >0
+    # E 	number of emitters or harmonic coefficients describing emitters 	integer >0
+    # N 	number of data samples describing one measurement 	integer >0
+    # S 	number of characters in a string 	integer ≥0
+    # I 	singleton dimension, constant 	always 1
+    # C 	coordinate triplet, constant 	always 3
+
+    # Open DirPat database
+    if not has_sofa:
+        raise ValueError(
+            "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
+        )
+
+    file_sofa = sofa.Database.open(path)
+
+    # read the mesurements
+    IR_S = file_sofa.Data.IR.get_values()
+
+    if is_source:
+        # Receiver positions
+        pos = file_sofa.Receiver.Position.get_values()
+        pos_units = file_sofa.Receiver.Position.Units.split(",")
+
+        # Look for source of specific type requested by user
+        msr = IR_S[measurement_id, :, :]
+
+    else:
+        # Source positions
+        pos = file_sofa.Source.Position.get_values()
+        pos_units = file_sofa.Source.Position.Units.split(",")
+
+        # Look for receiver of specific type requested by user
+        msr = IR_S[:, measurement_id, :]
+
+    # downsample the fir filter.
+    msr = decimate(
+        msr,
+        int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+        axis=-1,
+    )
+
+    no_of_nodes, samples = msr.shape
+
+    is_dirpat = path.name in [
+        "Soundfield_ST450_CUBE.sofa",
+        "AKG_c480_c414_CUBE.sofa",
+        "Oktava_MK4012_CUBE.sofa",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    ]
+    if is_dirpat:
+        # There is a bug in the DIRPAT measurement files where the array of
+        # measurement locations were not flattened correctly
+        pos_units[0:1] = "radian"
+        if path.name == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
+            pos_RS = np.reshape(pos, [36, -1, 3])
+            pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
+        else:
+            pos_RS = np.reshape(pos, [30, -1, 3])
+            pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
+
+    azimuth = pos[:, 0]
+    colatitude = pos[:, 1]
+    distance = pos[:, 2]
+
+    # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
+    if not is_dirpat:
+        if pos_units[0] == "degree":
+            azimuth = np.deg2rad(azimuth)
+        if pos_units[1] == "degree":
+            colatitude = np.deg2rad(colatitude)
+
+    if np.any(colatitude < 0.0):
+        # it looks like the data is using elevation format
+        colatitude = np.pi / 2.0 - colatitude
+
+    # Calculate no of latitudes and longitudes in the grid
+    regular_grid = _detect_regular_grid(azimuth, colatitude)
+
+    return (
+        azimuth,
+        colatitude,
+        distance,
+        regular_grid,
+        msr,
+        no_of_nodes,
+        samples,
+    )
+
+
 class DIRPATInterpolate:
 
     """
@@ -332,9 +425,7 @@ class DIRPATInterpolate:
         colatitude_simulation=0,
     ):
         self.path = path
-        self.id = DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source)
         self.source = source
-        self.DIRPAT_pattern_enum = DIRPAT_pattern_enum
 
         self.fs = fs
 
@@ -346,7 +437,12 @@ class DIRPATInterpolate:
             self.sofa_msr_fir,
             self.no_of_nodes,
             self.samples_size_ir,
-        ) = self.open_sofa_database(path=self.path, fs=self.fs)
+        ) = open_sofa_file(
+            path=self.path,
+            measurement_id=DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source),
+            is_source=source,
+            fs=self.fs,
+        )
 
         self.sofa_x, self.sofa_y, self.sofa_z = spher2cart(
             self.phi_sofa, self.theta_sofa, self.r_sofa
@@ -409,7 +505,7 @@ class DIRPATInterpolate:
                 )
 
             self.freq_angles_fft = np.zeros(
-                (self.no_of_nodes, self.samples_size_ir), dtype=np.complex_
+                (self.no_of_nodes, self.samples_size_ir // 2 + 1), dtype=np.complex_
             )  # N-point FFT
             self.sh_coeffs_expanded_original_grid = 0
             self.sh_coeffs_expanded_target_grid = 0
@@ -441,12 +537,12 @@ class DIRPATInterpolate:
             for i in range(self.no_of_nodes):
                 self.freq_angles_fft[i, :] = fft(self.sofa_msr_fir[i, :])
 
-            cart_points = np.empty((3, self.phi_sofa.shape[0]))
-            cart_points[0, :] = self.sofa_x
-            cart_points[1, :] = self.sofa_y
-            cart_points[2, :] = self.sofa_z
+            self.points = np.empty((self.phi_sofa.shape[0], 3))
+            self.points[:, 0] = self.sofa_x
+            self.points[:, 1] = self.sofa_y
+            self.points[:, 2] = self.sofa_z
 
-            self.rotated_sofa_points = np.matmul(res, cart_points)
+            self.rotated_sofa_points = np.matmul(res, self.points.T)
 
             (
                 self.rotated_sofa_phi,
@@ -473,10 +569,7 @@ class DIRPATInterpolate:
         # freq_angles_fft = np.zeros((self.no_of_nodes, self.samples_size_ir// 2), dtype=np.complex_)
 
         # Take n-point dft of the FIR's on the grid
-        for i in range(self.no_of_nodes):
-            self.freq_angles_fft[i, :] = fft(
-                self.sofa_msr_fir[i, :]
-            )  # [:(self.samples_size_ir // 2)] #self.samples_size_ir//2
+        self.freq_angles_fft[:] = np.fft.rfft(self.sofa_msr_fir, axis=-1)
 
         g_tilda = self.w_[:, None] * self.freq_angles_fft
 
@@ -489,97 +582,11 @@ class DIRPATInterpolate:
 
         # Shape gamma_full_scale : ((deg+1)^2 * 256 | 128 | 2048 | 1024 | 683) Coeffs for every frequency bin
 
-        self.sh_coeffs_expanded_original_grid = np.fft.ifft(
-            np.matmul(self.Ysh, gamma_full_scale), axis=-1
+        self.sh_coeffs_expanded_original_grid = np.fft.irfft(
+            np.matmul(self.Ysh, gamma_full_scale), n=self.samples_size_ir, axis=-1
         )
-        self.sh_coeffs_expanded_target_grid = np.fft.ifft(
-            np.matmul(self.Ysh_fibo, gamma_full_scale), axis=-1
-        )
-
-    def open_sofa_database(self, path, fs=16000):
-        # Open DirPat database
-        if not has_sofa:
-            raise ValueError(
-                "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
-            )
-
-        file_sofa = sofa.Database.open(path)
-
-        # read the mesurements
-        IR_S = file_sofa.Data.IR.get_values()
-
-        if self.source == True:
-            # Receiver positions
-            pos = file_sofa.Receiver.Position.get_values()
-            pos_units = file_sofa.Receiver.Position.Units.split(",")
-
-            # Look for source of specific type requested by user
-            msr = IR_S[
-                self.id, :, :
-            ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
-
-        else:
-            # Source positions
-            pos = file_sofa.Source.Position.get_values()
-            pos_units = file_sofa.Source.Position.Units.split(",")
-
-            # Look for receiver of specific type requested by user
-            msr = IR_S[
-                :, self.id, :
-            ]  # First receiver #Shape ( no_sources * no_measurement_points * no_samples_IR)
-
-        # downsample the fir filter.
-        msr = decimate(
-            msr,
-            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-            axis=-1,
-        )
-
-        no_of_nodes, samples = msr.shape
-
-        is_dirpat = path.name in [
-            "Soundfield_ST450_CUBE.sofa",
-            "AKG_c480_c414_CUBE.sofa",
-            "Oktava_MK4012_CUBE.sofa",
-            "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-        ]
-        if is_dirpat:
-            # There is a bug in the DIRPAT measurement files where the array of
-            # measurement locations were not flattened correctly
-            pos_units[0:1] = "radian"
-            if path.name == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
-                pos_RS = np.reshape(pos, [36, -1, 3])
-                pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
-            else:
-                pos_RS = np.reshape(pos, [30, -1, 3])
-                pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
-
-        azimuth = pos[:, 0]
-        colatitude = pos[:, 1]
-        distance = pos[:, 2]
-
-        # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
-        if not is_dirpat:
-            if pos_units[0] == "degree":
-                azimuth = np.deg2rad(azimuth)
-            if pos_units[1] == "degree":
-                colatitude = np.deg2rad(colatitude)
-
-        if np.any(colatitude < 0.0):
-            # it looks like the data is using elevation format
-            colatitude = np.pi / 2.0 - colatitude
-
-        # Calculate no of latitudes and longitudes in the grid
-        regular_grid = _detect_regular_grid(azimuth, colatitude)
-
-        return (
-            azimuth,
-            colatitude,
-            distance,
-            regular_grid,
-            msr,
-            no_of_nodes,
-            samples,
+        self.sh_coeffs_expanded_target_grid = np.fft.irfft(
+            np.matmul(self.Ysh_fibo, gamma_full_scale), n=self.samples_size_ir, axis=-1
         )
 
     def cal_index_knn(self, azimuth, colatitude):
@@ -772,7 +779,7 @@ class DIRPATInterpolate:
         if self.interpolate:
             cart = self.points
             length = np.abs(
-                fft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
+                np.fft.rfft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
             )
         else:
             cart = np.array([self.sofa_x, self.sofa_y, self.sofa_z]).T
@@ -808,7 +815,5 @@ class DIRPATInterpolate:
         surf = ax.plot_surface(
             X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
         )
-
-        plt.show()
 
         return ax
