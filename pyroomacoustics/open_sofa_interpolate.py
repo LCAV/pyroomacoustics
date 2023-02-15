@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import scipy
 
@@ -10,14 +11,15 @@ except ImportError:
 
 import collections
 import math
-from timeit import default_timer as timer
 
 from scipy.fft import fft, fftfreq, ifft
 from scipy.interpolate import griddata
 from scipy.signal import decimate
 from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
+from .directivities import Directivity, DirectionVector
 from .doa import (
+    Grid,
     GridSphere,
     cart2spher,
     fibonnaci_spherical_sampling,
@@ -331,6 +333,7 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
     # C 	coordinate triplet, constant 	always 3
 
     # Open DirPat database
+    path = Path(path)
     if not has_sofa:
         raise ValueError(
             "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
@@ -358,11 +361,15 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
         msr = IR_S[:, measurement_id, :]
 
     # downsample the fir filter.
-    msr = decimate(
-        msr,
-        int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-        axis=-1,
-    )
+    fs_file = file_sofa.Data.SamplingRate.get_values()[0]
+    if fs is None:
+        fs = fs_file
+    elif fs != fs_file:
+        msr = decimate(
+            msr,
+            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+            axis=-1,
+        )
 
     is_dirpat = path.name in [
         "Soundfield_ST450_CUBE.sofa",
@@ -399,129 +406,52 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
     # encapsulate the spherical grid points in a grid object
     grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
 
-    return grid, distance, msr
+    return grid, distance, msr, fs
 
 
-class DIRPATInterpolate:
-
+class MeasuredDirectivity(Directivity):
     """
-    Intialization class performs the following functions
-    Open DIRPAT Files
-    Interpolate on fibonacci sphere
-    Rotate the pattern w.r.t to the given azimuth(phi) [-pi, pi] and colatitude(theta) [0,pi] defines the orientation of the source or a receiver
-    Reutrns response in the given direction w.r.t to the given angle of arrivals(microphones) / angle of departures(angle of departures)
+    A class to store directivity patterns obtained by measurements.
 
     Parameters
-    --------------
-    path : (string)
-        Path towards the specific DIRPAT file
-    fs  : (int)
-        Sampling frequency of the microphone or source FIR's filters , should be  <= simulation frequency
-    DIRPAT_pattern_enum :  (string)
-        The specific pattern in the DIRPAT files are associated with id's , presented in the github document
-    source  : (Boolean)
-        If the DIRPAT files represnts one of source or receiver's
-    interpolate  : (Boolean)
-        Interpolate the FIR filter or not
-    no_of_points_fibo_sphere  : (int)
-        How many points should be there on fibonnacci sphere
-    azimuth_simulation  , colatitude_simulation : (int)
-        Orientation of the source/mic in the simulation environment in degrees.
-
+    ----------
+    orientation: DirectionVector
+        The direction of where the directivity should point
+    grid: doa.Grid
+        The grid of unit vectors where the measurements were taken
+    impulse_responses: np.ndarray, (n_grid, n_ir)
+        The impulse responses corresponding to the grid points
+    fs: int
+        The sampling frequency of the impulse responses
     """
 
-    def __init__(
-        self,
-        path,
-        fs,
-        DIRPAT_pattern_enum=None,
-        source=False,
-        interp_order=None,
-        interp_n_points=1000,
-    ):
-        self.path = path
-        self.source = source
-
+    def __init__(self, orientation, grid, impulse_responses, fs):
+        super().__init__(orientation)
+        assert isinstance(grid, Grid)
+        self._original_grid = grid
+        self._irs = impulse_responses
         self.fs = fs
 
-        (
-            self.grid_sofa,  # azimuth
-            self.distance_sofa,
-            self.impulse_responses_sofa,
-        ) = open_sofa_file(
-            path=self.path,
-            measurement_id=DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source),
-            is_source=source,
-            fs=self.fs,
-        )
+        # set the initial orientation
+        self.set_orientation(self._orientation)
 
-        self.interpolation_order = interp_order
+    @property
+    def filter_len_ir(self):
+        """Length of the impulse response in samples"""
+        return self._irs.shape[-1]
 
-        if interp_order is not None:
-            self.grid = GridSphere(
-                cartesian_points=fibonacci_sphere(samples=interp_n_points)
-            )
-
-            self.impulse_responses, _ = spherical_interpolation(
-                self.grid_sofa,
-                self.impulse_responses_sofa,
-                self.grid,
-                spherical_harmonics_order=self.interpolation_order,
-                axis=-2,
-            )
-
-        else:
-            self.impulse_responses = self.impulse_responses_sofa
-            self.grid = self.grid_sofa
-
-        self.original_grid = self.grid
-        self._build_kdtree()
-
-    def _build_kdtree(self):
-        self.kdtree = cKDTree(
-            np.column_stack(
-                (
-                    self.grid.azimuth,
-                    self.grid.colatitude,
-                )
-            )
-        )
-
-    def nearest_neighbour(self, azimuth, colatitude):
+    def set_orientation(self, orientation):
         """
-        Calculates nearest neighbour for all the image source for the source and the receiver
-
-        Retrives the FIR in frequency resolution according to the given index
-        parameter. Index is found using query on kdtree based on incoming or
-        outgoing angles of the image sources
+        Set orientation of directivity pattern.
 
         Parameters
         ----------
-        azimuth: (np.ndarray)
-             list of azimuth angles in radians [0,2 * pi]
-        colatitude: (np.ndarray)
-            list of colatitude angles in radians [0,pi]
-
-        Returns
-        -------
-        np.ndarray
-            FIR in frequency resolution for the particular query angle.
+        orientation : DirectionVector
+            New direction for the directivity pattern.
         """
-        _, index = self.kdtree.query(np.column_stack((azimuth, colatitude)))
-        return self.impulse_responses[index, :]
-
-    def change_orientation(self, azimuth_change, colatitude_change, degrees=True):
-        """
-        Change of rotation without repeating the whole process only works for the sofa file where we are doing interpolation on fibo sphere
-        Made for IWAENC.
-        """
-
-        if degrees:
-            n_c = np.radians(colatitude_change)
-            n_a = np.radians(azimuth_change)
-        else:
-            n_c = colatitude_change
-            n_a = azimuth_change
+        assert isinstance(orientation, DirectionVector)
+        n_a = orientation.get_azimuth(degrees=False)
+        n_c = orientation.get_colatitude(degrees=False)
 
         R_y = np.array(
             [[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]]
@@ -532,118 +462,45 @@ class DIRPATInterpolate:
         res = np.matmul(R_z, R_y)
 
         # rotate the grid and re-build the KD-tree
-        self.grid = GridSphere(
-            cartesian_points=np.matmul(res, self.original_grid.cartesian)
+        self._grid = GridSphere(
+            cartesian_points=np.matmul(res, self._original_grid.cartesian)
         )
-        self._build_kdtree()
+        # create the kd-tree
+        self._kdtree = cKDTree(self._grid.spherical.T)
 
-    def plot(self, freq_bin=0):
+    def get_response(
+        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
+    ):
         """
-        Plot 3D plots of the SOFA file , interpolated fibonnacci sphere and roatated fibo and sofa spheres.
+        Get response for provided angles and frequency.
 
-        Display gain for a specified freq bin
-
-
-        :Parameter (int) freq_bin:Bin number
-
+        Parameters
+        ----------
+        azimuth: np.ndarray, (n_points,)
+            The azimuth of the desired responses
+        colatitude: np.ndarray, (n_points,)
+            The colatitude of the desired responses
+        magnitude: bool
+            Ignored
+        frequency: np.ndarray, (n_freq,)
+            Ignored
+        degrees: bool
+            If ``True``, indicates that azimuth and colatitude are provided in degrees
         """
-        import matplotlib.pyplot as plt
+        if degrees:
+            azimuth = np.radians(azimuth)
+            colatitude = np.radians(colatitude)
 
-        fg = plt.figure(figsize=plt.figaspect(0.5))
-
-        if self.interpolate:
-            ax1 = fg.add_subplot(1, 4, 1, projection="3d")
-            ax_ = ax1.scatter(
-                self.grid_sofa.x,
-                self.grid_sofa.y,
-                self.grid_sofa.z,
-                c=np.abs(self.freq_angles_fft[:, freq_bin]),
-                s=100,
-            )
-            ax1.set_title("Mag|STFT| of one of the SOFA Files")
-            fg.colorbar(ax_, shrink=0.5, aspect=5)
-
-            ax2 = fg.add_subplot(1, 4, 2, projection="3d")
-            ax_1 = ax2.scatter(
-                self.sofa_x,
-                self.sofa_y,
-                self.sofa_z,
-                c=np.abs(
-                    fft(self.sh_coeffs_expanded_original_grid, axis=-1)[:, freq_bin]
-                ),
-                s=100,
-            )
-            ax2.set_title("Expanded Initial Grid")
-            fg.colorbar(ax_1, shrink=0.5, aspect=5)
-
-            ax3 = fg.add_subplot(1, 4, 4, projection="3d")
-            ax_2 = ax3.scatter(
-                self.rotated_fibo_points[0, :],
-                self.rotated_fibo_points[1, :],
-                self.rotated_fibo_points[2, :],
-                c=np.abs(
-                    fft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
-                ),
-                s=50,
-            )
-            ax3.set_title(
-                "Interpolated And Rotated Target Grid Based On Analytic SOFA Receiver"
-            )
-            fg.colorbar(ax_2, shrink=0.5, aspect=5)
-
-            ax4 = fg.add_subplot(1, 4, 3, projection="3d")
-            ax_3 = ax4.scatter(
-                self.points[:, 0],
-                self.points[:, 1],
-                self.points[:, 2],
-                c=np.abs(
-                    fft(self.sh_coeffs_expanded_target_grid, axis=-1)[:, freq_bin]
-                ),
-                s=50,
-            )  # fibo_debug
-            ax4.set_title("Interpolated Fibo Grid")
-            fg.colorbar(ax_3, shrink=0.5, aspect=5)
-        else:
-            ax1 = fg.add_subplot(1, 2, 1, projection="3d")
-            ax_ = ax1.scatter(
-                self.sofa_x,
-                self.sofa_y,
-                self.sofa_z,
-                c=np.abs(self.freq_angles_fft[:, freq_bin]),
-                s=100,
-            )
-            ax1.set_title("Mag|STFT| of one of the SOFA Files")
-            fg.colorbar(ax_, shrink=0.5, aspect=5)
-
-            ax2 = fg.add_subplot(1, 2, 2, projection="3d")
-            ax_1 = ax2.scatter(
-                self.rotated_sofa_points[0, :],
-                self.rotated_sofa_points[1, :],
-                self.rotated_sofa_points[2, :],
-                c=np.abs(self.freq_angles_fft[:, freq_bin]),
-                s=100,
-            )
-            ax2.set_title("Expanded Initial Grid")
-            fg.colorbar(ax_1, shrink=0.5, aspect=5)
-
-        fg.tight_layout(pad=3.0)
-        plt.show()
+        _, index = self._kdtree.query(np.column_stack((azimuth, colatitude)))
+        return self._irs[index, :]
 
     @requires_matplotlib
-    def plot_new(
-        self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None, original=False
-    ):
+    def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
         import matplotlib.pyplot as plt
         from matplotlib import cm
 
-        if original:
-            cart = self.grid_sofa.cartesian.T
-            length = np.abs(
-                np.fft.rfft(self.impulse_responses_sofa, axis=-1)[:, freq_bin]
-            )
-        else:
-            cart = self.grid.cartesian.T
-            length = np.abs(np.fft.rfft(self.impulse_responses, axis=-1)[:, freq_bin])
+        cart = self._grid.cartesian.T
+        length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
         g = np.linspace(-1, 1, n_grid)
@@ -654,9 +511,9 @@ class DIRPATInterpolate:
         # of the original points, otherwise griddata returns NaN
         shrink_factor = 0.99
         while True:
-            X = np.cos(AZ) * np.sin(COL) * 0.95
-            Y = np.sin(AZ) * np.sin(COL) * 0.95
-            Z = np.cos(COL) * 0.95
+            X = np.cos(AZ) * np.sin(COL) * shrink_factor
+            Y = np.sin(AZ) * np.sin(COL) * shrink_factor
+            Z = np.cos(COL) * shrink_factor
             grid = np.column_stack((X.flatten(), Y.flatten(), Z.flatten()))
             interp_len = griddata(cart, length, grid, method="linear")
             V = interp_len.reshape((n_grid // 2, n_grid))
@@ -685,3 +542,81 @@ class DIRPATInterpolate:
         )
 
         return ax
+
+
+class SOFADirectivityFactory:
+
+    """
+    This class reads measured directivities from a
+    `SOFA <https://www.sofaconventions.org>`_ format file.
+    Optionally, it can perform interpolation of the impulse responses onto a finer grid.
+    The interpolation is done in the spherical harmonics domain.
+
+
+    Parameters
+    --------------
+    path : (string)
+        Path towards the specific DIRPAT file
+    DIRPAT_pattern_enum :  (string or int)
+        The specific pattern in the DIRPAT files are associated with id's , presented in the github document
+    source: (Boolean)
+        Indicates if the response is for a receiver or source
+    fs: (int)
+        The desired sampling frequency. If the impulse responses were stored at
+        a different sampling frequency, they are resampled at ``fs``.
+    interpolate: (Boolean)
+        Interpolate the FIR filter or not
+    interp_n_points: (int)
+        Number of points for the interpolation grid. The interpolation grid is a
+        Fibonnaci pseudo-uniform sampling of the sphere.
+
+    """
+
+    def __init__(
+        self,
+        path,
+        DIRPAT_pattern_enum=None,
+        source=False,
+        fs=None,
+        interp_order=None,
+        interp_n_points=1000,
+    ):
+        self.path = path
+        self.source = source
+
+        (
+            self.grid_sofa,  # azimuth
+            self.distance_sofa,
+            self.impulse_responses_sofa,
+            self.fs,
+        ) = open_sofa_file(
+            path=self.path,
+            measurement_id=DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source),
+            is_source=source,
+            fs=fs,
+        )
+
+        self.interp_order = interp_order
+        self.interp_n_points = interp_n_points
+
+        if interp_order is not None:
+            self.grid = GridSphere(
+                cartesian_points=fibonacci_sphere(samples=interp_n_points)
+            )
+
+            self.impulse_responses, _ = spherical_interpolation(
+                self.grid_sofa,
+                self.impulse_responses_sofa,
+                self.grid,
+                spherical_harmonics_order=self.interp_order,
+                axis=-2,
+            )
+
+        else:
+            self.impulse_responses = self.impulse_responses_sofa
+            self.grid = self.grid_sofa
+
+    def create(self, orientation):
+        return MeasuredDirectivity(
+            orientation, self.grid, self.impulse_responses, self.fs
+        )

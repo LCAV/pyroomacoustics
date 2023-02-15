@@ -5,15 +5,7 @@ import numpy as np
 cimport cython
 from libc.math cimport ceil, floor
 
-from scipy.fft import fft, ifft
-
 from libc.math cimport ceil, floor
-
-from timeit import default_timer as timer
-
-from scipy.signal import hilbert
-
-from .directivities import DIRPATRir
 
 
 @cython.boundscheck(False)

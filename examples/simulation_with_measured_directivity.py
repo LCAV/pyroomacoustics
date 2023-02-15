@@ -75,8 +75,8 @@ from pyroomacoustics.directivities import (
     CardioidFamily,
     DirectionVector,
     DirectivityPattern,
-    DIRPATRir,
 )
+from pyroomacoustics.open_sofa_interpolate import SOFADirectivityFactory
 
 path_DIRPAT_file = os.path.join(
     os.path.dirname(__file__).replace("examples", ""),
@@ -93,19 +93,18 @@ path_Eigenmic_file = os.path.join(
     "EM32_Directivity.sofa",
 )
 
-dir_obj_Dmic = DIRPATRir(
+akg_c414k = SOFADirectivityFactory(
+    path=path_DIRPAT_file, DIRPAT_pattern_enum="AKG_c414K", source=False, fs=16000
+)
+dir_obj_Dmic = akg_c414k.create(
     orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
-    path=path_DIRPAT_file,
-    DIRPAT_pattern_enum="AKG_c414K",
-    fs=16000,
 )
 
-dir_obj_Emic = DIRPATRir(
-    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
-    path=path_Eigenmic_file,
-    DIRPAT_pattern_enum="EM_32_9",
-    fs=16000,
-    no_points_on_fibo_sphere=0,
+eigenmike = SOFADirectivityFactory(
+    path=path_Eigenmic_file, DIRPAT_pattern_enum="EM_32_9", source=False, fs=16000
+)
+dir_obj_Emic = eigenmike.create(
+    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True)
 )
 
 dir_obj_Cmic = CardioidFamily(
@@ -186,7 +185,7 @@ room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 
 room.add_microphone([2.31, 1.65, 1.163], directivity=dir_mic)
 
-dir_mic.set_orientation(54, 73)
+dir_mic.set_orientation(DirectionVector(54, 73))
 
 
 room.compute_rir()
@@ -200,7 +199,7 @@ for idx, fb in enumerate(range(44)):
     if idx >= 5 * 10:
         break
     ax = fig.add_subplot(5, 10, idx + 1, projection="3d")
-    dir_mic.obj_open_sofa_inter.plot_new(freq_bin=fb, ax=ax, depth=True)
+    dir_mic.plot(freq_bin=fb, ax=ax, depth=True)
     # ax.set_xticks([])
     # ax.set_yticks([])
     # ax.set_zticks([])

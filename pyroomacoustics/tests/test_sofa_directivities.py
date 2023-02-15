@@ -24,16 +24,18 @@ from pyroomacoustics.directivities import (
     CardioidFamily,
     DirectionVector,
     DirectivityPattern,
-    DIRPATRir,
 )
 from pyroomacoustics.doa import GridSphere
 from pyroomacoustics.open_sofa_interpolate import (
     calculation_pinv_voronoi_cells,
     calculation_pinv_voronoi_cells_general,
+    SOFADirectivityFactory,
 )
 
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]
+save_plot = False
+interp_order = 12
 
 TEST_DATA = Path(__file__).parent / "data"
 
@@ -96,19 +98,24 @@ def test_dirpat_download():
 
 
 SOFA_ONE_SIDE_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("EM_32_0", "EM32_Directivity.sofa", False, False),
-    ("EM_32_31", "EM32_Directivity.sofa", False, False),
-    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False, False),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", False, save_plot),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
+        save_plot,
+    ),
     (
         "Vibrolux_2x10inch",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         False,
-        False,
+        save_plot,
     ),
 ]
 
@@ -137,11 +144,16 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
     )
 
     # define source with figure_eight directivity
-    directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
+    dir_factory = SOFADirectivityFactory(
         path=Path(DEFAULT_SOFA_PATH) / sofa_file_name,
         DIRPAT_pattern_enum=pattern_id,
-        fs=16000,
+        source=sofa_info[sofa_file_name]["type"] == "sources",
+        fs=room.fs,
+        interp_order=interp_order,
+        interp_n_points=1000,
+    )
+    directivity = dir_factory.create(
+        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False)
     )
 
     # add source with figure_eight directivity
@@ -160,8 +172,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
     room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    directivity.set_orientation(np.radians(0), np.radians(0))
-    # directivity_SRC.set_orientation(np.radians(70), np.radians(34))
+    directivity.set_orientation(DirectionVector(0.0, 0.0))
 
     room.compute_rir()
 
@@ -197,7 +208,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "AKG_c480",
         "AKG_c480_c414_CUBE.sofa",
         False,
-        False,
+        save_plot,
     ),
     (
         "Vibrolux_2x10inch",
@@ -205,7 +216,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "AKG_c414K",
         "AKG_c480_c414_CUBE.sofa",
         False,
-        False,
+        save_plot,
     ),
     (
         "Vibrolux_2x10inch",
@@ -213,7 +224,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "EM_32_0",
         "EM32_Directivity.sofa",
         False,
-        False,
+        save_plot,
     ),
     (
         "Genelec_8020",
@@ -221,7 +232,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "EM_32_31",
         "EM32_Directivity.sofa",
         False,
-        False,
+        save_plot,
     ),
 ]
 
@@ -258,18 +269,26 @@ def test_sofa_two_sides(
         min_phase=False,
     )
 
-    src_directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
+    src_factory = SOFADirectivityFactory(
         path=Path(DEFAULT_SOFA_PATH) / src_sofa_file_name,
         DIRPAT_pattern_enum=src_pattern_id,
-        fs=16000,
+        source=True,
+        fs=room.fs,
+        interp_order=interp_order,
+    )
+    src_directivity = src_factory.create(
+        DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
-    mic_directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
+    mic_factory = SOFADirectivityFactory(
         path=Path(DEFAULT_SOFA_PATH) / mic_sofa_file_name,
         DIRPAT_pattern_enum=mic_pattern_id,
-        fs=16000,
+        source=False,
+        fs=room.fs,
+        interp_order=interp_order,
+    )
+    mic_directivity = mic_factory.create(
+        DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
     room.add_source([1.52, 0.883, 1.044], directivity=src_directivity)
@@ -278,8 +297,10 @@ def test_sofa_two_sides(
     room.add_microphone([2.31, 1.65, 1.163], directivity=mic_directivity)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    mic_directivity.set_orientation(np.radians(np.pi), np.radians(0))
-    src_directivity.set_orientation(np.radians(0), np.radians(np.pi / 2.0))
+    mic_directivity.set_orientation(DirectionVector(np.radians(np.pi), 0, degrees=True))
+    src_directivity.set_orientation(
+        DirectionVector(0, np.radians(np.pi / 2.0), degrees=True)
+    )
 
     room.compute_rir()
 
@@ -322,19 +343,24 @@ def test_sofa_two_sides(
 
 
 SOFA_CARDIOID_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False),
-    ("EM_32_0", "EM32_Directivity.sofa", False, False),
-    ("EM_32_31", "EM32_Directivity.sofa", False, False),
-    ("Genelec_8020", "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa", False, False),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", False, save_plot),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
+        save_plot,
+    ),
     (
         "Vibrolux_2x10inch",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         False,
-        False,
+        save_plot,
     ),
 ]
 
@@ -363,11 +389,15 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
     )
 
     # define source with figure_eight directivity
-    directivity = DIRPATRir(
-        orientation=DirectionVector(azimuth=0, colatitude=0, degrees=True),
+    dir_factory = SOFADirectivityFactory(
         path=Path(DEFAULT_SOFA_PATH) / sofa_file_name,
         DIRPAT_pattern_enum=pattern_id,
+        source=sofa_info[sofa_file_name]["type"] == "sources",
         fs=16000,
+        interp_order=interp_order,
+    )
+    directivity = dir_factory.create(
+        DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
     # add source with figure_eight directivity
@@ -392,7 +422,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
     room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    directivity.set_orientation(np.radians(0), np.radians(0))
+    directivity.set_orientation(DirectionVector(0.0, 0.0))
     # directivity_SRC.set_orientation(np.radians(70), np.radians(34))
 
     room.compute_rir()

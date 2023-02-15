@@ -666,7 +666,8 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily, DIRPATRir, source_angle_shoebox
+from .directivities import CardioidFamily, source_angle_shoebox
+from .open_sofa_interpolate import MeasuredDirectivity
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
@@ -2069,7 +2070,7 @@ class Room(object):
         if isinstance(position, SoundSource):
             if directivity is not None:
                 if isinstance(directivity, CardioidFamily) or isinstance(
-                    directivity, DIRPATRir
+                    directivity, MeasuredDirectivity
                 ):
                     return self.add(SoundSource(position, directivity=directivity))
             else:
@@ -2077,7 +2078,7 @@ class Room(object):
         else:
             if directivity is not None:
                 if isinstance(directivity, CardioidFamily) or isinstance(
-                    directivity, DIRPATRir
+                    directivity, MeasuredDirectivity
                 ):
                     return self.add(
                         SoundSource(
@@ -2414,7 +2415,7 @@ class Room(object):
 
                 else:
                     """
-                    Checks if either source or the microphone directivity belongs from the class DIRPATRir
+                    Checks if either source or the microphone directivity belongs from the class MeasuredDirectivity
                     """
 
                     ir = self.dft_scale_rir_calc(
@@ -2521,10 +2522,10 @@ class Room(object):
 
         if rec_presence and source_presence:
             resp_mic = self.mic_array.directivity[mic_pos].get_response(
-                azimuth=azi_m, colatitude=col_m
+                azimuth=azi_m, colatitude=col_m, degrees=False
             )  # Return response as an array of number of (img_sources * length of filters)
             resp_src = self.sources[src_pos].directivity.get_response(
-                azimuth=azi_s, colatitude=col_s
+                azimuth=azi_s, colatitude=col_s, degrees=False
             )
 
             if self.mic_array.directivity[mic_pos].filter_len_ir == 1:
@@ -2549,7 +2550,9 @@ class Room(object):
                 ), "Directivity source frequency of simulation should be same as frequency of interpolation"
 
                 resp_src = self.sources[src_pos].directivity.get_response(
-                    azimuth=azi_s, colatitude=col_s
+                    azimuth=azi_s,
+                    colatitude=col_s,
+                    degrees=False,
                 )
 
             elif rec_presence:
@@ -2558,7 +2561,9 @@ class Room(object):
                 ), "Directivity mic frequency of simulation should be same as frequency of interpolation"
 
                 resp_mic = self.mic_array.directivity[mic_pos].get_response(
-                    azimuth=azi_m, colatitude=col_m
+                    azimuth=azi_m,
+                    colatitude=col_m,
+                    degrees=False,
                 )
 
         # else:
