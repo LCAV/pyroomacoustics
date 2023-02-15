@@ -2500,8 +2500,11 @@ class Room(object):
         fp_im = N
         fir_length_octave_band = self.octave_bands.n_fft
 
-        from .build_rir import (fast_convolution_3, fast_convolution_4,
-                                fast_window_sinc_interpolator)
+        from .build_rir import (
+            fast_convolution_3,
+            fast_convolution_4,
+            fast_window_sinc_interpolator,
+        )
 
         rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
         source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False

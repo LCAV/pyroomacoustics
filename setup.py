@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import os
 import sys
+
 # To use a consistent encoding
 from os import path
 

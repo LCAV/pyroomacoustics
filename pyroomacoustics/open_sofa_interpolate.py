@@ -19,8 +19,14 @@ from scipy.signal import decimate
 from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
 from .directivities import DirectionVector, Directivity
-from .doa import (Grid, GridSphere, cart2spher, detect_regular_grid,
-                  fibonnaci_spherical_sampling, spher2cart)
+from .doa import (
+    Grid,
+    GridSphere,
+    cart2spher,
+    detect_regular_grid,
+    fibonnaci_spherical_sampling,
+    spher2cart,
+)
 from .utilities import requires_matplotlib
 
 

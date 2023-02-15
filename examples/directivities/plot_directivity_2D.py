@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pyroomacoustics import dB
-from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
-                                           DirectivityPattern)
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 orientation = DirectionVector(azimuth=0, colatitude=90, degrees=True)
 lower_gain = -20

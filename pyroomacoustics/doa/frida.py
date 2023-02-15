@@ -4,9 +4,14 @@ import numpy as np
 from scipy import linalg as la
 
 from .doa import DOA
-from .tools_fri_doa_plane import (cov_mtx_est, extract_off_diag, make_G,
-                                  make_GtG_and_inv, polar2cart,
-                                  pt_src_recon_multiband)
+from .tools_fri_doa_plane import (
+    cov_mtx_est,
+    extract_off_diag,
+    make_G,
+    make_GtG_and_inv,
+    polar2cart,
+    pt_src_recon_multiband,
+)
 
 
 class FRIDA(DOA):

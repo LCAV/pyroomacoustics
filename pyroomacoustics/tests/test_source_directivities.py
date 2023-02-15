@@ -3,8 +3,11 @@ from unittest import TestCase
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
-                                           DirectivityPattern)
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 # create room
 room = pra.ShoeBox(

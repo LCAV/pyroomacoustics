@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
-                                           DirectivityPattern)
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 three_dim = True  # 2D or 3D
 

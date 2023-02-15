@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
-                                           DirectivityPattern)
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 three_dim = True  # 2D or 3D
 shoebox = True  # source directivity not supported for non-shoebox!
