@@ -15,22 +15,15 @@ import numpy as np
 import pytest
 
 import pyroomacoustics as pra
-from pyroomacoustics.datasets.sofa import (
-    DEFAULT_SOFA_PATH,
-    download_sofa_files,
-    get_sofa_db_info,
-)
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.datasets.sofa import (DEFAULT_SOFA_PATH,
+                                           download_sofa_files,
+                                           get_sofa_db_info)
+from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
+                                           DirectivityPattern)
 from pyroomacoustics.doa import GridSphere
 from pyroomacoustics.open_sofa_interpolate import (
-    calculation_pinv_voronoi_cells,
-    calculation_pinv_voronoi_cells_general,
-    SOFADirectivityFactory,
-)
+    SOFADirectivityFactory, calculation_pinv_voronoi_cells,
+    calculation_pinv_voronoi_cells_general)
 
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]

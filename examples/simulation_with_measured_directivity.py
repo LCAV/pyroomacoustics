@@ -71,11 +71,8 @@ from scipy.io import wavfile
 from scipy.signal import fftconvolve
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
+                                           DirectivityPattern)
 from pyroomacoustics.open_sofa_interpolate import SOFADirectivityFactory
 
 path_DIRPAT_file = os.path.join(

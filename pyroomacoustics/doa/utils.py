@@ -3,6 +3,7 @@ This module contains useful functions to compute distances and errors on on
 circles and spheres.
 """
 from __future__ import division
+
 import collections
 
 import numpy as np

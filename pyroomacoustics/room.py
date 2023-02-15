@@ -667,9 +667,9 @@ from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, source_angle_shoebox
-from .open_sofa_interpolate import MeasuredDirectivity
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
+from .open_sofa_interpolate import MeasuredDirectivity
 from .parameters import Material, Physics, constants, eps, make_materials
 from .soundsource import SoundSource
 from .utilities import angle_function
@@ -2500,11 +2500,8 @@ class Room(object):
         fp_im = N
         fir_length_octave_band = self.octave_bands.n_fft
 
-        from .build_rir import (
-            fast_convolution_3,
-            fast_convolution_4,
-            fast_window_sinc_interpolator,
-        )
+        from .build_rir import (fast_convolution_3, fast_convolution_4,
+                                fast_window_sinc_interpolator)
 
         rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
         source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False

@@ -2,11 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.directivities import (CardioidFamily, DirectionVector,
+                                           DirectivityPattern)
 
 dir_1 = CardioidFamily(
     orientation=DirectionVector(azimuth=180, colatitude=30, degrees=True),

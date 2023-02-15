@@ -9,7 +9,8 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import cart2spher, fibonnaci_spherical_sampling, great_circ_dist, spher2cart
+from .utils import (cart2spher, fibonnaci_spherical_sampling, great_circ_dist,
+                    spher2cart)
 
 
 class Grid:
@@ -393,7 +394,6 @@ class GridSphere(Grid):
         try:
             import matplotlib.colors as colors
             import matplotlib.pyplot as plt
-
             # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
         except ImportError:

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import numpy as np
 import scipy
 
@@ -17,15 +18,9 @@ from scipy.interpolate import griddata
 from scipy.signal import decimate
 from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
-from .directivities import Directivity, DirectionVector
-from .doa import (
-    Grid,
-    GridSphere,
-    cart2spher,
-    fibonnaci_spherical_sampling,
-    spher2cart,
-    detect_regular_grid,
-)
+from .directivities import DirectionVector, Directivity
+from .doa import (Grid, GridSphere, cart2spher, detect_regular_grid,
+                  fibonnaci_spherical_sampling, spher2cart)
 from .utilities import requires_matplotlib
 
 

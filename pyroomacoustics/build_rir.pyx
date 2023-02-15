@@ -5,8 +5,6 @@ import numpy as np
 cimport cython
 from libc.math cimport ceil, floor
 
-from libc.math cimport ceil, floor
-
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
