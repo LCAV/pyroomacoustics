@@ -2113,7 +2113,7 @@ class Room(object):
                     max_disp = self.max_rand_disp
 
                     # add a random displacement to each cartesian coordinate
-                    disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
+                    disp = np.random.uniform(-max_disp, max_disp, size=(self.dim, n_images))
                     source.images += disp
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
