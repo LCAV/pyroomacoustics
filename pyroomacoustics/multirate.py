@@ -27,7 +27,7 @@ def frac_delay(delta, N, w_max=0.9, C=4):
     n = np.arange(N)
 
     try:
-        from cvxopt import solvers, matrix
+        from cvxopt import matrix, solvers
     except:
         raise ValueError(
             "To use the frac_delay function, the cvxopt module is necessary."
@@ -70,7 +70,6 @@ def frac_delay(delta, N, w_max=0.9, C=4):
 
 
 def low_pass(numtaps, B, epsilon=0.1):
-
     bands = [0, (1 - epsilon) * B, B, 0.5]
     desired = [1, 0]
 
@@ -96,7 +95,6 @@ def low_pass(numtaps, B, epsilon=0.1):
 
 
 def resample(x, p, q):
-
     import fractions
 
     gcd = fractions.gcd(p, q)

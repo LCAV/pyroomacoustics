@@ -310,7 +310,6 @@ def time_dB(signal, Fs, bits=16):
 
 
 def spectrum(signal, Fs, N):
-
     from .stft import spectroplot, stft
     from .windows import hann
 
@@ -335,7 +334,6 @@ def compare_plot(
     title1=None,
     title2=None,
 ):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -411,7 +409,6 @@ def compare_plot(
 
 
 def real_spectrum(signal, axis=-1, **kwargs):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -651,7 +648,6 @@ def levinson(r, b):
     epsilon = r[0]
 
     for j in np.arange(1, p):
-
         g = np.sum(np.conj(r[1 : j + 1]) * a[::-1])
         gamma = -g / epsilon
         a = np.concatenate((a, np.zeros(1))) + gamma * np.concatenate(
@@ -659,12 +655,7 @@ def levinson(r, b):
         )
         epsilon = epsilon * (1 - np.abs(gamma) ** 2)
         delta = np.dot(np.conj(r[1 : j + 1]), np.flipud(x))
-        q = (
-            b[
-                j,
-            ]
-            - delta
-        ) / epsilon
+        q = (b[j,] - delta) / epsilon
         if len(b.shape) == 1:
             x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
         else:
@@ -810,7 +801,6 @@ def angle_function(s1, v2):
 
     # colatitude calculation for 3-D coordinates
     if s1.shape[0] == 3 and v2.shape[0] == 3:
-
         z2 = v2[2]
         z_vals = s1[2]
 
@@ -820,7 +810,6 @@ def angle_function(s1, v2):
 
     # colatitude calculation for 2-D coordinates
     elif s1.shape[0] == 2 and v2.shape[0] == 2:
-
         num_points = s1.shape[1]
         colatitude = np.ones(num_points) * np.pi / 2
 

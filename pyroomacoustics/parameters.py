@@ -92,7 +92,6 @@ class Constants:
         _constants[name] = val
 
     def get(self, name):
-
         try:
             v = _constants[name]
         except KeyError:
@@ -181,7 +180,6 @@ class Physics(object):
     """
 
     def __init__(self, temperature=None, humidity=None):
-
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
         if humidity is None:
             self.H = 0.0
@@ -319,7 +317,6 @@ class Material(object):
     """
 
     def __init__(self, energy_absorption, scattering=None):
-
         # Handle the energy absorption input based on its type
         if isinstance(energy_absorption, (float, np.float32, np.float64)):
             # This material is flat over frequencies
@@ -475,6 +472,30 @@ def make_materials(*args, **kwargs):
     If only keyword arguments are provided, only the dict is returned.
     If both are provided, both are returned.
     If no argument is provided, an empty list is returned.
+
+    .. code-block:: python
+        :linenos:
+
+        # energy absorption parameters
+        floor_eabs = {
+            "description": "Example floor material",
+            "coeffs": [0.1, 0.2, 0.1, 0.1, 0.1, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # scattering parameters
+        audience_scat = {
+            "description": "Theatre Audience",
+            "coeffs": [0.3, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7]
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # create a list of materials
+        my_mat_list = pra.make_materials((floor_eabs, audience_scat))
+
+        # create a dict of materials
+        my_mat_dict = pra.make_materials(floor=(floor_abs, audience_scat))
+
     """
 
     ret_args = []

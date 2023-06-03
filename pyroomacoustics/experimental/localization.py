@@ -2,6 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 from scipy import linalg as la
+
 from .point_cloud import PointCloud
 
 try:

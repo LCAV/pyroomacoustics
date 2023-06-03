@@ -187,7 +187,7 @@ def square_2D_array(center, M, N, phi, d):
         The center of the array
     M: int
         The number of points in the first dimension
-    M: int
+    N: int
         The number of points in the second dimension
     phi: float
         The counterclockwise rotation of the array (from the x-axis)
@@ -251,7 +251,6 @@ def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
 
 
 def fir_approximation_ls(weights, T, n1, n2):
-
     freqs_plus = np.array(weights.keys())[:, np.newaxis]
     freqs = np.vstack([freqs_plus, -freqs_plus])
     omega = 2 * np.pi * freqs
@@ -325,7 +324,6 @@ def circular_microphone_array_xyplane(
     azimuth_list = np.arange(M) * 360 / M + phi0
     directivity_list = []
     for i in range(M):
-
         orientation = DirectionVector(
             azimuth=azimuth_list[i], colatitude=colatitude, degrees=True
         )
@@ -354,7 +352,6 @@ class MicrophoneArray(object):
     """Microphone array class."""
 
     def __init__(self, R, fs, directivity=None):
-
         R = np.array(R)
         self.dim = R.shape[0]  # are we in 2D or in 3D
         self.nmic = R.shape[1]  # number of microphones
@@ -386,7 +383,6 @@ class MicrophoneArray(object):
         self.center = np.mean(R, axis=1, keepdims=True)
 
     def set_directivity(self, directivities):
-
         """
         This functions sets self.directivity as a list of directivities with `n_mics` entries,
         where `n_mics` is the number of microphones
@@ -616,7 +612,6 @@ class Beamformer(MicrophoneArray):
         self.filters = np.zeros((self.M, self.Lg))
 
         if self.N <= self.Lg:
-
             # go back to time domain and shift DC to center
             tw = np.fft.irfft(np.conj(self.weights), axis=1, n=self.N)
             self.filters[:, : self.N] = np.concatenate(
@@ -624,7 +619,6 @@ class Beamformer(MicrophoneArray):
             )
 
         elif self.N > self.Lg:
-
             # Least-square projection
             for i in np.arange(self.M):
                 Lgp = np.floor((1 - non_causal) * self.Lg)
@@ -641,7 +635,6 @@ class Beamformer(MicrophoneArray):
                 self.filters[i] = np.real(np.linalg.lstsq(F, w, rcond=None)[0])
 
     def weights_from_filters(self):
-
         if self.filters is None:
             raise NameError("Filters must be defined.")
 
@@ -654,7 +647,6 @@ class Beamformer(MicrophoneArray):
             self.weights[m] = np.conj(np.fft.rfft(self.filters[m], n=self.N))
 
     def steering_vector_2D(self, frequency, phi, dist, attn=False):
-
         phi = np.array([phi]).reshape(phi.size)
 
         # Assume phi and dist are measured from the array's center
@@ -701,7 +693,6 @@ class Beamformer(MicrophoneArray):
             D -= np.min(D)
 
         else:
-
             D = distance(self.R, X)
 
         phase = np.exp(-1j * omega * D / constants.get("c"))
@@ -715,7 +706,6 @@ class Beamformer(MicrophoneArray):
             return phase
 
     def response(self, phi_list, frequency):
-
         i_freq = np.argmin(np.abs(self.frequencies - frequency))
 
         if self.weights is None and self.filters is not None:
@@ -736,7 +726,6 @@ class Beamformer(MicrophoneArray):
         return self.frequencies[i_freq], bfresp
 
     def response_from_point(self, x, frequency):
-
         i_freq = np.argmin(np.abs(self.frequencies - frequency))
 
         if self.weights is None and self.filters is not None:
@@ -757,7 +746,6 @@ class Beamformer(MicrophoneArray):
         return self.frequencies[i_freq], bfresp
 
     def plot_response_from_point(self, x, legend=None):
-
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
@@ -802,13 +790,10 @@ class Beamformer(MicrophoneArray):
         plt.legend(legend)
 
     def plot_beam_response(self):
-
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is None and self.filters is None:
-            raise NameError(
-                "Beamforming weights or filters need to be computed" " first."
-            )
+            raise NameError("Beamforming weights or filters need to be computed first.")
 
         phi = np.linspace(-np.pi, np.pi - np.pi / 180, 360)
         freq = self.frequencies
@@ -865,7 +850,6 @@ class Beamformer(MicrophoneArray):
         plt.setp(plt.gca(), "yticklabels", np.arange(1, 5) * f_0)
 
     def snr(self, source, interferer, f, R_n=None, dB=False):
-
         i_f = np.argmin(np.abs(self.frequencies - f))
 
         if self.weights is None and self.filters is not None:
@@ -907,7 +891,6 @@ class Beamformer(MicrophoneArray):
         return SNR
 
     def udr(self, source, interferer, f, R_n=None, dB=False):
-
         i_f = np.argmin(np.abs(self.frequencies - f))
 
         if self.weights is None and self.filters is not None:
@@ -941,12 +924,10 @@ class Beamformer(MicrophoneArray):
         return UDR
 
     def process(self, FD=False):
-
         if self.signals is None or len(self.signals) == 0:
             raise NameError("No signal to beamform.")
 
         if FD is True:
-
             # STFT processing
             if self.weights is None and self.filters is not None:
                 self.weights_from_filters()
@@ -983,7 +964,6 @@ class Beamformer(MicrophoneArray):
                 output = output[self.zpf : -self.zpb]
 
         else:
-
             # TD processing
 
             if self.weights is not None and self.filters is None:
@@ -1003,7 +983,6 @@ class Beamformer(MicrophoneArray):
         return output
 
     def plot(self, sum_ir=False, FD=True):
-
         if self.weights is None and self.filters is not None:
             self.weights_from_filters()
         elif self.weights is not None and self.filters is None:
@@ -1063,7 +1042,6 @@ class Beamformer(MicrophoneArray):
     def rake_delay_and_sum_weights(
         self, source, interferer=None, R_n=None, attn=True, ff=False
     ):
-
         self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
 
         K = source.images.shape[1] - 1
@@ -1075,7 +1053,6 @@ class Beamformer(MicrophoneArray):
     def rake_one_forcing_weights(
         self, source, interferer=None, R_n=None, ff=False, attn=True
     ):
-
         if R_n is None:
             R_n = np.zeros((self.M, self.M))
 
@@ -1118,7 +1095,6 @@ class Beamformer(MicrophoneArray):
         self.weights = np.zeros((self.M, self.frequencies.shape[0]), dtype=complex)
 
         for i, f in enumerate(self.frequencies):
-
             A_good = self.steering_vector_2D_from_point(
                 f, source.images, attn=attn, ff=ff
             )
@@ -1145,7 +1121,6 @@ class Beamformer(MicrophoneArray):
     def rake_max_udr_weights(
         self, source, interferer=None, R_n=None, ff=False, attn=True
     ):
-
         if source.images.shape[1] == 1:
             self.rake_max_sinr_weights(
                 source.images, interferer.images, R_n=R_n, ff=ff, attn=attn
@@ -1315,7 +1290,7 @@ class Beamformer(MicrophoneArray):
         # compute and return SNR
         A = np.dot(g_val.T, H[:, :L])
         num = np.dot(A, A.T)
-        denom = np.dot(np.dot(g_val.T, K_nq), g_val)
+        denom = np.linalg.multi_dot([g_val.T, K_nq, g_val])
 
         return num / denom
 
@@ -1395,7 +1370,7 @@ class Beamformer(MicrophoneArray):
         # compute and return SNR
         A = np.dot(g_val.T, H[:, :L])
         num = np.dot(A, A.T)
-        denom = np.dot(np.dot(g_val.T, K_nq), g_val)
+        denom = np.linalg.multi_dot([g_val.T, K_nq, g_val])
 
         return num / denom
 
@@ -1470,7 +1445,6 @@ class Beamformer(MicrophoneArray):
         As = np.zeros((Lg * self.M, K))
 
         for r in np.arange(self.M):
-
             # build constraint matrix
             hs = u.low_pass_dirac(
                 s_time[r, :, np.newaxis], s_dmp[r, :, np.newaxis], self.fs, Lh
@@ -1505,6 +1479,6 @@ class Beamformer(MicrophoneArray):
         # compute and return SNR
         A = np.dot(g_val.T, H[:, :L])
         num = np.dot(A, A.T)
-        denom = np.dot(np.dot(g_val.T, K_nq), g_val)
+        denom = np.linalg.multi_dot([g_val.T, K_nq, g_val])
 
         return num / denom

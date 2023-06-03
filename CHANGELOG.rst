@@ -14,8 +14,6 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
-- Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
-- Randomized image source method for removing sweeping echoes in shoebox rooms.
 - New implementation of fast RIR builder function in the ``libroom`` C++
   extentsion to replace the current cython code. Advantages are: 1) only one
   compiled extension, 2) multithreading support
@@ -28,17 +26,79 @@ Added
 Changed
 ~~~~~~~
 
-- Refactored the implementation of FastMNMF.
-- Modified the document of __init__.py in ``doa`` subpackage.
-- `End of Python 3.6 support <https://endoflife.date/python>`__.
-- Removed the deprecated ``realtime`` sub-module.
-- Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
 - Removed the broken ``get_rir`` method of the class ``SoundSource``
 
 Bugfix
 ~~~~~~
 
+- Fixes a bug when using randomized image source model with a 2D room (#315) by
+  @hrosseel
+
+
+`0.7.3`_ - 2022-12-05
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixes issue #293 due to the C++ method ``Room::next_wall_hit`` not handling
+  2D shoebox rooms, which cause a seg fault
+
+`0.7.2`_ - 2022-11-15
+---------------------
+
+Added
+~~~~~
+
+- Appveyor builds for compiled wheels for win32/win64 x86
+
+Bugfix
+~~~~~~
+
+- Fixes missing import statement in room.plot for 3D rooms (PR #286)
+- On win64, ``bss.fastmnmf`` would fail due to some singular matrix. 1) protect solve
+  with try/except and switch to pseudo-inverse if necessary, 2) change eps 1e-7 -> 1e-6
+
+`0.7.1`_ - 2022-11-11
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixed pypi upload for windows wheels
+
+`0.7.0`_ - 2022-11-10
+---------------------
+
+Added
+~~~~~
+
+- Added the AnechoicRoom class.
+- Added FastMNMF2 (Fast Multichannel Nonnegative Matrix Factorization 2) to ``bss`` subpackage.
+- Randomized image source method for removing sweeping echoes in shoebox rooms.
+- Adds the ``cart2spher`` method in ``pyroomacoustics.doa.utils`` to convert from cartesian
+  to spherical coordinates.
+- Example `room_complex_wall_materials.py`
+- CI for python 3.10
+
+Changed
+~~~~~~~
+
+- Cleans up the plot_rir function in Room so that the labels are neater. It
+  also adds an extra option ``kind`` that can take values "ir", "tf", or "spec"
+  to plot the impulse responses, transfer functions, or spectrograms of the RIR.
+- Refactored the implementation of FastMNMF.
+- Modified the document of __init__.py in ``doa`` subpackage.
+- `End of Python 3.6 support <https://endoflife.date/python>`__.
+- Removed the deprecated ``realtime`` sub-module.
+- Removed the deprecated functions ``pyroomacoustics.transform.analysis``, ``pyroomacoustics.transform.synthesis``, ``pyroomacoustics.transform.compute_synthesis_window``. They are replaced by the equivalent functions in ``pyroomacoustics.transform.stft`` sub-module.
+- The minimum required version of numpy was changed to 1.13.0 (use of ``np.linalg.multi_dot`` in ``doa`` sub-package see #271)
+
+Bugfix
+~~~~~~
+
 - Fixed most warnings in the tests
+- Fixed bug in ``examples/adaptive_filter_stft_domain.py``
 
 `0.6.0`_ - 2021-11-29
 ---------------------
@@ -479,7 +539,11 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.6.0...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.3...master
+.. _0.7.3: https://github.com/LCAV/pyroomacoustics/compare/v0.7.2...v0.7.3
+.. _0.7.2: https://github.com/LCAV/pyroomacoustics/compare/v0.7.1...v0.7.2
+.. _0.7.1: https://github.com/LCAV/pyroomacoustics/compare/v0.7.0...v0.7.1
+.. _0.7.0: https://github.com/LCAV/pyroomacoustics/compare/v0.6.0...v0.7.0
 .. _0.6.0: https://github.com/LCAV/pyroomacoustics/compare/v0.5.0...v0.6.0
 .. _0.5.0: https://github.com/LCAV/pyroomacoustics/compare/v0.4.3...v0.5.0
 .. _0.4.3: https://github.com/LCAV/pyroomacoustics/compare/v0.4.2...v0.4.3

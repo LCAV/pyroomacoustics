@@ -20,11 +20,13 @@ data. For fixed WAV files, the one-shot function
 `pyroomacoustics.denoise.apply_spectral_sub` can be used.
 """
 
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import os
+
 import pyroomacoustics as pra
-import matplotlib.pyplot as plt
 from pyroomacoustics.denoise import SpectralSub
 
 """
@@ -80,7 +82,6 @@ Process as in real-time
 processed_audio = np.zeros(signal.shape)
 n = 0
 while noisy_signal.shape[0] - n >= hop:
-
     # SCNR in frequency domain
     stft.analysis(noisy_signal[n : (n + hop)])
     gain_filt = scnr.compute_gain_filter(stft.X)

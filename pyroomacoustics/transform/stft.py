@@ -27,6 +27,7 @@ from __future__ import division
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided as _as_strided
+
 from .dft import DFT
 
 
@@ -84,7 +85,6 @@ class STFT(object):
         precision="double",
         **kwargs
     ):
-
         # initialize parameters
         self.num_samples = N  # number of samples per frame
         self.num_channels = channels  # number of channels
@@ -183,9 +183,7 @@ class STFT(object):
             self.out = np.zeros((self.hop, self.num_channels), dtype=self.time_dtype)
 
         # useful views on the input buffer
-        self.fft_in_state = self.fft_in_buffer[
-            self.zf : self.zf + self.n_state,
-        ]
+        self.fft_in_state = self.fft_in_buffer[self.zf : self.zf + self.n_state,]
         self.fresh_samples = self.fft_in_buffer[
             self.zf + self.n_state : self.zf + self.n_state + self.hop,
         ]
@@ -350,7 +348,6 @@ class STFT(object):
 
         # ----check number of frames
         if self.streaming:  # need integer multiple of hops
-
             if self.fixed_input:
                 if x_shape[0] != self.num_frames * self.hop:
                     raise ValueError(
@@ -372,7 +369,6 @@ class STFT(object):
         # need at least num_samples for last frame
         # e.g.[hop|hop|...|hop|num_samples]
         else:
-
             if self.fixed_input:
                 if x_shape[0] != (self.hop * (self.num_frames - 1) + self.num_samples):
                     raise ValueError(
@@ -396,7 +392,6 @@ class STFT(object):
                         )
                     self.num_frames = 1
                 else:
-
                     # calculate num_frames and append zeros if necessary
                     self.num_frames = int(
                         np.ceil((x_shape[0] - self.num_samples) / self.hop) + 1
@@ -448,20 +443,14 @@ class STFT(object):
         """
 
         # correct input size check in: dft.analysis()
-        self.fresh_samples[:,] = x_n[
-            :,
-        ]  # introduce new samples
-        self.x_p[
-            :,
-        ] = self.old_samples  # save next state
+        self.fresh_samples[:,] = x_n[:,]  # introduce new samples
+        self.x_p[:,] = self.old_samples  # save next state
 
         # apply DFT to current frame
         self.X[:] = self.dft.analysis(self.fft_in_buffer)
 
         # shift backwards in the buffer the state
-        self.fft_in_state[:,] = self.x_p[
-            :,
-        ]
+        self.fft_in_state[:,] = self.x_p[:,]
 
     def _analysis_streaming(self, x):
         """
@@ -475,23 +464,15 @@ class STFT(object):
             n = 0
             for k in range(self.num_frames):
                 # introduce new samples
-                self.fresh_samples[:,] = x[
-                    n : n + self.hop,
-                ]
+                self.fresh_samples[:,] = x[n : n + self.hop,]
                 # save next state
-                self.x_p[
-                    :,
-                ] = self.old_samples
+                self.x_p[:,] = self.old_samples
 
                 # apply DFT to current frame
-                self.X[
-                    k,
-                ] = self.dft.analysis(self.fft_in_buffer)
+                self.X[k,] = self.dft.analysis(self.fft_in_buffer)
 
                 # shift backwards in the buffer the state
-                self.fft_in_state[:,] = self.x_p[
-                    :,
-                ]
+                self.fft_in_state[:,] = self.x_p[:,]
 
                 n += self.hop
 
@@ -507,7 +488,6 @@ class STFT(object):
 
         if not self.mono:
             for c in range(self.num_channels):
-
                 y = _as_strided(x[:, c], shape=new_shape, strides=new_strides)
                 y = np.concatenate(
                     (
@@ -522,7 +502,6 @@ class STFT(object):
                 else:
                     self.X[:, :, c] = self.dft_frames.analysis(y).T
         else:
-
             y = _as_strided(x, shape=new_shape, strides=new_strides)
             y = np.concatenate(
                 (
@@ -587,7 +566,6 @@ class STFT(object):
         return self.X
 
     def process(self, X=None):
-
         """
         Parameters
         -----------
@@ -621,11 +599,9 @@ class STFT(object):
         return self.X
 
     def _process_single(self):
-
         np.multiply(self.X, self.H, self.X)
 
     def _process_multiple(self):
-
         if not self.fixed_input:
             if self.mono:
                 self.H_multi = np.tile(self.H, (self.num_frames, 1))
@@ -694,22 +670,19 @@ class STFT(object):
 
         # synthesis + overlap and add
         if not self.mono:
-
             x_r = np.zeros(
                 (self.num_frames * self.hop, self.num_channels), dtype=self.time_dtype
             )
 
             n = 0
             for f in range(self.num_frames):
-
                 # apply IDFT to current frame and reconstruct output
-                x_r[
-                    n : n + self.hop,
-                ] = self._overlap_and_add(self.dft.synthesis(self.X[f, :, :]))
+                x_r[n : n + self.hop,] = self._overlap_and_add(
+                    self.dft.synthesis(self.X[f, :, :])
+                )
                 n += self.hop
 
         else:
-
             x_r = np.zeros(self.num_frames * self.hop, dtype=self.time_dtype)
 
             # treat number of frames as the multiple channels for DFT
@@ -728,38 +701,25 @@ class STFT(object):
             # overlap and add
             n = 0
             for f in range(self.num_frames):
-                x_r[
-                    n : n + self.hop,
-                ] = self._overlap_and_add(mx[:, f])
+                x_r[n : n + self.hop,] = self._overlap_and_add(mx[:, f])
                 n += self.hop
 
         return x_r
 
     def _overlap_and_add(self, x=None):
-
         if x is None:
             x = self.dft.x
 
-        self.out[:,] = x[
-            0 : self.hop,
-        ]  # fresh output samples
+        self.out[:,] = x[0 : self.hop,]  # fresh output samples
 
         # add state from previous frames when overlap is used
         if self.n_state_out > 0:
             m = np.minimum(self.hop, self.n_state_out)
-            self.out[:m,] += self.y_p[
-                :m,
-            ]
+            self.out[:m,] += self.y_p[:m,]
             # update state variables
-            self.y_p[: -self.hop,] = self.y_p[
-                self.hop :,
-            ]  # shift out left
-            self.y_p[
-                -self.hop :,
-            ] = 0.0
-            self.y_p[:,] += x[
-                -self.n_state_out :,
-            ]
+            self.y_p[: -self.hop,] = self.y_p[self.hop :,]  # shift out left
+            self.y_p[-self.hop :,] = 0.0
+            self.y_p[:,] += x[-self.n_state_out :,]
 
         return self.out
 

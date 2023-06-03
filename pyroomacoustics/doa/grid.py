@@ -1,12 +1,12 @@
 """
 Routines to perform grid search on the sphere
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
-
-from abc import ABCMeta, abstractmethod
 
 from .detect_peaks import detect_peaks
 from .utils import great_circ_dist
@@ -25,7 +25,6 @@ class Grid:
     __metaclass__ = ABCMeta
 
     def __init__(self, n_points):
-
         self.n_points = n_points
         self.values = None
         self.cartesian = np.zeros((3, n_points))
@@ -47,7 +46,6 @@ class Grid:
         return NotImplemented
 
     def set_values(self, vals):
-
         vals = np.array(vals)
 
         if vals.ndim == 0:
@@ -76,7 +74,6 @@ class GridCircle(Grid):
 
     def __init__(self, n_points=360, azimuth=None):
         if azimuth is not None:
-
             if azimuth.ndim != 1:
                 raise ValueError("Azimuth must be a 1D ndarray.")
 
@@ -100,14 +97,12 @@ class GridCircle(Grid):
         self.y[:] = np.sin(azimuth)
 
     def apply(self, func, spherical=False):
-
         if spherical:
             self.values = func(self.azimuth)
         else:
             self.values = func(self.x, self.y)
 
     def find_peaks(self, k=1):
-
         # make circular
         val_ext = np.append(self.values, self.values[:10])
 
@@ -123,7 +118,6 @@ class GridCircle(Grid):
         return candidates[max_idx]
 
     def plot(self, mark_peaks=0):
-
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -141,7 +135,6 @@ class GridCircle(Grid):
         ax.plot(pts, vals, "-")
 
         if mark_peaks > 0:
-
             idx = self.find_peaks(k=mark_peaks)
 
             ax.plot(pts[idx], vals[idx], "ro")
@@ -168,7 +161,6 @@ class GridSphere(Grid):
 
     def __init__(self, n_points=1000, spherical_points=None):
         if spherical_points is not None:
-
             if spherical_points.ndim != 2 or spherical_points.shape[0] != 2:
                 raise ValueError("spherical_points must be a 2D array with two rows.")
 
@@ -254,11 +246,9 @@ class GridSphere(Grid):
         dist = []
 
         for u in range(self.n_points):
-
             phi1, theta1 = self.spherical[:, u]
 
             for v in self.neighbors[u]:
-
                 phi2, theta2 = self.spherical[:, v]
 
                 d = great_circ_dist(1, theta1, phi1, theta2, phi2)
@@ -287,7 +277,6 @@ class GridSphere(Grid):
         # We start by looking at points whose neighbors all have lower values
         # than themselves
         for v in range(self.n_points):
-
             is_local_max = True
 
             for u in self.neighbors[v]:
@@ -340,7 +329,6 @@ class GridSphere(Grid):
         projection=True,
         points_only=False,
     ):
-
         if points_only:
             dirty_img = None
             dirty_grid_x = None
@@ -380,10 +368,10 @@ class GridSphere(Grid):
 
         try:
             import matplotlib.colors as colors
+            import matplotlib.pyplot as plt
 
             # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
-            import matplotlib.pyplot as plt
         except ImportError:
             import warnings
 
@@ -397,7 +385,6 @@ class GridSphere(Grid):
             ax.scatter(self.x, self.y, self.z, c="b", marker="o")
 
         if mark_peaks > 0:
-
             id = self.find_peaks(k=mark_peaks)
             s = 1.05
             ax.scatter(
@@ -408,7 +395,6 @@ class GridSphere(Grid):
         voronoi.sort_vertices_of_regions()
 
         if self.values is not None:
-
             col_max = self.values.max()
             col_min = self.values.min()
 
@@ -418,7 +404,6 @@ class GridSphere(Grid):
                 col_map = self.values / col_max
 
         else:
-
             col_map = np.zeros(self.n_points)
 
         cmap = plt.get_cmap("coolwarm")

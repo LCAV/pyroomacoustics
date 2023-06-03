@@ -7,6 +7,8 @@ import numpy as np
 import pyroomacoustics as pra
 from pyroomacoustics.libroom import threaded_rir_builder
 
+import pyroomacoustics as pra
+
 try:
     from pyroomacoustics import build_rir
 
@@ -76,7 +78,6 @@ visibilities = np.array(
 
 
 def build_rir_wrap(time, alpha, visibility, fs, fdl):
-
     # fractional delay length
     fdl = pra.constants.get("frac_delay_length")
     fdl2 = (fdl - 1) // 2
@@ -115,7 +116,6 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
 
 
 def test_build_rir():
-
     if not build_rir_available:
         return
 
@@ -260,7 +260,6 @@ def measure_runtime(dtype=np.float32, num_threads=4):
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     for t, a, v in zip(times, alphas, visibilities):

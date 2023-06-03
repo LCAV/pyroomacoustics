@@ -7,6 +7,7 @@ The STL file was kindly provided by Diego Di Carlo (@Chutlhu).
 """
 import argparse
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,14 +24,14 @@ except ImportError as err:
     )
     raise err
 
+default_stl_path = Path(__file__).parent / "data/INRIA_MUSIS.stl"
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Basic room from STL file example")
-    parser.add_argument("file", type=str, help="Path to STL file")
+    parser.add_argument(
+        "--file", type=str, default=default_stl_path, help="Path to STL file"
+    )
     args = parser.parse_args()
-
-    path_to_musis_stl_file = "./data/raw/MUSIS_3D_no_mics_simple.stl"
 
     material = pra.Material(energy_absorption=0.2, scattering=0.1)
 

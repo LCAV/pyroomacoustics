@@ -5,8 +5,9 @@
 import unittest
 
 import numpy as np
-import pyroomacoustics as pra
 from scipy.signal import fftconvolve
+
+import pyroomacoustics as pra
 
 # fix the RNG seed for repeatability
 np.random.seed(0)
@@ -96,7 +97,6 @@ class TestDOA(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     """
     algo_names = sorted(pra.doa.algorithms.keys())
 

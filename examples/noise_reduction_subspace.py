@@ -10,12 +10,14 @@ data. For fixed WAV files, the one-shot function
 `pyroomacoustics.denoise.apply_subspace` can be used.
 """
 
+import os
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import os
+
 import pyroomacoustics as pra
-import matplotlib.pyplot as plt
-import time
 from pyroomacoustics.denoise import Subspace
 
 """
@@ -63,10 +65,7 @@ n = 0
 start_time = time.time()
 hop = frame_len // 2
 while noisy_signal.shape[0] - n >= hop:
-
-    processed_audio[
-        n : n + hop,
-    ] = scnr.apply(noisy_signal[n : n + hop])
+    processed_audio[n : n + hop,] = scnr.apply(noisy_signal[n : n + hop])
 
     # update step
     n += hop

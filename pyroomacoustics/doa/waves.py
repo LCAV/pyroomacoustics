@@ -60,7 +60,6 @@ class WAVES(MUSIC):
         num_iter=5,
         **kwargs
     ):
-
         MUSIC.__init__(
             self,
             L=L,
@@ -92,7 +91,6 @@ class WAVES(MUSIC):
         invalid = []
 
         for k in range(self.num_freq):
-
             self.grid.set_values(
                 1 / self._compute_spatial_spectrum(C_hat[k, :, :], self.freq_bins[k])
             )
@@ -118,7 +116,6 @@ class WAVES(MUSIC):
 
         # while(i < self.iter or (len(self.src_idx) < self.num_src and i < 20)):
         while i < self.iter:
-
             # construct waves matrix
             self._construct_waves_matrix(C_hat, f0, beta)
 

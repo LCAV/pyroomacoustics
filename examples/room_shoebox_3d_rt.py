@@ -79,11 +79,9 @@ def chrono(f, *args, **kwargs):
 
 
 if __name__ == "__main__":
-
     rirs = {}
 
     for name, config in params.items():
-
         print("Simulate: ", name)
 
         shoebox = make_room(config)

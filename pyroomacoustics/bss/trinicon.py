@@ -101,7 +101,6 @@ def trinicon(
 
     m = 1  # online block index
     while m <= M:  # online loop
-
         # new chunk of input signal
         x = np.zeros((P, K * L + N))
         if m * hop > S:
@@ -118,7 +117,6 @@ def trinicon(
         w_new = w.copy()
 
         for j in range(j_max):  # offline update loop
-
             y_c = np.zeros((Q, K * L + N - L))  # c stands for chunk
             y_blocks = np.zeros((Q, K, N))
 

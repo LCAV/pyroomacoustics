@@ -1,7 +1,9 @@
-import numpy as np
-import pyroomacoustics as pra
-from scipy.io import wavfile
 import unittest
+
+import numpy as np
+from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 np.random.seed(0)
 
@@ -22,9 +24,9 @@ wav_files = [
 # List of frame lengths to test
 L = [256, 512, 1024, 2048, 4096]
 
+
 # Frequency Blind Source Separation
 def freq_bss(algo="auxiva", L=256, **kwargs):
-
     # Room dimensions in meters
     room_dim = [8, 9]
 
@@ -58,7 +60,6 @@ def freq_bss(algo="auxiva", L=256, **kwargs):
     # Record each source separately
     separate_recordings = []
     for source, signal in zip(room.sources, signals):
-
         source.signal[:] = signal
 
         room.simulate()

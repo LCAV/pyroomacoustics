@@ -24,9 +24,16 @@ We try to stick to `PEP8 <https://www.python.org/dev/peps/pep-0008/>`__
 as much as possible. Variables, functions, modules and packages should
 be in lowercase with underscores. Class names in CamelCase.
 
-We use `Black <https://github.com/psf/black>`__ to format the code.
+We use `Black <https://github.com/psf/black>`__ to format the code and `isort <https://pycqa.github.io/isort/>`__ to sort the imports.
 The format will be automatically checked when doing a pull request so it is
 recommended to regularly run Black on the code.
+Please format your code as follows prior to commiting.
+
+.. code-block:: shell
+
+  pip install black isort
+  black .
+  isort --profile black .
 
 Documentation
 ~~~~~~~~~~~~~
@@ -37,7 +44,7 @@ style <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__
 We recommend the following steps for generating the documentation:
 
 -  Create a separate environment, e.g. with Anaconda, as such:
-   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme``
+   ``conda create -n mkdocs37 python=3.7 sphinx numpydoc mock sphinx_rtd_theme sphinxcontrib-napoleon tabulate`` 
 -  Switch to the environment: ``source activate mkdocs37``
 -  Navigate to the ``docs`` folder and run: ``./make_apidoc.sh``
 -  The materials database page is generated with the script ``./make_materials_table.py``

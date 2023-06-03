@@ -23,6 +23,7 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 cases = {
@@ -45,7 +46,6 @@ cases = {
 
 
 def ccw3p(case):
-
     p1, p2, p3 = case["points"]
 
     r = pra.libroom.ccw3p(p1, p2, p3)
@@ -68,9 +68,7 @@ def test_ccw3p_colinear():
 
 
 if __name__ == "__main__":
-
     for lbl, case in cases.items():
-
         try:
             ccw3p(case)
         except:

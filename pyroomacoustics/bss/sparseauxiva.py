@@ -25,6 +25,7 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 import numpy as np
+
 from .common import projection_back, sparir
 
 
@@ -39,7 +40,6 @@ def sparseauxiva(
     return_filters=False,
     callback=None,
 ):
-
     """
     Implementation of sparse AuxIVA algorithm for BSS presented in
 

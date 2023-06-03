@@ -5,7 +5,6 @@ import os
 import sys
 
 # To use a consistent encoding
-from codecs import open
 from os import path
 
 # import version from file
@@ -89,6 +88,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
 
 
 ### Build Tools (taken from pybind11 example) ###
+
 
 # As of Python 3.6, CCompiler has a `has_flag` method.
 # cf http://bugs.python.org/issue26689
@@ -182,7 +182,7 @@ setup_kwargs = dict(
     package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
     install_requires=[
         "Cython",
-        "numpy",
+        "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
     ],

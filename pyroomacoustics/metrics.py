@@ -2,9 +2,9 @@ import os
 import platform
 
 import numpy as np
+from scipy.signal import hann
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
-from scipy.signal import hann
 
 from .transform import stft
 
@@ -38,26 +38,15 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
     if n % 2 == 1:
         # if n is odd, take central element
-        m = xsw[
-            n // 2,
-        ]
+        m = xsw[n // 2,]
     else:
         # if n is even, average the two central elements
-        m = 0.5 * (
-            xsw[
-                n // 2 - 1,
-            ]
-            + xsw[
-                n // 2,
-            ]
-        )
+        m = 0.5 * (xsw[n // 2 - 1,] + xsw[n // 2,])
 
     if alpha is None:
         if keepdims:
             m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
+                m[np.newaxis,],
                 0,
                 axis,
             )
@@ -85,14 +74,8 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             else:
                 ci = np.array(
                     [
-                        xsw[
-                            j,
-                        ]
-                        - m,
-                        xsw[
-                            k,
-                        ]
-                        - m,
+                        xsw[j,] - m,
+                        xsw[k,] - m,
                     ]
                 )
 
@@ -104,22 +87,14 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
             ci = np.array(
                 [
-                    xsw[
-                        j,
-                    ]
-                    - m,
-                    xsw[
-                        k,
-                    ]
-                    - m,
+                    xsw[j,] - m,
+                    xsw[k,] - m,
                 ]
             )
 
         if keepdims:
             m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
+                m[np.newaxis,],
                 0,
                 axis,
             )
@@ -164,7 +139,6 @@ def mse(x1, x2):
 
 # Itakura-Saito distance function
 def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
-
     P1 = np.abs(stft.analysis(x1, stft_L, stft_hop)) ** 2
     P2 = np.abs(stft(x2, stft_L, stft_hop)) ** 2
 
@@ -183,7 +157,6 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
 
 def snr(ref, deg):
-
     return np.sum(ref**2) / np.sum((ref - deg) ** 2)
 
 
@@ -244,7 +217,6 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
 
     # Recover output as the processes finish
     while states.any():
-
         for i, p in enumerate(pipes):
             if states[i] == True and p.poll() is not None:
                 states[i] = False
@@ -334,7 +306,6 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
 
     # loop through different slope values
     for k in range(nCoeffs):
-
         # get masks
         a = coeffs[k]
 

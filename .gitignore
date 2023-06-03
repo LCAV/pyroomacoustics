@@ -5,8 +5,13 @@
 *.idea
 *.DS_Store
 *.wav
+*.so
 build/
 docs/_build
 dist/
 local_examples/
 *.ipynb_checkpoints
+# files added after editable install (pip install -e . )
+pyroomacoustics.egg-info/
+pyroomacoustics/build_rir.c
+pyroomacoustics/**/*.so

@@ -1,10 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from pyroomacoustics import dB, all_combinations
+from pyroomacoustics import all_combinations, dB
 from pyroomacoustics.directivities import cardioid_func
 from pyroomacoustics.doa import spher2cart
-
 
 azimuth = np.radians(np.linspace(start=0, stop=360, num=361, endpoint=True))
 colatitude = np.radians(np.linspace(start=0, stop=180, num=180, endpoint=True))

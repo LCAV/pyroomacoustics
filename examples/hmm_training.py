@@ -7,12 +7,13 @@ dimension O.  We sample from this model a number of examples.
 Then we train a second models on these examples.
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
+
 import numpy as np
+
 from pyroomacoustics import HMM, CircularGaussianEmission, GaussianEmission
 
 if __name__ == "__main__":
-
     K = 4  # number of states
     O = 6  # dimension of the emission vector
     model = "left-right"  # transition matrix model

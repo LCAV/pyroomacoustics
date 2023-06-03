@@ -15,11 +15,11 @@ If the C module is not installed (pure python
 fallback version), then nothing is done.
 """
 import numpy as np
+
 import pyroomacoustics
 
 
 def test_issue_22():
-
     np.random.seed(0)
 
     n_mics = 1
@@ -48,7 +48,6 @@ def test_issue_22():
     shoebox.add_microphone_array(pyroomacoustics.MicrophoneArray(mic_pos, fs))
 
     for i in range(n_times):
-
         shoebox.image_source_model()
 
         if i != 0 and i % 1000 == 0:
@@ -56,5 +55,4 @@ def test_issue_22():
 
 
 if __name__ == "__main__":
-
     test_issue_22()
