@@ -29,6 +29,8 @@ from .doa import (
 )
 from .utilities import requires_matplotlib
 
+_DATA_SOFA_DIR = Path(__file__).parent / "data/sofa"
+
 
 def fibonacci_sphere(samples):
     """
@@ -323,6 +325,19 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
     return id
 
 
+def _resolve_sofa_path(path):
+    path = Path(path)
+
+    if path.exists():
+        return path
+
+    _path = _DATA_SOFA_DIR / path
+    if _path.exists():
+        return _path
+
+    raise ValueError(f"SOFA file {path} could not be found")
+
+
 def open_sofa_file(path, measurement_id, is_source, fs=16000):
     # Memo for notation of SOFA dimensions
     # From: https://www.sofaconventions.org/mediawiki/index.php/SOFA_conventions#AnchorDimensions
@@ -335,11 +350,12 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
     # C 	coordinate triplet, constant 	always 3
 
     # Open DirPat database
-    path = Path(path)
     if not has_sofa:
         raise ValueError(
-            "The package 'sofa' needs to be installed to call this function. Install by doing `pip install sofa`"
+            "The package 'python-sofa' needs to be installed to call this function. Install by doing `pip install python-sofa`"
         )
+
+    path = _resolve_sofa_path(path)
 
     file_sofa = sofa.Database.open(path)
 
@@ -628,8 +644,9 @@ class SOFADirectivityFactory:
     fs: (int)
         The desired sampling frequency. If the impulse responses were stored at
         a different sampling frequency, they are resampled at ``fs``.
-    interpolate: (Boolean)
-        Interpolate the FIR filter or not
+    interp_order: (int)
+        The order of spherical harmonics to use for interpolation.
+        If ``None`` interpolation is not used.
     interp_n_points: (int)
         Number of points for the interpolation grid. The interpolation grid is a
         Fibonnaci pseudo-uniform sampling of the sphere.
