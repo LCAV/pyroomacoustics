@@ -230,9 +230,9 @@ def highpass(signal, Fs, fc=None, plot=False):
     wc = 2.0 * fc / Fs
 
     # design the filter
-    from scipy.signal import freqz, iirfilter, lfilter
+    from scipy.signal import iirfilter, sosfiltfilt, sosfreqz
 
-    b, a = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type)
+    sos = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")
 
     # plot frequency response of filter if requested
     if plot:
@@ -244,7 +244,7 @@ def highpass(signal, Fs, fc=None, plot=False):
             warnings.warn("Matplotlib is required for plotting")
             return
 
-        w, h = freqz(b, a)
+        w, h = sosfreqz(sos)
 
         plt.figure()
         plt.title("Digital filter frequency response")
@@ -255,7 +255,7 @@ def highpass(signal, Fs, fc=None, plot=False):
         plt.grid()
 
     # apply the filter
-    signal = lfilter(b, a, signal.copy())
+    signal = sosfiltfilt(sos, signal.copy())
 
     return signal
 

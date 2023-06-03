@@ -509,6 +509,7 @@ class MicrophoneArray(object):
         """
         if isinstance(locs, MicrophoneArray):
             self.R = np.concatenate((self.R, locs.R), axis=1)
+            self.directivity += locs.directivity
         else:
             self.R = np.concatenate((self.R, locs), axis=1)
 

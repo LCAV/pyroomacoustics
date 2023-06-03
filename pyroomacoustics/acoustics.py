@@ -358,10 +358,13 @@ class OctaveBandsFactory(object):
 
         """
 
-        u_ = [
-            att_in_octave_band[i] * np.exp(-0.5 * air_abs_band[i] * distance_is)
-            for i in range(len(bws))
-        ]
+        if air_abs_band is None:
+            u_ = [att_in_octave_band[i] for i in range(len(bws))]
+        else:
+            u_ = [
+                att_in_octave_band[i] * np.exp(-0.5 * air_abs_band[i] * distance_is)
+                for i in range(len(bws))
+            ]
 
         for b in range(len(bws)):
             att_in_dft_scale += u_[b] * self.filters_freq_domain[:, b]

@@ -272,9 +272,10 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
     """
     Assigns DIRPAT pattern enum to respective id present in the DIRPAT SOFA files.
     Works only for mic and source files
-
-
     """
+
+    if isinstance(DIRPAT_pattern_enum, int):
+        return DIRPAT_pattern_enum
 
     if source is not True:
         if "AKG_c480" in DIRPAT_pattern_enum:
@@ -342,6 +343,74 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
 
     file_sofa = sofa.Database.open(path)
 
+    is_dirpat = path.name in [
+        "Soundfield_ST450_CUBE.sofa",
+        "AKG_c480_c414_CUBE.sofa",
+        "Oktava_MK4012_CUBE.sofa",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    ]
+
+    conv_name = file_sofa.convention.name
+
+    if conv_name == "SimpleFreeFieldHRIR":
+        return _read_simple_free_field_hrir(file_sofa, measurement_id, fs)
+
+    elif conv_name == "GeneralFIR":
+        return _read_general_fir(
+            file_sofa, path.name, measurement_id, fs, is_source, is_dirpat
+        )
+
+    else:
+        raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
+
+
+def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
+    # read the mesurements
+    IR_S = file_sofa.Data.IR.get_values()
+
+    # Source positions
+    pos = file_sofa.Source.Position.get_values()
+    pos_units = file_sofa.Source.Position.Units.split(",")
+    pos_type = file_sofa.Source.Position.Type
+
+    # Look for receiver of specific type requested by user
+    msr = IR_S[:, measurement_id, :]
+
+    # downsample the fir filter.
+    fs_file = file_sofa.Data.SamplingRate.get_values()[0]
+    if fs is None:
+        fs = fs_file
+    elif fs != fs_file:
+        msr = decimate(
+            msr,
+            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
+            axis=-1,
+        )
+
+    if pos_type != "spherical":
+        raise NotImplementedError(f"{pos_type} not implemented")
+
+    azimuth = pos[:, 0]
+    colatitude = pos[:, 1]
+    distance = pos[:, 2]
+
+    # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
+    if pos_units[0] == "degree":
+        azimuth = np.deg2rad(azimuth)
+    if pos_units[1] == "degree":
+        colatitude = np.deg2rad(colatitude)
+
+    if np.any(colatitude < 0.0):
+        # it looks like the data is using elevation format
+        colatitude = np.pi / 2.0 - colatitude
+
+    # encapsulate the spherical grid points in a grid object
+    grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
+
+    return grid, distance, msr, fs
+
+
+def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source, is_dirpat):
     # read the mesurements
     IR_S = file_sofa.Data.IR.get_values()
 
@@ -372,17 +441,11 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
             axis=-1,
         )
 
-    is_dirpat = path.name in [
-        "Soundfield_ST450_CUBE.sofa",
-        "AKG_c480_c414_CUBE.sofa",
-        "Oktava_MK4012_CUBE.sofa",
-        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    ]
     if is_dirpat:
         # There is a bug in the DIRPAT measurement files where the array of
         # measurement locations were not flattened correctly
         pos_units[0:1] = "radian"
-        if path.name == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
+        if filename == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
             pos_RS = np.reshape(pos, [36, -1, 3])
             pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
         else:
