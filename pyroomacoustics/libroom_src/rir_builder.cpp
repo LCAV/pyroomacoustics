@@ -147,15 +147,28 @@ void threaded_rir_builder_impl(
 
   for (auto &&result : results) result.get();
 
-  for (size_t idx = 0; idx < rir_len; idx++)
-    for (size_t t_idx = 0; t_idx < num_threads; t_idx++)
-      rir_acc(idx) += rir_out[t_idx * rir_len + idx];
+  block_size = size_t(std::ceil(double(rir_len) / double(num_threads)));
+
+  std::vector<std::future<void>> sum_results;
+  for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
+    size_t t_start = t_idx * block_size;
+    size_t t_end = std::min(t_start + block_size, rir_len);
+
+    sum_results.emplace_back(pool.enqueue(
+        [&](size_t t_start, size_t t_end) {
+          for (size_t idx = t_start; idx < t_end; idx++)
+            for (size_t t_idx = 0; t_idx < num_threads; t_idx++)
+              rir_acc(idx) += rir_out[t_idx * rir_len + idx];
+        },
+        t_start, t_end));
+  }
+
+  for (auto &&result : sum_results) result.get();
 }
 
-void threaded_rir_builder(py::buffer rir, const py::buffer time,
-                          const py::buffer alpha, const py::buffer visibility,
-                          int fs, size_t fdl, size_t lut_gran,
-                          size_t num_threads) {
+void rir_builder(py::buffer rir, const py::buffer time, const py::buffer alpha,
+                 const py::buffer visibility, int fs, size_t fdl,
+                 size_t lut_gran, size_t num_threads) {
   // dispatch to correct implementation depending on input type
   auto buf = pybind11::array::ensure(rir);
   if (py::isinstance<py::array_t<float>>(buf)) {
@@ -168,3 +181,179 @@ void threaded_rir_builder(py::buffer rir, const py::buffer time,
     std::runtime_error("wrong type array for rir builder");
   }
 }
+
+template <class T>
+void threaded_delay_sum_impl(
+    const py::array_t<T, py::array::c_style | py::array::forcecast> irs,
+    const py::array_t<int, py::array::c_style | py::array::forcecast> delays,
+    py::array_t<T, py::array::c_style | py::array::forcecast> output,
+    size_t num_threads) {
+  // accessors for the arrays
+  auto irs_acc = irs.unchecked();                // short impulse responses
+  auto delays_acc = delays.unchecked();          // integer delays
+  auto output_acc = output.mutable_unchecked();  // output array
+
+  auto n_irs = irs.shape(0);
+  auto n_taps = irs.shape(1);
+  auto out_len = output.shape(0);
+
+  // error handling
+  if (n_irs != delays.shape(0))
+    throw std::runtime_error("time and alpha arrays should have the same size");
+
+  // check that the output buffer is long enough
+  py::buffer_info del_buf = delays.request();
+  int *del_ptr = (int *)(del_buf.ptr);
+  auto d_min = *std::min_element(del_ptr, del_ptr + del_buf.size);
+  auto d_max = *std::max_element(del_ptr, del_ptr + del_buf.size);
+  if (d_min < 0) throw std::runtime_error("delays should be positive");
+  if (d_max + n_taps > out_len)
+    throw std::runtime_error("the output buffer is too small");
+
+  // divide into equal size blocks for thread processing
+  std::vector<T> out_buffers(num_threads * out_len, 0);
+  size_t block_size = size_t(std::ceil(double(n_irs) / double(num_threads)));
+
+  // build the RIR
+  ThreadPool pool(num_threads);
+  std::vector<std::future<void>> results;
+  for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
+    size_t t_start = t_idx * block_size;
+    size_t t_end = std::min(t_start + block_size, (size_t)n_irs);
+    size_t offset = t_idx * out_len;
+
+    results.emplace_back(pool.enqueue(
+        [&](size_t t_start, size_t t_end, size_t offset) {
+          for (size_t idx = t_start; idx < t_end; idx++) {
+            for (ssize_t k = 0; k < n_taps; k++) {
+              out_buffers[offset + delays_acc(idx) + k] += irs_acc(idx, k);
+            }
+          }
+        },
+        t_start, t_end, offset));
+  }
+
+  for (auto &&result : results) result.get();
+
+  // now sum all the parts
+  block_size = size_t(std::ceil(double(out_len) / double(num_threads)));
+
+  std::vector<std::future<void>> sum_results;
+  for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
+    size_t t_start = t_idx * block_size;
+    size_t t_end = std::min(t_start + block_size, (size_t)out_len);
+
+    sum_results.emplace_back(pool.enqueue(
+        [&](size_t t_start, size_t t_end) {
+          for (size_t idx = t_start; idx < t_end; idx++)
+            for (size_t t_idx = 0; t_idx < num_threads; t_idx++)
+              output_acc(idx) += out_buffers[t_idx * out_len + idx];
+        },
+        t_start, t_end));
+  }
+
+  for (auto &&result : sum_results) result.get();
+}
+
+void delay_sum(const py::buffer irs, const py::buffer delays, py::buffer output,
+               size_t num_threads) {
+  // dispatch to correct implementation depending on input type
+  auto buf = pybind11::array::ensure(irs);
+  if (py::isinstance<py::array_t<float>>(buf)) {
+    threaded_delay_sum_impl<float>(irs, delays, output, num_threads);
+  } else if (py::isinstance<py::array_t<double>>(buf)) {
+    threaded_delay_sum_impl<double>(irs, delays, output, num_threads);
+  } else {
+    std::runtime_error("wrong type array for delay-sum");
+  }
+}
+
+template <class T>
+void threaded_fractional_delay_impl(
+    py::array_t<T, py::array::c_style | py::array::forcecast> out,
+    const py::array_t<T, py::array::c_style | py::array::forcecast> time,
+    size_t lut_gran, size_t num_threads) {
+  auto pi = get_pi<T>();
+
+  // accessors for the arrays
+  auto out_acc = out.mutable_unchecked();
+  auto tim_acc = time.unchecked();
+
+  // error handling
+  if (out_acc.ndim() != 2)
+    throw std::runtime_error("output array needs to be 2D");
+  if (tim_acc.shape(0) != out_acc.shape(0))
+    throw std::runtime_error(
+        "time and output arrays should have the same size");
+
+  size_t n_times = time.size();
+  size_t fdl = out_acc.shape(1);
+  if (fdl % 2 == 0)  // force to be odd length
+    fdl = fdl - 1;
+  size_t fdl2 = (fdl - 1) / 2;
+
+  // create necessary data
+  size_t lut_size = (fdl + 2) * lut_gran;
+  auto lut_delta = T(1.0) / lut_gran;
+  auto lut_gran_f = T(lut_gran);
+
+  // sinc values table
+  std::vector<T> sinc_lut(lut_size);
+  T n = -T(fdl2) - 1;
+  for (size_t idx = 0; idx < lut_size; n += lut_delta, idx++) {
+    if (n == 0.0)
+      sinc_lut[idx] = 1.0;
+    else
+      sinc_lut[idx] = std::sin(pi * n) / (pi * n);
+  }
+
+  // hann window
+  std::vector<T> hann(fdl);
+  for (size_t idx = 0; idx < fdl; idx++)
+    hann[idx] = T(0.5) - T(0.5) * std::cos((T(2.0) * pi * idx) / T(fdl - 1));
+
+  // divide into equal size blocks for thread processing
+  size_t block_size = size_t(std::ceil(double(n_times) / double(num_threads)));
+
+  // build the RIR
+  ThreadPool pool(num_threads);
+  std::vector<std::future<void>> results;
+  for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
+    size_t t_start = t_idx * block_size;
+    size_t t_end = std::min(t_start + block_size, n_times);
+
+    results.emplace_back(pool.enqueue(
+        [&](size_t t_start, size_t t_end) {
+          for (size_t idx = t_start; idx < t_end; idx++) {
+            // LUT interpolation
+            T x_off_frac = (1. - tim_acc(idx)) * lut_gran_f;
+            T lut_gran_off = std::floor(x_off_frac);
+            T x_off = (x_off_frac - lut_gran_off);
+
+            int lut_pos = int(lut_gran_off);
+            for (size_t k = 0; k < fdl; lut_pos += lut_gran, k++)
+              out_acc(idx, k) =
+                  hann[k] *
+                  (sinc_lut[lut_pos] +
+                   x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]));
+          }
+        },
+        t_start, t_end));
+  }
+
+  for (auto &&result : results) result.get();
+}
+
+void fractional_delay(py::buffer out, const py::buffer time, size_t lut_gran,
+                      size_t num_threads) {
+  // dispatch to correct implementation depending on input type
+  auto buf = pybind11::array::ensure(out);
+  if (py::isinstance<py::array_t<float>>(buf)) {
+    threaded_fractional_delay_impl<float>(out, time, lut_gran, num_threads);
+  } else if (py::isinstance<py::array_t<double>>(buf)) {
+    threaded_fractional_delay_impl<double>(out, time, lut_gran, num_threads);
+  } else {
+    std::runtime_error("wrong type array for fractional delays");
+  }
+}
+

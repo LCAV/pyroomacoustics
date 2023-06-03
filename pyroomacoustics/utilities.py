@@ -562,6 +562,9 @@ def fractional_delay(t0):
 
     N = constants.get("frac_delay_length")
 
+    if t0.ndim == 1:
+        t0 = t0[:, None]
+
     return np.hanning(N) * np.sinc(np.arange(N) - (N - 1) / 2 - t0)
 
 
@@ -655,7 +658,12 @@ def levinson(r, b):
         )
         epsilon = epsilon * (1 - np.abs(gamma) ** 2)
         delta = np.dot(np.conj(r[1 : j + 1]), np.flipud(x))
-        q = (b[j,] - delta) / epsilon
+        q = (
+            b[
+                j,
+            ]
+            - delta
+        ) / epsilon
         if len(b.shape) == 1:
             x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
         else:

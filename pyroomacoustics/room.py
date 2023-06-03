@@ -2246,7 +2246,6 @@ class Room(object):
                 rir_bands = []
 
                 for b, bw in enumerate(bws):
-
                     ir_loc = np.zeros_like(ir, dtype=np.float32)
 
                     # IS method
@@ -2278,7 +2277,7 @@ class Room(object):
                         # is shorter than the delay to to the filter
                         # hence: time + fdl2
                         time_adjust = time + fdl2 / self.fs
-                        libroom.threaded_rir_builder(
+                        libroom.rir_builder(
                             ir_loc,
                             time_adjust.astype(np.float32),
                             alpha.astype(np.float32),
