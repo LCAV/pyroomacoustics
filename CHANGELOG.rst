@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes a bug when using randomized image source model with a 2D room (#315) by
+  @hrosseel
+
 
 `0.7.3`_ - 2022-12-05
 ---------------------
