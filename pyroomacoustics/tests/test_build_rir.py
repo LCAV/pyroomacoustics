@@ -3,8 +3,8 @@ from __future__ import division, print_function
 import os
 import time
 
-import pytest
 import numpy as np
+import pytest
 
 import pyroomacoustics as pra
 from pyroomacoustics import libroom
@@ -200,7 +200,6 @@ def test_errors():
 
 @pytest.mark.parametrize("dtype,tol", [(np.float32, 1e-6), (np.float64, 1e-7)])
 def test_delay_sum(dtype, tol):
-
     n = 1000
     taps = 81
     n_threads = os.cpu_count()
