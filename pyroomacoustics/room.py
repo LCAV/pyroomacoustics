@@ -655,6 +655,8 @@ References
 from __future__ import division, print_function
 
 import math
+import os
+import sys
 import warnings
 
 import numpy as np
@@ -669,7 +671,14 @@ from .directivities import CardioidFamily, source_angle_shoebox
 from .doa import GridCircle, GridSphere
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
-from .parameters import Material, Physics, constants, eps, make_materials
+from .parameters import (
+    Material,
+    Physics,
+    constants,
+    eps,
+    get_num_threads,
+    make_materials,
+)
 from .soundsource import SoundSource
 from .utilities import angle_function, fractional_delay
 
@@ -2113,7 +2122,9 @@ class Room(object):
                     max_disp = self.max_rand_disp
 
                     # add a random displacement to each cartesian coordinate
-                    disp = np.random.uniform(-max_disp, max_disp, size=(self.dim, n_images))
+                    disp = np.random.uniform(
+                        -max_disp, max_disp, size=(self.dim, n_images)
+                    )
                     source.images += disp
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
@@ -2235,7 +2246,7 @@ class Room(object):
                 rir_bands = []
 
                 for b, bw in enumerate(bws):
-                    ir_loc = np.zeros_like(ir)
+                    ir_loc = np.zeros_like(ir, dtype=np.float32)
 
                     # IS method
                     if self.simulator_state["ism_needed"]:
@@ -2258,7 +2269,7 @@ class Room(object):
                             )
 
                         # Use the Cython extension for the fractional delays
-                        from .build_rir import fast_rir_builder
+                        # from .build_rir import fast_rir_builder
 
                         vis = self.visibility[s][m, :].astype(np.int32)
                         # we add the delay due to the factional delay filter to
@@ -2266,7 +2277,16 @@ class Room(object):
                         # is shorter than the delay to to the filter
                         # hence: time + fdl2
                         time_adjust = time + fdl2 / self.fs
-                        fast_rir_builder(ir_loc, time_adjust, alpha, vis, self.fs, fdl)
+                        libroom.rir_builder(
+                            ir_loc,
+                            time_adjust.astype(np.float32),
+                            alpha.astype(np.float32),
+                            vis,
+                            self.fs,
+                            fdl,
+                            constants.get("sinc_lut_granularity"),
+                            constants.get("num_threads"),
+                        )
 
                         if is_multi_band:
                             ir_loc = self.octave_bands.analysis(ir_loc, band=b)

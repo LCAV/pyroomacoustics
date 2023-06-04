@@ -39,6 +39,33 @@ import numpy as np
 eps = 1e-10
 
 
+def get_num_threads():
+    """
+    Returns the number of threads available for pyroomacoustics
+
+    The number of threads can be set by
+    1. Setting the ``PRA_NUM_THREADS`` environment variable
+    2. Calling ``pra.constants.set("num_threads") = new_num_threads
+    3. Seting ``OMP_NUM_THREADS`` or ``MKL_NUM_THREADS``
+    """
+
+    num_cores = os.cpu_count()
+
+    # the specific environment variable takes prescedence
+    if "PRA_NUM_THREADS" in os.environ:
+        return int(os.environ["PRA_NUM_THREADS"])
+
+    # we also respect OMP and MKL variables
+    env_var = [
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+    ]
+
+    all_limits = [int(getattr(os.environ, var, num_cores)) for var in env_var]
+
+    return min(all_limits)
+
+
 # We implement the constants as a dictionary so that they can
 # be modified at runtime.
 # The class Constants gives an interface to update the value of
@@ -50,6 +77,8 @@ _constants_default = {
     "fc_hp": 300.0,  # cut-off frequency of standard high-pass filter
     "frac_delay_length": 81,  # Length of the fractional delay filters used for RIR gen
     "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
+    "sinc_lut_granularity": 20,  # num. points in integer interval in the sinc interp. LUT
+    "num_threads": get_num_threads(),  # num. of threads to use
 }
 
 
