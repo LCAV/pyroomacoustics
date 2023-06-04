@@ -1,8 +1,33 @@
 import abc
+import warnings
+from pathlib import Path
 import numpy as np
 from enum import Enum
 from pyroomacoustics.doa import spher2cart
+import json
 from pyroomacoustics.utilities import requires_matplotlib, all_combinations
+
+def wrap_degrees(angle):
+    """Wrap angles to between -180 and 180 degrees.
+
+    Args:
+        angle (list, np.array, float, int): an array of angles
+
+    Returns:
+        angles (np.array): an array of angles wrapped to between -180 and 180
+            all angles at -180 are returned as +180
+    """
+    angle = np.array(angle)
+    if len(angle.shape) == 0:
+        angle = np.expand_dims(angle, 0)
+    ind_nan = np.isnan(angle)  # skip wrapping any nans (prevent annoying warnings)
+    angle[ind_nan] = 0
+    angle[angle < -180] += 360
+    angle[angle > 180] -= 360
+    angle[angle == -180] = 180
+    if sum(ind_nan) > 0:
+        angle[ind_nan] = np.nan  # put the nans back in
+    return angle
 
 
 class DirectivityPattern(Enum):
@@ -278,6 +303,71 @@ class CardioidFamily(Directivity):
 
         return ax
 
+
+class SpeechDirectivity(Directivity):
+    """
+        Object for directivities for running speech, data from.
+        https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6033614/
+    Parameters
+    ----------
+    orientation : DirectionVector
+        Indicates direction of the pattern.
+    """
+    def __init__(self, orientation, pattern_name="running_speech", gain=1.0):
+        Directivity.__init__(self, orientation)
+        datafile = Path("./data/speech_directivity.json")
+        with open(datafile, "r") as f:
+            speech_data = json.load(f)
+        self.centre_freqs = np.array(speech_data["centre_freqs"])
+        self.angles = np.array(speech_data["angles"])
+        self.speech_data = np.array(speech_data["data"])
+        self._gain = gain
+        self._pattern_name = pattern_name
+
+    @property
+    def directivity_pattern(self):
+        """Name of speech directivity pattern."""
+        return self._pattern_name
+
+    def get_response(
+        self, azimuth, colatitude=None, magnitude=True, frequency=None, degrees=True
+    ):
+        """
+        Get response for provided angles.
+
+        Parameters
+        ----------
+        azimuth : array_like
+            Azimuth in degrees
+        colatitude : array_like, optional
+            Colatitude in degrees. Default is to be on XY plane.
+        magnitude : bool, optional
+            Whether to return magnitude of response.
+        frequency : float, optional
+            For which frequency to compute the response.
+        degrees : bool, optional
+            Whether provided angles are in degrees.
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided angles.
+        """
+        if not degrees:
+            raise RuntimeError("SpeechDirectivity requires angles in degrees.")
+        if frequency is None:
+            raise RuntimeError("SpeechDirectivity requires frequency input.")
+        if not magnitude:
+            warnings.warn("SpeechDirectivity does not return phase response, magnitiude only.")
+        if colatitude is not None:
+            warnings.warn("SpeechDirectivity assumes X-Y plane only.")
+        # find the freq closest to the avaiable 1/3rd octave band
+        freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
+        azimuth = wrap_degrees(azimuth)
+        azimuth = np.abs(azimuth) # speech response is mirroed
+        directivity_at_angle_db = np.interp(self.angles, self.speech_data[freq_ind, :], azimuth)
+        directivity_at_angle = np.power(10, directivity_at_angle_db / 20)
+        return directivity_at_angle
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
     """
