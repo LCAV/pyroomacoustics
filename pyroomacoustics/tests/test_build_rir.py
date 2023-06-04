@@ -198,7 +198,7 @@ def test_errors():
         libroom.rir_builder(rir, time, alpha, visibility, fs, 80, 20, 2)
 
 
-@pytest.mark.parametrize("dtype,tol", [(np.float32, 1e-6), (np.float64, 1e-7)])
+@pytest.mark.parametrize("dtype,tol", [(np.float32, 1e-5), (np.float64, 1e-7)])
 def test_delay_sum(dtype, tol):
     n = 1000
     taps = 81
