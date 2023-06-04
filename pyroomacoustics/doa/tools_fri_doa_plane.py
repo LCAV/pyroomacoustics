@@ -296,13 +296,13 @@ def output_shrink(K, L):
     """
     out_len = L - K
     if out_len % 2 == 0:
-        half_out_len = np.int(out_len / 2.0)
+        half_out_len = int(out_len / 2.0)
         mtx_r = np.hstack(
             (np.eye(half_out_len), np.zeros((half_out_len, half_out_len)))
         )
         mtx_i = mtx_r
     else:
-        half_out_len = np.int((out_len + 1) / 2.0)
+        half_out_len = int((out_len + 1) / 2.0)
         mtx_r = np.hstack(
             (np.eye(half_out_len), np.zeros((half_out_len, half_out_len - 1)))
         )
@@ -322,11 +322,11 @@ def coef_expan_mtx(K):
         number of Dirac. The filter size is K + 1
     """
     if K % 2 == 0:
-        D0 = np.eye(np.int(K / 2.0 + 1))
+        D0 = np.eye(int(K / 2.0 + 1))
         D1 = np.vstack((D0, D0[1:, ::-1]))
         D2 = np.vstack((D0, -D0[1:, ::-1]))[:, :-1]
     else:
-        D0 = np.eye(np.int((K + 1) / 2.0))
+        D0 = np.eye(int((K + 1) / 2.0))
         D1 = np.vstack((D0, D0[:, ::-1]))
         D2 = np.vstack((D0, -D0[:, ::-1]))
     return D1, D2

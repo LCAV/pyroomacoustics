@@ -103,7 +103,6 @@ class ModeVector(object):
         # we use this to test if an integer is passed
         integer = (
             int,
-            np.int,
             np.int16,
             np.int32,
             np.int64,
@@ -212,7 +211,7 @@ class DOA(object):
 
         self.num_src = self._check_num_src(num_src)
         self.sources = np.zeros([self.D, self.num_src])
-        self.src_idx = np.zeros(self.num_src, dtype=np.int)
+        self.src_idx = np.zeros(self.num_src, dtype=int)
         self.azimuth_recon = None
         self.colatitude_recon = None
         self.alpha_recon = None
@@ -330,7 +329,7 @@ class DOA(object):
         if num_src is not None and num_src != self.num_src:
             self.num_src = self._check_num_src(num_src)
             self.sources = np.zeros([self.num_src, self.D])
-            self.src_idx = np.zeros(self.num_src, dtype=np.int)
+            self.src_idx = np.zeros(self.num_src, dtype=int)
             self.angle_of_arrival = None
         if X.shape[0] != self.M:
             raise ValueError(
@@ -343,12 +342,12 @@ class DOA(object):
 
         # frequency bins on which to apply DOA
         if freq_bins is not None:
-            self.freq_bins = np.array(freq_bins, dtype=np.int)
+            self.freq_bins = np.array(freq_bins, dtype=int)
         elif freq_hz is not None:
             self.freq_bins = [int(np.round(f / self.fs * self.nfft)) for f in freq_bins]
         else:
             freq_range = [int(np.round(f / self.fs * self.nfft)) for f in freq_range]
-            self.freq_bins = np.arange(freq_range[0], freq_range[1], dtype=np.int)
+            self.freq_bins = np.arange(freq_range[0], freq_range[1], dtype=int)
 
         self.freq_bins = self.freq_bins[self.freq_bins < self.max_bin]
         self.freq_bins = self.freq_bins[self.freq_bins >= 0]

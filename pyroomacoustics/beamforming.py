@@ -450,7 +450,7 @@ class MicrophoneArray(object):
         else:
             self.signals = signals
 
-    def to_wav(self, filename, mono=False, norm=False, bitdepth=np.float):
+    def to_wav(self, filename, mono=False, norm=False, bitdepth=float):
         """
         Save all the signals to wav files.
 
@@ -475,7 +475,7 @@ class MicrophoneArray(object):
         else:
             signal = self.signals.T  # each column is a channel
 
-        float_types = [float, np.float, np.float32, np.float64]
+        float_types = [float, np.float32, np.float64]
 
         if bitdepth in float_types:
             bits = None
@@ -858,7 +858,7 @@ class Beamformer(MicrophoneArray):
         f_0 = np.floor(self.fs / 8000.0)
         for i in np.arange(1, 5):
             yticks[i - 1] = np.argmin(np.abs(freq - 1000.0 * i * f_0))
-        # yticks = np.array(plt.getp(plt.gca(), 'yticks'), dtype=np.int)
+        # yticks = np.array(plt.getp(plt.gca(), 'yticks'), dtype=int)
         plt.setp(plt.gca(), "yticks", yticks)
         plt.setp(plt.gca(), "yticklabels", np.arange(1, 5) * f_0)
 

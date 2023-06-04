@@ -598,7 +598,7 @@ def fractional_delay_filter_bank(delays):
     bank_flat = np.zeros(N * filter_length)
 
     # separate delays in integer and fractional parts
-    di = np.floor(delays).astype(np.int)
+    di = np.floor(delays).astype(int)
     df = delays - di
 
     # broadcasting tricks to compute at once all the locations

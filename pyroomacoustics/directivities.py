@@ -1,4 +1,5 @@
 import abc
+import os
 import warnings
 from pathlib import Path
 import numpy as np
@@ -315,11 +316,11 @@ class SpeechDirectivity(Directivity):
     """
     def __init__(self, orientation, pattern_name="running_speech", gain=1.0):
         Directivity.__init__(self, orientation)
-        datafile = Path("./data/speech_directivity.json")
+        datafile = os.path.join(os.path.dirname(__file__), "data/speech_directivity.json")
         with open(datafile, "r") as f:
             speech_data = json.load(f)
         self.centre_freqs = np.array(speech_data["centre_freqs"])
-        self.angles = np.array(speech_data["angles"])
+        self.pattern_angles = np.array(speech_data["angles"])
         self.speech_data = np.array(speech_data["data"])
         self._gain = gain
         self._pattern_name = pattern_name
@@ -330,7 +331,7 @@ class SpeechDirectivity(Directivity):
         return self._pattern_name
 
     def get_response(
-        self, azimuth, colatitude=None, magnitude=True, frequency=None, degrees=True
+        self, azimuth, colatitude=None, magnitude=True, frequency=None, degrees=True,
     ):
         """
         Get response for provided angles.
@@ -353,21 +354,133 @@ class SpeechDirectivity(Directivity):
         resp : :py:class:`~numpy.ndarray`
             Response at provided angles.
         """
-        if not degrees:
-            raise RuntimeError("SpeechDirectivity requires angles in degrees.")
+        if degrees:
+            azimuth = np.radians(azimuth)
+        degrees = False
         if frequency is None:
-            raise RuntimeError("SpeechDirectivity requires frequency input.")
+            raise RuntimeError("SpeechDirectivity requires a frequency input.")
         if not magnitude:
             warnings.warn("SpeechDirectivity does not return phase response, magnitiude only.")
-        if colatitude is not None:
+        if colatitude is None:
             warnings.warn("SpeechDirectivity assumes X-Y plane only.")
         # find the freq closest to the avaiable 1/3rd octave band
         freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
-        azimuth = wrap_degrees(azimuth)
-        azimuth = np.abs(azimuth) # speech response is mirroed
-        directivity_at_angle_db = np.interp(self.angles, self.speech_data[freq_ind, :], azimuth)
+
+        # get coords on the unit sphere for the input azimuth / colatitude
+        coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=False)
+        # use the internal orientation to project the coords of the input angles onto the appropriate direction 
+        cos_theta = np.matmul(self._orientation.unit_vector, coord)
+        # extract the angle(s) we are computing the gains for
+        directivity_angle = np.arccos(cos_theta)  # speech response is mirrored so angle sign doesnt matter
+        directivity_angle_deg = directivity_angle / np.pi * 180
+        directivity_angle_deg = wrap_degrees(directivity_angle_deg)
+        directivity_angle_deg = np.abs(directivity_angle_deg) # speech response is mirrored
+        # linear interpolation to estimate gain at requested angle(s)
+        if isinstance(directivity_angle_deg, (list, np.ndarray)):
+            directivity_at_angle_db = np.array([np.interp(angle, self.pattern_angles, self.speech_data[freq_ind, :]) for angle in directivity_angle_deg])
+        else:
+            directivity_at_angle_db = np.interp(directivity_angle_deg, self.pattern_angles, self.speech_data[freq_ind, :])
         directivity_at_angle = np.power(10, directivity_at_angle_db / 20)
         return directivity_at_angle
+
+    @requires_matplotlib
+    def plot_response(
+        self, azimuth, colatitude=None, degrees=True, ax=None, offset=None, frequency=1000
+    ):
+        """
+        Plot directivity response at specified angles.
+
+        Parameters
+        ----------
+        azimuth : array_like
+            Azimuth values for plotting.
+        colatitude : array_like, optional
+            Colatitude values for plotting. If not provided, 2D plot.
+        degrees : bool
+            Whether provided values are in degrees (True) or radians (False).
+        ax : axes object
+        offset : list
+            3-D coordinates of the point where the response needs to be plotted.
+
+        Return
+        ------
+        ax : :py:class:`~matplotlib.axes.Axes`
+        """
+        import matplotlib.pyplot as plt
+
+        if offset is not None:
+            x_offset = offset[0]
+            y_offset = offset[1]
+        else:
+            x_offset = 0
+            y_offset = 0
+
+        if degrees:
+            azimuth = np.radians(azimuth)
+
+        if colatitude is not None:
+
+            if degrees:
+                colatitude = np.radians(colatitude)
+
+            if ax is None:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1, projection="3d")
+
+            if offset is not None:
+                z_offset = offset[2]
+            else:
+                z_offset = 0
+
+            spher_coord = all_combinations(azimuth, colatitude)
+            azi_flat = spher_coord[:, 0]
+            col_flat = spher_coord[:, 1]
+
+            # compute response
+            resp = self.get_response(
+                azimuth=azi_flat, colatitude=col_flat, magnitude=True, degrees=False, frequency=frequency,
+            )
+            RESP = resp.reshape(len(azimuth), len(colatitude))
+
+            # create surface plot, need cartesian coordinates
+            AZI, COL = np.meshgrid(azimuth, colatitude)
+            X = RESP.T * np.sin(COL) * np.cos(AZI) + x_offset
+            Y = RESP.T * np.sin(COL) * np.sin(AZI) + y_offset
+            Z = RESP.T * np.cos(COL) + z_offset
+
+            ax.plot_surface(X, Y, Z)
+
+            if ax is None:
+                ax.set_title(
+                    "{}, azimuth={}, colatitude={}".format(
+                        self.directivity_pattern,
+                        self.get_azimuth(),
+                        self.get_colatitude(),
+                    )
+                )
+            else:
+                ax.set_title("Directivity Plot")
+
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+
+        else:
+
+            if ax is None:
+                fig = plt.figure()
+                ax = plt.subplot(111)
+
+            # compute response
+            resp = self.get_response(azimuth=azimuth, magnitude=True, degrees=False, frequency=frequency)
+            RESP = resp
+
+            # create surface plot, need cartesian coordinates
+            X = RESP.T * np.cos(azimuth) + x_offset
+            Y = RESP.T * np.sin(azimuth) + y_offset
+            ax.plot(X, Y)
+
+        return ax
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
     """

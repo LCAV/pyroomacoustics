@@ -584,7 +584,7 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily, source_angle_shoebox
+from .directivities import CardioidFamily, source_angle_shoebox, SpeechDirectivity
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
@@ -633,7 +633,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
         times.append(times[-1] + dt)
 
     # convert from continuous to discrete time
-    indices = (np.array(times) * fs).astype(np.int)
+    indices = (np.array(times) * fs).astype(int)
     seq = np.zeros(indices[-1] + 1)
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
@@ -1892,13 +1892,13 @@ class Room(object):
 
         if isinstance(position, SoundSource):
             if directivity is not None:
-                assert isinstance(directivity, CardioidFamily)
+                assert isinstance(directivity, (CardioidFamily, SpeechDirectivity))
                 return self.add(SoundSource(position, directivity=directivity))
             else:
                 return self.add(position)
         else:
             if directivity is not None:
-                assert isinstance(directivity, CardioidFamily)
+                assert isinstance(directivity, (CardioidFamily, SpeechDirectivity))
                 return self.add(
                     SoundSource(
                         position, signal=signal, delay=delay, directivity=directivity
@@ -2061,9 +2061,9 @@ class Room(object):
                 # Do band-wise RIR construction
                 is_multi_band = self.is_multi_band
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
+                centre_freqs = self.octave_bands.centers if is_multi_band else [self.fs / 4]
                 rir_bands = []
-
-                for b, bw in enumerate(bws):
+                for b, (bw, centre_freq) in enumerate(zip(bws, centre_freqs)):
 
                     ir_loc = np.zeros_like(ir)
 
@@ -2077,7 +2077,7 @@ class Room(object):
                             alpha *= self.mic_array.directivity[m].get_response(
                                 azimuth=azimuth,
                                 colatitude=colatitude,
-                                frequency=bw,
+                                frequency=centre_freq,
                                 degrees=False,
                             )
 
@@ -2085,10 +2085,9 @@ class Room(object):
                             alpha *= self.sources[s].directivity.get_response(
                                 azimuth=azimuth_s,
                                 colatitude=colatitude_s,
-                                frequency=bw,
+                                frequency=centre_freq,
                                 degrees=False,
                             )
-
                         # Use the Cython extension for the fractional delays
                         from .build_rir import fast_rir_builder
 
@@ -2102,7 +2101,6 @@ class Room(object):
 
                         if is_multi_band:
                             ir_loc = self.octave_bands.analysis(ir_loc, band=b)
-
                         ir += ir_loc
 
                     # Ray Tracing
