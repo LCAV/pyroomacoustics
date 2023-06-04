@@ -104,7 +104,7 @@ void threaded_rir_builder_impl(
   // hann window
   std::vector<T> hann(fdl);
   for (size_t idx = 0; idx < fdl; idx++)
-    hann[idx] = T(0.5) - T(0.5) * std::cos((T(2.0) * pi * idx) / T(fdl - 1));
+    hann[idx] = T(0.5) - T(0.5) * std::cos((pi * T(2 * idx)) / T(fdl - 1));
 
   // divide into equal size blocks for thread processing
   std::vector<T> rir_out(num_threads * rir_len);
@@ -193,12 +193,12 @@ void threaded_delay_sum_impl(
   auto delays_acc = delays.unchecked();          // integer delays
   auto output_acc = output.mutable_unchecked();  // output array
 
-  auto n_irs = irs.shape(0);
-  auto n_taps = irs.shape(1);
-  auto out_len = output.shape(0);
+  size_t n_irs = irs.shape(0);
+  size_t n_taps = irs.shape(1);
+  size_t out_len = output.shape(0);
 
   // error handling
-  if (n_irs != delays.shape(0))
+  if (n_irs != (size_t)delays.shape(0))
     throw std::runtime_error("time and alpha arrays should have the same size");
 
   // check that the output buffer is long enough
@@ -225,7 +225,7 @@ void threaded_delay_sum_impl(
     results.emplace_back(pool.enqueue(
         [&](size_t t_start, size_t t_end, size_t offset) {
           for (size_t idx = t_start; idx < t_end; idx++) {
-            for (ssize_t k = 0; k < n_taps; k++) {
+            for (size_t k = 0; k < n_taps; k++) {
               out_buffers[offset + delays_acc(idx) + k] += irs_acc(idx, k);
             }
           }
@@ -310,7 +310,7 @@ void threaded_fractional_delay_impl(
   // hann window
   std::vector<T> hann(fdl);
   for (size_t idx = 0; idx < fdl; idx++)
-    hann[idx] = T(0.5) - T(0.5) * std::cos((T(2.0) * pi * idx) / T(fdl - 1));
+    hann[idx] = T(0.5) - T(0.5) * std::cos((T(2 * idx) * pi) / T(fdl - 1));
 
   // divide into equal size blocks for thread processing
   size_t block_size = size_t(std::ceil(double(n_times) / double(num_threads)));
