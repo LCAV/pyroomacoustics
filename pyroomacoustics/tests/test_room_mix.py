@@ -1,11 +1,14 @@
 """
 Tests the mixing function of ``Room.simulate``
 """
-import numpy as np
-import pyroomacoustics as pra
 import unittest
 
-room = pra.ShoeBox([9, 5, 4], fs=16000, absorption=0.25, max_order=15)
+import numpy as np
+
+import pyroomacoustics as pra
+
+e_abs = 1.0 - (1.0 - 0.25) ** 2
+room = pra.ShoeBox([9, 5, 4], fs=16000, materials=pra.Material(e_abs), max_order=15)
 
 # three microphones
 room.add_microphone_array(
@@ -34,7 +37,6 @@ mix_kwargs = {
 
 
 def callback_mix(premix, snr=0, sir=0, ref_mic=0, n_src=None, n_tgt=None):
-
     # first normalize all separate recording to have unit power at microphone one
     p_mic_ref = np.std(premix[:, ref_mic, :], axis=1)
     premix /= p_mic_ref[:, None, None]
@@ -56,7 +58,6 @@ def callback_mix(premix, snr=0, sir=0, ref_mic=0, n_src=None, n_tgt=None):
 
 class TestRoomMix(unittest.TestCase):
     def test_mix(self):
-
         # Run the simulation
         premix = room.simulate(
             callback_mix=callback_mix,

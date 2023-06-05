@@ -24,6 +24,7 @@
 from __future__ import division
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 eps = 1e-6
@@ -304,7 +305,6 @@ cases = {
 
 
 def run_intersect(lbl):
-
     case = cases[lbl]
     wall = pra.wall_factory(case["corners"], case["absorption"], case["scattering"])
     p1, p2 = case["seg"]
@@ -404,7 +404,6 @@ def test_2d_none_2():
 
 
 if __name__ == "__main__":
-
     test_3d_valid()
     test_3d_endpt_1()
     test_3d_endpt_2()

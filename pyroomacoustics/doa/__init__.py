@@ -108,16 +108,16 @@ References
 
 """
 
-from .doa import *
-from .srp import *
-from .music import *
-from .normmusic import *
 from .cssm import *
-from .waves import *
-from .tops import *
+from .doa import *
 from .frida import *
 from .grid import *
+from .music import *
+from .normmusic import *
+from .srp import *
+from .tops import *
 from .utils import *
+from .waves import *
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {

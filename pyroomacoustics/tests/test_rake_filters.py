@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyroomacoustics as pra
 
 room = pra.ShoeBox([4, 6], fs=16000, max_order=1)
@@ -44,7 +45,6 @@ def test_perceptual_filters():
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     bf.rake_perceptual_filters(

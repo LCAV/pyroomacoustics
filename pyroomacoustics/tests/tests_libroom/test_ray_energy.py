@@ -24,7 +24,9 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 
@@ -52,7 +54,6 @@ class SimpleHistogram(list):
 
 class TestRayEnergy(unittest.TestCase):
     def test_square_room(self):
-
         """
         This is a cubic room of 2x2x2 meters. The source is placed at [0.5,0.5, 1]
         and the receiver at [1.5, 1.5, 1]. A ray is launched towards [1, 0, 1] so that
@@ -74,8 +75,8 @@ class TestRayEnergy(unittest.TestCase):
         distance = round_trip / 2.0
 
         while transmitted / distance > energy_thresh:
-            r_sq = distance ** 2
-            p_hit = 1.0 - np.sqrt(1.0 - detector_radius ** 2 / r_sq)
+            r_sq = distance**2
+            p_hit = 1.0 - np.sqrt(1.0 - detector_radius**2 / r_sq)
             histogram_gt.add(distance, transmitted / (r_sq * p_hit))
             transmitted *= (1.0 - energy_absorption) ** 4  # 4 wall hits
             distance += round_trip

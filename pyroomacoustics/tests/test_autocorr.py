@@ -1,7 +1,9 @@
-import numpy as np
-from pyroomacoustics import autocorr
-from unittest import TestCase
 import time
+from unittest import TestCase
+
+import numpy as np
+
+from pyroomacoustics import autocorr
 
 N = 256
 n_iter = 100
@@ -10,7 +12,6 @@ tol = 1e-12
 
 
 def consistent_results(p, biased=True):
-
     r_time = autocorr(x, p, method="time", biased=biased)
     r_fft = autocorr(x, p, method="fft", biased=biased)
     r_np = autocorr(x, p, method="numpy", biased=biased)

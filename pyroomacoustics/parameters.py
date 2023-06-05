@@ -39,6 +39,33 @@ import numpy as np
 eps = 1e-10
 
 
+def get_num_threads():
+    """
+    Returns the number of threads available for pyroomacoustics
+
+    The number of threads can be set by
+    1. Setting the ``PRA_NUM_THREADS`` environment variable
+    2. Calling ``pra.constants.set("num_threads") = new_num_threads
+    3. Seting ``OMP_NUM_THREADS`` or ``MKL_NUM_THREADS``
+    """
+
+    num_cores = os.cpu_count()
+
+    # the specific environment variable takes prescedence
+    if "PRA_NUM_THREADS" in os.environ:
+        return int(os.environ["PRA_NUM_THREADS"])
+
+    # we also respect OMP and MKL variables
+    env_var = [
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+    ]
+
+    all_limits = [int(getattr(os.environ, var, num_cores)) for var in env_var]
+
+    return min(all_limits)
+
+
 # We implement the constants as a dictionary so that they can
 # be modified at runtime.
 # The class Constants gives an interface to update the value of
@@ -50,6 +77,8 @@ _constants_default = {
     "fc_hp": 300.0,  # cut-off frequency of standard high-pass filter
     "frac_delay_length": 81,  # Length of the fractional delay filters used for RIR gen
     "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
+    "sinc_lut_granularity": 20,  # num. points in integer interval in the sinc interp. LUT
+    "num_threads": get_num_threads(),  # num. of threads to use
 }
 
 
@@ -63,7 +92,6 @@ class Constants:
         _constants[name] = val
 
     def get(self, name):
-
         try:
             v = _constants[name]
         except KeyError:
@@ -77,6 +105,7 @@ class Constants:
 
 # the instanciation of the class
 constants = Constants()
+
 
 # Compute the speed of sound as a function
 # of temperature, humidity, and pressure
@@ -151,7 +180,6 @@ class Physics(object):
     """
 
     def __init__(self, temperature=None, humidity=None):
-
         self.p = 100.0  # pressure in kilo-Pascal (kPa), not used
         if humidity is None:
             self.H = 0.0
@@ -289,7 +317,6 @@ class Material(object):
     """
 
     def __init__(self, energy_absorption, scattering=None):
-
         # Handle the energy absorption input based on its type
         if isinstance(energy_absorption, (float, np.float32, np.float64)):
             # This material is flat over frequencies
@@ -445,6 +472,30 @@ def make_materials(*args, **kwargs):
     If only keyword arguments are provided, only the dict is returned.
     If both are provided, both are returned.
     If no argument is provided, an empty list is returned.
+
+    .. code-block:: python
+        :linenos:
+
+        # energy absorption parameters
+        floor_eabs = {
+            "description": "Example floor material",
+            "coeffs": [0.1, 0.2, 0.1, 0.1, 0.1, 0.05],
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # scattering parameters
+        audience_scat = {
+            "description": "Theatre Audience",
+            "coeffs": [0.3, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7]
+            "center_freqs": [125, 250, 500, 1000, 2000, 4000],
+        }
+
+        # create a list of materials
+        my_mat_list = pra.make_materials((floor_eabs, audience_scat))
+
+        # create a dict of materials
+        my_mat_dict = pra.make_materials(floor=(floor_abs, audience_scat))
+
     """
 
     ret_args = []

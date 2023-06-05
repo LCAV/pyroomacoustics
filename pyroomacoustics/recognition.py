@@ -1,10 +1,11 @@
 from __future__ import division, print_function
 
-import numpy as np
 import os
-from scipy.stats import multivariate_normal
-import sys
 import struct
+import sys
+
+import numpy as np
+from scipy.stats import multivariate_normal
 
 try:
     import sounddevice as sd
@@ -24,7 +25,6 @@ class CircularGaussianEmission:
         self.K = nstates
 
         if examples is None:
-
             # Initialize to random components
             self.O = odim
             self.mu = np.random.normal(size=(self.K, self.O))
@@ -38,10 +38,9 @@ class CircularGaussianEmission:
 
             self.mu = np.array([np.mean(X, axis=0)] * self.K)
             centered = X - self.mu[0]
-            self.Sigma = np.array([np.mean(centered ** 2, axis=0)] * self.K)
+            self.Sigma = np.array([np.mean(centered**2, axis=0)] * self.K)
 
     def update_parameters(self, examples, gamma):
-
         g = np.concatenate(gamma, axis=0)
         X = np.concatenate(examples, axis=0)
         Z = g.sum(axis=0)
@@ -100,10 +99,9 @@ class GaussianEmission:
 
             self.mu = np.array([np.mean(X, axis=0)] * self.K)
             centered = X - self.mu[0]
-            self.Sigma = np.array([np.diag(np.mean(centered ** 2, axis=0))] * self.K)
+            self.Sigma = np.array([np.diag(np.mean(centered**2, axis=0))] * self.K)
 
     def update_parameters(self, examples, gamma):
-
         g = np.concatenate(gamma, axis=0)
         X = np.concatenate(examples, axis=0)
         Z = g.sum(axis=0)
@@ -230,7 +228,6 @@ class HMM:
         loglikelihood_old = -np.inf  # log-likelihood
         n_iter = 0
         while True:
-
             # Initialize new parameters value for accumulation
             loglikelihood = 0.0
 
@@ -244,7 +241,6 @@ class HMM:
             # -----------------
 
             for X, pxz in zip(examples, p_x_given_z):
-
                 # check dimension of emission
                 if X.shape[1] != self.emission.O:
                     raise ValueError(

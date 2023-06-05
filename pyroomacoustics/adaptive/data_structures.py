@@ -16,7 +16,6 @@ class Buffer:
     """
 
     def __init__(self, length=20, dtype=np.float64):
-
         self.buf = np.zeros(length, dtype=dtype)
         self.len = length
         self.head = self.len
@@ -71,7 +70,6 @@ class Buffer:
         return ptr[r]
 
     def __repr__(self):
-
         if self.head == self.len:
             return "[]"
         else:
@@ -103,12 +101,10 @@ class Powers:
     """
 
     def __init__(self, a, length=20, dtype=np.float64):
-
         self.a = dtype(a)
         self.pwr = self.a ** np.arange(length)
 
     def __getitem__(self, r):
-
         # find maximum power requested
         if isinstance(r, int):
             high = r + 1
@@ -148,7 +144,6 @@ class CoinFlipper:
     """
 
     def __init__(self, p, length=10000):
-
         self.p = p
         self.length = length
         self.buffer = np.random.random(length) < p

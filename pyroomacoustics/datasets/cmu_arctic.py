@@ -111,7 +111,6 @@ class CMUArcticCorpus(Dataset):
     """
 
     def __init__(self, basedir=None, download=False, build=True, **kwargs):
-
         # initialize
         Dataset.__init__(self)
 
@@ -203,10 +202,8 @@ class CMUArcticCorpus(Dataset):
 
         # Check all the sentences
         for tag, info in cmu_arctic_sentences.items():
-
             # And all speakers for each sentence
             for speaker, path in info["paths"].items():
-
                 # This is the metadata for this sample
                 meta = Meta(
                     speaker=speaker,

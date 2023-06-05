@@ -1,10 +1,10 @@
 """
 This tests the construction of a bank of octave filters
 """
-import pyroomacoustics as pra
-
 import numpy as np
 from scipy.signal import sosfreqz
+
+import pyroomacoustics as pra
 
 tol = 1.0  # decibel
 
@@ -39,7 +39,6 @@ def test_bandpass_filterbank():
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     f0 = 125.0 / 2.0

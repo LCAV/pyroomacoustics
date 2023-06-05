@@ -5,7 +5,6 @@ import os
 import sys
 
 # To use a consistent encoding
-from codecs import open
 from os import path
 
 # import version from file
@@ -13,15 +12,14 @@ with open("pyroomacoustics/version.py") as f:
     exec(f.read())
 
 try:
-    from setuptools import setup, Extension
+    from setuptools import Extension, distutils, setup
     from setuptools.command.build_ext import build_ext
-    from setuptools import distutils
 except ImportError:
     print("Setuptools unavailable. Falling back to distutils.")
     import distutils
+    from distutils.command.build_ext import build_ext
     from distutils.core import setup
     from distutils.extension import Extension
-    from distutils.command.build_ext import build_ext
 
 
 class get_pybind_include(object):
@@ -53,13 +51,16 @@ libroom_files = [
         "geometry.hpp",
         "geometry.cpp",
         "common.hpp",
+        "rir_builder.cpp",
+        "rir_builder.hpp",
         "libroom.cpp",
+        "threadpool.hpp",
     ]
 ]
 ext_modules = [
     Extension(
         "pyroomacoustics.libroom",
-        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp"]],
+        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp", "rir_builder.cpp"]],
         depends=libroom_files,
         include_dirs=[
             ".",
@@ -87,6 +88,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
 
 
 ### Build Tools (taken from pybind11 example) ###
+
 
 # As of Python 3.6, CCompiler has a `has_flag` method.
 # cf http://bugs.python.org/issue26689
@@ -180,7 +182,7 @@ setup_kwargs = dict(
     package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json", "data/speech_directivity.json" ]},
     install_requires=[
         "Cython",
-        "numpy",
+        "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
     ],

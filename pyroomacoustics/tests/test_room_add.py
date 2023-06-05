@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyroomacoustics as pra
 
 sig = np.arange(10)
@@ -10,7 +11,6 @@ mic1 = [7.87, 3.6, 6.1]
 
 
 def test_add_source_mic():
-
     room = pra.ShoeBox(room_size).add_source(source_loc0).add_microphone(mic0)
 
     assert len(room.sources) == 1
@@ -30,7 +30,6 @@ def test_add_source_mic():
 
 
 def test_add_source_mic_obj():
-
     room = pra.ShoeBox(room_size)
 
     source0 = pra.SoundSource(source_loc0, signal=sig)
@@ -58,7 +57,6 @@ def test_add_source_mic_obj():
 
 
 def test_add_source_mic_obj_2():
-
     room = pra.ShoeBox(room_size)
 
     source0 = pra.SoundSource(source_loc0, signal=sig)
@@ -77,7 +75,6 @@ def test_add_source_mic_obj_2():
 
 
 def test_add_source_mic_ndarray():
-
     source0 = pra.SoundSource(source_loc0, signal=sig)
     source1 = pra.SoundSource(source_loc1, signal=sig)
     mic_array = np.c_[mic0, mic1]
@@ -96,7 +93,6 @@ def test_add_source_mic_ndarray():
 
 
 def test_add_source_mic_ndarray_2():
-
     source0 = pra.SoundSource(source_loc0, signal=sig)
     source1 = pra.SoundSource(source_loc1, signal=sig)
     mic_array = np.c_[mic0, mic1]

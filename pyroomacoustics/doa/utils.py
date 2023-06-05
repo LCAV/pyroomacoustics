@@ -3,6 +3,7 @@ This module contains useful functions to compute distances and errors on on
 circles and spheres.
 """
 from __future__ import division
+
 import numpy as np
 
 
@@ -55,18 +56,45 @@ def great_circ_dist(r, colatitude1, azimuth1, colatitude2, azimuth2):
     return dist
 
 
+def cart2spher(vectors):
+    """
+    Parameters
+    ----------
+    vectors: array_like, shape (3, n_vectors)
+        The vectors to transform
+
+    Returns
+    -------
+    azimuth: numpy.ndarray, shape (n_vectors,)
+        The azimuth of the vectors
+    colatitude: numpy.ndarray, shape (n_vectors,)
+        The colatitude of the vectors
+    r: numpy.ndarray, shape (n_vectors,)
+        The length of the vectors
+    """
+
+    r = np.linalg.norm(vectors, axis=0)
+
+    azimuth = np.arctan2(vectors[1], vectors[0])
+    colatitude = np.arctan2(np.linalg.norm(vectors[:2], axis=0), vectors[2])
+
+    return azimuth, colatitude, r
+
+
 def spher2cart(azimuth, colatitude=None, r=1, degrees=False):
     """
     Convert a spherical point to cartesian coordinates.
 
     Parameters
     ----------
-    r:
-        radius
     azimuth:
         azimuth
     colatitude:
         colatitude
+    r:
+        radius
+    degrees:
+        Returns values in degrees instead of radians if set to ``True``
 
     Returns
     -------

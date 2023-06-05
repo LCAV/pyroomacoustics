@@ -5,7 +5,8 @@ Least Mean Squares Family
 Implementations of adaptive filters from the LMS class. These algorithms have a
 low complexity and reliable behavior with a somewhat slower convergence.
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
 import scipy.linalg as la
 
@@ -26,7 +27,6 @@ class NLMS(AdaptiveFilter):
     """
 
     def __init__(self, length, mu=0.5):
-
         self.mu = mu
         AdaptiveFilter.__init__(self, length)
 
@@ -65,7 +65,6 @@ class BlockLMS(NLMS):
     """
 
     def __init__(self, length, mu=0.01, L=1, nlms=False):
-
         self.nlms = nlms
 
         # sketching parameters
@@ -103,7 +102,6 @@ class BlockLMS(NLMS):
 
         # Block update
         if self.n % self.L == 0:
-
             # block-update parameters
             X = la.hankel(self.x[: self.L], r=self.x[self.L - 1 :])
 

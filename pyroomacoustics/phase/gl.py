@@ -57,7 +57,7 @@ Example
     fft_size = 512
     hop = fft_size // 4
     win_a = np.hamming(fft_size)
-    win_s = pra.transform.compute_synthesis_window(win_a, hop)
+    win_s = pra.transform.stft.compute_synthesis_window(win_a, hop)
     n_iter = 200
 
     engine = pra.transform.STFT(
@@ -100,7 +100,8 @@ except NameError:
     basestring = str
 
 import numpy as np
-from ..transform import STFT, compute_synthesis_window
+
+from ..transform.stft import STFT, compute_synthesis_window
 
 
 def griffin_lim(
@@ -167,12 +168,9 @@ def griffin_lim(
     # the successive application of analysis/synthesis introduces
     # a shift of ``fft_size - hop`` that we must correct
     the_shift = fft_size - hop
-    y[:-the_shift,] = y[
-        the_shift:,
-    ]
+    y[:-the_shift,] = y[the_shift:,]
 
     for epoch in range(n_iter):
-
         # possibly monitor the reconstruction
         if callback is not None:
             callback(epoch, Y, y)
@@ -184,9 +182,7 @@ def griffin_lim(
         Y *= X / np.abs(Y)
 
         # back to time domain
-        y[:-the_shift,] = engine.synthesis(Y)[
-            the_shift:,
-        ]
+        y[:-the_shift,] = engine.synthesis(Y)[the_shift:,]
 
     # last callback
     if callback is not None:

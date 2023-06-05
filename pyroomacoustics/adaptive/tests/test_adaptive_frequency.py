@@ -1,8 +1,10 @@
 from __future__ import division, print_function
 
 from unittest import TestCase
+
 import numpy as np
 from scipy.signal import fftconvolve
+
 import pyroomacoustics as pra
 
 # fix RNG for a deterministic result
@@ -31,12 +33,7 @@ n = 0
 num_blocks = 0
 X_concat = np.zeros((num_bands, n_samples // hop), dtype=np.complex64)
 while n_samples - n > hop:
-
-    stft_in.analysis(
-        x[
-            n : n + hop,
-        ]
-    )
+    stft_in.analysis(x[n : n + hop,])
     X_concat[:, num_blocks] = stft_in.X
 
     n += hop
@@ -47,6 +44,7 @@ Y_concat = np.zeros((num_bands, num_blocks), dtype=np.complex64)
 for k in range(num_bands):
     Y_concat[k, :] = fftconvolve(X_concat[k, :], W[:, k])[:num_blocks]
 
+
 # run filters on each block
 def run_filters(algorithm, X_concat, Y_concat):
     num_blocks = X_concat.shape[1]
@@ -56,7 +54,6 @@ def run_filters(algorithm, X_concat, Y_concat):
 
 class TestAdaptiveFilterFrequencyDomain(TestCase):
     def test_subband_nlms(self):
-
         subband_nlms = pra.adaptive.SubbandLMS(
             num_taps=num_taps, num_bands=num_bands, mu=0.5, nlms=True
         )

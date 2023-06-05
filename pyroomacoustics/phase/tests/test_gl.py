@@ -6,9 +6,11 @@ Part of the pyroomacoustics package
 MIT License
 """
 
+import unittest
+
 import numpy as np
 from scipy.io import wavfile
-import unittest
+
 import pyroomacoustics as pra
 
 test_tol = 1e-2
@@ -19,7 +21,7 @@ fs, audio = wavfile.read(filename)
 fft_size = 512
 hop = fft_size // 4
 win_a = np.hamming(fft_size)
-win_s = pra.transform.compute_synthesis_window(win_a, hop)
+win_s = pra.transform.stft.compute_synthesis_window(win_a, hop)
 n_iter = 200
 
 engine = pra.transform.STFT(
@@ -38,6 +40,7 @@ def compute_error(X_mag, y):
 
 np.random.seed(0)
 ini = [None, "random", X]
+
 
 # The actual test case
 # We use deterministic phase initialization (to zero)
@@ -60,7 +63,6 @@ class TestGL(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     # monitor convergence

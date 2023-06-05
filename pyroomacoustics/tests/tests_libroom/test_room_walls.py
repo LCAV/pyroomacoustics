@@ -24,10 +24,10 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
 
 import pyroomacoustics as pra
-
 
 c0 = np.array(
     [
@@ -242,7 +242,6 @@ absorptions_shoebox = [0.1, 0.1, 0.1, 0.1]
 
 
 def room_factory(walls, obstructing_walls, microphones):
-
     args = [
         walls,
         obstructing_walls,
@@ -269,7 +268,6 @@ def room_factory(walls, obstructing_walls, microphones):
 
 class TestRoomWalls(unittest.TestCase):
     def test_max_dist_3D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_2D)
@@ -297,7 +295,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(abs(result - correct) < eps)
 
     def test_max_dist_2D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_2D, absorptions_2D, scatterings_2D)
@@ -348,7 +345,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(not w1.same_as(w2))
 
     def test_same_wall_false3D_more_corners(self):
-
         # Modification of wall_corners_3D[0]: adding a corner => 5 corners wall
         c1 = np.array([[0, 3, 3, 1.5, 0], [0, 0, 0, 0, 0], [0, 0, 2, 1.5, 2]])
 
@@ -359,7 +355,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(not w1.same_as(w2))
 
     def test_next_wall_hit(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)
@@ -392,7 +387,7 @@ class TestRoomWalls(unittest.TestCase):
         # correct intersection
         result = np.array([0, 2, 1])
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         correct_result = np.allclose(ttuple[0], result, atol=eps)
         correct_next_wall = ttuple[1] == 4
@@ -401,7 +396,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(correct_next_wall and correct_result and correct_distance)
 
     def test_next_wall_nohit(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)
@@ -431,12 +425,11 @@ class TestRoomWalls(unittest.TestCase):
         # end outside the room
         end = [-2, -3, -1]
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         self.assertTrue(ttuple[1] == -1)
 
     def test_next_wall_hit2D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_2D, absorptions_2D, scatterings_2D)
@@ -466,7 +459,7 @@ class TestRoomWalls(unittest.TestCase):
         # the intersection expected result
         result = np.array([0, -1.0 / 3])
 
-        ttuple = np.array(room.next_wall_hit(start, end, False))
+        ttuple = room.next_wall_hit(start, end, False)
 
         correct_result = np.allclose(ttuple[0], result, atol=eps)
         correct_next_wall = ttuple[1] == 4
@@ -512,7 +505,6 @@ class TestRoomWalls(unittest.TestCase):
         )
 
     def test_scat_ray_ok(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(
@@ -590,7 +582,6 @@ class TestRoomWalls(unittest.TestCase):
     """
 
     def test_contains_2D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(
@@ -605,7 +596,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(room.contains(microphones[:, 0]))
 
     def test_notcontains_2D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(
@@ -620,7 +610,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(not room.contains(microphones[:, 0]))
 
     def test_contains_3D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)
@@ -633,7 +622,6 @@ class TestRoomWalls(unittest.TestCase):
         self.assertTrue(room.contains(microphones[:, 0]))
 
     def test_notcontains_3D(self):
-
         walls = [
             pra.wall_factory(c, [a], [s])
             for c, a, s in zip(wall_corners_3D, absorptions_3D, scatterings_3D)

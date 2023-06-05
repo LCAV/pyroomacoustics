@@ -4,7 +4,6 @@ it works as expected
 """
 import pyroomacoustics as pra
 
-
 scat_test = {
     "coeffs": [0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3],
     "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
@@ -112,7 +111,6 @@ def test_empty():
 
 
 if __name__ == "__main__":
-
     test_material_e_float()
     test_material_es_float()
     test_material_es_dict

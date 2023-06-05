@@ -2,6 +2,7 @@
 include pyroomacoustics/data/materials.json
 
 # The header files for the compiled extension
+include pyroomacoustics/libroom_src/*.h
 include pyroomacoustics/libroom_src/*.hpp
 include pyroomacoustics/libroom_src/*.cpp
 

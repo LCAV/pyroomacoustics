@@ -27,7 +27,7 @@ import numpy as np
 
 
 class SpectralSub(object):
-    """
+    r"""
     Here we have a class for performing **single channel** noise reduction via
     spectral subtraction. The instantaneous signal energy and noise floor is
     estimated at each time instance (for each frequency bin) and this is used
@@ -121,7 +121,6 @@ class SpectralSub(object):
     """
 
     def __init__(self, nfft, db_reduc, lookback, beta, alpha=1):
-
         self.beta = beta
         self.alpha = alpha
 
@@ -210,17 +209,11 @@ def apply_spectral_sub(
     n = 0
     while noisy_signal.shape[0] - n >= hop:
         # SCNR in frequency domain
-        stft.analysis(
-            noisy_signal[
-                n : (n + hop),
-            ]
-        )
+        stft.analysis(noisy_signal[n : (n + hop),])
         gain_filt = scnr.compute_gain_filter(stft.X)
 
         # back to time domain
-        processed_audio[
-            n : n + hop,
-        ] = stft.synthesis(gain_filt * stft.X)
+        processed_audio[n : n + hop,] = stft.synthesis(gain_filt * stft.X)
 
         # update step
         n += hop

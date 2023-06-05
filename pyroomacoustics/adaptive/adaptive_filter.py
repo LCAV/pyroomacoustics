@@ -1,6 +1,7 @@
 from __future__ import division, print_function
-import scipy.linalg as la
+
 import numpy as np
+import scipy.linalg as la
 
 
 class AdaptiveFilter:
@@ -11,7 +12,6 @@ class AdaptiveFilter:
     """
 
     def __init__(self, length):
-
         # filter length
         self.length = length
 
@@ -54,5 +54,4 @@ class AdaptiveFilter:
         self.d = d_n
 
     def name(self):
-
         return self.__class__.__name__

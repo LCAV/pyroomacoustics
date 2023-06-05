@@ -14,11 +14,14 @@ after filtering.
 """
 
 from __future__ import division, print_function
+
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import matplotlib.pyplot as plt
+
 import pyroomacoustics as pra
-import os
 
 # filter to apply
 h_len = 99
@@ -51,7 +54,6 @@ processed_audio = np.zeros(audio.shape)
 # process the signals while full blocks are available
 n = 0
 while audio.shape[0] - n > hop:
-
     # go to frequency domain
     stft.analysis(audio[n : n + hop])
 

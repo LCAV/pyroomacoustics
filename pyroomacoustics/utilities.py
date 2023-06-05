@@ -23,8 +23,9 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
-import numpy as np
 import itertools
+
+import numpy as np
 from scipy import signal
 from scipy.io import wavfile
 
@@ -170,7 +171,7 @@ def to_16b(signal):
     No clipping in performed, you are responsible to ensure signal is within
     the correct interval.
     """
-    return ((2 ** 15 - 1) * signal).astype(np.int16)
+    return ((2**15 - 1) * signal).astype(np.int16)
 
 
 def clip(signal, high, low):
@@ -206,8 +207,8 @@ def normalize_pwr(sig1, sig2):
     """Normalize sig1 to have the same power as sig2."""
 
     # average power per sample
-    p1 = np.mean(sig1 ** 2)
-    p2 = np.mean(sig2 ** 2)
+    p1 = np.mean(sig1**2)
+    p2 = np.mean(sig2**2)
 
     # normalize
     return sig1.copy() * np.sqrt(p2 / p1)
@@ -229,7 +230,7 @@ def highpass(signal, Fs, fc=None, plot=False):
     wc = 2.0 * fc / Fs
 
     # design the filter
-    from scipy.signal import iirfilter, lfilter, freqz
+    from scipy.signal import freqz, iirfilter, lfilter
 
     b, a = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type)
 
@@ -309,8 +310,7 @@ def time_dB(signal, Fs, bits=16):
 
 
 def spectrum(signal, Fs, N):
-
-    from .stft import stft, spectroplot
+    from .stft import spectroplot, stft
     from .windows import hann
 
     F = stft(signal, N, N / 2, win=hann(N))
@@ -334,7 +334,6 @@ def compare_plot(
     title1=None,
     title2=None,
 ):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -368,7 +367,7 @@ def compare_plot(
     if title2 is not None:
         plt.title(title2)
 
-    from .stft import stft, spectroplot
+    from .stft import spectroplot, stft
     from .windows import hann
 
     F1 = stft.stft(signal1, fft_size, fft_size / 2, win=windows.hann(fft_size))
@@ -410,7 +409,6 @@ def compare_plot(
 
 
 def real_spectrum(signal, axis=-1, **kwargs):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -564,6 +562,9 @@ def fractional_delay(t0):
 
     N = constants.get("frac_delay_length")
 
+    if isinstance(t0, np.ndarray) and t0.ndim == 1:
+        t0 = t0[:, None]
+
     return np.hanning(N) * np.sinc(np.arange(N) - (N - 1) / 2 - t0)
 
 
@@ -598,7 +599,7 @@ def fractional_delay_filter_bank(delays):
     bank_flat = np.zeros(N * filter_length)
 
     # separate delays in integer and fractional parts
-    di = np.floor(delays).astype(int)
+    di = np.floor(delays).astype(np.int64)
     df = delays - di
 
     # broadcasting tricks to compute at once all the locations
@@ -650,7 +651,6 @@ def levinson(r, b):
     epsilon = r[0]
 
     for j in np.arange(1, p):
-
         g = np.sum(np.conj(r[1 : j + 1]) * a[::-1])
         gamma = -g / epsilon
         a = np.concatenate((a, np.zeros(1))) + gamma * np.concatenate(
@@ -658,12 +658,7 @@ def levinson(r, b):
         )
         epsilon = epsilon * (1 - np.abs(gamma) ** 2)
         delta = np.dot(np.conj(r[1 : j + 1]), np.flipud(x))
-        q = (
-            b[
-                j,
-            ]
-            - delta
-        ) / epsilon
+        q = (b[j] - delta) / epsilon
         if len(b.shape) == 1:
             x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
         else:
@@ -809,7 +804,6 @@ def angle_function(s1, v2):
 
     # colatitude calculation for 3-D coordinates
     if s1.shape[0] == 3 and v2.shape[0] == 3:
-
         z2 = v2[2]
         z_vals = s1[2]
 
@@ -819,7 +813,6 @@ def angle_function(s1, v2):
 
     # colatitude calculation for 2-D coordinates
     elif s1.shape[0] == 2 and v2.shape[0] == 2:
-
         num_points = s1.shape[1]
         colatitude = np.ones(num_points) * np.pi / 2
 

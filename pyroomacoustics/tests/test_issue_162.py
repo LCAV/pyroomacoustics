@@ -7,7 +7,10 @@ def compute_rir(order):
     fromPos = np.zeros((3))
     toPos = np.ones((3, 1))
     roomSize = np.array([3, 3, 3])
-    room = pra.ShoeBox(roomSize, fs=1000, absorption=0.95, max_order=order)
+    e_abs = 1.0 - (1.0 - 0.95) ** 2
+    room = pra.ShoeBox(
+        roomSize, fs=1000, materials=pra.Material(e_abs), max_order=order
+    )
     room.add_source(fromPos)
     mics = pra.MicrophoneArray(toPos, room.fs)
     room.add_microphone_array(mics)

@@ -7,12 +7,13 @@ dimension O.  We sample from this model a number of examples.
 Then we train a second models on these examples.
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
+
 import numpy as np
+
 from pyroomacoustics import HMM, CircularGaussianEmission, GaussianEmission
 
 if __name__ == "__main__":
-
     K = 4  # number of states
     O = 6  # dimension of the emission vector
     model = "left-right"  # transition matrix model
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     # Initialize the emission parameters to mean and variance of dataset
     emission2.mu[:, :] = np.array([np.mean(X, axis=0)] * K)
     centered = X - emission2.mu[0]
-    emission2.Sigma[:, :] = np.array([np.mean(centered ** 2, axis=0)] * K)
+    emission2.Sigma[:, :] = np.array([np.mean(centered**2, axis=0)] * K)
 
     # Now try to fit the model
     niter = hmm2.fit(examples, tol=1e-8, max_iter=1000, verbose=True)

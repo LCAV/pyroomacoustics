@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 import numpy as np
 from scipy.signal import fftconvolve
 
@@ -33,7 +34,6 @@ def generate_signals(SNR, x, h, noise):
 
 class TestDeconvolution(TestCase):
     def test_deconvolve_hann_noiseless(self):
-
         h = h_hann
         h_len = h_hann.shape[0]
         SNR = 1000.0
@@ -49,7 +49,6 @@ class TestDeconvolution(TestCase):
         self.assertTrue(rmse < tol)
 
     def test_wiener_deconvolve_hann_noiseless(self):
-
         h = h_hann
         h_len = h_hann.shape[0]
         SNR = 1000.0
@@ -58,7 +57,7 @@ class TestDeconvolution(TestCase):
         y, sigma_noise = generate_signals(SNR, x, h, noise)
 
         h_hat = pra.experimental.wiener_deconvolve(
-            y, x, length=h_len, noise_variance=sigma_noise ** 2
+            y, x, length=h_len, noise_variance=sigma_noise**2
         )
         rmse = np.sqrt(np.linalg.norm(h_hat - h) ** 2 / h_len)
 
@@ -68,7 +67,6 @@ class TestDeconvolution(TestCase):
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     h = h_hann
@@ -79,7 +77,7 @@ if __name__ == "__main__":
     mse1 = np.linalg.norm(h_hat1 - h) ** 2 / h_len
 
     h_hat2 = pra.experimental.wiener_deconvolve(
-        y, x, length=h_len, noise_variance=sigma_noise ** 2, let_n_points=15
+        y, x, length=h_len, noise_variance=sigma_noise**2, let_n_points=15
     )
     res2 = np.linalg.norm(y - fftconvolve(x, h_hat2)) ** 2 / y.shape[0]
     mse2 = np.linalg.norm(h_hat2 - h) ** 2 / h_len

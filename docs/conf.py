@@ -12,8 +12,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 # mock modules for compilation without installing all packages
 MOCK_MODULES = [
@@ -92,6 +92,7 @@ extensions = [
 
 numpydoc_show_class_members = False
 
+
 # Custom function to define some 'noisy' class members to skip
 def skip_member(app, what, name, obj, skip, options):
     exclusions = (
@@ -121,8 +122,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"Pyroomacoustics"
-copyright = u"2016, LCAV"
+project = "Pyroomacoustics"
+copyright = "2016, LCAV"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -286,8 +287,8 @@ latex_documents = [
     (
         "index",
         "ReadtheDocsTemplate.tex",
-        u"Read the Docs Template Documentation",
-        u"Read the Docs",
+        "Read the Docs Template Documentation",
+        "Read the Docs",
         "manual",
     ),
 ]
@@ -321,8 +322,8 @@ man_pages = [
     (
         "index",
         "readthedocstemplate",
-        u"Read the Docs Template Documentation",
-        [u"Read the Docs"],
+        "Read the Docs Template Documentation",
+        ["Read the Docs"],
         1,
     )
 ]
@@ -340,8 +341,8 @@ texinfo_documents = [
     (
         "index",
         "ReadtheDocsTemplate",
-        u"Read the Docs Template Documentation",
-        u"Read the Docs",
+        "Read the Docs Template Documentation",
+        "Read the Docs",
         "ReadtheDocsTemplate",
         "One line description of project.",
         "Miscellaneous",

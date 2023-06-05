@@ -24,6 +24,7 @@
 from __future__ import division
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 polygons = [
@@ -138,7 +139,6 @@ def test_top_outside():
 
 
 if __name__ == "__main__":
-
     test_inside()
     test_on_border()
     test_on_corner()

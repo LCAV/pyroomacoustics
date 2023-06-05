@@ -24,11 +24,12 @@
 
 import numpy as np
 from scipy import integrate
-from pyroomacoustics import lpc
+
+from ..utilities import lpc
 
 
 class IterativeWiener(object):
-    """
+    r"""
     A class for performing **single channel** noise reduction in the frequency
     domain with a Wiener filter that is iteratively computed. This
     implementation is based off of the approach presented in:
@@ -170,7 +171,6 @@ class IterativeWiener(object):
     """
 
     def __init__(self, frame_len, lpc_order, iterations, alpha=0.8, thresh=0.01):
-
         if frame_len % 2:
             raise ValueError(
                 "Frame length should be even as this method " "relies on 50% overlap."
@@ -218,7 +218,6 @@ class IterativeWiener(object):
 
         # simple VAD
         if frame_energy < self.thresh:  # noise frame
-
             # update noise power spectral density
             # assuming white noise, i.e. flat spectrum
             self.noise_psd = (
@@ -228,7 +227,6 @@ class IterativeWiener(object):
             # update wiener filter
             self.wiener_filt[:] = compute_wiener_filter(self.speech_psd, self.noise_psd)
         else:  # speech frame
-
             s_i = current_frame
 
             # iteratively update speech power spectral density / wiener filter
@@ -248,7 +246,7 @@ class IterativeWiener(object):
 
 
 def compute_speech_psd(a, g2, nfft):
-    """
+    r"""
     Compute power spectral density of speech as specified in equation (41b) of
 
         J. Lim and A. Oppenheim, *All-Pole Modeling of Degraded Speech,*
@@ -286,7 +284,7 @@ def compute_speech_psd(a, g2, nfft):
 
 
 def compute_squared_gain(a, noise_psd, y):
-    """
+    r"""
     Estimate the squared gain of the speech power spectral density as done on
     p. 204 of
 
@@ -331,9 +329,9 @@ def compute_squared_gain(a, noise_psd, y):
 
     # right hand side of expression
     if np.isscalar(noise_psd):  # white noise, i.e. flat spectrum
-        rhs = np.sum(y ** 2) - N * noise_psd
+        rhs = np.sum(y**2) - N * noise_psd
     else:
-        rhs = np.sum(y ** 2) - np.sum(noise_psd)
+        rhs = np.sum(y**2) - np.sum(noise_psd)
 
     # estimate integral
     d_omega = 2 * np.pi / 1000
@@ -411,19 +409,13 @@ def apply_iterative_wiener(
     n = 0
     while noisy_signal.shape[0] - n >= hop:
         # SCNR in frequency domain
-        stft.analysis(
-            noisy_signal[
-                n : (n + hop),
-            ]
-        )
+        stft.analysis(noisy_signal[n : (n + hop),])
         X = scnr.compute_filtered_output(
             current_frame=stft.fft_in_buffer, frame_dft=stft.X
         )
 
         # back to time domain
-        processed_audio[
-            n : n + hop,
-        ] = stft.synthesis(X)
+        processed_audio[n : n + hop,] = stft.synthesis(X)
 
         # update step
         n += hop

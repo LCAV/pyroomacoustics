@@ -1,12 +1,13 @@
-import pyroomacoustics as pra
-import numpy as np
-from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
-    CardioidFamily,
-)
 from unittest import TestCase
 
+import numpy as np
+
+import pyroomacoustics as pra
+from pyroomacoustics.directivities import (
+    CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
+)
 
 # create room
 room = pra.ShoeBox(
@@ -34,7 +35,7 @@ room.compute_rir()
 class TestSourceDirectivity(TestCase):
     def test_zero_gain(self):
         gain = np.amax(room.rir[0][0])
-        self.assertTrue(gain < (10 ** -10))
+        self.assertTrue(gain < (10**-10))
 
 
 def get_error():

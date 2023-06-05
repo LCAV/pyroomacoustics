@@ -1,7 +1,8 @@
-import numpy as np
 import os
 import platform
 
+import numpy as np
+from scipy.signal import hann
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 
@@ -37,26 +38,15 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
     if n % 2 == 1:
         # if n is odd, take central element
-        m = xsw[
-            n // 2,
-        ]
+        m = xsw[n // 2,]
     else:
         # if n is even, average the two central elements
-        m = 0.5 * (
-            xsw[
-                n // 2 - 1,
-            ]
-            + xsw[
-                n // 2,
-            ]
-        )
+        m = 0.5 * (xsw[n // 2 - 1,] + xsw[n // 2,])
 
     if alpha is None:
         if keepdims:
             m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
+                m[np.newaxis,],
                 0,
                 axis,
             )
@@ -84,14 +74,8 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             else:
                 ci = np.array(
                     [
-                        xsw[
-                            j,
-                        ]
-                        - m,
-                        xsw[
-                            k,
-                        ]
-                        - m,
+                        xsw[j,] - m,
+                        xsw[k,] - m,
                     ]
                 )
 
@@ -103,22 +87,14 @@ def median(x, alpha=None, axis=-1, keepdims=False):
             k = int(np.ceil(0.5 * n + 0.5 * eta * np.sqrt(n)))
             ci = np.array(
                 [
-                    xsw[
-                        j,
-                    ]
-                    - m,
-                    xsw[
-                        k,
-                    ]
-                    - m,
+                    xsw[j,] - m,
+                    xsw[k,] - m,
                 ]
             )
 
         if keepdims:
             m = np.moveaxis(
-                m[
-                    np.newaxis,
-                ],
+                m[np.newaxis,],
                 0,
                 axis,
             )
@@ -146,7 +122,7 @@ def median(x, alpha=None, axis=-1, keepdims=False):
 
 # Simple mean squared error function
 def mse(x1, x2):
-    """
+    r"""
     A short hand to compute the mean-squared error of two signals.
 
     .. math::
@@ -163,12 +139,11 @@ def mse(x1, x2):
 
 # Itakura-Saito distance function
 def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
-
     P1 = np.abs(stft.analysis(x1, stft_L, stft_hop)) ** 2
     P2 = np.abs(stft(x2, stft_L, stft_hop)) ** 2
 
-    VAD1 = P1.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
-    VAD2 = P2.mean(axis=1) > 2 * stft_L ** 2 * sigma2_n
+    VAD1 = P1.mean(axis=1) > 2 * stft_L**2 * sigma2_n
+    VAD2 = P2.mean(axis=1) > 2 * stft_L**2 * sigma2_n
     VAD = np.logical_or(VAD1, VAD2)
 
     if P1.shape[0] != P2.shape[0] or P1.shape[1] != P2.shape[1]:
@@ -182,8 +157,7 @@ def itakura_saito(x1, x2, sigma2_n, stft_L=128, stft_hop=128):
 
 
 def snr(ref, deg):
-
-    return np.sum(ref ** 2) / np.sum((ref - deg) ** 2)
+    return np.sum(ref**2) / np.sum((ref - deg) ** 2)
 
 
 # Perceptual Evaluation of Speech Quality for multiple files using multiple threads
@@ -243,7 +217,6 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
 
     # Recover output as the processes finish
     while states.any():
-
         for i, p in enumerate(pipes):
             if states[i] == True and p.poll() is not None:
                 states[i] = False
@@ -260,3 +233,93 @@ def pesq(ref_file, deg_files, Fs=8000, swap=False, wb=False, bin="./bin/pesq"):
                     pesq_vals[:, i] = np.array(map(float, last_line.split()[-2:]))
 
     return pesq_vals
+
+
+def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
+    """
+    Measure of sweeping echo in RIR obtained from image-source method.
+    A higher value indicates less sweeping echoes
+
+    For details see : De Sena et al. "On the modeling of rectangular geometries in
+    room acoustic simulations", IEEE TASLP, 2015
+
+
+    Parameters
+    ----------
+
+    rir:    RIR signal from ISM (mono).
+    fs:     sampling frequency.
+    t_min:  TYPE, optional
+            Minimum time window. The default is 0.
+    t_max:  TYPE, optional
+            Maximum time window. The default is 0.5.
+    fb:     TYPE, optional
+            Mask bandwidth. The default is 400.
+
+    Returns
+    -------
+    sweeping spectrum flatness (ssf)
+
+    """
+
+    # some default values
+    fmin = 50
+    fmax = 0.9 * fs / 2
+
+    # STFT parameters
+    fft_size = 512  # fft size for analysis
+    fft_hop = 256  # hop between analysis frame
+    fft_zp = 2**12 - fft_size  # zero padding
+    analysis_window = hann(fft_size)
+
+    # calculate stft
+    S = stft.analysis(rir, fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
+
+    (nFrames, nFreqs) = np.shape(S)
+    nFreqs = int(nFreqs / 2)
+
+    # ignore negative frequencies
+    S = S[:, :nFreqs]
+
+    timeSlice = np.arange(0, nFrames) * fft_hop / fs
+    assert nFrames == len(timeSlice)
+    freqSlice = np.linspace(0, fs / 2, nFreqs)
+    assert nFreqs == len(freqSlice)
+
+    # get time-frequency grid
+    (t_mesh, f_mesh) = np.meshgrid(timeSlice, freqSlice)
+
+    bmin = int(np.floor(nFreqs / fs * fmin))
+    bmax = int(np.ceil(nFreqs / fs * fmax))
+
+    Phi = np.zeros(np.shape(S))
+
+    # normalize spectrogram to make energy identical in each bin
+    for k in range(nFrames):
+        norm_factor = np.sum(np.power(np.abs(S[k, bmin:bmax]), 2))
+        Phi[k, :] = np.abs(S[k, :]) / np.sqrt(norm_factor)
+
+    # slope values
+    nCoeffs = 500
+    coeffs = np.linspace(5000, 150000, nCoeffs)
+    ss = np.zeros(nCoeffs)
+
+    # loop through different slope values
+    for k in range(nCoeffs):
+        # get masks
+        a = coeffs[k]
+
+        maskTime = np.logical_and(t_mesh > t_min, t_mesh < t_max)
+
+        maskFreq = np.logical_and(
+            f_mesh > t_mesh * a - fb / 2, f_mesh < t_mesh * a + fb / 2
+        )
+
+        boolMask = np.logical_and(maskTime, maskFreq)
+
+        ss[k] = np.mean(Phi[boolMask.T])
+
+    # calculate spectral flatness
+    ssf = np.exp(np.mean(np.log(np.abs(ss)))) / np.mean(np.abs(ss))
+
+    return ssf

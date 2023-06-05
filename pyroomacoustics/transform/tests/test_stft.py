@@ -1,7 +1,10 @@
 from __future__ import division, print_function
+
 from unittest import TestCase
+
 import numpy as np
 from scipy.signal import fftconvolve
+
 import pyroomacoustics as pra
 from pyroomacoustics.transform import STFT
 
@@ -34,7 +37,6 @@ for i in range(x.shape[1]):
 
 
 def incorrect_input_size(D, num_frames):
-
     if D == 1:
         x_local = x[:, 0]
     else:
@@ -77,9 +79,7 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=True):
     hop = block_size  # no overlap
     if not streaming:
         num_samples = (num_frames - 1) * hop + block_size
-        x_local = x_local[
-            :num_samples,
-        ]
+        x_local = x_local[:num_samples,]
 
     # Create the STFT object
     if fixed_memory:
@@ -100,37 +100,20 @@ def no_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=True):
     processed_x = np.zeros(x_local.shape)
 
     if streaming:
-
         n = 0
         hop_frames = hop * num_frames
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
-            stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
-            )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            stft.analysis(x_local[n : n + hop_frames,])
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
     else:
-
         stft.analysis(x_local)
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
-    error = np.max(
-        np.abs(
-            x_local[
-                :n,
-            ]
-            - processed_x[
-                :n,
-            ]
-        )
-    )
+    error = np.max(np.abs(x_local[:n,] - processed_x[:n,]))
 
     return error
 
@@ -156,12 +139,10 @@ def with_arbitrary_overlap_synthesis_window(
     hop = int((1 - overlap) * block_size)  # quarter overlap
     if not streaming:
         num_samples = (num_frames - 1) * hop + block_size
-        x_local = x_local[
-            :num_samples,
-        ]
+        x_local = x_local[:num_samples,]
 
     analysis_window = pra.hann(block_size)
-    synthesis_window = pra.transform.compute_synthesis_window(analysis_window, hop)
+    synthesis_window = pra.transform.stft.compute_synthesis_window(analysis_window, hop)
 
     # Create the STFT object
     if fixed_memory:
@@ -190,29 +171,17 @@ def with_arbitrary_overlap_synthesis_window(
     processed_x = np.zeros(x_local.shape)
 
     if streaming:
-
         n = 0
         hop_frames = hop * num_frames
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
-            stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
-            )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            stft.analysis(x_local[n : n + hop_frames,])
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
         error = np.max(
             np.abs(
-                x_local[
-                    : n - block_size + hop,
-                ]
-                - processed_x[
-                    block_size - hop : n,
-                ]
+                x_local[: n - block_size + hop,] - processed_x[block_size - hop : n,]
             )
         )
 
@@ -228,22 +197,12 @@ def with_arbitrary_overlap_synthesis_window(
             plt.show()
 
     else:
-
         stft.analysis(x_local)
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
         L = block_size - hop
-        error = np.max(
-            np.abs(
-                x_local[
-                    L:-L,
-                ]
-                - processed_x[
-                    L:,
-                ]
-            )
-        )
+        error = np.max(np.abs(x_local[L:-L,] - processed_x[L:,]))
 
         if 20 * np.log10(error) > -10:
             import matplotlib.pyplot as plt
@@ -282,9 +241,7 @@ def no_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming=True):
     hop = block_size  # no overlap
     if not streaming:
         num_samples = (num_frames - 1) * hop + block_size
-        x_local = x_local[
-            :num_samples,
-        ]
+        x_local = x_local[:num_samples,]
 
     # Create the STFT object
     if fixed_memory:
@@ -308,39 +265,22 @@ def no_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming=True):
     processed_x = np.zeros(x_local.shape)
 
     if not streaming:
-
         stft.analysis(x_local)
         stft.process()
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
     else:
-
         n = 0
         hop_frames = hop * num_frames
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
-            stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
-            )
+            stft.analysis(x_local[n : n + hop_frames,])
             stft.process()  # apply the filter
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-    error = np.max(
-        np.abs(
-            y_local[
-                :n,
-            ]
-            - processed_x[
-                :n,
-            ]
-        )
-    )
+    error = np.max(np.abs(y_local[:n,] - processed_x[:n,]))
 
     return error
 
@@ -365,9 +305,7 @@ def with_half_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=T
     window = pra.hann(block_size)  # the analysis window
     if not streaming:
         num_samples = (num_frames - 1) * hop + block_size
-        x_local = x_local[
-            :num_samples,
-        ]
+        x_local = x_local[:num_samples,]
 
     # Create the STFT object
     if fixed_memory:
@@ -394,48 +332,27 @@ def with_half_overlap_no_filter(D, num_frames=1, fixed_memory=False, streaming=T
     processed_x = np.zeros(x_local.shape)
 
     if not streaming:
-
         stft.analysis(x_local)
         processed_x = stft.synthesis()
         n = processed_x.shape[0]
 
         error = np.max(
             np.abs(
-                x_local[
-                    block_size - hop : n - hop,
-                ]
-                - processed_x[
-                    block_size - hop : n - hop,
-                ]
+                x_local[block_size - hop : n - hop,]
+                - processed_x[block_size - hop : n - hop,]
             )
         )
 
     else:
-
         n = 0
         hop_frames = hop * num_frames
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
-            stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
-            )
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            stft.analysis(x_local[n : n + hop_frames,])
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-        error = np.max(
-            np.abs(
-                x_local[
-                    : n - hop,
-                ]
-                - processed_x[
-                    hop:n,
-                ]
-            )
-        )
+        error = np.max(np.abs(x_local[: n - hop,] - processed_x[hop:n,]))
 
     return error
 
@@ -464,9 +381,7 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
     window = pra.hann(block_size)  # the analysis window
     if not streaming:
         num_samples = (num_frames - 1) * hop + block_size
-        x_local = x_local[
-            :num_samples,
-        ]
+        x_local = x_local[:num_samples,]
 
     # Create the STFT object
     if fixed_memory:
@@ -496,7 +411,6 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
     processed_x = np.zeros(x_local.shape)
 
     if not streaming:
-
         stft.analysis(x_local)
         stft.process()
         processed_x = stft.synthesis()
@@ -504,42 +418,22 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
 
         error = np.max(
             np.abs(
-                y_local[
-                    block_size : n - block_size,
-                ]
-                - processed_x[
-                    block_size : n - block_size,
-                ]
+                y_local[block_size : n - block_size,]
+                - processed_x[block_size : n - block_size,]
             )
         )
 
     else:
-
         n = 0
         hop_frames = hop * num_frames
         # process the signals while full blocks are available
         while x_local.shape[0] - n > hop_frames:
-            stft.analysis(
-                x_local[
-                    n : n + hop_frames,
-                ]
-            )
+            stft.analysis(x_local[n : n + hop_frames,])
             stft.process()  # apply the filter
-            processed_x[
-                n : n + hop_frames,
-            ] = stft.synthesis()
+            processed_x[n : n + hop_frames,] = stft.synthesis()
             n += hop_frames
 
-        error = np.max(
-            np.abs(
-                y_local[
-                    : n - hop,
-                ]
-                - processed_x[
-                    hop:n,
-                ]
-            )
-        )
+        error = np.max(np.abs(y_local[: n - hop,] - processed_x[hop:n,]))
 
         # if D==1:
         #     import matplotlib.pyplot as plt
@@ -552,7 +446,6 @@ def with_half_overlap_with_filter(D, num_frames=1, fixed_memory=False, streaming
 
 
 def call_all_stft_tests(num_frames=1, fixed_memory=False, streaming=True, overlap=True):
-
     error = no_overlap_no_filter(1, num_frames, fixed_memory, streaming)
     print("no overlap, no filter, mono             : %0.0f dB" % (20 * np.log10(error)))
 
@@ -999,7 +892,6 @@ class TestSTFT(TestCase):
 
 
 if __name__ == "__main__":
-
     print()
     print("TEST INFO")
     print("-------------------------------------------------------------")

@@ -24,7 +24,9 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 eps = 1e-6
@@ -98,7 +100,6 @@ def run_side(label):
 
 
 def run_reflect(label):
-
     p = points[label]["p"]
     p_refl = np.array(points[label]["reflect"])
     r_exp = points[label]["expect"]
@@ -165,7 +166,6 @@ class TestUtilityRoutines(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_reflected_end2D(self):
-
         eps = 0.001
         start = [1, 3]
 
@@ -184,7 +184,6 @@ class TestUtilityRoutines(unittest.TestCase):
         self.assertTrue(np.allclose(res, [5.0, -1.0], atol=eps))
 
     def test_reflected_end3D(self):
-
         eps = 0.001
         start = [1, 1, 1]
         hit = [-1, 1, 3]

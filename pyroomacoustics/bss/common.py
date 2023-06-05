@@ -27,7 +27,7 @@ import numpy as np
 
 
 def projection_back(Y, ref, clip_up=None, clip_down=None):
-    """
+    r"""
     This function computes the frequency-domain filter that minimizes
     the squared error to a reference signal. This is commonly used
     to solve the scale ambiguity in BSS.
@@ -70,7 +70,7 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
     num = np.sum(np.conj(ref[:, :, None]) * Y, axis=0)
     denom = np.sum(np.abs(Y) ** 2, axis=0)
 
-    c = np.ones(num.shape, dtype=np.complex)
+    c = np.ones(num.shape, dtype=Y.dtype)
     I = denom > 0.0
     c[I] = num[I] / denom[I]
 
@@ -184,7 +184,7 @@ def sparir(
     # Define stopping criteria
     crit = np.zeros((maxiter, 1))
     criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-    crit[iter_] = np.sum(criterion ** 2)
+    crit[iter_] = np.sum(criterion**2)
 
     while (crit[iter_] > tol) and (iter_ < maxiter - 1):
         # Update gradient
@@ -205,7 +205,7 @@ def sparir(
         gradq = np.expand_dims(gradq, axis=1)
         # Update stopping criteria
         criterion = -tau[support] * np.sign(g[support]) - gradq[support]
-        crit[iter_] = sum(criterion ** 2) + sum(
+        crit[iter_] = sum(criterion**2) + sum(
             abs(gradq[~support]) - tau[~support] > tol
         )
 

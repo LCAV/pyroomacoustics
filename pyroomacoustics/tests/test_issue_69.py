@@ -1,13 +1,17 @@
 import unittest
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 room_dim = [15, 14, 16]
 absorption = 0.2
+e_abs = 1.0 - (1.0 - absorption) ** 2
 source_position = [2.0, 3.1, 2.0]
 mic_position = [2.0, 1.5, 2.0]
 fs = 16000
 max_order = 5
+
 
 # scenario A
 def get_room_constructor_args():
@@ -19,7 +23,7 @@ def get_room_constructor_args():
     mics = pra.MicrophoneArray(np.array([mic_position]).T, fs)
     shoebox = pra.ShoeBox(
         room_dim,
-        absorption=absorption,
+        materials=pra.Material(e_abs),
         fs=fs,
         max_order=max_order,
         sources=[source],
@@ -33,7 +37,9 @@ def get_room_constructor_args():
 
 # scenario B
 def get_room_add_method():
-    shoebox = pra.ShoeBox(room_dim, absorption=absorption, fs=fs, max_order=max_order)
+    shoebox = pra.ShoeBox(
+        room_dim, materials=pra.Material(e_abs), fs=fs, max_order=max_order
+    )
     shoebox.add_source(source_position)
     mics = pra.MicrophoneArray(np.array([mic_position]).T, fs)
     shoebox.add_microphone_array(mics)
@@ -45,7 +51,6 @@ def get_room_add_method():
 
 class RoomConstructorSources(unittest.TestCase):
     def test_room_constructor(self):
-
         room_1 = get_room_constructor_args()
         self.assertTrue(isinstance(room_1.sources[0], pra.SoundSource))
 
@@ -60,5 +65,4 @@ class RoomConstructorSources(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

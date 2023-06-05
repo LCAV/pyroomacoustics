@@ -1,12 +1,15 @@
 import abc
+import json
 import os
 import warnings
 from pathlib import Path
 import numpy as np
 from enum import Enum
+
+import numpy as np
+
 from pyroomacoustics.doa import spher2cart
-import json
-from pyroomacoustics.utilities import requires_matplotlib, all_combinations
+from pyroomacoustics.utilities import all_combinations, requires_matplotlib
 
 def wrap_degrees(angle):
     """Wrap angles to between -180 and 180 degrees.
@@ -241,7 +244,6 @@ class CardioidFamily(Directivity):
             azimuth = np.radians(azimuth)
 
         if colatitude is not None:
-
             if degrees:
                 colatitude = np.radians(colatitude)
 
@@ -288,7 +290,6 @@ class CardioidFamily(Directivity):
             ax.set_zlabel("z")
 
         else:
-
             if ax is None:
                 fig = plt.figure()
                 ax = plt.subplot(111)

@@ -21,11 +21,13 @@
 Test code for RT60 measurement routine
 """
 import numpy as np
+
 import pyroomacoustics as pra
 
 eps = 1e-15
 
-room = pra.ShoeBox([10, 7, 6], fs=16000, absorption=0.35, max_order=17)
+e_abs = 1.0 - (1.0 - 0.35) ** 2
+room = pra.ShoeBox([10, 7, 6], fs=16000, materials=pra.Material(e_abs), max_order=17)
 room.add_source([3, 2.5, 1.7])
 room.add_microphone_array(pra.MicrophoneArray(np.array([[7, 3.7, 1.1]]).T, room.fs))
 room.compute_rir()
@@ -66,6 +68,5 @@ def test_rt60_plot():
 
 
 if __name__ == "__main__":
-
     test_rt60()
     test_rt60_plot()
