@@ -12,14 +12,18 @@ from pyroomacoustics.doa import spher2cart
 from pyroomacoustics.utilities import all_combinations, requires_matplotlib
 
 def wrap_degrees(angle):
-    """Wrap angles to between -180 and 180 degrees.
+    """
+    Wrap angles to between -180 and 180 degrees.
 
-    Args:
-        angle (list, np.array, float, int): an array of angles
+    Parameters
+    ----------
+    angle : list, np.array, float, int
+        an array of angles, or a single value.
 
-    Returns:
-        angles (np.array): an array of angles wrapped to between -180 and 180
-            all angles at -180 are returned as +180
+    Returns
+    -------
+    angle : :py:class:`~numpy.ndarray`
+        an array of angles wrapped to between -180 and 180 all angles at -180 are returned as +180
     """
     angle = np.array(angle)
     if len(angle.shape) == 0:
@@ -314,6 +318,10 @@ class SpeechDirectivity(Directivity):
     ----------
     orientation : DirectionVector
         Indicates direction of the pattern.
+    pattern_name : str, optional
+        Indicates subtype of pattern.
+    gain : float
+        Desired gain. Not used in SpeechDirectivity.
     """
     def __init__(self, orientation, pattern_name="running_speech", gain=1.0):
         Directivity.__init__(self, orientation)

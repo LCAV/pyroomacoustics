@@ -845,7 +845,7 @@ class Beamformer(MicrophoneArray):
         f_0 = np.floor(self.fs / 8000.0)
         for i in np.arange(1, 5):
             yticks[i - 1] = np.argmin(np.abs(freq - 1000.0 * i * f_0))
-        # yticks = np.array(plt.getp(plt.gca(), 'yticks'), dtype=int)
+        # yticks = np.array(plt.getp(plt.gca(), 'yticks'), dtype=np.int)
         plt.setp(plt.gca(), "yticks", yticks)
         plt.setp(plt.gca(), "yticklabels", np.arange(1, 5) * f_0)
 
