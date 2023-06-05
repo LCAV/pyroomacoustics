@@ -656,6 +656,8 @@ References
 from __future__ import division, print_function
 
 import math
+import os
+import sys
 import warnings
 
 import numpy as np
@@ -2144,7 +2146,9 @@ class Room(object):
                     max_disp = self.max_rand_disp
 
                     # add a random displacement to each cartesian coordinate
-                    disp = np.random.uniform(-max_disp, max_disp, size=(3, n_images))
+                    disp = np.random.uniform(
+                        -max_disp, max_disp, size=(self.dim, n_images)
+                    )
                     source.images += disp
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
@@ -2294,7 +2298,6 @@ class Room(object):
                 Use octave bands to construct RIR :
                 1) Ray-tracing is activated
                 2) directivity of both the microphones and source is not given.
-
                 """
 
                 if (
@@ -2308,7 +2311,9 @@ class Room(object):
                     )
                 ) or self.simulator_state["rt_needed"]:
                     for b, bw in enumerate(bws):  # Loop through every band
-                        ir_loc = np.zeros_like(ir)  # ir for every band
+                        ir_loc = np.zeros_like(
+                            ir, dtype=np.float32
+                        )  # ir for every band
 
                         # IS method
                         if self.simulator_state["ism_needed"]:
@@ -2336,22 +2341,23 @@ class Room(object):
                                     degrees=False,
                                 )
 
-                            # Use the Cython extension for the fractional delays
-                            from .build_rir import fast_rir_builder
-
                             vis = self.visibility[s][m, :].astype(np.int32)
 
                             # we add the delay due to the factional delay filter to
                             # the arrival times to avoid problems when propagation
                             # is shorter than the delay to to the filter
                             # hence: time + fdl2
+                            time_adjust = time + fdl2 / self.fs
 
-                            time_adjust = (
-                                time + fdl2 / self.fs
-                            )  # This remains the same for all octave bands.
-
-                            fast_rir_builder(
-                                ir_loc, time_adjust, alpha, vis, self.fs, fdl
+                            libroom.rir_builder(
+                                ir_loc,
+                                time_adjust.astype(np.float32),
+                                alpha.astype(np.float32),
+                                vis,
+                                self.fs,
+                                fdl,
+                                constants.get("sinc_lut_granularity"),
+                                constants.get("num_threads"),
                             )
 
                             if is_multi_band:

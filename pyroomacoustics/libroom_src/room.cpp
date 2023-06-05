@@ -662,7 +662,7 @@ std::tuple < Vectorf<D>, int, float > Room<D>::next_wall_hit(
     // The direction vector
     Vectorf<D> dir = end - start;
 
-    for (int shoebox_orders_idx = 0 ; shoebox_orders_idx < D ; shoebox_orders_idx++)
+    for (size_t shoebox_orders_idx = 0 ; shoebox_orders_idx < D ; shoebox_orders_idx++)
     {
       auto d = shoebox_orders[shoebox_orders_idx];
 

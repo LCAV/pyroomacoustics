@@ -11,7 +11,29 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
 - Simulation with measured directivity responses from the DIRPAT dataset for shoebox rooms
+- New implementation of fast RIR builder function in the ``libroom`` C++
+  extentsion to replace the current cython code. Advantages are: 1) only one
+  compiled extension, 2) multithreading support
+- New global parameter ``sinc_lut_granularity`` that controls the number of points used
+  in the look-up table for the sinc interpolation. Accessible via ``parameters.constants.get``.
+- New global parameter  ``num_threads`` that controls the number of threads used in
+  multi-threaded code (rir builder only at the moment). The number of threads can also
+  be controlled via the environement variable ``PRA_NUM_THREADS``
+
+Changed
+~~~~~~~
+
+- Removed the broken ``get_rir`` method of the class ``SoundSource``
+
+Bugfix
+~~~~~~
+
+- Fixes a bug when using randomized image source model with a 2D room (#315) by
+  @hrosseel
 
 `0.7.3`_ - 2022-12-05
 ---------------------
