@@ -1,18 +1,19 @@
-import pyroomacoustics as pra
-import numpy as np
-from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
-    SpeechDirectivity,
-)
 from unittest import TestCase
 
+import numpy as np
+
+import pyroomacoustics as pra
+from pyroomacoustics.directivities import (
+    DirectionVector,
+    DirectivityPattern,
+    SpeechDirectivity,
+)
 
 
 def predict_rir_speech_source(speech_direction):
     """
     Predict RIR when speech is facing in a particular direction.
-    
+
     Parameters
     ----------
     speech_direction: float
@@ -59,18 +60,24 @@ def predict_rir_speech_source(speech_direction):
 
     return room.rir[0][0]
 
+
 class TestSourceDirectivity(TestCase):
     def test_speech_direction(self):
-        energy_0_deg = np.mean(predict_rir_speech_source(speech_direction=0)**2)
-        energy_180_deg = np.mean(predict_rir_speech_source(speech_direction=180)**2)
+        energy_0_deg = np.mean(predict_rir_speech_source(speech_direction=0) ** 2)
+        energy_180_deg = np.mean(predict_rir_speech_source(speech_direction=180) ** 2)
 
         self.assertTrue(energy_0_deg > energy_180_deg)
 
+
 if __name__ == "__main__":
-    energy_0_deg = np.mean(predict_rir_speech_source(azimuth=0)**2)
-    energy_180_deg = np.mean(predict_rir_speech_source(azimuth=180)**2)
+    energy_0_deg = np.mean(predict_rir_speech_source(azimuth=0) ** 2)
+    energy_180_deg = np.mean(predict_rir_speech_source(azimuth=180) ** 2)
     print()
     print("-" * 40)
-    print(f"mean energy when speech facing towards mic {10 *np.log10(energy_0_deg):.0f} dB")
-    print(f"mean energy when speech facing away from mic {10 *np.log10(energy_180_deg):.0f} dB")
+    print(
+        f"mean energy when speech facing towards mic {10 *np.log10(energy_0_deg):.0f} dB"
+    )
+    print(
+        f"mean energy when speech facing away from mic {10 *np.log10(energy_180_deg):.0f} dB"
+    )
     print("-" * 40)

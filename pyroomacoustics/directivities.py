@@ -2,14 +2,14 @@ import abc
 import json
 import os
 import warnings
-from pathlib import Path
-import numpy as np
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 
 from pyroomacoustics.doa import spher2cart
 from pyroomacoustics.utilities import all_combinations, requires_matplotlib
+
 
 def wrap_degrees(angle):
     """
@@ -323,9 +323,12 @@ class SpeechDirectivity(Directivity):
     gain : float
         Desired gain. Not used in SpeechDirectivity.
     """
+
     def __init__(self, orientation, pattern_name="running_speech", gain=1.0):
         Directivity.__init__(self, orientation)
-        datafile = os.path.join(os.path.dirname(__file__), "data/speech_directivity.json")
+        datafile = os.path.join(
+            os.path.dirname(__file__), "data/speech_directivity.json"
+        )
         with open(datafile, "r") as f:
             speech_data = json.load(f)
         self.centre_freqs = np.array(speech_data["centre_freqs"])
@@ -340,7 +343,12 @@ class SpeechDirectivity(Directivity):
         return self._pattern_name
 
     def get_response(
-        self, azimuth, colatitude=None, magnitude=True, frequency=None, degrees=True,
+        self,
+        azimuth,
+        colatitude=None,
+        magnitude=True,
+        frequency=None,
+        degrees=True,
     ):
         """
         Get response for provided angles.
@@ -367,33 +375,56 @@ class SpeechDirectivity(Directivity):
             azimuth = np.radians(azimuth)
         degrees = False
         if frequency is None:
-            warnings.warn("SpeechDirectivity is frequency dependant, defaults to respone at 1 kHz.")
+            warnings.warn(
+                "SpeechDirectivity is frequency dependant, defaults to respone at 1 kHz."
+            )
             frequency = 1000
         if not magnitude:
-            warnings.warn("SpeechDirectivity does not return phase response, magnitiude only.")
+            warnings.warn(
+                "SpeechDirectivity does not return phase response, magnitiude only."
+            )
         # find the freq closest to the avaiable 1/3rd octave band
         freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
 
         # get coords on the unit sphere for the input azimuth / colatitude
         coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=False)
-        # use the internal orientation to project the coords of the input angles onto the appropriate direction 
+        # use the internal orientation to project the coords of the input angles onto the appropriate direction
         cos_theta = np.matmul(self._orientation.unit_vector, coord)
         # extract the angle(s) we are computing the gains for
-        directivity_angle = np.arccos(cos_theta)  # speech response is mirrored so angle sign doesnt matter
+        directivity_angle = np.arccos(
+            cos_theta
+        )  # speech response is mirrored so angle sign doesnt matter
         directivity_angle_deg = directivity_angle / np.pi * 180
         directivity_angle_deg = wrap_degrees(directivity_angle_deg)
-        directivity_angle_deg = np.abs(directivity_angle_deg) # speech response is mirrored
+        directivity_angle_deg = np.abs(
+            directivity_angle_deg
+        )  # speech response is mirrored
         # linear interpolation to estimate gain at requested angle(s)
         if isinstance(directivity_angle_deg, (list, np.ndarray)):
-            directivity_at_angle_db = np.array([np.interp(angle, self.pattern_angles, self.speech_data[freq_ind, :]) for angle in directivity_angle_deg])
+            directivity_at_angle_db = np.array(
+                [
+                    np.interp(angle, self.pattern_angles, self.speech_data[freq_ind, :])
+                    for angle in directivity_angle_deg
+                ]
+            )
         else:
-            directivity_at_angle_db = np.interp(directivity_angle_deg, self.pattern_angles, self.speech_data[freq_ind, :])
+            directivity_at_angle_db = np.interp(
+                directivity_angle_deg,
+                self.pattern_angles,
+                self.speech_data[freq_ind, :],
+            )
         directivity_at_angle = np.power(10, directivity_at_angle_db / 20)
         return directivity_at_angle
 
     @requires_matplotlib
     def plot_response(
-        self, azimuth, colatitude=None, degrees=True, ax=None, offset=None, frequency=None
+        self,
+        azimuth,
+        colatitude=None,
+        degrees=True,
+        ax=None,
+        offset=None,
+        frequency=None,
     ):
         """
         Plot directivity response at specified angles.
@@ -429,7 +460,6 @@ class SpeechDirectivity(Directivity):
             azimuth = np.radians(azimuth)
 
         if colatitude is not None:
-
             if degrees:
                 colatitude = np.radians(colatitude)
 
@@ -448,7 +478,11 @@ class SpeechDirectivity(Directivity):
 
             # compute response
             resp = self.get_response(
-                azimuth=azi_flat, colatitude=col_flat, magnitude=True, degrees=False, frequency=frequency,
+                azimuth=azi_flat,
+                colatitude=col_flat,
+                magnitude=True,
+                degrees=False,
+                frequency=frequency,
             )
             RESP = resp.reshape(len(azimuth), len(colatitude))
 
@@ -476,13 +510,14 @@ class SpeechDirectivity(Directivity):
             ax.set_zlabel("z")
 
         else:
-
             if ax is None:
                 fig = plt.figure()
                 ax = plt.subplot(111)
 
             # compute response
-            resp = self.get_response(azimuth=azimuth, magnitude=True, degrees=False, frequency=frequency)
+            resp = self.get_response(
+                azimuth=azimuth, magnitude=True, degrees=False, frequency=frequency
+            )
             RESP = resp
 
             # create surface plot, need cartesian coordinates
@@ -491,6 +526,7 @@ class SpeechDirectivity(Directivity):
             ax.plot(X, Y)
 
         return ax
+
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
     """

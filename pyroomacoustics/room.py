@@ -667,7 +667,7 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily, source_angle_shoebox, SpeechDirectivity
+from .directivities import CardioidFamily, SpeechDirectivity, source_angle_shoebox
 from .doa import GridCircle, GridSphere
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
@@ -2243,7 +2243,9 @@ class Room(object):
                 # Do band-wise RIR construction
                 is_multi_band = self.is_multi_band
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
-                centre_freqs = self.octave_bands.centers if is_multi_band else [self.fs / 4]
+                centre_freqs = (
+                    self.octave_bands.centers if is_multi_band else [self.fs / 4]
+                )
                 rir_bands = []
 
                 for b, (bw, centre_freq) in enumerate(zip(bws, centre_freqs)):
