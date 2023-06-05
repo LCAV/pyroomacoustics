@@ -139,7 +139,13 @@ class Directivity(abc.ABC):
 
     @abc.abstractmethod
     def get_response(
-        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
+        self,
+        azimuth,
+        colatitude=None,
+        magnitude=False,
+        frequency=None,
+        degrees=True,
+        band=None,
     ):
         """
         Get response for provided angles and frequency.
@@ -172,7 +178,13 @@ class CardioidFamily(Directivity):
         return self._pattern_name
 
     def get_response(
-        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
+        self,
+        azimuth,
+        colatitude=None,
+        magnitude=False,
+        frequency=None,
+        degrees=True,
+        band=None,
     ):
         """
         Get response for provided angles.
@@ -190,7 +202,11 @@ class CardioidFamily(Directivity):
             value has no effect.
         degrees : bool, optional
             Whether provided angles are in degrees.
-
+        band: list, optional.
+            when provided this specifies the start an end of a frequency band in Hz.
+            This overrides the parameter frequency, and the response will be intergrated
+            over this frequency band. Cardioid are frequency-independent so this
+            value has no effect.
 
         Returns
         -------
@@ -349,6 +365,7 @@ class SpeechDirectivity(Directivity):
         magnitude=True,
         frequency=None,
         degrees=True,
+        band=None,
     ):
         """
         Get response for provided angles.
@@ -365,6 +382,10 @@ class SpeechDirectivity(Directivity):
             For which frequency to compute the response.
         degrees : bool, optional
             Whether provided angles are in degrees.
+        band: list, optional.
+            when provided this specifies the start an end of a frequency band in Hz.
+            This overrides the parameter frequency, and the response will be intergrated
+            over this frequency band.
 
         Returns
         -------
@@ -374,18 +395,29 @@ class SpeechDirectivity(Directivity):
         if degrees:
             azimuth = np.radians(azimuth)
         degrees = False
-        if frequency is None:
-            warnings.warn(
-                "SpeechDirectivity is frequency dependant, defaults to respone at 1 kHz."
-            )
-            frequency = 1000
+
         if not magnitude:
             warnings.warn(
                 "SpeechDirectivity does not return phase response, magnitiude only."
             )
-        # find the freq closest to the avaiable 1/3rd octave band
-        freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
-
+        if band is None:
+            # when the band is not provided, use the centre freq
+            # find the freq closest to the avaiable 1/3rd octave band
+            if frequency is None:
+                warnings.warn(
+                    "SpeechDirectivity is frequency dependant, defaults to respone at 1 kHz."
+                )
+                frequency = 1000
+            freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
+            gains_per_angle = self.speech_data[freq_ind, :]
+        else:
+            freq_inds = np.logical_and(
+                self.centre_freqs >= band[0], self.centre_freqs < band[1]
+            )
+            # average the power over the 3rd octave gains within the band
+            gains_per_angle = 10 * np.log10(
+                np.mean(np.power(10, self.speech_data[freq_inds, :] / 10), 0)
+            )
         # get coords on the unit sphere for the input azimuth / colatitude
         coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=False)
         # use the internal orientation to project the coords of the input angles onto the appropriate direction
@@ -403,7 +435,7 @@ class SpeechDirectivity(Directivity):
         if isinstance(directivity_angle_deg, (list, np.ndarray)):
             directivity_at_angle_db = np.array(
                 [
-                    np.interp(angle, self.pattern_angles, self.speech_data[freq_ind, :])
+                    np.interp(angle, self.pattern_angles, gains_per_angle)
                     for angle in directivity_angle_deg
                 ]
             )

@@ -44,9 +44,7 @@ def predict_rir_speech_source(speech_direction):
     )
 
     # define source with speech directivity
-    PATTERN = DirectivityPattern.FIGURE_EIGHT
     ORIENTATION = DirectionVector(azimuth=speech_direction, colatitude=90, degrees=True)
-
     directivity = SpeechDirectivity(orientation=ORIENTATION)
 
     # add source with speech directivity
