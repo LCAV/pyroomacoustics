@@ -353,7 +353,7 @@ class SpeechDirectivity(Directivity):
             Colatitude in degrees. Default is to be on XY plane.
         magnitude : bool, optional
             Whether to return magnitude of response.
-        frequency : float, optional
+        frequency : float, required
             For which frequency to compute the response.
         degrees : bool, optional
             Whether provided angles are in degrees.
@@ -367,11 +367,10 @@ class SpeechDirectivity(Directivity):
             azimuth = np.radians(azimuth)
         degrees = False
         if frequency is None:
-            raise RuntimeError("SpeechDirectivity requires a frequency input.")
+            warnings.warn("SpeechDirectivity is frequency dependant, defaults to respone at 1 kHz.")
+            frequency = 1000
         if not magnitude:
             warnings.warn("SpeechDirectivity does not return phase response, magnitiude only.")
-        if colatitude is None:
-            warnings.warn("SpeechDirectivity assumes X-Y plane only.")
         # find the freq closest to the avaiable 1/3rd octave band
         freq_ind = np.argmin(np.abs(frequency - self.centre_freqs))
 
@@ -394,7 +393,7 @@ class SpeechDirectivity(Directivity):
 
     @requires_matplotlib
     def plot_response(
-        self, azimuth, colatitude=None, degrees=True, ax=None, offset=None, frequency=1000
+        self, azimuth, colatitude=None, degrees=True, ax=None, offset=None, frequency=None
     ):
         """
         Plot directivity response at specified angles.
@@ -410,6 +409,8 @@ class SpeechDirectivity(Directivity):
         ax : axes object
         offset : list
             3-D coordinates of the point where the response needs to be plotted.
+        frequency : float, optional
+            For which frequency to compute the response, defaults to 1 kHz.
 
         Return
         ------
