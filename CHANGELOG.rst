@@ -22,6 +22,8 @@ Added
 - New global parameter  ``num_threads`` that controls the number of threads used in
   multi-threaded code (rir builder only at the moment). The number of threads can also
   be controlled via the environement variable ``PRA_NUM_THREADS``
+- Added a new directivity object ``SpeechDirectivity`` which adds a frequency dependent directivity
+  pattern based on running speech.
 
 Changed
 ~~~~~~~
