@@ -8,8 +8,7 @@
 namespace py = pybind11;
 
 void rir_builder(py::buffer rir, const py::buffer time, const py::buffer alpha,
-                 const py::buffer visibility, int fs, size_t fdl,
-                 size_t lut_gran, size_t num_threads);
+                 int fs, size_t fdl, size_t lut_gran, size_t num_threads);
 
 void delay_sum(const py::buffer irs, const py::buffer delays, py::buffer output,
                size_t num_threads);

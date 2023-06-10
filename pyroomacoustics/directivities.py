@@ -91,6 +91,14 @@ class Directivity(abc.ABC):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
 
+    @property
+    def is_impulse_response(self):
+        """
+        Indicates whether the array returned has coefficients
+        for octave bands or is a full-size impulse response
+        """
+        return False
+
     def get_azimuth(self, degrees=True):
         return self._orientation.get_azimuth(degrees, degrees=degrees)
 

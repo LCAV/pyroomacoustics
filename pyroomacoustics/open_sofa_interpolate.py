@@ -516,6 +516,10 @@ class MeasuredDirectivity(Directivity):
         self.set_orientation(self._orientation)
 
     @property
+    def is_impulse_response(self):
+        return True
+
+    @property
     def filter_len_ir(self):
         """Length of the impulse response in samples"""
         return self._irs.shape[-1]

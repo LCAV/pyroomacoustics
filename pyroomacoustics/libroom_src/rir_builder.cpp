@@ -46,14 +46,11 @@ void threaded_rir_builder_impl(
     py::array_t<T, py::array::c_style | py::array::forcecast> rir,
     const py::array_t<T, py::array::c_style | py::array::forcecast> time,
     const py::array_t<T, py::array::c_style | py::array::forcecast> alpha,
-    const py::array_t<int, py::array::c_style | py::array::forcecast>
-        visibility,
     int fs, size_t fdl, size_t lut_gran, size_t num_threads) {
   auto pi = get_pi<T>();
 
   // accessors for the arrays
   auto rir_acc = rir.mutable_unchecked();
-  auto vis_acc = visibility.unchecked();
   auto tim_acc = time.unchecked();
   auto alp_acc = alpha.unchecked();
 
@@ -64,9 +61,6 @@ void threaded_rir_builder_impl(
   // error handling
   if (n_times != size_t(alpha.size()))
     throw std::runtime_error("time and alpha arrays should have the same size");
-  if (n_times != size_t(visibility.size()))
-    throw std::runtime_error(
-        "time and visibility arrays should have the same size");
   if (fdl % 2 != 1)
     throw std::runtime_error("the fractional filter length should be odd");
 
@@ -121,25 +115,23 @@ void threaded_rir_builder_impl(
     results.emplace_back(pool.enqueue(
         [&](size_t t_start, size_t t_end, size_t offset) {
           for (size_t idx = t_start; idx < t_end; idx++) {
-            if (vis_acc(idx)) {
-              // decompose integral/fractional parts
-              T sample_frac = fs * tim_acc(idx);
-              T time_ip = std::floor(sample_frac);
-              T time_fp = sample_frac - time_ip;
+            // decompose integral/fractional parts
+            T sample_frac = fs * tim_acc(idx);
+            T time_ip = std::floor(sample_frac);
+            T time_fp = sample_frac - time_ip;
 
-              // LUT interpolation
-              T x_off_frac = (1. - time_fp) * lut_gran_f;
-              T lut_gran_off = std::floor(x_off_frac);
-              T x_off = (x_off_frac - lut_gran_off);
+            // LUT interpolation
+            T x_off_frac = (1. - time_fp) * lut_gran_f;
+            T lut_gran_off = std::floor(x_off_frac);
+            T x_off = (x_off_frac - lut_gran_off);
 
-              int lut_pos = int(lut_gran_off);
-              int f = int(time_ip) - fdl2;
-              for (size_t k = 0; k < fdl; lut_pos += lut_gran, f++, k++)
-                rir_out[offset + f] +=
-                    alp_acc(idx) * hann[k] *
-                    (sinc_lut[lut_pos] +
-                     x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]));
-            }
+            int lut_pos = int(lut_gran_off);
+            int f = int(time_ip) - fdl2;
+            for (size_t k = 0; k < fdl; lut_pos += lut_gran, f++, k++)
+              rir_out[offset + f] +=
+                  alp_acc(idx) * hann[k] *
+                  (sinc_lut[lut_pos] +
+                   x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]));
           }
         },
         t_start, t_end, offset));
@@ -167,15 +159,14 @@ void threaded_rir_builder_impl(
 }
 
 void rir_builder(py::buffer rir, const py::buffer time, const py::buffer alpha,
-                 const py::buffer visibility, int fs, size_t fdl,
-                 size_t lut_gran, size_t num_threads) {
+                 int fs, size_t fdl, size_t lut_gran, size_t num_threads) {
   // dispatch to correct implementation depending on input type
   auto buf = pybind11::array::ensure(rir);
   if (py::isinstance<py::array_t<float>>(buf)) {
-    threaded_rir_builder_impl<float>(rir, time, alpha, visibility, fs, fdl,
+    threaded_rir_builder_impl<float>(rir, time, alpha, fs, fdl,
                                      lut_gran, num_threads);
   } else if (py::isinstance<py::array_t<double>>(buf)) {
-    threaded_rir_builder_impl<double>(rir, time, alpha, visibility, fs, fdl,
+    threaded_rir_builder_impl<double>(rir, time, alpha, fs, fdl,
                                       lut_gran, num_threads);
   } else {
     std::runtime_error("wrong type array for rir builder");

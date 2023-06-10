@@ -372,10 +372,7 @@ class MicrophoneArray(object):
         self.R = R  # array geometry
 
         self.fs = fs  # sampling frequency of microphones
-        self.directivity = None
-
-        if directivity is not None:
-            self.set_directivity(directivity)
+        self.set_directivity(directivity)
 
         self.signals = None
 
@@ -399,7 +396,7 @@ class MicrophoneArray(object):
             self.directivity = directivities
         else:
             # only 1 directivity specified
-            assert isinstance(directivities, Directivity)
+            assert directivities is None or isinstance(directivities, Directivity)
             self.directivity = [directivities] * self.nmic
 
     def record(self, signals, fs):

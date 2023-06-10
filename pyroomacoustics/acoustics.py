@@ -161,10 +161,11 @@ class OctaveBandsFactory(object):
         Use third octave bands if True (default: False)
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
+    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512, keep_dc=False):
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
+        self.keep_dc = keep_dc
 
         # compute the number of bands
         self.n_bands = math.floor(np.log2(fs / base_frequency))
@@ -260,27 +261,7 @@ class OctaveBandsFactory(object):
 
     def _make_filters(self):
         """
-        Create the band-pass filters for the octave bands
-
-        Parameters
-        ----------
-        order: int, optional
-            The order of the IIR filters (default: 8)
-        output: {'ba', 'zpk', 'sos'}
-            Type of output: numerator/denominator ('ba'), pole-zero ('zpk'), or
-            second-order sections ('sos'). Default is 'ba'.
-
-        Returns
-        -------
-        A list of callables that will each apply one of the band-pass filters
-        """
-
-        """
-        filter_bank = bandpass_filterbank(
-            self.bands, fs=self.fs, order=order, output=output
-        )
-
-        return [lambda sig: sosfiltfilt(bpf, sig) for bpf in filter_bank]
+        Creates the band-pass filters for the octave bands
         """
 
         # This seems to work only for Octave bands out of the box
@@ -301,9 +282,9 @@ class OctaveBandsFactory(object):
         )  # This only contains positive newfrequencies
 
         for b, (band, center) in enumerate(zip(new_bands, centers)):
-            if (
-                b == 0
-            ):  # Converting Octave bands so that the minimum phase filters do not have ripples.
+            if b == 0 and self.keep_dc:
+                # Converting Octave bands so that the minimum phase filters do not
+                # have ripples.
                 make_one = freq < center
                 freq_resp[make_one, b] = 1.0
 
@@ -325,55 +306,8 @@ class OctaveBandsFactory(object):
         # remove the first sample to make them odd-length symmetric filters
         self.filters = filters[1:, :]
 
-        # Octave band filters in frequency domain used in the following method "octave_band_dft_interpolation"
+        # Octave band filters in frequency domain
         self.filters_freq_domain = fft(filters, axis=0)
-
-    def octave_band_dft_interpolation(
-        self,
-        att_in_octave_band,
-        air_abs_band,
-        distance_is,
-        att_in_dft_scale,
-        bws,
-        min_phase,
-    ):
-        """
-        Convert octave band dampings to dft scale, interpolates octave band values to full dft scale values.
-
-        Parameters:
-        -------------
-        att_in_octave_band : np.ndarray
-            Dampings in octave band Shape : (no_of_octave_band)
-        air_abs_band : np.ndarray
-            air absorption in octave band Shape : (no_of_octave_band)
-        distance_is : float
-            distance of the image source from the mic
-        min_phase : Boolean
-            decides if the final filter is minimum phase (causal) or (non-causal) linear phase sinc filter
-
-        Returns:
-        -------------
-        att_in_dft_scale : np.ndarray
-            Dampings in octave bands interpolated to full scale frequency domain.
-
-        """
-
-        if air_abs_band is None:
-            u_ = [att_in_octave_band[i] for i in range(len(bws))]
-        else:
-            u_ = [
-                att_in_octave_band[i] * np.exp(-0.5 * air_abs_band[i] * distance_is)
-                for i in range(len(bws))
-            ]
-
-        for b in range(len(bws)):
-            att_in_dft_scale += u_[b] * self.filters_freq_domain[:, b]
-
-        if min_phase:
-            att_in_dft_scale += 1e-07  # To avoid divide by zero error when performing hilbert transform.
-            m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale))))
-            att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
-        return att_in_dft_scale
 
 
 def critical_bands():
