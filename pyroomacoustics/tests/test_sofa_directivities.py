@@ -327,7 +327,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
 
 @pytest.mark.parametrize(
     "src_pattern_id, src_sofa_file_name, mic_pattern_id, "
-    "mic_sofa_file_name, save_flag, plot_flag",
+    "mic_sofa_file_name, min_phase, save_flag, plot_flag",
     SOFA_TWO_SIDES_PARAMETERS,
 )
 def test_sofa_two_sides(
