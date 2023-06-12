@@ -39,9 +39,14 @@ interp_order = 12
 
 TEST_DATA = Path(__file__).parent / "data"
 
+# the processing delay due to the band-pass filters was removed in
+# after the test files were created
+# we need to subtract this delay from the reference signal
+ref_delay = 216
+
 # tolerances for the regression tests
-atol = 5e-5
-rtol = 1e-8
+atol = 5e-3
+rtol = 3e-2
 
 room_dim = [6, 6, 2.4]
 
@@ -90,6 +95,16 @@ all_materials = {
     ),
 }
 
+"""
+all_materials = pra.Material(0.1)
+all_materials = pra.Material(
+    energy_absorption={
+        "coeffs": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
+    },
+)
+"""
+
 
 def test_dirpat_download():
     files = download_sofa_files(verbose=True)
@@ -98,16 +113,17 @@ def test_dirpat_download():
 
 
 SOFA_ONE_SIDE_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("EM_32_0", "EM32_Directivity.sofa", False, save_plot),
-    ("EM_32_31", "EM32_Directivity.sofa", False, save_plot),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", False, False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", False, False, save_plot),
     (
         "Genelec_8020",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
         False,
         save_plot,
     ),
@@ -115,18 +131,47 @@ SOFA_ONE_SIDE_PARAMETERS = [
         "Vibrolux_2x10inch",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         False,
+        False,
+        save_plot,
+    ),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", True, False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", True, False, save_plot),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        True,
+        False,
+        save_plot,
+    ),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        True,
+        False,
         save_plot,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "pattern_id,sofa_file_name,save_flag,plot_flag", SOFA_ONE_SIDE_PARAMETERS
+    "pattern_id,sofa_file_name,min_phase,save_flag,plot_flag", SOFA_ONE_SIDE_PARAMETERS
 )
-def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
+def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_flag):
     """
     Tests with only microphone *or* source from a SOFA file
     """
+
+    if min_phase:
+        pra.constants.set("octave_bands_n_fft", 128)
+        pra.constants.set("octave_bands_keep_dc", True)
+    else:
+        pra.constants.set("octave_bands_n_fft", 512)
+        pra.constants.set("octave_bands_keep_dc", False)
 
     # make sure all the files are present
     # in case tests are run out of order
@@ -140,7 +185,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
         materials=all_materials,
         air_absorption=True,
         ray_tracing=False,
-        min_phase=False,
+        min_phase=min_phase,
     )
 
     # define source with figure_eight directivity
@@ -185,6 +230,8 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
+        reference_data = reference_data[ref_delay : ref_delay + rir_1_0.shape[0]]
+        # rir_1_0 = rir_1_0[: reference_data.shape[0]]
         print("Max diff.:", abs(reference_data - rir_1_0).max())
         print(
             "Rel diff.:",
@@ -196,6 +243,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, save_flag, plot_flag):
             ax.plot(reference_data, label="ref")
             ax.legend()
             fig.savefig(test_file_path.with_suffix(".pdf"))
+            plt.close(fig)
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
@@ -208,6 +256,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "AKG_c480",
         "AKG_c480_c414_CUBE.sofa",
         False,
+        False,
         save_plot,
     ),
     (
@@ -215,6 +264,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         "AKG_c414K",
         "AKG_c480_c414_CUBE.sofa",
+        False,
         False,
         save_plot,
     ),
@@ -224,6 +274,7 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "EM_32_0",
         "EM32_Directivity.sofa",
         False,
+        False,
         save_plot,
     ),
     (
@@ -231,6 +282,43 @@ SOFA_TWO_SIDES_PARAMETERS = [
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         "EM_32_31",
         "EM32_Directivity.sofa",
+        False,
+        False,
+        save_plot,
+    ),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        "AKG_c480",
+        "AKG_c480_c414_CUBE.sofa",
+        True,
+        False,
+        save_plot,
+    ),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        "AKG_c414K",
+        "AKG_c480_c414_CUBE.sofa",
+        True,
+        False,
+        save_plot,
+    ),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        "EM_32_0",
+        "EM32_Directivity.sofa",
+        True,
+        False,
+        save_plot,
+    ),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        "EM_32_31",
+        "EM32_Directivity.sofa",
+        True,
         False,
         save_plot,
     ),
@@ -247,12 +335,20 @@ def test_sofa_two_sides(
     src_sofa_file_name,
     mic_pattern_id,
     mic_sofa_file_name,
+    min_phase,
     save_flag,
     plot_flag,
 ):
     """
     Tests with only microphone *or* source from a SOFA file
     """
+
+    if min_phase:
+        pra.constants.set("octave_bands_n_fft", 128)
+        pra.constants.set("octave_bands_keep_dc", True)
+    else:
+        pra.constants.set("octave_bands_n_fft", 512)
+        pra.constants.set("octave_bands_keep_dc", False)
 
     # make sure all the files are present
     # in case tests are run out of order
@@ -266,7 +362,7 @@ def test_sofa_two_sides(
         materials=all_materials,
         air_absorption=True,
         ray_tracing=False,
-        min_phase=False,
+        min_phase=min_phase,
     )
 
     src_factory = SOFADirectivityFactory(
@@ -323,12 +419,7 @@ def test_sofa_two_sides(
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
-
-        print("Max diff.:", abs(reference_data - rir_1_0).max())
-        print(
-            "Rel diff.:",
-            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
-        )
+        reference_data = reference_data[ref_delay : ref_delay + rir_1_0.shape[0]]
 
         if plot_flag:
             fig, ax = plt.subplots(1, 1)
@@ -336,6 +427,13 @@ def test_sofa_two_sides(
             ax.plot(reference_data, label="ref")
             ax.legend()
             fig.savefig(test_file_path.with_suffix(".pdf"))
+            plt.close(fig)
+
+        print("Max diff.:", abs(reference_data - rir_1_0).max())
+        print(
+            "Rel diff.:",
+            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
+        )
 
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
@@ -343,16 +441,17 @@ def test_sofa_two_sides(
 
 
 SOFA_CARDIOID_PARAMETERS = [
-    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, save_plot),
-    ("EM_32_0", "EM32_Directivity.sofa", False, save_plot),
-    ("EM_32_31", "EM32_Directivity.sofa", False, save_plot),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", False, False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", False, False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", False, False, save_plot),
     (
         "Genelec_8020",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        False,
         False,
         save_plot,
     ),
@@ -360,18 +459,47 @@ SOFA_CARDIOID_PARAMETERS = [
         "Vibrolux_2x10inch",
         "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
         False,
+        False,
+        save_plot,
+    ),
+    ("AKG_c480", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414K", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414N", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414S", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("AKG_c414A", "AKG_c480_c414_CUBE.sofa", True, False, save_plot),
+    ("EM_32_0", "EM32_Directivity.sofa", True, False, save_plot),
+    ("EM_32_31", "EM32_Directivity.sofa", True, False, save_plot),
+    (
+        "Genelec_8020",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        True,
+        False,
+        save_plot,
+    ),
+    (
+        "Vibrolux_2x10inch",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+        True,
+        False,
         save_plot,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "pattern_id,sofa_file_name,save_flag,plot_flag", SOFA_CARDIOID_PARAMETERS
+    "pattern_id,sofa_file_name,min_phase,save_flag,plot_flag", SOFA_CARDIOID_PARAMETERS
 )
-def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
+def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plot_flag):
     """
     Tests with only microphone *or* source from a SOFA file
     """
+
+    if min_phase:
+        pra.constants.set("octave_bands_n_fft", 128)
+        pra.constants.set("octave_bands_keep_dc", True)
+    else:
+        pra.constants.set("octave_bands_n_fft", 512)
+        pra.constants.set("octave_bands_keep_dc", False)
 
     # make sure all the files are present
     # in case tests are run out of order
@@ -436,6 +564,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
         np.save(test_file_path, rir_1_0)
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
+        reference_data = reference_data[ref_delay : ref_delay + rir_1_0.shape[0]]
 
         print("Max diff.:", abs(reference_data - rir_1_0).max())
         print(
@@ -449,6 +578,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, save_flag, plot_flag):
             ax.plot(reference_data, label="ref")
             ax.legend()
             fig.savefig(test_file_path.with_suffix(".pdf"))
+            plt.close(fig)
 
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:

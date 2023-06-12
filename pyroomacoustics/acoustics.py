@@ -30,7 +30,6 @@ import math
 
 import numpy as np
 from scipy import signal
-from scipy.fft import fft, fftfreq, fftshift, ifft
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
 from scipy.signal import butter, fftconvolve, hilbert, sosfiltfilt
@@ -307,7 +306,7 @@ class OctaveBandsFactory(object):
         self.filters = filters[1:, :]
 
         # Octave band filters in frequency domain
-        self.filters_freq_domain = fft(filters, axis=0)
+        self.filters_freq_domain = np.fft.fft(filters, axis=0, n=self.n_fft)
 
 
 def critical_bands():

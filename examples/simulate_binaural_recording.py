@@ -152,7 +152,7 @@ if __name__ == "__main__":
         materials=all_materials,
         air_absorption=True,
         ray_tracing=False,
-        min_phase=True,
+        min_phase=False,
         use_rand_ism=True,
         max_rand_disp=0.05,
     )
@@ -171,6 +171,7 @@ if __name__ == "__main__":
     wavfile.write(args.output, fs, signals.T)
 
     room.plot_rir(FD=True)
+    room.plot_rir(FD=False)
 
     fig = plt.figure()
     for idx, fb in enumerate(range(44)):

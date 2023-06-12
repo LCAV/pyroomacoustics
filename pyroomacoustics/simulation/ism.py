@@ -4,6 +4,7 @@ import numpy as np
 from scipy.signal import fftconvolve, hilbert
 
 from .. import libroom
+from ..directivities import source_angle_shoebox
 from ..parameters import constants
 from ..utilities import angle_function
 
@@ -21,7 +22,7 @@ def multi_convolve(*signals):
 
     fd = np.fft.rfft(signals[0], axis=-1, n=pow2_len)
     for s in signals[1:]:
-        fd *= np.fft.rfft(signals[1], axis=-1, n=pow2_len)
+        fd *= np.fft.rfft(s, axis=-1, n=pow2_len)
 
     conv = np.fft.irfft(fd, axis=-1, n=pow2_len)
     conv = conv[:, :max_len]
@@ -65,14 +66,9 @@ def interpolate_octave_bands(
     """
     n_bands = octave_bands.n_bands
 
-    att_in_dft_scale = (
-        att_in_octave_bands[0, :, None] * octave_bands.filters_freq_domain[None, :, 0]
+    att_in_dft_scale = np.einsum(
+        "bi,fb->if", att_in_octave_bands, octave_bands.filters_freq_domain
     )
-    for b in range(1, n_bands):
-        att_in_dft_scale += (
-            att_in_octave_bands[b, :, None]
-            * octave_bands.filters_freq_domain[None, :, b]
-        )
 
     if min_phase:
         att_in_dft_scale += (
@@ -81,7 +77,8 @@ def interpolate_octave_bands(
         m_p = np.imag(-hilbert(np.log(np.abs(att_in_dft_scale)), axis=-1))
         att_in_dft_scale = np.abs(att_in_dft_scale) * np.exp(1j * m_p)
 
-    ir = np.fft.irfft(att_in_dft_scale, n=octave_bands.n_fft, axis=-1)
+    ir = np.fft.ifft(att_in_dft_scale, n=octave_bands.n_fft, axis=-1).real
+
     return ir
 
 
@@ -99,8 +96,11 @@ def compute_ism_rir(
 ):
     fdl2 = fdl // 2
 
+    images = src.images[:, is_visible]
+    att = src.damping[:, is_visible]
+
     dist = np.sqrt(
-        np.sum((src.images[:, is_visible] - mic[:, None]) ** 2, axis=0)
+        np.sum((images - mic[:, None]) ** 2, axis=0)
     )  # Calculate distance between image sources and for each microphone
 
     # dist shape (n) : n0 of image sources
@@ -120,7 +120,7 @@ def compute_ism_rir(
     # What will be the length of RIR according to t_max
     N = int(math.ceil(t_max * fs + fdl2 + 1))
 
-    oct_band_amplitude = src.damping[:, is_visible] / dist
+    oct_band_amplitude = att / dist
     full_band_imp_resp = []
 
     if air_abs_coeffs is not None:
@@ -129,7 +129,7 @@ def compute_ism_rir(
         )
 
     if mic_dir is not None:
-        angle_function_array = angle_function(src.images[:, is_visible], mic)
+        angle_function_array = angle_function(images, mic)
         azimuth_m = angle_function_array[0]
         colatitude_m = angle_function_array[1]
         mic_gain = mic_dir.get_response(
@@ -145,7 +145,7 @@ def compute_ism_rir(
 
     if src.directivity is not None:
         azimuth_s, colatitude_s = source_angle_shoebox(
-            image_source_loc=src.images[:, is_visible],
+            image_source_loc=images,
             wall_flips=abs(src.orders_xyz[:, is_visible]),
             mic_loc=mic,
         )
@@ -188,8 +188,9 @@ def compute_ism_rir(
 
     if len(full_band_imp_resp) > 0:
         # Case 3) Full band RIR construction
-        time_ip = np.round(time).astype(np.int32)
-        time_fp = (time - time_ip).astype(np.float32)
+        sample_frac = time * fs
+        time_ip = np.floor(sample_frac).astype(np.int32)
+        time_fp = (sample_frac - time_ip).astype(np.float32)
 
         # create fractional delay filters
         frac_delays = np.zeros((time_fp.shape[0], fdl), dtype=np.float32)
@@ -220,11 +221,11 @@ def compute_ism_rir(
             irs.astype(np.float32), time_ip, rir, constants.get("num_threads")
         )
 
-        if n_bands > 1:
+        if n_bands > 1 and not min_phase:
             # we want to trim the extra samples introduced by the octave
             # band filters
-            s = (constants.get("octave_bands_n_fft") - 1) // 2
-            irs = irs[s:]
+            s = (constants.get("octave_bands_n_fft")) // 2
+            rir = rir[s:]
 
     else:
         # Case 1) or 2)

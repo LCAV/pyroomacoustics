@@ -378,6 +378,10 @@ class MicrophoneArray(object):
 
         self.center = np.mean(R, axis=1, keepdims=True)
 
+    @property
+    def is_directive(self):
+        return any([d is not None for d in self.directivity])
+
     def set_directivity(self, directivities):
         """
         This functions sets self.directivity as a list of directivities with `n_mics` entries,

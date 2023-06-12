@@ -675,7 +675,6 @@ from .open_sofa_interpolate import MeasuredDirectivity
 from .parameters import Material, Physics, constants, eps, make_materials
 from .simulation import compute_ism_rir, compute_rt_rir
 from .soundsource import SoundSource
-from .utilities import angle_function
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1042,7 +1041,7 @@ class Room(object):
 
         if use_ray_tracing:
             if hasattr(self, "mic_array") and self.mic_array is not None:
-                if self.mic_array.directivity is not None:
+                if self.mic_array.is_directive:
                     raise NotImplementedError(
                         "Directivity not supported with ray tracing."
                     )
@@ -1264,7 +1263,7 @@ class Room(object):
 
         # Resample material properties at octave bands
         octave_bands = OctaveBandsFactory(
-            fs=self.fs,
+            fs=fs,
             n_fft=constants.get("octave_bands_n_fft"),
             keep_dc=constants.get("octave_bands_keep_dc"),
             base_frequency=constants.get("octave_bands_base_freq"),
@@ -1510,7 +1509,7 @@ class Room(object):
                         c="k",
                     )
 
-                    if plot_directivity and self.mic_array.directivity is not None:
+                    if plot_directivity and self.mic_array.directivity[i] is not None:
                         azimuth_plot = np.linspace(
                             start=0, stop=360, num=361, endpoint=True
                         )
@@ -1723,7 +1722,7 @@ class Room(object):
                         c="k",
                     )
 
-                    if plot_directivity and self.mic_array.directivity is not None:
+                    if plot_directivity and self.mic_array.directivity[i] is not None:
                         azimuth_plot = np.linspace(
                             start=0, stop=360, num=361, endpoint=True
                         )
@@ -2013,10 +2012,9 @@ class Room(object):
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
         else:
             # if the type is microphone array
-            if directivity is not None:
-                mic_array.set_directivity(directivity)
+            mic_array.set_directivity(directivity)
 
-            if self.simulator_state["rt_needed"] and mic_array.directivity is not None:
+            if self.simulator_state["rt_needed"] and mic_array.is_directive:
                 raise NotImplementedError("Directivity not supported with ray tracing.")
 
         return self.add(mic_array)
@@ -2219,6 +2217,7 @@ class Room(object):
                         self.fs,
                         self.octave_bands,
                         air_abs_coeffs=self.air_absorption,
+                        min_phase=self.min_phase,
                     )
                     rir_parts.append(ir_ism)
 

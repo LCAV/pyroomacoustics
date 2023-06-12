@@ -77,7 +77,7 @@ visibilities = np.array(
 )
 
 
-def build_rir_wrap(time, alpha, visibility, fs, fdl):
+def build_rir_wrap(time, alpha, fs, fdl):
     # fractional delay length
     fdl = pra.constants.get("frac_delay_length")
     fdl2 = (fdl - 1) // 2
@@ -91,12 +91,11 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
     ir_cpp_f = ir_cython.astype(np.float32)
 
     # Try to use the Cython extension
-    # build_rir.fast_rir_builder(ir_cython, time, alpha, visibility, fs, fdl)
+    # build_rir.fast_rir_builder(ir_cython, time, alpha, fs, fdl)
     libroom.rir_builder(
         ir_cpp_f,
         time.astype(np.float32),
         alpha.astype(np.float32),
-        visibility.astype(np.int32),
         fs,
         fdl,
         20,
@@ -105,12 +104,11 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
 
     # fallback to pure Python implemenation
     for i in range(time.shape[0]):
-        if visibility[i] == 1:
-            time_ip = int(np.round(fs * time[i]))
-            time_fp = (fs * time[i]) - time_ip
-            ir_ref[time_ip - fdl2 : time_ip + fdl2 + 1] += alpha[
-                i
-            ] * pra.fractional_delay(time_fp)
+        time_ip = int(np.round(fs * time[i]))
+        time_fp = (fs * time[i]) - time_ip
+        ir_ref[time_ip - fdl2 : time_ip + fdl2 + 1] += alpha[i] * pra.fractional_delay(
+            time_fp
+        )
 
     return ir_ref, ir_cpp_f
 
@@ -120,9 +118,7 @@ def test_build_rir():
         return
 
     for t, a, v in zip(times, alphas, visibilities):
-        ir_ref, ir_cython = build_rir_wrap(
-            times[0], alphas[0], visibilities[0], fs, fdl
-        )
+        ir_ref, ir_cython = build_rir_wrap(times[0], alphas[0], fs, fdl)
         assert np.max(np.abs(ir_ref - ir_cython)) < tol
 
 
@@ -139,14 +135,12 @@ def test_short():
 
     time = np.array([0.0], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
-    visibility = np.array([1], dtype=np.int32)
 
     with pytest.raises(RuntimeError):
         libroom.rir_builder(
             rir,
             time,
             alpha,
-            visibility,
             fs,
             fdl,
             20,
@@ -167,10 +161,9 @@ def test_long():
 
     time = np.array([(N - 1) / fs], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
-    visibility = np.array([1], dtype=np.int32)
 
     with pytest.raises(RuntimeError):
-        libroom.rir_builder(rir, time, alpha, visibility, fs, fdl, 20, 2)
+        libroom.rir_builder(rir, time, alpha, fs, fdl, 20, 2)
 
 
 def test_errors():
@@ -186,16 +179,12 @@ def test_errors():
 
     time = np.array([100 / fs, 200 / fs], dtype=np.float32)
     alpha = np.array([1.0, 1.0], dtype=np.float32)
-    visibility = np.array([1, 1], dtype=np.int32)
 
     with pytest.raises(RuntimeError):
-        libroom.rir_builder(rir, time, alpha[:1], visibility, fs, fdl, 20, 2)
+        libroom.rir_builder(rir, time, alpha[:1], fs, fdl, 20, 2)
 
     with pytest.raises(RuntimeError):
-        libroom.rir_builder(rir, time, alpha, visibility[:1], fs, fdl, 20, 2)
-
-    with pytest.raises(RuntimeError):
-        libroom.rir_builder(rir, time, alpha, visibility, fs, 80, 20, 2)
+        libroom.rir_builder(rir, time, alpha, fs, 80, 20, 2)
 
 
 @pytest.mark.parametrize("dtype,tol", [(np.float32, 1e-5), (np.float64, 1e-7)])
@@ -260,22 +249,17 @@ def measure_runtime(dtype=np.float32, num_threads=4):
     alpha = np.random.randn(n_img).astype(dtype)
     rir_len = int(np.ceil(time_arr.max() * fs) + fdl)
     rir = np.zeros(rir_len, dtype=dtype)
-    visibility = np.random.rand(n_img) > 0.5
 
     tick = time.perf_counter()
     rir[:] = 0.0
     for i in range(n_repeat):
-        libroom.rir_builder(
-            rir, time_arr, alpha, visibility.astype(np.int32), fs, fdl, 20, 1
-        )
+        libroom.rir_builder(rir, time_arr, alpha, fs, fdl, 20, 1)
     tock_1 = (time.perf_counter() - tick) / n_repeat
 
     tick = time.perf_counter()
     rir[:] = 0.0
     for i in range(n_repeat):
-        libroom.rir_builder(
-            rir, time_arr, alpha, visibility.astype(np.int32), fs, fdl, 20, num_threads
-        )
+        libroom.rir_builder(rir, time_arr, alpha, fs, fdl, 20, num_threads)
     tock_8 = (time.perf_counter() - tick) / n_repeat
 
     tick = time.perf_counter()
@@ -294,9 +278,7 @@ def measure_runtime(dtype=np.float32, num_threads=4):
         tick = time.perf_counter()
         rir[:] = 0.0
         for i in range(n_repeat):
-            build_rir.fast_rir_builder(
-                rir, time_arr, alpha, visibility.astype(np.int32), fs, fdl
-            )
+            build_rir.fast_rir_builder(rir, time_arr, alpha, fs, fdl)
         tock_old = (time.perf_counter() - tick) / n_repeat
 
     print("runtime:")
