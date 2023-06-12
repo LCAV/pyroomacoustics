@@ -175,6 +175,7 @@ setup_kwargs = dict(
         "pyroomacoustics.bss",
         "pyroomacoustics.denoise",
         "pyroomacoustics.phase",
+        "pyroomacoustics.simulation",
     ],
     # Libroom C extension
     ext_modules=ext_modules,
