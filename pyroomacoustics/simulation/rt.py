@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
@@ -28,6 +29,32 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
     seq[indices] = np.random.choice([1, -1], size=len(indices))
 
     return seq
+
+
+def interp_hist(hist, N):
+    """
+    interpolate the histogram on N samples
+
+    we use the  bin centers as anchors
+    since we can't interpolate outside the anchors, we just repeat
+    the first and last value to fill the array
+    """
+    hbss = N // hist.shape[0]
+    pad = hbss // 2
+    t = np.linspace(pad, N - 1 - pad, hist.shape[0])
+    f = interp1d(t, hist)
+    out = np.zeros(N)
+    out[pad:-pad] = f(np.arange(pad, N - pad))
+    out[:pad] = out[pad]
+    out[-pad:] = out[-pad]
+    return out
+
+
+def seq_bin_power(seq, hbss):
+    seq_rot = seq.reshape((-1, hbss))  # shape 72,64
+    power = np.sum(seq_rot**2, axis=1)
+    power[power <= 0.0] = 1.0
+    return power
 
 
 def compute_rt_rir(
@@ -61,7 +88,9 @@ def compute_rt_rir(
     hbss = int(hist_bin_size_samples)
 
     fdl2 = fdl // 2  # delay due to fractional delay filter
-    N = int(math.ceil(t_max * fs / hbss) * hbss)
+    # make the length a multiple of the bin size
+    n_bins = math.ceil(t_max * fs / hbss)
+    N = n_bins * hbss
 
     # this is the random sequence for the tail generation
     seq = sequence_generation(volume_room, N / fs, c, fs)
@@ -70,40 +99,47 @@ def compute_rt_rir(
     n_bands = histograms[0].shape[0]
     bws = octave_bands.get_bw() if n_bands > 1 else [fs / 2]
 
-    rir = np.zeros(fdl2 + N)
+    rir_bands = np.zeros((n_bands, N))
     for b, bw in enumerate(bws):  # Loop through every band
         if n_bands > 1:
             seq_bp = octave_bands.analysis(seq, band=b)
         else:
             seq_bp = seq.copy()
 
-        # interpolate the histogram and multiply the sequence
-
-        seq_bp_rot = seq_bp.reshape((-1, hbss))  # shape 72,64
-
-        new_n_bins = seq_bp_rot.shape[0]
-
         # Take only those bins which have some non-zero values for that specific octave bands.
+        hist = histograms[0][b, :n_bins]
 
-        hist = histograms[0][b, :new_n_bins]
+        # we normalize the histogram by the sequence power in that bin
+        seq_power = seq_bin_power(seq_bp, hbss)
 
-        normalization = np.linalg.norm(
-            seq_bp_rot, axis=1
-        )  # Take normalize of the poisson distribution octave band filtered array on the axis 1 -> shape (72|71) if input is of size (72,64)
-
-        # Only those indices which have normalization greater than 0.0
-        indices = normalization > 0.0
-
-        seq_bp_rot[indices, :] /= normalization[indices, None]
-
-        seq_bp_rot *= np.sqrt(hist[:, None])
+        # we linarly interpolate the histogram to smoothly cover all the samples
+        hist_lin_interp = interp_hist(hist / seq_power, N)
 
         # Normalize the band power
-        # The bands should normally sum up to fs / 2
-
-        seq_bp *= np.sqrt(bw / fs * 2.0)
+        # the (bw / fs * 2.0) is necessary to normalize the band power
+        # this is the contribution of the octave band to total energy
+        seq_bp *= np.sqrt(bw / fs * 2.0 * hist_lin_interp)
 
         # Impulse response for every octave band for each microphone
-        rir[fdl2:] += seq_bp
+        rir_bands[b] = seq_bp
+
+    if air_abs_coeffs is not None:
+        if rir_bands.shape[0] == 1:
+            # do the octave band analysis if it was not done in the first step
+            rir_bands = np.array(
+                [
+                    octave_bands.analysis(rir_bands[0], band=b)
+                    for b in range(octave_bands.n_bands)
+                ]
+            )
+
+        air_abs = np.exp(
+            -0.5 * air_abs_coeffs[:, None] * np.arange(N)[None, :] / fs * c
+        )
+
+        rir_bands *= air_abs
+
+    rir = np.zeros(fdl2 + N)
+    rir[fdl2:] = np.sum(rir_bands, axis=0)
 
     return rir

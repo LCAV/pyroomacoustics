@@ -38,10 +38,17 @@ if __name__ == "__main__":
     # We invert Sabine's formula to obtain the parameters for the ISM simulator
     e_absorption, max_order = pra.inverse_sabine(rt60_tgt, room_dim)
 
+    pra.constants.set("octave_bands_keep_dc", True)
+
     # Create the room
     if args.method == "ism":
         room = pra.ShoeBox(
-            room_dim, fs=fs, materials=pra.Material(e_absorption), max_order=max_order
+            room_dim,
+            fs=fs,
+            materials=pra.Material(e_absorption),
+            max_order=max_order,
+            use_rand_ism=True,
+            air_absorption=True,
         )
     elif args.method == "hybrid":
         room = pra.ShoeBox(

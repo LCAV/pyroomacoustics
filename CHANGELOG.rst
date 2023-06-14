@@ -14,7 +14,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
-- Simulation with measured directivity responses from the DIRPAT dataset for shoebox rooms
+- Simulation with measured directivity responses in SOFA format (limited file types) is
+  possible with the image source model.
 - New implementation of fast RIR builder function in the ``libroom`` C++
   extentsion to replace the current cython code. Advantages are: 1) only one
   compiled extension, 2) multithreading support
@@ -23,11 +24,22 @@ Added
 - New global parameter  ``num_threads`` that controls the number of threads used in
   multi-threaded code (rir builder only at the moment). The number of threads can also
   be controlled via the environement variable ``PRA_NUM_THREADS``
+- New global parameters to control the octave bands used for simulation.
+  * ``octave_bands_base_freq``: the base frequency used for the octave bands (default ``125 ``),
+    note that together with the sampling frequency this will determine the number of sub-bands
+    used in simulation.
+  * ``octave_bands_n_fft``: lengths of the octave band filters (current is default ``512``
+    but will be changed to ``128`` in the next release)
+  * ``octave_bands_keep_dc``: extends the lowest band to include the DC offset,
+    the current default is ``False`` to match past behavior, but will be changed to
+    ``True`` in the next release because the filters have less oscillations this way.
 
 Changed
 ~~~~~~~
 
 - Removed the broken ``get_rir`` method of the class ``SoundSource``
+- In ray tracing, the histograms are now linearly interpolated between
+  the bins to obtain smoother RIR
 
 Bugfix
 ~~~~~~
