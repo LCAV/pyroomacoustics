@@ -74,7 +74,9 @@ def compute_rt_rir(
     nz_bins_loc = np.nonzero(histograms[0].sum(axis=0))[0]
 
     if len(nz_bins_loc) == 0:
-        n_bins = 0
+        # the histogram is all zeros, there is no RIR to build
+        # we return only an RIR that contains the default delay
+        return np.zeros(fdl // 2)
     else:
         n_bins = nz_bins_loc[-1] + 1
 
