@@ -24,7 +24,7 @@ from .doa import (
     GridSphere,
     cart2spher,
     detect_regular_grid,
-    fibonnaci_spherical_sampling,
+    fibonacci_spherical_sampling,
     spher2cart,
 )
 from .utilities import requires_matplotlib
@@ -450,12 +450,14 @@ def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source, is_dir
     fs_file = file_sofa.Data.SamplingRate.get_values()[0]
     if fs is None:
         fs = fs_file
-    elif fs != fs_file:
+    elif fs < fs_file:
         msr = decimate(
             msr,
             int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
             axis=-1,
         )
+    else:
+        raise ValueError(f"Upsampling of SOFA rir not implemented")
 
     if is_dirpat:
         # There is a bug in the DIRPAT measurement files where the array of
@@ -686,7 +688,7 @@ class SOFADirectivityFactory:
 
         if interp_order is not None:
             self.grid = GridSphere(
-                cartesian_points=fibonacci_sphere(samples=interp_n_points)
+                cartesian_points=fibonacci_spherical_sampling(n_points=interp_n_points)
             )
 
             self.impulse_responses, _ = spherical_interpolation(

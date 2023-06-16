@@ -9,7 +9,7 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import cart2spher, fibonnaci_spherical_sampling, great_circ_dist, spher2cart
+from .utils import cart2spher, fibonacci_spherical_sampling, great_circ_dist, spher2cart
 
 
 class Grid:
@@ -208,7 +208,7 @@ class GridSphere(Grid):
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            self.x, self.y, self.z = fibonnaci_spherical_sampling(n_points)
+            self.x, self.y, self.z = fibonacci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates

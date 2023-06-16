@@ -172,7 +172,7 @@ def polar_distance(x1, x2):
     return d, index
 
 
-def fibonnaci_spherical_sampling(n_points):
+def fibonacci_spherical_sampling(n_points):
     """
     This function computes nearly equidistant points on the sphere
     using the fibonacci method

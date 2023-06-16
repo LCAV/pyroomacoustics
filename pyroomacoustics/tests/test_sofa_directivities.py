@@ -42,7 +42,7 @@ TEST_DATA = Path(__file__).parent / "data"
 # the processing delay due to the band-pass filters was removed in
 # after the test files were created
 # we need to subtract this delay from the reference signal
-ref_delay = 216
+ref_delay = 0
 
 # tolerances for the regression tests
 atol = 5e-3
@@ -223,7 +223,10 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
 
     rir_1_0 = room.rir[0][0]
 
-    filename = "-".join([sofa_file_name.split(".")[0], pattern_id]) + "-oneside.npy"
+    filename = (
+        "-".join([sofa_file_name.split(".")[0], pattern_id])
+        + f"-minphase_{min_phase}-oneside.npy"
+    )
     test_file_path = TEST_DATA / filename
     if save_flag:
         TEST_DATA.mkdir(exist_ok=True, parents=True)
@@ -231,7 +234,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     elif test_file_path.exists():
         reference_data = np.load(test_file_path)
         reference_data = reference_data[ref_delay : ref_delay + rir_1_0.shape[0]]
-        # rir_1_0 = rir_1_0[: reference_data.shape[0]]
+        rir_1_0 = rir_1_0[: reference_data.shape[0]]
         print("Max diff.:", abs(reference_data - rir_1_0).max())
         print(
             "Rel diff.:",
@@ -411,7 +414,7 @@ def test_sofa_two_sides(
                 mic_pattern_id,
             ]
         )
-        + "-twosides.npy"
+        + f"-minphase_{min_phase}-twosides.npy"
     )
     test_file_path = TEST_DATA / filename
     if save_flag:
@@ -557,7 +560,10 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
 
     rir_1_0 = room.rir[0][0]
 
-    filename = "-".join([sofa_file_name.split(".")[0], pattern_id]) + "-cardioid.npy"
+    filename = (
+        "-".join([sofa_file_name.split(".")[0], pattern_id])
+        + f"-minphase_{min_phase}-cardioid.npy"
+    )
     test_file_path = TEST_DATA / filename
     if save_flag:
         TEST_DATA.mkdir(exist_ok=True, parents=True)
