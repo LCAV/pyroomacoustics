@@ -2243,14 +2243,13 @@ class Room(object):
                 # Do band-wise RIR construction
                 is_multi_band = self.is_multi_band
                 bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
-                bands = self.octave_bands.bands if is_multi_band else [0, self.fs / 2]
                 centre_freqs = (
                     self.octave_bands.centers if is_multi_band else [self.fs / 4]
                 )
                 rir_bands = []
 
-                for b, (bw, centre_freq, band) in enumerate(
-                    zip(bws, centre_freqs, bands)
+                for b, (bw, centre_freq) in enumerate(
+                    zip(bws, centre_freqs)
                 ):
                     ir_loc = np.zeros_like(ir, dtype=np.float32)
 
@@ -2270,7 +2269,7 @@ class Room(object):
                             alpha *= self.sources[s].directivity.get_response(
                                 azimuth=azimuth_s,
                                 colatitude=colatitude_s,
-                                band=band,
+                                frequency=centre_freq,
                                 degrees=False,
                             )
                         # Use the Cython extension for the fractional delays
