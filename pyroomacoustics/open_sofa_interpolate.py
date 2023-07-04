@@ -32,39 +32,6 @@ from .utilities import requires_matplotlib
 _DATA_SOFA_DIR = Path(__file__).parent / "data/sofa"
 
 
-def fibonacci_sphere(samples):
-    """
-    Creates a uniform fibonacci sphere.
-
-    This version has some point at the pole which leads
-    to a less *uniform* sampling. We should switch to
-    fibonnaci_spherical_sampling
-
-    Parameter
-    ---------
-    samples : (int)
-        Points on the sphere
-
-    Return
-    --------
-    Points : (np.array) shape(Points) = [no_of_points * 3]
-        Cartesian coordinates of the points
-
-    """
-
-    points = []
-    phi = math.pi * (3.0 - math.sqrt(5.0))  # golden angle in radians
-
-    i = np.arange(samples)
-    y = 1 - i / float(samples - 1) * 2
-    radius = np.sqrt(1 - y * y)
-    theta = phi * i
-    x = np.cos(theta) * radius
-    z = np.sin(theta) * radius
-
-    return np.array([x, y, z])
-
-
 def cal_sph_basis(azimuth, colatitude, degree):  # theta_target,phi_target
     """
     Calculate a spherical basis matrix
@@ -280,6 +247,7 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
         return DIRPAT_pattern_enum
 
     if source is not True:
+        # receivers/microphones
         if "AKG_c480" in DIRPAT_pattern_enum:
             id = 0
         elif "AKG_c414K" in DIRPAT_pattern_enum:
@@ -294,7 +262,9 @@ def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
             id = int(DIRPAT_pattern_enum.split("_")[-1])
         else:
             raise ValueError("Please specifiy correct DIRPAT_pattern_enum for mic")
+
     else:
+        # sources/loudspeakers
         if "Genelec_8020" in DIRPAT_pattern_enum:
             id = 0
         elif "Lambda_labs_CX-1A" in DIRPAT_pattern_enum:
@@ -359,29 +329,20 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
 
     file_sofa = sofa.Database.open(path)
 
-    is_dirpat = path.name in [
-        "Soundfield_ST450_CUBE.sofa",
-        "AKG_c480_c414_CUBE.sofa",
-        "Oktava_MK4012_CUBE.sofa",
-        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    ]
-
     conv_name = file_sofa.convention.name
 
     if conv_name == "SimpleFreeFieldHRIR":
         return _read_simple_free_field_hrir(file_sofa, measurement_id, fs)
 
     elif conv_name == "GeneralFIR":
-        return _read_general_fir(
-            file_sofa, path.name, measurement_id, fs, is_source, is_dirpat
-        )
+        return _read_general_fir(file_sofa, path.name, measurement_id, fs, is_source)
 
     else:
         raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
 
 
 def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
-    # read the mesurements
+    # read the mesurements (source direction, receiver location, taps)
     IR_S = file_sofa.Data.IR.get_values()
 
     # Source positions
@@ -426,9 +387,16 @@ def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
     return grid, distance, msr, fs
 
 
-def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source, is_dirpat):
+def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source):
     # read the mesurements
     IR_S = file_sofa.Data.IR.get_values()
+
+    is_dirpat = filename in [
+        "Soundfield_ST450_CUBE.sofa",
+        "AKG_c480_c414_CUBE.sofa",
+        "Oktava_MK4012_CUBE.sofa",
+        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    ]
 
     if is_source:
         # Receiver positions
@@ -656,7 +624,6 @@ class SOFADirectivityFactory:
     interp_n_points: (int)
         Number of points for the interpolation grid. The interpolation grid is a
         Fibonnaci pseudo-uniform sampling of the sphere.
-
     """
 
     def __init__(
