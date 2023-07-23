@@ -118,14 +118,14 @@ class MUSIC(DOA):
             import warnings
 
             warnings.warn("Only for 2D.")
-            return
+            # return
 
         # plot
         for k in range(self.num_freq):
             freq = float(self.freq_bins[k]) / self.nfft * self.fs
             azimuth = self.grid.azimuth * 180 / np.pi
 
-            plt.plot(azimuth, self.Pssl[k, 0 : len(azimuth)])
+            plt.plot(azimuth, self.Pssl[0 : len(azimuth), k])
 
             plt.ylabel("Magnitude")
             plt.xlabel("Azimuth [degrees]")
