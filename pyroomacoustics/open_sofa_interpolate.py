@@ -341,17 +341,76 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
         raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
 
 
+def _parse_locations(sofa_pos, target_format):
+    """
+    Reads and normalize a position stored in a SOFA file
+
+    Parameters
+    ----------
+    sofa_pos:
+        SOFA position object
+    target_format:
+        One of 'spherical' or 'cartesian'. For 'spherical', the
+        angles are always in radians
+
+    Returns
+    -------
+    A numpy array in the correct format
+    """
+
+    if target_format not in ("spherical", "cartesian"):
+        raise ValueError("Target format should be 'spherical' or 'cartesian'")
+
+    # SOFA dimensions
+    dim = sofa_pos.dimensions()
+
+    # source positions
+    pos = sofa_pos.get_values()
+
+    if len(dim) == 3 and dim[-1] == "I":
+        pos = pos[:-1]
+        dim = dim[:-1]
+
+    # get units
+    pos_units = sofa_pos.Units
+    if "," in pos_units:
+        pos_units = pos_units.split(",")
+        pos_units = [p.strip() for p in pos_units]
+    else:
+        pos_units = [pos_units] * pos.shape[1]
+
+    pos_type = sofa_pos.Type
+
+    if pos_type == "cartesian":
+        if any([p != "metre" for p in pos_units]):
+            raise ValueError(f"Found unit '{pos_units}' in SOFA file")
+
+        if target_format == "spherical":
+            return cart2spher(pos.T)
+        else:
+            return pos
+
+    elif pos_type == "spherical":
+        azimuth = pos[:, 0] if pos_units[0] != "degree" else np.deg2rad(pos[:, 0])
+        colatitude = pos[:, 1] if pos_units[0] != "degree" else np.deg2rad(pos[:, 1])
+        distance = pos[:, 2]
+
+        if np.any(colatitude < 0.0):
+            # it looks like the data is using elevation format
+            colatitude = np.pi / 2.0 - colatitude
+
+        if target_format == "cartesian":
+            return spher2cart(azimuth, colatitude, distance)
+        else:
+            return azimuth, colatitude, distance
+
+    else:
+        raise NotImplementedError(f"{pos_type} not implemented")
+
+
 def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
     # read the mesurements (source direction, receiver location, taps)
-    IR_S = file_sofa.Data.IR.get_values()
-
-    # Source positions
-    pos = file_sofa.Source.Position.get_values()
-    pos_units = file_sofa.Source.Position.Units.split(",")
-    pos_type = file_sofa.Source.Position.Type
-
-    # Look for receiver of specific type requested by user
-    msr = IR_S[:, measurement_id, :]
+    msr = file_sofa.Data.IR.get_values()
 
     # downsample the fir filter.
     fs_file = file_sofa.Data.SamplingRate.get_values()[0]
@@ -364,27 +423,18 @@ def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
             axis=-1,
         )
 
-    if pos_type != "spherical":
-        raise NotImplementedError(f"{pos_type} not implemented")
+    # Source positions
+    azimuth, colatitude, distance = _parse_locations(
+        file_sofa.Source.Position, target_format="spherical"
+    )
 
-    azimuth = pos[:, 0]
-    colatitude = pos[:, 1]
-    distance = pos[:, 2]
-
-    # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
-    if pos_units[0] == "degree":
-        azimuth = np.deg2rad(azimuth)
-    if pos_units[1] == "degree":
-        colatitude = np.deg2rad(colatitude)
-
-    if np.any(colatitude < 0.0):
-        # it looks like the data is using elevation format
-        colatitude = np.pi / 2.0 - colatitude
+    # Receivers locations (i.e., "ears" for HRIR)
+    rec_loc = _parse_locations(file_sofa.Receiver.Position, target_format="cartesian")
 
     # encapsulate the spherical grid points in a grid object
     grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
 
-    return grid, distance, msr, fs
+    return grid, distance, msr[:, measurement_id, :], fs
 
 
 def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source):

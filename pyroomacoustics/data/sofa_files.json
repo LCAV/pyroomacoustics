@@ -54,8 +54,8 @@
     "supported": true,
     "type": "receivers",
     "url": "https://phaidra.kug.ac.at/download/o:69292",
-    "homepage": "??",
-    "license": "??",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:69292",
+    "license": "CC0",
     "contains": {
       "EM_32_0": 0,
       "EM_32_1": 1,

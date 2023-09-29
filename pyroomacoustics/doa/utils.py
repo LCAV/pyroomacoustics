@@ -98,7 +98,7 @@ def spher2cart(azimuth, colatitude=None, r=1, degrees=False):
     r:
         radius
     degrees:
-        Returns values in degrees instead of radians if set to ``True``
+        If True, indicates that the input angles are in degree (instead of radian)
 
     Returns
     -------

@@ -165,7 +165,6 @@ if __name__ == "__main__":
     room.simulate()
 
     signals = room.mic_array.signals
-    signals = pra.highpass(signals, room.fs, fc=150)
     signals *= 0.95 / abs(signals).max()
     signals = (signals * 2**15).astype(np.int16)
     wavfile.write(args.output, fs, signals.T)
