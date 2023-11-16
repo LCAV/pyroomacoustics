@@ -7,20 +7,20 @@ from pyroomacoustics import angle_function
 pi = np.pi
 
 # for 3-D coordinates
-a1 = np.array([[0, 0, 1], [0, 0, 1], [0, 1, 1]])
+a1 = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
 a2 = np.array([[0], [0], [1]])
 a3 = np.array([0, 0, 1]).T
 
 b1 = np.array([[0], [0], [0]])
-b2 = np.array([1, -1, 1]).T
+b2 = np.array([1, 0, 0]).T
 
 
-a1_b1 = np.array([[0, 0, pi / 4], [0, 0, pi / 4]])
-a1_b2 = np.array([[3 * pi / 4, 3 * pi / 4, pi / 2], [3 * pi / 4, pi / 2, pi / 2]])
+a1_b1 = np.array([[0, pi / 2, 0], [0, pi / 2, pi / 2]])
+a1_b2 = np.array([[pi, 3 * pi / 4, 0], [pi / 4, pi / 2, 0]])
 a2_b1 = np.array([[0], [0]])
-a2_b2 = np.array([[3 * pi / 4], [pi / 2]])
+a2_b2 = np.array([[pi], [pi / 4]])
 a3_b1 = np.array([[0], [0]])
-a3_b2 = np.array([[3 * pi / 4], [pi / 2]])
+a3_b2 = np.array([[pi], [pi / 4]])
 
 
 # for 2-D coordinates

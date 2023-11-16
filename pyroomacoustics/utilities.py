@@ -808,7 +808,7 @@ def angle_function(s1, v2):
         z_vals = s1[2]
 
         colatitude = np.arctan2(
-            ((x_vals - x2) ** 2 + (y_vals - y2) ** 2) ** 1 / 2, (z_vals - z2)
+            ((x_vals - x2) ** 2 + (y_vals - y2) ** 2) ** (1 / 2), (z_vals - z2)
         )
 
     # colatitude calculation for 2-D coordinates
