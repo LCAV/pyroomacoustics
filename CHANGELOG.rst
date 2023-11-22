@@ -33,6 +33,8 @@ Bugfix
 
 - Fixes a bug when using randomized image source model with a 2D room (#315) by
   @hrosseel
+- Fixes a bug when setting the air absorption coefficients to custom values (#191),
+  adds a test, and more details in the doc
 
 
 `0.7.3`_ - 2022-12-05
