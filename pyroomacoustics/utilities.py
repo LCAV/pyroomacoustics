@@ -29,9 +29,9 @@ import numpy as np
 from scipy import signal
 from scipy.io import wavfile
 
+from .doa import cart2spher
 from .parameters import constants, eps
 from .sync import correlate
-from .doa import cart2spher
 
 
 def requires_matplotlib(func):
