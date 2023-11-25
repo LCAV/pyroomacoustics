@@ -35,6 +35,8 @@ Bugfix
   @hrosseel
 - Fixes a bug when setting the air absorption coefficients to custom values (#191),
   adds a test, and more details in the doc
+- Fixes a bug in the utilities.angle_function in the calculation of the colatitude (#329)
+  by @fabiodimarco
 
 
 `0.7.3`_ - 2022-12-05
