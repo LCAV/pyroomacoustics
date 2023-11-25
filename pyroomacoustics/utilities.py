@@ -31,6 +31,7 @@ from scipy.io import wavfile
 
 from .parameters import constants, eps
 from .sync import correlate
+from .doa import cart2spher
 
 
 def requires_matplotlib(func):
@@ -774,7 +775,8 @@ GEOMETRY UTILITIES
 
 def angle_function(s1, v2):
     """
-    Compute azimuth and colatitude angles in radians for a given set of points `s1` and a singular point `v2`.
+    Compute azimuth and colatitude angles in radians for a given set of points `s1`
+    with respect to a reference point `v2`.
 
     Parameters
     -----------
@@ -786,8 +788,9 @@ def angle_function(s1, v2):
     Returns
     -----------
     numpy array
-        2×N numpy array with azimuth and colatitude angles in radians.
-
+        2×N numpy array with azimuth and colatitude angles in radians in the
+        first and second row, respectively.
+        If the input vectors are 2-D, the colatitude is always fixed to pi/2.
     """
 
     if len(s1.shape) == 1:
@@ -797,26 +800,19 @@ def angle_function(s1, v2):
 
     assert s1.shape[0] == v2.shape[0]
 
-    x_vals = s1[0]
-    y_vals = s1[1]
-    x2 = v2[0]
-    y2 = v2[1]
+    ndim = s1.shape[0]
+    if ndim == 2:
+        s1 = np.concatenate((s1, np.zeros((1, s1.shape[1]))), axis=0)
+        v2 = np.concatenate((v2, np.zeros((1, v2.shape[1]))), axis=0)
 
-    # colatitude calculation for 3-D coordinates
-    if s1.shape[0] == 3 and v2.shape[0] == 3:
-        z2 = v2[2]
-        z_vals = s1[2]
+    # this is slightly wasteful for 2d points, but is safer as we are relying
+    # on tried and tested code
+    az, co, r = cart2spher(s1 - v2)
 
-        colatitude = np.arctan2(
-            ((x_vals - x2) ** 2 + (y_vals - y2) ** 2) ** (1 / 2), (z_vals - z2)
-        )
+    if ndim == 2:
+        # this is only necessary to handle correctly the case s1 - v2 = 0
+        # in this case cart2spher returns zero, but we would like to have
+        # colatitude = pi/2 for consistency
+        co[:] = np.pi / 2
 
-    # colatitude calculation for 2-D coordinates
-    elif s1.shape[0] == 2 and v2.shape[0] == 2:
-        num_points = s1.shape[1]
-        colatitude = np.ones(num_points) * np.pi / 2
-
-    # azimuth calculation (same for 2-D and 3-D)
-    azimuth = np.arctan2((y_vals - y2), (x_vals - x2))
-
-    return np.vstack((azimuth, colatitude))
+    return np.vstack((az, co))
