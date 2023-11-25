@@ -1,6 +1,7 @@
-import pyroomacoustics as pra
 import numpy as np
 import pytest
+
+import pyroomacoustics as pra
 
 
 @pytest.fixture
