@@ -1,5 +1,7 @@
 import abc
+import sys
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 
@@ -50,6 +52,7 @@ class DirectionVector(object):
         if colatitude is None:
             colatitude = np.pi / 2
         assert colatitude <= np.pi and colatitude >= 0
+
         self._colatitude = colatitude
 
         self._unit_v = np.array(
@@ -88,11 +91,19 @@ class Directivity(abc.ABC):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
 
+    @property
+    def is_impulse_response(self):
+        """
+        Indicates whether the array returned has coefficients
+        for octave bands or is a full-size impulse response
+        """
+        return False
+
     def get_azimuth(self, degrees=True):
-        return self._orientation.get_azimuth(degrees)
+        return self._orientation.get_azimuth(degrees, degrees=degrees)
 
     def get_colatitude(self, degrees=True):
-        return self._orientation.get_colatitude(degrees)
+        return self._orientation.get_colatitude(degrees, degrees=degrees)
 
     def set_orientation(self, orientation):
         """
@@ -134,6 +145,7 @@ class CardioidFamily(Directivity):
         self._p = pattern_enum.value
         self._gain = gain
         self._pattern_name = pattern_enum.name
+        self.filter_len_ir = 1
 
     @property
     def directivity_pattern(self):
@@ -173,9 +185,11 @@ class CardioidFamily(Directivity):
             return np.ones(len(azimuth))
         else:
             coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
+
             resp = self._gain * self._p + (1 - self._p) * np.matmul(
                 self._orientation.unit_vector, coord
             )
+
             if magnitude:
                 return np.abs(resp)
             else:
