@@ -179,7 +179,14 @@ setup_kwargs = dict(
     # Libroom C extension
     ext_modules=ext_modules,
     # Necessary to keep the source files
-    package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
+    package_data={
+        "pyroomacoustics": [
+            "*.pxd",
+            "*.pyx",
+            "data/materials.json",
+            "data/speech_directivity.json",
+        ]
+    },
     install_requires=[
         "Cython",
         "numpy>=1.13.0",

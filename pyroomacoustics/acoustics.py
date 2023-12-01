@@ -413,7 +413,7 @@ def bands_hz2s(bands_hz, Fs, N, transform="dft"):
         else:
             j += 1
 
-    return np.array(bands_s, dtype=np.int)
+    return np.array(bands_s, dtype=np.int64)
 
 
 def melscale(f):
