@@ -2080,6 +2080,115 @@ class Room(object):
 
         return self.add(mic_array)
 
+    def simulate_moving_sound(
+        self,
+        position,
+        signal=None,
+        delay=0,
+        fs=None,
+        stept=200,
+        speed=5,
+        x_direction=True,
+        y_direction=True,
+    ):
+        """
+        Adds a moving sound source given by its position in the room.
+        Simulate all the locations the sound source is moving to
+        determining the RIR.
+        Perform time-varying convolution on the output signal.
+
+        Parameters
+        -----------
+        position: ndarray, shape: (2,) or (3,)
+            The starting location of the moving source in the room.
+        signal: ndarray, shape: (n_samples,), optional
+            The signal played by the source.
+        delay: float, optional
+            A time delay until the source signal starts
+            in the simulation.
+        fs: float, optional
+            The sampling frequency of the microphone, if different from that of the room.
+        stept: float, (The default is 200).
+            The step duration, measured in milliseconds.
+            It is used to determine the duration of each simulation
+            step in the virtual room.
+        speed: float, (The default is 5).
+            Speed of the moving sound source in the virtual room.
+            It is measured in meters per second.
+        x_direction, y_direction: bool, optional
+            Flags indicating the direction of movement. True for forward, False for backward.
+
+        Returns
+        -------
+        movemix: ndarray
+            audio signal obtained from the simulation.
+        filter_kernels: ndarray
+            Room impulse responses at each step.
+        """
+
+        # Validate parameters
+
+        if signal is None:
+            raise ValueError("Please provide a signal for the sound source.")
+
+        if fs is None or fs <= 0:
+            raise ValueError("Invalid sampling frequency (fs).")
+
+        # Calculate the number of samples in each step
+        stepn = int(stept * fs / 1000)
+        # Calculate the distance traveled in a step
+        stepd = speed * stept / 1000
+        # The number of simulation steps needed to process the entire audio signal.
+        n = int(len(signal) / stepn)
+        # Store RIR of the simulated audio
+        # Initialize lists to store results
+        movemix_list = []
+        movemix = np.array([])
+        filter_kernels = np.array([])
+
+        for i in range(n):
+            # Reshape position to handle both (2,) and (2, 1) cases
+            position = np.array(position).reshape(-1)
+
+            # Update the position of the sound source based on movement direction
+            if x_direction:
+                x_position = [position[0] + stepd * i, position[1]]
+            else:
+                x_position = [position[0] - stepd * i, position[1]]
+
+            # Update the position of the sound source based on movement direction
+            if y_direction:
+                y_position = [position[0], position[1] + stepd * i]
+            else:
+                y_position = [position[0], position[1] - stepd * i]
+
+            # Create a numpy array for the source location
+            source_location = np.array([x_position[0], y_position[1]])
+            self.sources = []
+            self.add_source(
+                position=source_location,
+                delay=delay,
+                signal=signal[i * stepn : (i + 1) * stepn],
+            )
+            # Simulate the room and obtain the room impulse response
+            self.simulate()
+
+            # only use the duration of original, to avoid echo
+            # set data type as 16bit, ref:https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html
+            record_ = self.mic_array.signals[:, :stepn].astype("int16")
+
+            if i == 0:
+                movemix = record_
+                filter_kernels = self.rir.copy()
+            else:
+                movemix = np.concatenate((movemix, record_), axis=1)
+                filter_kernels = np.concatenate(
+                    (filter_kernels, self.rir.copy()), axis=1
+                )
+
+        return movemix, filter_kernels
+
+
     def add_source(self, position, signal=None, delay=0, directivity=None):
         """
         Adds a sound source given by its position in the room. Optionally
