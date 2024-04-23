@@ -1,5 +1,4 @@
 .. image:: https://github.com/LCAV/pyroomacoustics/raw/master/logo/pyroomacoustics_logo_horizontal.png
-   :scale: 80 %
    :alt: Pyroomacoustics logo
    :align: left
 
