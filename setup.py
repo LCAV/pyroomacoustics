@@ -188,8 +188,8 @@ setup_kwargs = dict(
     ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,
-    test_suite="nose.collector",
-    tests_require=["nose"],
+    test_suite="pytest",
+    tests_require=["pytest"],
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
@@ -207,14 +207,11 @@ setup_kwargs = dict(
         "License :: OSI Approved :: MIT License",
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        #'Programming Language :: Python :: 3.3',
-        #'Programming Language :: Python :: 3.4',
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     # What does your project relate to?
     keywords="room acoustics signal processing doa beamforming adaptive",
