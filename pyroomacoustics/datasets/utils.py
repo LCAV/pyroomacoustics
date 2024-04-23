@@ -34,6 +34,27 @@ except ImportError:
     from urllib import urlopen, urlretrieve
 
 
+class AttrDict(object):
+    """Convert a dictionary into an object"""
+
+    def __init__(self, dictionary):
+        for key, val in dictionary.items():
+            if isinstance(val, dict):
+                setattr(self, key, Dict2Obj(val))
+            elif isinstance(val, list):
+                setattr(
+                    self, key, [Dict2Obj(v) if isinstance(v, dict) else v for v in val]
+                )
+            else:
+                setattr(self, key, val)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, val):
+        return setattr(self, key, val)
+
+
 def download_uncompress(url, path=".", compression=None, context=None):
     """
     This functions download and uncompress on the fly a file

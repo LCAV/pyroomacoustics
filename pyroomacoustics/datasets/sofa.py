@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from .utils import download_multiple
+from .utils import download_multiple, AttrDict
 
 _pra_data_folder = Path(__file__).parents[1] / "data"
 DEFAULT_SOFA_PATH = _pra_data_folder / "sofa"
@@ -49,3 +49,9 @@ def download_sofa_files(path=None, overwrite=False, verbose=False):
     download_multiple(files, overwrite=overwrite, verbose=verbose)
 
     return list(files.keys())
+
+
+def SOFADatabase(AttrDict):
+    def __init__(self):
+        self._db = get_sofa_db_info()
+        super().__init__(self._db)
