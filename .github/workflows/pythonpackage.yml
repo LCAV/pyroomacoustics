@@ -55,7 +55,7 @@ jobs:
     - name: Test the binary wheels
       if: matrix.os != 'ubuntu-latest'
       run: |
-        python -m build bdist_wheel
+        python -m build --wheel
         twine check dist/*
     - name: Publish sdist to pypi
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && matrix.os == 'ubuntu-latest'
