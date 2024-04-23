@@ -45,17 +45,17 @@ jobs:
         python -m pip install -e .
     - name: Test with pytest
       run: |
-        pip install -U pytest setuptools wheel twine
+        pip install -U pytest setuptools build wheel twine
         pytest
     - name: Test the universal wheels
       if: matrix.os == 'ubuntu-latest'
       run: |
-        python setup.py sdist
+        python -m build --sdist
         twine check dist/*
     - name: Test the binary wheels
       if: matrix.os != 'ubuntu-latest'
       run: |
-        python setup.py bdist_wheel
+        python -m build bdist_wheel
         twine check dist/*
     - name: Publish sdist to pypi
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && matrix.os == 'ubuntu-latest'
