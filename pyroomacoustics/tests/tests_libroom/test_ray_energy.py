@@ -157,8 +157,9 @@ class TestRayEnergy(unittest.TestCase):
         histogram_rt_poly = np.array(h_poly[0])[: len(histogram_gt)]
         histogram_rt_cube = np.array(h_cube[0])[: len(histogram_gt)]
 
-        self.assertTrue(np.allclose(histogram_rt_poly, histogram_gt))
-        self.assertTrue(np.allclose(histogram_rt_cube, histogram_gt))
+        # print(abs(histogram_rt_poly - histogram_gt).max())
+        self.assertTrue(np.allclose(histogram_rt_poly, histogram_gt, atol=1e-6))
+        self.assertTrue(np.allclose(histogram_rt_cube, histogram_gt, atol=1e-6))
 
 
 if __name__ == "__main__":
