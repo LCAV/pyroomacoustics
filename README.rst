@@ -215,6 +215,11 @@ A comprehensive set of examples covering most of the functionalities
 of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
 
+A `video introduction to pyroomacoustics <https://www.youtube.com/watch?v=c3DTtc--_F4>`_.
+
+A `video tutorial series on using pyroomacoustics <https://youtube.com/playlist?list=PL6QnpHKwdPYgxLV_Ijr6K_3Gdyfhk0SHg&si=gsSuUm9Yw2_sjYhr>`_
+covering many advanced topics.
+
 Authors
 -------
 
