@@ -282,10 +282,7 @@ PYBIND11_MODULE(libroom, m) {
   m.def("dist_line_point", &dist_line_point,
         "Computes the distance between a point and an infinite line");
 
-  m.def("rir_builder", &rir_builder, "RIR builder",
-        py::call_guard<py::gil_scoped_release>());
-  m.def("delay_sum", &delay_sum, "Delay and sum",
-        py::call_guard<py::gil_scoped_release>());
-  m.def("fractional_delay", &fractional_delay, "Fractional delays",
-        py::call_guard<py::gil_scoped_release>());
+  m.def("rir_builder", &rir_builder, "RIR builder");
+  m.def("delay_sum", &delay_sum, "Delay and sum");
+  m.def("fractional_delay", &fractional_delay, "Fractional delays");
 }

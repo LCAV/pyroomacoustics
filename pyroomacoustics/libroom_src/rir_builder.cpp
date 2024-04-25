@@ -44,11 +44,12 @@ constexpr T get_pi() {
 template <class T>
 void threaded_rir_builder_impl(
     py::array_t<T, py::array::c_style | py::array::forcecast> rir,
-    const py::array_t<T, py::array::c_style | py::array::forcecast> time,
-    const py::array_t<T, py::array::c_style | py::array::forcecast> alpha,
+    const py::array_t<T, py::array::c_style | py::array::forcecast> &time,
+    const py::array_t<T, py::array::c_style | py::array::forcecast> &alpha,
     const py::array_t<int, py::array::c_style | py::array::forcecast>
-        visibility,
+        &visibility,
     int fs, size_t fdl, size_t lut_gran, size_t num_threads) {
+
   auto pi = get_pi<T>();
 
   // accessors for the arrays
@@ -110,6 +111,9 @@ void threaded_rir_builder_impl(
   std::vector<T> rir_out(num_threads * rir_len);
   size_t block_size = size_t(std::ceil(double(n_times) / double(num_threads)));
 
+  // relase the GIL from here on
+  py::gil_scoped_release release;
+
   // build the RIR
   ThreadPool pool(num_threads);
   std::vector<std::future<void>> results;
@@ -166,9 +170,10 @@ void threaded_rir_builder_impl(
   for (auto &&result : sum_results) result.get();
 }
 
-void rir_builder(py::buffer rir, const py::buffer time, const py::buffer alpha,
-                 const py::buffer visibility, int fs, size_t fdl,
+void rir_builder(py::buffer rir, const py::buffer &time, const py::buffer &alpha,
+                 const py::buffer &visibility, int fs, size_t fdl,
                  size_t lut_gran, size_t num_threads) {
+
   // dispatch to correct implementation depending on input type
   auto buf = pybind11::array::ensure(rir);
   if (py::isinstance<py::array_t<float>>(buf)) {
@@ -213,6 +218,9 @@ void threaded_delay_sum_impl(
   // divide into equal size blocks for thread processing
   std::vector<T> out_buffers(num_threads * out_len, 0);
   size_t block_size = size_t(std::ceil(double(n_irs) / double(num_threads)));
+
+  // release the GIL from here on
+  py::gil_scoped_release release;
 
   // build the RIR
   ThreadPool pool(num_threads);
@@ -314,6 +322,9 @@ void threaded_fractional_delay_impl(
 
   // divide into equal size blocks for thread processing
   size_t block_size = size_t(std::ceil(double(n_times) / double(num_threads)));
+
+  // relase the GIL from here on
+  py::gil_scoped_release release;
 
   // build the RIR
   ThreadPool pool(num_threads);
