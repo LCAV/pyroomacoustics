@@ -15,18 +15,23 @@ Added
 ~~~~~
 
 - New implementation of fast RIR builder function in the ``libroom`` C++
-  extentsion to replace the current cython code. Advantages are: 1) only one
+  extension to replace the current cython code. Advantages are: 1) only one
   compiled extension, 2) multithreading support
-- New global parameter ``sinc_lut_granularity`` that controls the number of points used
-  in the look-up table for the sinc interpolation. Accessible via ``parameters.constants.get``.
-- New global parameter  ``num_threads`` that controls the number of threads used in
-  multi-threaded code (rir builder only at the moment). The number of threads can also
-  be controlled via the environement variable ``PRA_NUM_THREADS``
+- New global parameter ``sinc_lut_granularity`` that controls the number of
+  points used in the look-up table for the sinc interpolation. Accessible via
+  ``parameters.constants.get``.
+- New global parameter  ``num_threads`` that controls the number of threads
+  used in multi-threaded code (rir builder only at the moment). The number of
+  threads can also be controlled via the environement variable
+  ``PRA_NUM_THREADS``
+- Adds package build support for Python 3.11 and 3.12. - Adds package build for
+  new Apple M1 architecture
 
 Changed
 ~~~~~~~
 
 - Removed the broken ``get_rir`` method of the class ``SoundSource``
+- Removes package build support for Python 3.7 (EOL)
 
 Bugfix
 ~~~~~~
@@ -35,8 +40,12 @@ Bugfix
   @hrosseel
 - Fixes a bug when setting the air absorption coefficients to custom values (#191),
   adds a test, and more details in the doc
-- Fixes a bug in the utilities.angle_function in the calculation of the colatitude (#329)
-  by @fabiodimarco
+- Fixes a bug in the utilities.angle_function in the calculation of the
+  colatitude (#329) by @fabiodimarco
+- Replaces the crossing-based point-in-polygon algorithm in the C++ code with
+  the more robust winding number algorithm (#345)
+- Fixes usage of deprecated hann window with new version of scipy in
+  `metrics.py` (#344) by @mattpitkin
 
 
 `0.7.3`_ - 2022-12-05
