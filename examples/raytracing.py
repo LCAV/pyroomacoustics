@@ -2,6 +2,7 @@
 This example program demonstrates the use of ray tracing
 for the simulation of rooms of different sizes.
 """
+
 from __future__ import print_function
 
 import argparse

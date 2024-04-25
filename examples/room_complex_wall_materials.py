@@ -4,6 +4,7 @@ with rich wall materials.
 
 2022 (c) @noahdeetzers, @fakufaku
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 

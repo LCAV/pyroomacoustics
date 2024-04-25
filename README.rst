@@ -1,12 +1,9 @@
 .. image:: https://github.com/LCAV/pyroomacoustics/raw/master/logo/pyroomacoustics_logo_horizontal.png
-   :scale: 80 %
    :alt: Pyroomacoustics logo
    :align: left
 
 ------------------------------------------------------------------------------
 
-.. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
-    :target: https://travis-ci.org/LCAV/pyroomacoustics
 .. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=pypi-release
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status

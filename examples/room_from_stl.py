@@ -5,6 +5,7 @@ when different walls have different materials.
 
 The STL file was kindly provided by Diego Di Carlo (@Chutlhu).
 """
+
 import argparse
 import os
 from pathlib import Path

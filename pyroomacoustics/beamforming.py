@@ -348,7 +348,6 @@ def circular_microphone_array_xyplane(
 
 
 class MicrophoneArray(object):
-
     """Microphone array class."""
 
     def __init__(self, R, fs, directivity=None):

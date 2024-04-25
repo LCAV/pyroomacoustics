@@ -2,6 +2,7 @@
 Just run the Material command with a bunch of inputs to make sure
 it works as expected
 """
+
 import pyroomacoustics as pra
 
 scat_test = {

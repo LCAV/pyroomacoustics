@@ -1,6 +1,7 @@
 """
 This tests the construction of a bank of octave filters
 """
+
 import numpy as np
 from scipy.signal import sosfreqz
 

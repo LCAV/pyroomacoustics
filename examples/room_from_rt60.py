@@ -4,6 +4,7 @@ This results in a reverberation time slightly longer than desired.
 The simulation is pure image source method.
 The audio sample with the reverb added is saved back to `examples/samples/guitar_16k_reverb.wav`.
 """
+
 import argparse
 
 import matplotlib.pyplot as plt
