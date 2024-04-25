@@ -30,18 +30,8 @@ import pyroomacoustics as pra
 polygons = [
     np.array(
         [  # this one is clockwise
-            [
-                0,
-                4,
-                4,
-                0,
-            ],
-            [
-                0,
-                0,
-                4,
-                4,
-            ],
+            [0, 4, 4, 0],
+            [0, 0, 4, 4],
         ]
     ),
     np.array(

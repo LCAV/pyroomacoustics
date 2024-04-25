@@ -233,20 +233,55 @@ Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2)
   return v1.cross(v2);
 }
 
+bool on_segment(const Eigen::Vector2f &c1, const Eigen::Vector2f &c2, const Eigen::Vector2f &p) {
+  // Given three collinear points c1, c2, p, the function checks if 
+  // point p lies on line segment c1 <-> c2
 
-int is_inside_2d_polygon(const Eigen::Vector2f &p,
+  float x_down, x_up, y_down, y_up;
+  x_down = fminf(c1.coeff(0), c2.coeff(0));
+  x_up = fmaxf(c1.coeff(0), c2.coeff(0));
+  y_down = fminf(c1.coeff(1), c2.coeff(1));
+  y_up = fmaxf(c1.coeff(1), c2.coeff(1));
+  return (x_down <= p.coeff(0) && p.coeff(0) <= x_up && y_down <= p.coeff(1) && p.coeff(1) <= y_up);
+}
+
+inline int is_left(const Eigen::Vector2f &P0, const Eigen::Vector2f &P1, const Eigen::Vector2f &P2)
+{
+  // isLeft(): tests if a point is Left|On|Right of an infinite line.
+  // on the line is defined as within epsilon
+  // Input: three points P0, P1, and P2
+  // Return: >0 for P2 left of the line through P0 and P1
+  // =0 for P2 on the line
+  // <0 for P2 right of the line
+  // See: Algorithm 1 "Area of Triangles and Polygons"
+  float test_value = (
+      (P1.coeff(0) - P0.coeff(0)) * (P2.coeff(1) - P0.coeff(1))
+      - (P2.coeff(0) - P0.coeff(0)) * (P1.coeff(1) - P0.coeff(1))
+  );
+
+  if (fabsf(test_value) < libroom_eps)
+    return 0;
+  else if (test_value > 0)
+    return 1;
+  else
+    return -1;
+}
+
+int is_inside_2d_polygon(const Eigen::Vector2f &p_test,
     const Eigen::Matrix<float,2,Eigen::Dynamic> &corners)
 {
   /*
-    Checks if a given point is inside a given polygon in 2D.
+    Checks if a given point is inside a given polygon in 2D using the winding
+    number method.
 
     This function checks if a point (defined by its coordinates) is inside
     a polygon (defined by an array of coordinates of its corners) by counting
-    the number of intersections between the borders and a segment linking
-    the given point with a computed point outside the polygon.
-    A boolean is also returned to indicate if a point is on a border of the
-    polygon (the point is still considered inside), which can be useful for
-    limit cases computations.
+    the number of left intersections between the edges and a half-line starting from
+    the test point.
+
+    This is Dave Sunday's winding number algorithm described here:
+    http://profs.ic.uff.br/~anselmo/cursos/CGI/slidesNovos/Inclusion%20of%20a%20Point%20in%20a%20Polygon.pdf
+    It was modified to explicitely check for points on the edges of the polygon.
 
     p: (array size 2) coordinates of the point
     corners: (array size 2xN, N>2) coordinates of the corners of the polygon
@@ -257,66 +292,34 @@ int is_inside_2d_polygon(const Eigen::Vector2f &p,
     0 : the point is inside
     1 : the point is on the boundary
     */
-
-  bool is_inside = false;  // initialize point not in the polygon
-  int c1c2p, c1c2p0, pp0c1, pp0c2;
   int n_corners = corners.cols();
-
-  // find a point outside the polygon
-  int i_min;
-  corners.row(0).minCoeff(&i_min);
-  Eigen::Vector2f p_out;
-  p_out.resize(2);
-  p_out.coeffRef(0) = corners.coeff(0,i_min) - 1;
-  p_out.coeffRef(1) = p.coeff(1);
-
-  // Now count intersections
+  int wn = 0; // the winding number counter
+              // loop through all edges of the polygon
   for (int i = 0, j = n_corners-1 ; i < n_corners ; j=i++)
   {
-
-    // Check first if the point is on the segment
-    // We count the border as inside the polygon
-    c1c2p = ccw3p(corners.col(i), corners.col(j), p);
-    if (c1c2p == 0)
+    if (ccw3p(corners.col(j), corners.col(i), p_test) == 0 && on_segment(corners.col(j), corners.col(i), p_test))
     {
-      // Here we know that p is co-linear with the two corners
-      float x_down, x_up, y_down, y_up;
-      x_down = fminf(corners.coeff(0,i), corners.coeff(0,j));
-      x_up = fmaxf(corners.coeff(0,i), corners.coeff(0,j));
-      y_down = fminf(corners.coeff(1,i), corners.coeff(1,j));
-      y_up = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
-      if (x_down <= p.coeff(0) && p.coeff(0) <= x_up && y_down <= p.coeff(1) && p.coeff(1) <= y_up)
-        return 1;
+      // point is on the edge, we consider it inside
+      return 1;
     }
-
-    // Now check intersection with standard method
-    c1c2p0 = ccw3p(corners.col(i), corners.col(j), p_out);
-    if (c1c2p == c1c2p0)  // no intersection
-      continue;
-
-    pp0c1 = ccw3p(p, p_out, corners.col(i));
-    pp0c2 = ccw3p(p, p_out, corners.col(j));
-    if (pp0c1 == pp0c2)  // no intersection
-      continue;
-
-    // at this point we are sure there is an intersection
-
-    // the second condition takes care of horizontal edges and intersection on vertex
-    float c_max = fmaxf(corners.coeff(1,i), corners.coeff(1,j));
-    if (p.coeff(1) + libroom_eps < c_max)
-    {
-      is_inside = !is_inside;
+    if (corners.coeff(1,j) <= p_test.coeff(1)) { // start y <= P.y
+      if (corners.coeff(1,i) > p_test.coeff(1)) { // an upward crossing
+        if (is_left(corners.col(j), corners.col(i), p_test) > 0) // P left of edge
+          ++wn; // have a valid up intersect
+      }
+    } else { // start y > P.y (no test needed)
+      if (corners.coeff(1, i) <= p_test.coeff(1)) { // a downward crossing
+        if (is_left(corners.col(j), corners.col(i), p_test) < 0) // P right of edge
+          --wn; // have a valid down intersect
+      }
     }
-
   }
 
-  // for a odd number of intersections, the point is in the polygon
-  if (is_inside)
-    return 0;  // point strictly inside
+  if (wn == 0)
+    return -1;
   else
-    return -1; // point is outside
+    return 0;
 }
-
 
 float area_2d_polygon(const Eigen::Matrix<float, 2, Eigen::Dynamic> &corners)
 {

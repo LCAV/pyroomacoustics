@@ -83,10 +83,10 @@ class TestRayEnergy(unittest.TestCase):
 
         print("Creating the python room (polyhedral)")
         walls_corners = [
-            np.array([[0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, 2]]),  # left
-            np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # right
-            np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # front`
-            np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # back
+            np.array([[0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, 2]]),  # front
+            np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # back
+            np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # left`
+            np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # right
             np.array(
                 [
                     [0, 2, 2, 0],
@@ -157,8 +157,6 @@ class TestRayEnergy(unittest.TestCase):
         histogram_rt_poly = np.array(h_poly[0])[: len(histogram_gt)]
         histogram_rt_cube = np.array(h_cube[0])[: len(histogram_gt)]
 
-        print(abs(histogram_rt_poly - histogram_gt).max())
-        print(abs(histogram_rt_cube - histogram_gt).max())
         self.assertTrue(np.allclose(histogram_rt_poly, histogram_gt, atol=1e-5))
         self.assertTrue(np.allclose(histogram_rt_cube, histogram_gt, atol=1e-5))
 
