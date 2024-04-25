@@ -2,6 +2,7 @@
 Example of the basic operations with ``pyroomacoustics.datasets.Dataset``
 and ``pyroomacoustics.datasets.Sample`` classes
 """
+
 from pyroomacoustics.datasets import Dataset, Sample
 
 # Prepare a few artificial samples

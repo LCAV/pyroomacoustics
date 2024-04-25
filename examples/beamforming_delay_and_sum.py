@@ -1,6 +1,7 @@
 """
 This example shows how to create delay and sum beamformers
 """
+
 from __future__ import division, print_function
 
 import matplotlib.pyplot as plt

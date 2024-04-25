@@ -5,6 +5,7 @@ Adaptive Filter in STFT Domain Example
 In this example, we will run adaptive filters for system 
 identification, but in the frequeny domain.
 """
+
 from __future__ import division, print_function
 
 import matplotlib.pyplot as plt

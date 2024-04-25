@@ -26,7 +26,6 @@ import numpy as np
 
 
 class SubbandLMS:
-
     """
     Frequency domain implementation of LMS. Adaptive filter for each
     subband.
