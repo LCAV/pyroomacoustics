@@ -1,6 +1,7 @@
 """
 Tests the mixing function of ``Room.simulate``
 """
+
 import unittest
 
 import numpy as np

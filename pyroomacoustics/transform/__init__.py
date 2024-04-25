@@ -15,7 +15,6 @@ STFT
 
 """
 
-
 from . import stft
 from .dft import DFT
 from .stft import STFT

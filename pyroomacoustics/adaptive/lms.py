@@ -5,6 +5,7 @@ Least Mean Squares Family
 Implementations of adaptive filters from the LMS class. These algorithms have a
 low complexity and reliable behavior with a somewhat slower convergence.
 """
+
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
