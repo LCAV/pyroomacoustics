@@ -13,7 +13,7 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Nothing yet
 
-`0.7.4`_ - 2022-12-05
+`0.7.4`_ - 2024-04-25
 ---------------------
 
 Added
