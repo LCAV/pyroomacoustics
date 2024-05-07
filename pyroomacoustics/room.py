@@ -483,6 +483,36 @@ For a more complete example see
     - ``floor``/``ceiling`` for the walls int x-y plane with small/large z coordinates, respectively
 
 
+Air Absorption
+--------------
+
+The absorption of sound energy by air is frequency dependent.
+The absorption is described the frequency dependent coefficient :math:`\\alpha(f)` and the energy decreases with distance as :math:`e^{-\\alpha(f) d}`.
+This can be turned simply by providing the keyword argument ``air_absorption=True`` to the room constructor or calling ``set_absorption()`` on an existing room.
+The coefficients are also temperature and humidity dependent and the default values are as follows.
+
+========= ========    ====== ====== ====== ===== ===== ===== ===== =====
+Temp. (C) Hum. (%)    125 Hz 250 Hz 500 Hz 1 kHz 2 kHz 4 kHz 8 kHz 
+========= ========    ====== ====== ====== ===== ===== ===== ===== =====
+10        30-50       0.1    0.2    0.5    1.1   2.7   9.4   29.0  x1e-3
+10        50-70       0.1    0.2    0.5    0.8   1.8   5.9   21.1  x1e-3
+10        70-90       0.1    0.2    0.5    0.7   1.4   4.4   15.8  x1e-3
+20        30-50       0.1    0.3    0.6    1.0   1.9   5.8   20.3  x1e-3
+20        50-70       0.1    0.3    0.6    1.0   1.7   4.1   13.5  x1e-3
+20        70-90       0.1    0.3    0.6    1.1   1.7   3.5   10.6  x1e-3
+========= ========    ====== ====== ====== ===== ===== ===== ===== =====
+
+It is possible to set custom coefficients by providing a lists of coefficients and corresponding frequencies.
+If the frequencies are not provided, the default values of 125 Hz to 8 kHz octave bands are assumed.
+Note, that the number of octave bands will depend on the sampling frequency used.
+For 16 kHz, there will be 7 octave bands.
+If less than 7 coefficients are provided, or if the center frequencies do not correspond, a simple interpolation is used to fill the missing values.
+Missing values at end of the array are simply replicated from the last value.
+
+.. code-block:: python
+
+    room.set_air_absorption([0.1, 0.2, 0.4, 1.3, 2.8, 9.4, 23.0])
+
 Controlling the signal-to-noise ratio
 -------------------------------------
 
@@ -1109,14 +1139,29 @@ class Room(object):
         self.simulator_state["rt_needed"] = False
         self._update_room_engine_params()
 
-    def set_air_absorption(self, coefficients=None):
+    def set_air_absorption(
+        self, coefficients=None, center_freqs=None, interp_kind="linear"
+    ):
         """
         Activates or deactivates air absorption in the simulation.
 
         Parameters
         ----------
-        coefficients: list of float
-            List of air absorption coefficients, one per octave band
+        coefficients: list of float, optional
+            Optional list of air absorption coefficients, one per octave band.
+            If not provided, values corresponding to the temperature and humidity
+            of the room are used.
+        center_freqs: list, optional
+            The optional list of center frequencies for the octave bands.
+            If not provided, the values of the default ocatave bands are used.
+        interp_kind: str
+            Specifies the kind of interpolation as a string (‘linear’,
+            ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’, ‘previous’,
+            ‘next’, where ‘zero’, ‘slinear’, ‘quadratic’ and ‘cubic’ refer to a
+            spline interpolation of zeroth, first, second or third order;
+            ‘previous’ and ‘next’ simply return the previous or next value of
+            the point) or as an integer specifying the order of the spline
+            interpolator to use. Default is ‘linear’.
         """
 
         self.simulator_state["air_abs_needed"] = True
@@ -1124,7 +1169,9 @@ class Room(object):
             self.air_absorption = self.octave_bands(**self.physics.get_air_absorption())
         else:
             # ignore temperature and humidity if coefficients are provided
-            self.air_absorption = self.physics().get_air_absorption()
+            self.air_absorption = self.octave_bands(
+                coeffs=coefficients, center_freqs=center_freqs, interp_kind=interp_kind
+            )
 
     def unset_air_absorption(self):
         """Deactivates air absorption in the simulation"""

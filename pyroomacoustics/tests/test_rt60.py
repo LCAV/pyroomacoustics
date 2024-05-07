@@ -2,7 +2,7 @@ import numpy as np
 
 import pyroomacoustics as pra
 
-eps = 1e-10
+eps = 1e-6
 room_dim = [10, 7.5, 3.5]  # meters
 fs = 16000
 

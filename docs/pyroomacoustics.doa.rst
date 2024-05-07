@@ -17,6 +17,7 @@ Algorithms
    pyroomacoustics.doa.cssm
    pyroomacoustics.doa.frida
    pyroomacoustics.doa.music
+   pyroomacoustics.doa.normmusic.rst
    pyroomacoustics.doa.srp
    pyroomacoustics.doa.tops
    pyroomacoustics.doa.waves

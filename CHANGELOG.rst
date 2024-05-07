@@ -14,16 +14,6 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Added
 ~~~~~
 
-- Simulation with measured directivity responses in SOFA format (limited file types) is
-  possible with the image source model.
-- New implementation of fast RIR builder function in the ``libroom`` C++
-  extentsion to replace the current cython code. Advantages are: 1) only one
-  compiled extension, 2) multithreading support
-- New global parameter ``sinc_lut_granularity`` that controls the number of points used
-  in the look-up table for the sinc interpolation. Accessible via ``parameters.constants.get``.
-- New global parameter  ``num_threads`` that controls the number of threads used in
-  multi-threaded code (rir builder only at the moment). The number of threads can also
-  be controlled via the environement variable ``PRA_NUM_THREADS``
 - New global parameters to control the octave bands used for simulation.
   * ``octave_bands_base_freq``: the base frequency used for the octave bands (default ``125 ``),
     note that together with the sampling frequency this will determine the number of sub-bands
@@ -37,15 +27,49 @@ Added
 Changed
 ~~~~~~~
 
-- Removed the broken ``get_rir`` method of the class ``SoundSource``
 - In ray tracing, the histograms are now linearly interpolated between
   the bins to obtain smoother RIR
+
+`0.7.4`_ - 2024-04-25
+---------------------
+
+Added
+~~~~~
+
+- Simulation with measured directivity responses in SOFA format (limited file types) is
+  possible with the image source model.
+- New implementation of fast RIR builder function in the ``libroom`` C++
+  extension to replace the current cython code. Advantages are: 1) only one
+  compiled extension, 2) multithreading support
+- New global parameter ``sinc_lut_granularity`` that controls the number of
+  points used in the look-up table for the sinc interpolation. Accessible via
+  ``parameters.constants.get``.
+- New global parameter  ``num_threads`` that controls the number of threads
+  used in multi-threaded code (rir builder only at the moment). The number of
+  threads can also be controlled via the environement variable
+  ``PRA_NUM_THREADS``
+- Adds package build support for Python 3.11 and 3.12. - Adds package build for
+  new Apple M1 architecture
+
+Changed
+~~~~~~~
+
+- Removed the broken ``get_rir`` method of the class ``SoundSource``
+- Removes package build support for Python 3.7 (EOL)
 
 Bugfix
 ~~~~~~
 
 - Fixes a bug when using randomized image source model with a 2D room (#315) by
   @hrosseel
+- Fixes a bug when setting the air absorption coefficients to custom values (#191),
+  adds a test, and more details in the doc
+- Fixes a bug in the utilities.angle_function in the calculation of the
+  colatitude (#329) by @fabiodimarco
+- Replaces the crossing-based point-in-polygon algorithm in the C++ code with
+  the more robust winding number algorithm (#345)
+- Fixes usage of deprecated hann window with new version of scipy in
+  `metrics.py` (#344) by @mattpitkin
 
 `0.7.3`_ - 2022-12-05
 ---------------------
@@ -551,7 +575,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.3...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.4...master
+.. _0.7.4: https://github.com/LCAV/pyroomacoustics/compare/v0.7.3...v0.7.4
 .. _0.7.3: https://github.com/LCAV/pyroomacoustics/compare/v0.7.2...v0.7.3
 .. _0.7.2: https://github.com/LCAV/pyroomacoustics/compare/v0.7.1...v0.7.2
 .. _0.7.1: https://github.com/LCAV/pyroomacoustics/compare/v0.7.0...v0.7.1

@@ -1,5 +1,5 @@
-pyroomacoustics.doa.normmusic module
-====================================
+NormMUSIC
+=========
 
 .. automodule:: pyroomacoustics.doa.normmusic
    :members:

@@ -2,7 +2,12 @@ import os
 import platform
 
 import numpy as np
-from scipy.signal import hann
+
+try:
+    from scipy.signal import hann
+except ImportError:
+    from scipy.signal.windows import hann
+
 from scipy.stats import binom as _binom
 from scipy.stats import norm as _norm
 

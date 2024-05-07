@@ -269,7 +269,7 @@ def measure_runtime(dtype=np.float32, num_threads=4):
         td = np.round(tt).astype(np.int32)
         tf = (tt - td).astype(dtype)
         irs = np.zeros((tt.shape[0], fdl), dtype=dtype)
-        fractional_delay(irs, tf, 20, num_threads)
+        libroom.fractional_delay(irs, tf, 20, num_threads)
         irs *= alpha[:, None]
         libroom.delay_sum(irs, td, rir, num_threads)
     tock_2steps = (time.perf_counter() - tick) / n_repeat
