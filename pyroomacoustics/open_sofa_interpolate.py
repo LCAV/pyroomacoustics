@@ -649,7 +649,6 @@ class MeasuredDirectivity(Directivity):
 
 
 class SOFADirectivityFactory:
-
     """
     This class reads measured directivities from a
     `SOFA <https://www.sofaconventions.org>`_ format file.

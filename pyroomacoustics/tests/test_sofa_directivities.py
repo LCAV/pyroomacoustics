@@ -5,6 +5,7 @@ The tests compare the output of the simulation with some pre-generated samples.
 
 To generate the samples run this file: `python ./test_sofa_directivities.py`
 """
+
 import argparse
 import os
 import warnings

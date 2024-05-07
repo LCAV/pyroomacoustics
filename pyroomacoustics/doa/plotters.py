@@ -1,6 +1,7 @@
 """
 A collection of functions to plot maps and points on circles and spheres.
 """
+
 import numpy as np
 
 

@@ -60,7 +60,6 @@ We can also use the objects separately.
 ~ Prerak SRIVASTAVA, 8/11/2022
 """
 
-
 import os
 
 import matplotlib.pyplot as plt

@@ -7,6 +7,7 @@ responses.
 
 The simulation is done using the hybrid ISM/RT simulator.
 """
+
 from __future__ import print_function
 
 import time
