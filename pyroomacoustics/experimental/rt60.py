@@ -33,7 +33,7 @@ References
 import numpy as np
 
 
-def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
+def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=None):
     """
     Analyze the RT60 of an impulse response. Optionaly plots some useful information.
 
@@ -47,6 +47,10 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
         The decay in decibels for which we actually estimate the time. Although
         we would like to estimate the RT60, it might not be practical. Instead,
         we measure the RT20 or RT30 and extrapolate to RT60.
+    energy_thres: float
+        This should be a value between 0.0 and 1.0.
+        If provided, the fit will be done using a fraction energy_thres of the
+        whole energy. This is useful when there is a long noisy tail for example.
     plot: bool, optional
         If set to ``True``, the power decay and different estimated values will
         be plotted (default False).
@@ -60,7 +64,13 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
 
     # The power of the impulse response in dB
     power = h**2
+    # Backward energy integration according to Schroeder
     energy = np.cumsum(power[::-1])[::-1]  # Integration according to Schroeder
+
+    if energy_thres < 1.0:
+        assert 0.0 < energy_thres < 1.0
+        energy -= energy[0] * (1.0 - energy_thres)
+        energy = np.maximum(energy, 0.0)
 
     # remove the possibly all zero tail
     i_nz = np.max(np.where(energy > 0)[0])
@@ -68,13 +78,22 @@ def measure_rt60(h, fs=1, decay_db=60, plot=False, rt60_tgt=None):
     energy_db = 10 * np.log10(energy)
     energy_db -= energy_db[0]
 
+    min_energy_db = -np.min(energy_db)
+    if min_energy_db - 5 < decay_db:
+        decay_db = min_energy_db
+
     # -5 dB headroom
-    i_5db = np.min(np.where(-5 - energy_db > 0)[0])
+    try:
+        i_5db = np.min(np.where(energy_db < -5)[0])
+    except ValueError:
+        return 0.0
     e_5db = energy_db[i_5db]
     t_5db = i_5db / fs
-
     # after decay
-    i_decay = np.min(np.where(-5 - decay_db - energy_db > 0)[0])
+    try:
+        i_decay = np.min(np.where(energy_db < -5 - decay_db)[0])
+    except ValueError:
+        i_decay = len(energy_db)
     t_decay = i_decay / fs
 
     # compute the decay time
