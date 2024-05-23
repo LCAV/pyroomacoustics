@@ -161,9 +161,7 @@ def fastmnmf(
         Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
 
         # update G_NFM (diagonal element of spatial covariance matrices)
-        numerator = np.einsum(
-            "nft, ftm -> nfm", lambda_NFT, Qx_power_FTM / (Y_FTM**2)
-        )
+        numerator = np.einsum("nft, ftm -> nfm", lambda_NFT, Qx_power_FTM / (Y_FTM**2))
         denominator = np.einsum("nft, ftm -> nfm", lambda_NFT, 1 / Y_FTM) + eps
         G_NFM *= np.sqrt(numerator / denominator)
         Y_FTM = np.einsum("nft, nfm -> ftm", lambda_NFT, G_NFM)
