@@ -156,7 +156,7 @@ room = pra.ShoeBox(
     min_phase=False,
 )
 
-dir_mic = dir_obj_Dmic
+dir_mic = dir_obj_Emic
 
 room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 
