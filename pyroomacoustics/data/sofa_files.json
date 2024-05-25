@@ -1,94 +1,98 @@
 {
-  "Oktava_MK4012_CUBE.sofa": {
+  "Oktava_MK4012_CUBE": {
     "supported": false,
-    "type": "receivers",
+    "type": "microphones",
     "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Oktava_MK4012_CUBE.sofa",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
-    "contains": {}
+    "contains": []
   },
-  "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa": {
+
+  "LSPs_HATS_GuitarCabinets_Akustikmessplatz": {
     "supported": true,
     "type": "sources",
     "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
-    "contains": {
-      "Genelec_8020": 0,
-      "Lambda_labs_CX-1A": 1,
-      "HATS_4128C": 2,
-      "Tannoy_System_1200": 3,
-      "Neumann_KH120A": 4,
-      "Yamaha_DXR8": 5,
-      "BM_1x12inch_driver_closed_cabinet": 6,
-      "BM_1x12inch_driver_open_cabinet": 7,
-      "BM_open_stacked_on_closed_withCrossoverNetwork": 8,
-      "BM_open_stacked_on_closed_fullrange": 9,
-      "Palmer_1x12inch": 10,
-      "Vibrolux_2x10inch": 11
-    }
+    "contains": [
+      "Genelec_8020",
+      "Lambda_labs_CX-1A",
+      "HATS_4128C",
+      "Tannoy_System_1200",
+      "Neumann_KH120A",
+      "Yamaha_DXR8",
+      "BM_1x12inch_driver_closed_cabinet",
+      "BM_1x12inch_driver_open_cabinet",
+      "BM_open_stacked_on_closed_withCrossoverNetwork",
+      "BM_open_stacked_on_closed_fullrange",
+      "Palmer_1x12inch",
+      "Vibrolux_2x10inch"
+    ]
   },
-  "Soundfield_ST450_CUBE.sofa":  {
+
+  "Soundfield_ST450_CUBE":  {
     "supported": false,
-    "type": "receivers",
+    "type": "microphones",
     "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Soundfield_ST450_CUBE.sofa",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
-    "contains": {}
+    "contains": []
   },
-  "AKG_c480_c414_CUBE.sofa": {
+
+  "AKG_c480_c414_CUBE": {
     "supported": true,
-    "type": "receivers",
+    "type": "microphones",
     "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=AKG_c480_c414_CUBE.sofa",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
-    "contains": {
-      "AKG_c480": 0,
-      "AKG_c414K": 1,
-      "AKG_c414N": 2,
-      "AKG_c414S": 3,
-      "AKG_c414A": 4
-    }
+    "contains": [
+      "AKG_c480",
+      "AKG_c414K",
+      "AKG_c414N",
+      "AKG_c414S",
+      "AKG_c414A"
+    ]
   },
-  "EM32_Directivity.sofa": {
+
+  "EM32_Directivity": {
     "supported": true,
-    "type": "receivers",
+    "type": "microphones",
     "url": "https://phaidra.kug.ac.at/download/o:69292",
     "homepage": "https://phaidra.kug.ac.at/detail/o:69292",
     "license": "CC0",
-    "contains": {
-      "EM_32_0": 0,
-      "EM_32_1": 1,
-      "EM_32_2": 2,
-      "EM_32_3": 3,
-      "EM_32_4": 4,
-      "EM_32_5": 5,
-      "EM_32_6": 6,
-      "EM_32_7": 7,
-      "EM_32_8": 8,
-      "EM_32_9": 9,
-      "EM_32_10": 10,
-      "EM_32_11": 11,
-      "EM_32_12": 12,
-      "EM_32_13": 13,
-      "EM_32_14": 14,
-      "EM_32_15": 15,
-      "EM_32_16": 16,
-      "EM_32_17": 17,
-      "EM_32_18": 18,
-      "EM_32_19": 19,
-      "EM_32_20": 20,
-      "EM_32_21": 21,
-      "EM_32_22": 22,
-      "EM_32_23": 23,
-      "EM_32_24": 24,
-      "EM_32_25": 25,
-      "EM_32_26": 26,
-      "EM_32_27": 27,
-      "EM_32_28": 28,
-      "EM_32_29": 29,
-      "EM_32_30": 30,
-      "EM_32_31": 31
-    }
+    "contains": [
+      "EM_32_0",
+      "EM_32_1",
+      "EM_32_2",
+      "EM_32_3",
+      "EM_32_4",
+      "EM_32_5",
+      "EM_32_6",
+      "EM_32_7",
+      "EM_32_8",
+      "EM_32_9",
+      "EM_32_10",
+      "EM_32_11",
+      "EM_32_12",
+      "EM_32_13",
+      "EM_32_14",
+      "EM_32_15",
+      "EM_32_16",
+      "EM_32_17",
+      "EM_32_18",
+      "EM_32_19",
+      "EM_32_20",
+      "EM_32_21",
+      "EM_32_22",
+      "EM_32_23",
+      "EM_32_24",
+      "EM_32_25",
+      "EM_32_26",
+      "EM_32_27",
+      "EM_32_28",
+      "EM_32_29",
+      "EM_32_30",
+      "EM_32_31"
+    ]
   }
 }

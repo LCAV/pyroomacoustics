@@ -23,6 +23,10 @@ Added
   * ``octave_bands_keep_dc``: extends the lowest band to include the DC offset,
     the current default is ``False`` to match past behavior, but will be changed to
     ``True`` in the next release because the filters have less oscillations this way.
+- Simulation with measured directivity responses in SOFA format (limited file types) is
+  possible with the image source model.
+- Adds `soxr <https://github.com/dofuuz/python-soxr>`_ as a dependency since resampling
+  can often be necessary when working with SOFA files.
 
 Changed
 ~~~~~~~
@@ -36,8 +40,6 @@ Changed
 Added
 ~~~~~
 
-- Simulation with measured directivity responses in SOFA format (limited file types) is
-  possible with the image source model.
 - New implementation of fast RIR builder function in the ``libroom`` C++
   extension to replace the current cython code. Advantages are: 1) only one
   compiled extension, 2) multithreading support

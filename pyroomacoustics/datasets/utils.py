@@ -40,10 +40,10 @@ class AttrDict(object):
     def __init__(self, dictionary):
         for key, val in dictionary.items():
             if isinstance(val, dict):
-                setattr(self, key, Dict2Obj(val))
+                setattr(self, key, AttrDict(val))
             elif isinstance(val, list):
                 setattr(
-                    self, key, [Dict2Obj(v) if isinstance(v, dict) else v for v in val]
+                    self, key, [AttrDict(v) if isinstance(v, dict) else v for v in val]
                 )
             else:
                 setattr(self, key, val)
@@ -53,6 +53,12 @@ class AttrDict(object):
 
     def __setitem__(self, key, val):
         return setattr(self, key, val)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return repr(self.__dict__)
 
 
 def download_uncompress(url, path=".", compression=None, context=None):

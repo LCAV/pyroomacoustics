@@ -186,6 +186,7 @@ setup_kwargs = dict(
         "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
+        "soxr",
     ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,

@@ -68,34 +68,24 @@ if __name__ == "__main__":
 
     fs, speech = wavfile.read(args.source)
     speech = speech * (0.95 / abs(speech).max())
-    azimuth_deg = 45.0
+    azimuth_deg = -45.0
     colatitude_deg = 90.0
 
-    hrtf_left = SOFADirectivityFactory(
+    hrtf = SOFADirectivityFactory(
         path=args.hrtf,
-        DIRPAT_pattern_enum=0,
         fs=fs,
         interp_order=args.interp_order,
         interp_n_points=args.interp_n_points,
-    )
-    dir_left = hrtf_left.create(
-        orientation=DirectionVector(
-            azimuth=azimuth_deg, colatitude=colatitude_deg, degrees=True
-        ),
+        mic_labels=["left", "right"],
     )
 
-    hrtf_right = SOFADirectivityFactory(
-        path=args.hrtf,
-        DIRPAT_pattern_enum=1,
-        fs=fs,
-        interp_order=args.interp_order,
-        interp_n_points=args.interp_n_points,
+    orientation = DirectionVector(
+        azimuth=azimuth_deg, colatitude=colatitude_deg, degrees=True
     )
-    dir_right = hrtf_right.create(
-        orientation=DirectionVector(
-            azimuth=azimuth_deg, colatitude=colatitude_deg, degrees=True
-        ),
-    )
+
+    _, dir_left = hrtf.get_microphone("left", orientation=orientation)
+
+    _, dir_right = hrtf.get_microphone("right", orientation=orientation)
 
     room_dim = [6, 6, 2.4]
 

@@ -77,34 +77,13 @@ from pyroomacoustics.directivities import (
 )
 from pyroomacoustics.open_sofa_interpolate import SOFADirectivityFactory
 
-path_DIRPAT_file = os.path.join(
-    os.path.dirname(__file__).replace("examples", ""),
-    "pyroomacoustics",
-    "data",
-    "sofa",
-    "AKG_c480_c414_CUBE.sofa",
-)
-path_Eigenmic_file = os.path.join(
-    os.path.dirname(__file__).replace("examples", ""),
-    "pyroomacoustics",
-    "data",
-    "sofa",
-    "EM32_Directivity.sofa",
-)
+eigenmike = SOFADirectivityFactory("EM32_Directivity", fs=16000)
+akg = SOFADirectivityFactory("AKG_c480_c414_CUBE", fs=16000)
 
-akg_c414k = SOFADirectivityFactory(
-    path=path_DIRPAT_file, DIRPAT_pattern_enum="AKG_c414K", source=False, fs=16000
-)
-dir_obj_Dmic = akg_c414k.create(
-    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True),
-)
+vec_54_73 = DirectionVector(azimuth=54, colatitude=73, degrees=True)
 
-eigenmike = SOFADirectivityFactory(
-    path=path_Eigenmic_file, DIRPAT_pattern_enum="EM_32_9", source=False, fs=16000
-)
-dir_obj_Emic = eigenmike.create(
-    orientation=DirectionVector(azimuth=54, colatitude=73, degrees=True)
-)
+_, dir_obj_Dmic = akg.get_microphone("AKG_c414K", orientation=vec_54_73)
+_, dir_obj_Emic = eigenmike.get_microphone("EM_32_9", orientation=vec_54_73)
 
 dir_obj_Cmic = CardioidFamily(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
@@ -177,7 +156,7 @@ room = pra.ShoeBox(
     min_phase=False,
 )
 
-dir_mic = dir_obj_Emic
+dir_mic = dir_obj_Dmic
 
 room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 

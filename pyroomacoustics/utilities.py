@@ -28,6 +28,7 @@ import itertools
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
+import soxr
 
 from .doa import cart2spher
 from .parameters import constants, eps
@@ -816,3 +817,43 @@ def angle_function(s1, v2):
         co[:] = np.pi / 2
 
     return np.vstack((az, co))
+
+
+def resample(data, old_fs, new_fs):
+    """
+    Resample an ndarray from ``old_fs`` to ``new_fs`` along the last axis.
+
+    Parameters
+    ----------
+    data : numpy array
+        Input data to be resampled.
+    old_fs : int
+        Original sampling rate.
+    new_fs : int
+        New sampling rate.
+
+    Returns
+    -------
+    numpy array
+    """
+    ndim = data.ndim
+
+    if ndim == 1:
+        data = data[:, None]
+    elif ndim == 2:
+        data = data.T
+    else:
+        shape = data.shape
+        data = data.reshape(-1, data.shape[-1]).T
+
+    resampled_data = soxr.resample(data, old_fs, new_fs)
+
+    if ndim == 1:
+        resampled_data = resampled_data[:, 0]
+    elif ndim == 2:
+        resampled_data = resampled_data.T
+    else:
+        new_shape = shape[:-1] + resampled_data.shape[:1]
+        resampled_data = resampled_data.T.reshape(new_shape)
+
+    return resampled_data

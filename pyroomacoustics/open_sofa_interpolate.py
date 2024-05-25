@@ -18,6 +18,7 @@ from scipy.interpolate import griddata
 from scipy.signal import decimate
 from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
 
+from .datasets import SOFADatabase
 from .directivities import DirectionVector, Directivity
 from .doa import (
     Grid,
@@ -27,9 +28,26 @@ from .doa import (
     fibonacci_spherical_sampling,
     spher2cart,
 )
-from .utilities import requires_matplotlib
+from .utilities import requires_matplotlib, resample
 
 _DATA_SOFA_DIR = Path(__file__).parent / "data/sofa"
+
+DIRPAT_FILES = [
+    "Soundfield_ST450_CUBE.sofa",
+    "AKG_c480_c414_CUBE.sofa",
+    "Oktava_MK4012_CUBE.sofa",
+    "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+]
+
+
+def get_sofa_db():
+    # we want to avoid loading the database multiple times
+    global sofa_db
+    try:
+        return sofa_db
+    except NameError:
+        sofa_db = SOFADatabase()
+        return sofa_db
 
 
 def cal_sph_basis(azimuth, colatitude, degree):  # theta_target,phi_target
@@ -237,78 +255,31 @@ def spherical_interpolation(
     return interpolated_target_grid, interpolated_original_grid
 
 
-def DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=False):
-    """
-    Assigns DIRPAT pattern enum to respective id present in the DIRPAT SOFA files.
-    Works only for mic and source files
-    """
-
-    if isinstance(DIRPAT_pattern_enum, int):
-        return DIRPAT_pattern_enum
-
-    if source is not True:
-        # receivers/microphones
-        if "AKG_c480" in DIRPAT_pattern_enum:
-            id = 0
-        elif "AKG_c414K" in DIRPAT_pattern_enum:
-            id = 1
-        elif "AKG_c414N" in DIRPAT_pattern_enum:
-            id = 2
-        elif "AKG_c414S" in DIRPAT_pattern_enum:
-            id = 3
-        elif "AKG_c414A" in DIRPAT_pattern_enum:
-            id = 4
-        elif "EM_32" in DIRPAT_pattern_enum:
-            id = int(DIRPAT_pattern_enum.split("_")[-1])
-        else:
-            raise ValueError("Please specifiy correct DIRPAT_pattern_enum for mic")
-
-    else:
-        # sources/loudspeakers
-        if "Genelec_8020" in DIRPAT_pattern_enum:
-            id = 0
-        elif "Lambda_labs_CX-1A" in DIRPAT_pattern_enum:
-            id = 1
-        elif "HATS_4128C" in DIRPAT_pattern_enum:
-            id = 2
-        elif "Tannoy_System_1200" in DIRPAT_pattern_enum:
-            id = 3
-        elif "Neumann_KH120A" in DIRPAT_pattern_enum:
-            id = 4
-        elif "Yamaha_DXR8" in DIRPAT_pattern_enum:
-            id = 5
-        elif "BM_1x12inch_driver_closed_cabinet" in DIRPAT_pattern_enum:
-            id = 6
-        elif "BM_1x12inch_driver_open_cabinet" in DIRPAT_pattern_enum:
-            id = 7
-        elif "BM_open_stacked_on_closed_withCrossoverNetwork" in DIRPAT_pattern_enum:
-            id = 8
-        elif "BM_open_stacked_on_closed_fullrange" in DIRPAT_pattern_enum:
-            id = 9
-        elif "Palmer_1x12inch" in DIRPAT_pattern_enum:
-            id = 10
-        elif "Vibrolux_2x10inch" in DIRPAT_pattern_enum:
-            id = 11
-        else:
-            raise ValueError("Please specifiy correct DIRPAT_pattern_enum for source")
-
-    return id
-
-
 def _resolve_sofa_path(path):
     path = Path(path)
 
     if path.exists():
         return path
 
-    _path = _DATA_SOFA_DIR / path
-    if _path.exists():
-        return _path
+    sofa_db = get_sofa_db()
+    if path.stem in sofa_db:
+        return Path(sofa_db[path.stem].path)
 
     raise ValueError(f"SOFA file {path} could not be found")
 
 
-def open_sofa_file(path, measurement_id, is_source, fs=16000):
+def open_sofa_file(path, fs=16000):
+    """
+    Open a SOFA file and read the impulse responses
+
+    Parameters
+    ----------
+    path: str or Path
+        Path to the SOFA file
+    fs: int, optional
+        The desired sampling frequency. If the impulse responses were stored at
+        a different sampling frequency, they are resampled at ``fs``.
+    """
     # Memo for notation of SOFA dimensions
     # From: https://www.sofaconventions.org/mediawiki/index.php/SOFA_conventions#AnchorDimensions
     # M 	number of measurements 	integer >0
@@ -329,13 +300,17 @@ def open_sofa_file(path, measurement_id, is_source, fs=16000):
 
     file_sofa = sofa.Database.open(path)
 
+    # we have a special case for DIRPAT files because they need surgery
+    if path.name in DIRPAT_FILES:
+        return _read_dirpat(file_sofa, path.name, fs)
+
     conv_name = file_sofa.convention.name
 
     if conv_name == "SimpleFreeFieldHRIR":
-        return _read_simple_free_field_hrir(file_sofa, measurement_id, fs)
+        return _read_simple_free_field_hrir(file_sofa, fs)
 
     elif conv_name == "GeneralFIR":
-        return _read_general_fir(file_sofa, path.name, measurement_id, fs, is_source)
+        return _read_general_fir(file_sofa, fs)
 
     else:
         raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
@@ -368,7 +343,7 @@ def _parse_locations(sofa_pos, target_format):
     pos = sofa_pos.get_values()
 
     if len(dim) == 3 and dim[-1] == "I":
-        pos = pos[:-1]
+        pos = pos[..., 0]
         dim = dim[:-1]
 
     # get units
@@ -386,7 +361,7 @@ def _parse_locations(sofa_pos, target_format):
             raise ValueError(f"Found unit '{pos_units}' in SOFA file")
 
         if target_format == "spherical":
-            return cart2spher(pos.T)
+            return np.array(cart2spher(pos.T))
         else:
             return pos
 
@@ -402,13 +377,38 @@ def _parse_locations(sofa_pos, target_format):
         if target_format == "cartesian":
             return spher2cart(azimuth, colatitude, distance)
         else:
-            return azimuth, colatitude, distance
+            return np.array([azimuth, colatitude, distance])
 
     else:
         raise NotImplementedError(f"{pos_type} not implemented")
 
 
-def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
+def _read_simple_free_field_hrir(file_sofa, fs):
+    """
+    Reads the HRIRs stored in a SOFA file with the SimpleFreeFieldHRIR convention
+
+    Parameters
+    ----------
+    file_sofa: SOFA object
+        Path to the SOFA file
+    fs: int
+        The desired sampling frequency. If the impulse responses were stored at
+        a different sampling frequency, they are resampled at ``fs``
+
+    Returns
+    -------
+    ir: np.ndarray
+        The impulse responses in format ``(n_sources, n_mics, taps)``
+    source_dir: np.ndarray
+        The direction of the sources in spherical coordinates
+        ``(3, n_sources)`` where the first row is azimuth and the second is colatitude
+        and the third is distance
+    rec_loc: np.ndarray
+        The location of the receivers in cartesian coordinates with respect to the
+        origin of the SOFA file
+    fs: int
+        The sampling frequency of the impulse responses
+    """
     # read the mesurements (source direction, receiver location, taps)
     msr = file_sofa.Data.IR.get_values()
 
@@ -416,97 +416,88 @@ def _read_simple_free_field_hrir(file_sofa, measurement_id, fs):
     fs_file = file_sofa.Data.SamplingRate.get_values()[0]
     if fs is None:
         fs = fs_file
-    elif fs != fs_file:
-        msr = decimate(
-            msr,
-            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-            axis=-1,
-        )
+    else:
+        # msr = resample(msr, fs_file, fs)
+        msr = decimate(msr, int(round(fs_file / fs)), axis=-1)
 
     # Source positions
-    azimuth, colatitude, distance = _parse_locations(
-        file_sofa.Source.Position, target_format="spherical"
-    )
+    source_loc = _parse_locations(file_sofa.Source.Position, target_format="spherical")
 
     # Receivers locations (i.e., "ears" for HRIR)
     rec_loc = _parse_locations(file_sofa.Receiver.Position, target_format="cartesian")
 
-    # encapsulate the spherical grid points in a grid object
-    grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
-
-    return grid, distance, msr[:, measurement_id, :], fs
+    return msr, source_loc, rec_loc, fs
 
 
-def _read_general_fir(file_sofa, filename, measurement_id, fs, is_source):
-    # read the mesurements
-    IR_S = file_sofa.Data.IR.get_values()
-
-    is_dirpat = filename in [
-        "Soundfield_ST450_CUBE.sofa",
-        "AKG_c480_c414_CUBE.sofa",
-        "Oktava_MK4012_CUBE.sofa",
-        "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
-    ]
-
-    if is_source:
-        # Receiver positions
-        pos = file_sofa.Receiver.Position.get_values()
-        pos_units = file_sofa.Receiver.Position.Units.split(",")
-
-        # Look for source of specific type requested by user
-        msr = IR_S[measurement_id, :, :]
-
-    else:
-        # Source positions
-        pos = file_sofa.Source.Position.get_values()
-        pos_units = file_sofa.Source.Position.Units.split(",")
-
-        # Look for receiver of specific type requested by user
-        msr = IR_S[:, measurement_id, :]
+def _read_general_fir(file_sofa, fs):
+    # read the mesurements (source direction, receiver location, taps)
+    msr = file_sofa.Data.IR.get_values()
 
     # downsample the fir filter.
     fs_file = file_sofa.Data.SamplingRate.get_values()[0]
     if fs is None:
         fs = fs_file
-    elif fs < fs_file:
-        msr = decimate(
-            msr,
-            int(round(file_sofa.Data.SamplingRate.get_values()[0] / fs)),
-            axis=-1,
-        )
     else:
-        raise ValueError(f"Upsampling of SOFA rir not implemented")
+        # msr = resample(msr, fs_file, fs)
+        msr = decimate(msr, int(round(fs_file / fs)), axis=-1)
 
-    if is_dirpat:
-        # There is a bug in the DIRPAT measurement files where the array of
-        # measurement locations were not flattened correctly
-        pos_units[0:1] = "radian"
-        if filename == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
-            pos_RS = np.reshape(pos, [36, -1, 3])
-            pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
-        else:
-            pos_RS = np.reshape(pos, [30, -1, 3])
-            pos = np.swapaxes(pos_RS, 0, 1).reshape([pos.shape[0], -1])
+    # Source positions: (azimuth, colatitude, distance)
+    source_loc = _parse_locations(file_sofa.Source.Position, target_format="spherical")
 
-    azimuth = pos[:, 0]
-    colatitude = pos[:, 1]
-    distance = pos[:, 2]
+    # Receivers locations (i.e., "ears" for HRIR)
+    rec_loc = _parse_locations(file_sofa.Receiver.Position, target_format="cartesian")
 
-    # All measurements should be in = radians phi [0,2*np.pi] , theta [0,np.pi]
-    if not is_dirpat:
-        if pos_units[0] == "degree":
-            azimuth = np.deg2rad(azimuth)
-        if pos_units[1] == "degree":
-            colatitude = np.deg2rad(colatitude)
+    return msr, source_loc, rec_loc, fs
 
-    if np.any(colatitude < 0.0):
-        # it looks like the data is using elevation format
-        colatitude = np.pi / 2.0 - colatitude
 
-    # encapsulate the spherical grid points in a grid object
-    grid = GridSphere(spherical_points=np.array([azimuth, colatitude]))
+def _read_dirpat(file_sofa, filename, fs=None):
+    # read the mesurements
+    msr = file_sofa.Data.IR.get_values()  # (n_sources, n_mics, taps)
 
-    return grid, distance, msr, fs
+    # downsample the fir filter.
+    fs_file = file_sofa.Data.SamplingRate.get_values()[0]
+    if fs is None:
+        fs = fs_file
+    else:
+        resample(msr, fs_file, fs)
+
+    # Receiver positions
+    mic_pos = file_sofa.Receiver.Position.get_values()  # (3, n_mics)
+    mic_pos_units = file_sofa.Receiver.Position.Units.split(",")
+
+    # Source positions
+    src_pos = file_sofa.Source.Position.get_values()
+    src_pos_units = file_sofa.Source.Position.Units.split(",")
+
+    # There is a bug in the DIRPAT measurement files where the array of
+    # measurement locations were not flattened correctly
+    src_pos_units[0:1] = "radian"
+    if filename == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
+        # this is a source file
+        mic_pos_RS = np.reshape(mic_pos, [36, -1, 3])
+        mic_pos = np.swapaxes(mic_pos_RS, 0, 1).reshape([mic_pos.shape[0], -1])
+
+        if np.any(mic_pos[:, 1] < 0.0):
+            # it looks like the data is using elevation format
+            mic_pos[:, 1] = np.pi / 2.0 - mic_pos[:, 1]
+
+        # by convention, we keep the microphone locations in cartesian coordinates
+        mic_pos = spher2cart(*mic_pos.T).T
+
+        # create source locations, they are all at the center
+        src_pos = np.zeros((msr.shape[0], 3))
+    else:
+        src_pos_RS = np.reshape(src_pos, [30, -1, 3])
+        src_pos = np.swapaxes(src_pos_RS, 0, 1).reshape([src_pos.shape[0], -1])
+
+        if np.any(src_pos[:, 1] < 0.0):
+            # it looks like the data is using elevation format
+            src_pos[:, 1] = np.pi / 2.0 - src_pos[:, 1]
+
+        # create fake microphone locations, they are all at the center
+        mic_pos = np.zeros((msr.shape[1], 3))
+
+    return msr, src_pos.T, mic_pos.T, fs
 
 
 class MeasuredDirectivity(Directivity):
@@ -660,10 +651,6 @@ class SOFADirectivityFactory:
     --------------
     path : (string)
         Path towards the specific DIRPAT file
-    DIRPAT_pattern_enum :  (string or int)
-        The specific pattern in the DIRPAT files are associated with id's , presented in the github document
-    source: (Boolean)
-        Indicates if the response is for a receiver or source
     fs: (int)
         The desired sampling frequency. If the impulse responses were stored at
         a different sampling frequency, they are resampled at ``fs``.
@@ -673,51 +660,132 @@ class SOFADirectivityFactory:
     interp_n_points: (int)
         Number of points for the interpolation grid. The interpolation grid is a
         Fibonnaci pseudo-uniform sampling of the sphere.
+    sofa_file_reader_callback: (callable)
+        A callback function that reads the SOFA file and returns the impulse responses
+        The signature should be the same as the function `open_sofa_file`
+    mic_labels: (list of strings)
+        List of labels for the microphones. If not provided, the labels are simply the
+        indices of the microphones in the array
+    source_labels: (list of strings)
+        List of labels for the sources. If not provided, the labels are simply the
+        indices of the measurements in the array
     """
 
     def __init__(
         self,
         path,
-        DIRPAT_pattern_enum=None,
-        source=False,
         fs=None,
         interp_order=None,
         interp_n_points=1000,
+        sofa_file_reader_callback=None,
+        mic_labels=None,
+        source_labels=None,
     ):
-        self.path = path
-        self.source = source
+        self.path = Path(path)
+        self.mic_labels, self.source_labels = self._set_labels(
+            self.path, mic_labels, source_labels
+        )
+
+        if sofa_file_reader_callback is None:
+            sofa_file_reader_callback = open_sofa_file
 
         (
-            self.grid_sofa,  # azimuth
-            self.distance_sofa,
-            self.impulse_responses_sofa,
+            self.impulse_responses,  # (n_sources, n_mics, taps)
+            self.sources_loc,  # (3, n_sources), spherical coordinates
+            self.mics_loc,  # (3, n_mics), cartesian coordinates
             self.fs,
-        ) = open_sofa_file(
+        ) = sofa_file_reader_callback(
             path=self.path,
-            measurement_id=DIRPAT_pattern_enum_id(DIRPAT_pattern_enum, source=source),
-            is_source=source,
             fs=fs,
         )
 
         self.interp_order = interp_order
         self.interp_n_points = interp_n_points
 
+        self._ir_interp_cache = {}
         if interp_order is not None:
-            self.grid = GridSphere(
+            self.interp_grid = GridSphere(
                 cartesian_points=fibonacci_spherical_sampling(n_points=interp_n_points)
             )
+        else:
+            self.interp_grid = None
 
-            self.impulse_responses, _ = spherical_interpolation(
-                self.grid_sofa,
-                self.impulse_responses_sofa,
-                self.grid,
+    def _set_labels(self, path, mic_labels, src_labels):
+        sofa_db = get_sofa_db()
+        if path.stem in sofa_db:
+            info = sofa_db[path.stem]
+            if info.type == "microphones" and mic_labels is None:
+                mic_labels = info.contains
+            elif info.type == "sources" and src_labels is None:
+                src_labels = info.contains
+        return mic_labels, src_labels
+
+    def _interpolate(self, type, mid, grid, impulse_responses):
+        if self.interp_order is None:
+            return grid, impulse_responses
+
+        label = f"{type}_{mid}"
+
+        if label not in self._ir_interp_cache:
+            self._ir_interp_cache[label], _ = spherical_interpolation(
+                grid,
+                impulse_responses,
+                self.interp_grid,
                 spherical_harmonics_order=self.interp_order,
                 axis=-2,
             )
 
-        else:
-            self.impulse_responses = self.impulse_responses_sofa
-            self.grid = self.grid_sofa
+        return self.interp_grid, self._ir_interp_cache[label]
+
+    def _get_measurement_index(self, meas_id, labels):
+        if isinstance(meas_id, int):
+            return meas_id
+        elif labels is not None:
+            idx = labels.index(meas_id)
+            if idx >= 0:
+                return idx
+            else:
+                raise KeyError(f"Measurement id {meas_id} not found")
+
+        raise ValueError(f"Measurement id {meas_id} not found")
+
+    def get_microphone(self, measurement_id, orientation, offset=None):
+        mid = self._get_measurement_index(measurement_id, self.mic_labels)
+
+        # select the measurements corresponding to the mic id
+        ir = self.impulse_responses[:, mid, :]
+        src_grid = GridSphere(spherical_points=self.sources_loc[:2])
+
+        mic_loc = self.mics_loc[:, mid]
+        if offset is not None:
+            mic_loc += offset
+
+        # interpolate the IR
+        grid, ir = self._interpolate("mic", mid, src_grid, ir)
+
+        dir_obj = MeasuredDirectivity(orientation, grid, ir, self.fs)
+        return mic_loc, dir_obj
+
+    def get_source(self, measurement_id, orientation, offset=None):
+        mid = self._get_measurement_index(measurement_id, self.source_labels)
+
+        # select the measurements corresponding to the mic id
+        ir = self.impulse_responses[mid, :, :]
+
+        # here we need to swap the coordinate types
+        mic_pos = np.array(cart2spher(self.mics_loc))
+        mic_grid = GridSphere(spherical_points=mic_pos[:2])
+
+        # source location
+        src_loc = spher2cart(*self.sources_loc[:, mid])
+        if offset is not None:
+            src_loc += offset
+
+        # interpolate the IR
+        grid, ir = self._interpolate("source", mid, mic_grid, ir)
+
+        dir_obj = MeasuredDirectivity(orientation, grid, ir, self.fs)
+        return src_loc, dir_obj
 
     def create(self, orientation):
         return MeasuredDirectivity(

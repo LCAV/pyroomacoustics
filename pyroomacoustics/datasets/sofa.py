@@ -42,7 +42,7 @@ def download_sofa_files(path=None, overwrite=False, verbose=False):
     sofa_info = get_sofa_db_info()
 
     files = {
-        path / name: info["url"]
+        path / f"{name}.sofa": info["url"]
         for name, info in sofa_info.items()
         if info["supported"]
     }
@@ -51,7 +51,34 @@ def download_sofa_files(path=None, overwrite=False, verbose=False):
     return list(files.keys())
 
 
-def SOFADatabase(AttrDict):
-    def __init__(self):
-        self._db = get_sofa_db_info()
-        super().__init__(self._db)
+class SOFADatabase(dict):
+    def __init__(self, download=True):
+        super().__init__()
+
+        if download:
+            download_sofa_files(path=self.root)
+
+        self._db = {}
+        for name, info in get_sofa_db_info().items():
+            path = self.root / f"{name}.sofa"
+            if path.exists():
+                dict.__setitem__(self, name, AttrDict(info))
+                self[name]["path"] = path
+
+    def list(self):
+        for name, info in self.items():
+            print(f"- {name} ({info.type})")
+            for channel in info.contains:
+                print(f"  - {channel}")
+
+    @property
+    def root(self):
+        return DEFAULT_SOFA_PATH
+
+    @property
+    def db_info_path(self):
+        return SOFA_INFO
+
+    def __setitem__(self, key, val):
+        # disallow writing elements
+        raise RuntimeError(f"{self.__class__} is not writable")
