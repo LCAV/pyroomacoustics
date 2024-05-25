@@ -15,8 +15,7 @@ import math
 
 from scipy.fft import fft, fftfreq, ifft
 from scipy.interpolate import griddata
-from scipy.signal import decimate
-from scipy.spatial import KDTree, SphericalVoronoi, cKDTree
+from scipy.spatial import SphericalVoronoi, cKDTree
 
 from .datasets import SOFADatabase
 from .directivities import DirectionVector, Directivity
@@ -33,10 +32,10 @@ from .utilities import requires_matplotlib, resample
 _DATA_SOFA_DIR = Path(__file__).parent / "data/sofa"
 
 DIRPAT_FILES = [
-    "Soundfield_ST450_CUBE.sofa",
-    "AKG_c480_c414_CUBE.sofa",
-    "Oktava_MK4012_CUBE.sofa",
-    "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    "Soundfield_ST450_CUBE",
+    "AKG_c480_c414_CUBE",
+    "Oktava_MK4012_CUBE",
+    "LSPs_HATS_GuitarCabinets_Akustikmessplatz",
 ]
 
 
@@ -301,7 +300,7 @@ def open_sofa_file(path, fs=16000):
     file_sofa = sofa.Database.open(path)
 
     # we have a special case for DIRPAT files because they need surgery
-    if path.name in DIRPAT_FILES:
+    if path.stem in DIRPAT_FILES:
         return _read_dirpat(file_sofa, path.name, fs)
 
     conv_name = file_sofa.convention.name
@@ -417,8 +416,7 @@ def _read_simple_free_field_hrir(file_sofa, fs):
     if fs is None:
         fs = fs_file
     else:
-        # msr = resample(msr, fs_file, fs)
-        msr = decimate(msr, int(round(fs_file / fs)), axis=-1)
+        msr = resample(msr, fs_file, fs)
 
     # Source positions
     source_loc = _parse_locations(file_sofa.Source.Position, target_format="spherical")
@@ -438,8 +436,7 @@ def _read_general_fir(file_sofa, fs):
     if fs is None:
         fs = fs_file
     else:
-        # msr = resample(msr, fs_file, fs)
-        msr = decimate(msr, int(round(fs_file / fs)), axis=-1)
+        msr = resample(msr, fs_file, fs)
 
     # Source positions: (azimuth, colatitude, distance)
     source_loc = _parse_locations(file_sofa.Source.Position, target_format="spherical")
@@ -459,7 +456,7 @@ def _read_dirpat(file_sofa, filename, fs=None):
     if fs is None:
         fs = fs_file
     else:
-        resample(msr, fs_file, fs)
+        msr = resample(msr, fs_file, fs)
 
     # Receiver positions
     mic_pos = file_sofa.Receiver.Position.get_values()  # (3, n_mics)

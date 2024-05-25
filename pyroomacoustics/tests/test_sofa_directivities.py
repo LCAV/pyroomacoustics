@@ -393,8 +393,7 @@ def test_sofa_two_sides(
     )
 
     mic_factory = SOFADirectivityFactory(
-        path=Path(DEFAULT_SOFA_PATH) / mic_sofa_file_name,
-        source=False,
+        path=mic_sofa_file_name,
         fs=room.fs,
         interp_order=interp_order,
     )
@@ -584,12 +583,6 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
         reference_data = np.load(test_file_path)
         reference_data = reference_data[ref_delay : ref_delay + rir_1_0.shape[0]]
 
-        print("Max diff.:", abs(reference_data - rir_1_0).max())
-        print(
-            "Rel diff.:",
-            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
-        )
-
         if plot_flag:
             fig, ax = plt.subplots(1, 1)
             ax.plot(rir_1_0, label="test")
@@ -597,6 +590,12 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
             ax.legend()
             fig.savefig(test_file_path.with_suffix(".pdf"))
             plt.close(fig)
+
+        print("Max diff.:", abs(reference_data - rir_1_0).max())
+        print(
+            "Rel diff.:",
+            abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
+        )
 
         assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
@@ -657,8 +656,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     download_sofa_files(verbose=True)
-
-    test_sofa_one_side("AKG_c480", "AKG_c480_c414_CUBE", True, False, True)
 
     for params in SOFA_ONE_SIDE_PARAMETERS:
         new_params = params[:-2] + (args.save, args.plot)
