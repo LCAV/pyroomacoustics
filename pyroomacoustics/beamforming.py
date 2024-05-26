@@ -298,7 +298,7 @@ def circular_microphone_array_xyplane(
     MicrophoneArray object
     """
 
-    R = circular_2D_array(center=center[:1], M=M, phi0=phi0, radius=radius)
+    R = circular_2D_array(center=center[:2], M=M, phi0=phi0, radius=radius)
     if len(center) == 3:
         colatitude = 90
         R = np.concatenate((R, np.ones((1, M)) * center[2]))

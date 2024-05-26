@@ -1887,7 +1887,7 @@ class Room(object):
                 ax.plot(np.arange(len(h)) / float(self.fs / 1000), h)
             elif kind == "tf":
                 H = 20.0 * np.log10(abs(np.fft.rfft(h)) + 1e-15)
-                freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs * 1000)
+                freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs / 1000)
                 ax.plot(freq, H)
             elif kind == "spec":
                 h = h + np.random.randn(*h.shape) * 1e-15
