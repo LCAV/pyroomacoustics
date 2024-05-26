@@ -18,6 +18,13 @@ Changed
   The energy tail beyond this threshold is discarded which is useful for noisy RIR
   measurements. The default value is 0.95.
 
+Bugfix
+~~~~~~
+
+- Fixes a bug in ``beamforming.circular_microphone_array_xyplane`` (#348)
+- Fixes a bug in ``room.Room.plot_rir`` where the x-axis would have the wrong
+  ticks when called with ``kind="tf"``
+
 `0.7.4`_ - 2024-04-25
 ---------------------
 
