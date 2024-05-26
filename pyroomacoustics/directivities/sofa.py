@@ -10,39 +10,9 @@ except ImportError:
     has_sofa = False
 
 
-from ..datasets import SOFADatabase
+from ..datasets.sofa import get_sofa_db, is_dirpat, resolve_sofa_path
 from ..doa import cart2spher, spher2cart
 from ..utilities import resample
-
-DIRPAT_FILES = [
-    "Soundfield_ST450_CUBE",
-    "AKG_c480_c414_CUBE",
-    "Oktava_MK4012_CUBE",
-    "LSPs_HATS_GuitarCabinets_Akustikmessplatz",
-]
-
-
-def get_sofa_db():
-    # we want to avoid loading the database multiple times
-    global sofa_db
-    try:
-        return sofa_db
-    except NameError:
-        sofa_db = SOFADatabase()
-        return sofa_db
-
-
-def _resolve_sofa_path(path):
-    path = Path(path)
-
-    if path.exists():
-        return path
-
-    sofa_db = get_sofa_db()
-    if path.stem in sofa_db:
-        return Path(sofa_db[path.stem].path)
-
-    raise ValueError(f"SOFA file {path} could not be found")
 
 
 def open_sofa_file(path, fs=16000):
@@ -56,6 +26,23 @@ def open_sofa_file(path, fs=16000):
     fs: int, optional
         The desired sampling frequency. If the impulse responses were stored at
         a different sampling frequency, they are resampled at ``fs``.
+
+    Returns
+    -------
+    ir: np.ndarray (n_sources, n_mics, taps)
+        The impulse responses
+    fs: int
+        The sampling frequency of the impulse responses
+    source_dir: np.ndarray (3, n_sources)
+        The direction of the sources in spherical coordinates
+    rec_loc: np.ndarray (3, n_mics)
+        The location of the receivers in cartesian coordinates
+    source_labels: List[str]
+        If available, a list of human readable labels for the sources is
+        returned. Otherwise, ``None`` is returned
+    mic_labels: List[str]
+        If available, a list of human readable labels for the microphones is
+        returned. Otherwise, ``None`` is returned
     """
     # Memo for notation of SOFA dimensions
     # From: https://www.sofaconventions.org/mediawiki/index.php/SOFA_conventions#AnchorDimensions
@@ -73,24 +60,58 @@ def open_sofa_file(path, fs=16000):
             "The package 'python-sofa' needs to be installed to call this function. Install by doing `pip install python-sofa`"
         )
 
-    path = _resolve_sofa_path(path)
+    sofa_db = get_sofa_db()
+
+    path = resolve_sofa_path(path)
 
     file_sofa = sofa.Database.open(path)
 
     # we have a special case for DIRPAT files because they need surgery
-    if path.stem in DIRPAT_FILES:
-        return _read_dirpat(file_sofa, path.name, fs)
-
-    conv_name = file_sofa.convention.name
-
-    if conv_name == "SimpleFreeFieldHRIR":
-        return _read_simple_free_field_hrir(file_sofa, fs)
-
-    elif conv_name == "GeneralFIR":
-        return _read_general_fir(file_sofa, fs)
+    if is_dirpat(path):
+        # special case for DIRPAT files
+        # this is needed because the DIRPAT files are not following the SOFA conventions
+        # and require some custom processing
+        ir, fs, src_loc, mic_loc = _read_dirpat(file_sofa, path.stem, fs)
 
     else:
-        raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
+        # readers for SOFA files following the conventions
+
+        conv_name = file_sofa.convention.name
+
+        if conv_name == "SimpleFreeFieldHRIR":
+            ir, fs, src_loc, mic_loc = _read_simple_free_field_hrir(file_sofa, fs)
+
+        elif conv_name == "GeneralFIR":
+            ir, fs, src_loc, mic_loc = _read_general_fir(file_sofa, fs)
+
+        else:
+            raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
+
+    # assign the source labels if known
+    source_labels = None
+    mic_labels = None
+
+    file_id = path.stem
+    if file_id in sofa_db:
+        info = sofa_db[file_id]
+        if info.type == "sources":
+            source_labels = info.contains
+            mic_labels = None
+            if source_labels is not None and len(source_labels) != ir.shape[0]:
+                raise ValueError(
+                    f"Number of labels ({len(source_labels)}) does not match the "
+                    f"number of sources ({ir.shape[0]})"
+                )
+        elif info.type == "microphones":
+            source_labels = None
+            mic_labels = info.contains
+            if mic_labels is not None and len(mic_labels) != ir.shape[1]:
+                raise ValueError(
+                    f"Number of labels ({len(mic_labels)}) does not match the "
+                    f"number of microphones ({ir.shape[1]})"
+                )
+
+    return ir, fs, src_loc, mic_loc, source_labels, mic_labels
 
 
 def _parse_locations(sofa_pos, target_format):
@@ -137,8 +158,10 @@ def _parse_locations(sofa_pos, target_format):
         if any([p != "metre" for p in pos_units]):
             raise ValueError(f"Found unit '{pos_units}' in SOFA file")
 
+        pos = pos.T
+
         if target_format == "spherical":
-            return np.array(cart2spher(pos.T))
+            return np.array(cart2spher(pos))
         else:
             return pos
 
@@ -202,7 +225,7 @@ def _read_simple_free_field_hrir(file_sofa, fs):
     # Receivers locations (i.e., "ears" for HRIR)
     rec_loc = _parse_locations(file_sofa.Receiver.Position, target_format="cartesian")
 
-    return msr, source_loc, rec_loc, fs
+    return msr, fs, source_loc, rec_loc
 
 
 def _read_general_fir(file_sofa, fs):
@@ -222,10 +245,15 @@ def _read_general_fir(file_sofa, fs):
     # Receivers locations (i.e., "ears" for HRIR)
     rec_loc = _parse_locations(file_sofa.Receiver.Position, target_format="cartesian")
 
-    return msr, source_loc, rec_loc, fs
+    return msr, fs, source_loc, rec_loc
 
 
 def _read_dirpat(file_sofa, filename, fs=None):
+    sofa_db = get_sofa_db()
+
+    if filename not in sofa_db:
+        raise ValueError(f"DIRPAT file {filename} not found in the SOFA database")
+
     # read the mesurements
     msr = file_sofa.Data.IR.get_values()  # (n_sources, n_mics, taps)
 
@@ -247,7 +275,7 @@ def _read_dirpat(file_sofa, filename, fs=None):
     # There is a bug in the DIRPAT measurement files where the array of
     # measurement locations were not flattened correctly
     src_pos_units[0:1] = "radian"
-    if filename == "LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa":
+    if filename == "LSPs_HATS_GuitarCabinets_Akustikmessplatz":
         # this is a source file
         mic_pos_RS = np.reshape(mic_pos, [36, -1, 3])
         mic_pos = np.swapaxes(mic_pos_RS, 0, 1).reshape([mic_pos.shape[0], -1])
@@ -261,6 +289,7 @@ def _read_dirpat(file_sofa, filename, fs=None):
 
         # create source locations, they are all at the center
         src_pos = np.zeros((msr.shape[0], 3))
+
     else:
         src_pos_RS = np.reshape(src_pos, [30, -1, 3])
         src_pos = np.swapaxes(src_pos_RS, 0, 1).reshape([src_pos.shape[0], -1])
@@ -272,4 +301,4 @@ def _read_dirpat(file_sofa, filename, fs=None):
         # create fake microphone locations, they are all at the center
         mic_pos = np.zeros((msr.shape[1], 3))
 
-    return msr, src_pos.T, mic_pos.T, fs
+    return msr, fs, src_pos.T, mic_pos.T

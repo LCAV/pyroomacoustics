@@ -100,7 +100,7 @@
     "type": "microphones",
     "url": "http://sofacoustics.org/data/database/mit/mit_kemar_large_pinna.sofa",
     "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
-    "license": "custom-attribution",
+    "license": "This data is Copyright 1994 by the MIT Media Laboratory. It is provided free with no restrictions on use, provided the authors are cited when the data is used in any research or commercial application.",
     "contains": [
       "left",
       "right"
@@ -111,7 +111,7 @@
     "type": "microphones",
     "url": "http://sofacoustics.org/data/database/mit/mit_kemar_normal_pinna.sofa",
     "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
-    "license": "custom-attribution",
+    "license": "This data is Copyright 1994 by the MIT Media Laboratory. It is provided free with no restrictions on use, provided the authors are cited when the data is used in any research or commercial application.",
     "contains": [
       "left",
       "right"

@@ -76,16 +76,15 @@ if __name__ == "__main__":
         fs=fs,
         interp_order=args.interp_order,
         interp_n_points=args.interp_n_points,
-        mic_labels=["left", "right"],
     )
 
     orientation = DirectionVector(
         azimuth=azimuth_deg, colatitude=colatitude_deg, degrees=True
     )
 
-    _, dir_left = hrtf.get_microphone("left", orientation=orientation)
+    dir_left = hrtf.get_mic_directivity("left", orientation=orientation)
 
-    _, dir_right = hrtf.get_microphone("right", orientation=orientation)
+    dir_right = hrtf.get_mic_directivity("right", orientation=orientation)
 
     room_dim = [6, 6, 2.4]
 
@@ -149,8 +148,8 @@ if __name__ == "__main__":
 
     room.add_source([1.5, 3.01, 1.044], signal=speech)
 
-    room.add_microphone([1.1, 3.01, 1.8], directivity=dir_left)
-    room.add_microphone([1.1, 3.01, 1.8], directivity=dir_right)
+    room.add_microphone([1.1, 3.01, 2.2], directivity=dir_left)
+    room.add_microphone([1.1, 3.01, 2.2], directivity=dir_right)
 
     room.simulate()
 

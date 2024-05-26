@@ -1,4 +1,6 @@
 import json
+import typing as tp
+from dataclasses import dataclass
 from pathlib import Path
 
 from .utils import AttrDict, download_multiple
@@ -6,6 +8,42 @@ from .utils import AttrDict, download_multiple
 _pra_data_folder = Path(__file__).parents[1] / "data"
 DEFAULT_SOFA_PATH = _pra_data_folder / "sofa"
 SOFA_INFO = _pra_data_folder / "sofa_files.json"
+
+_DIRPAT_FILES = [
+    "Soundfield_ST450_CUBE",
+    "AKG_c480_c414_CUBE",
+    "Oktava_MK4012_CUBE",
+    "LSPs_HATS_GuitarCabinets_Akustikmessplatz",
+]
+
+
+def is_dirpat(name):
+    if isinstance(name, Path):
+        name = name.stem
+    return name in _DIRPAT_FILES
+
+
+def get_sofa_db():
+    # we want to avoid loading the database multiple times
+    global sofa_db
+    try:
+        return sofa_db
+    except NameError:
+        sofa_db = SOFADatabase()
+        return sofa_db
+
+
+def resolve_sofa_path(path):
+    path = Path(path)
+
+    if path.exists():
+        return path
+
+    sofa_db = get_sofa_db()
+    if path.stem in sofa_db:
+        return Path(sofa_db[path.stem].path)
+
+    raise ValueError(f"SOFA file {path} could not be found")
 
 
 def get_sofa_db_info():
@@ -51,7 +89,66 @@ def download_sofa_files(path=None, overwrite=False, verbose=False, no_fail=False
     return list(files.keys())
 
 
+@dataclass
+class SOFAFileInfo:
+    """
+    A class to store information about a SOFA file
+
+    Parameters
+    ----------
+    path: Path
+        The path to the SOFA file
+    supported: bool
+        Whether the SOFA file is supported by Pyroom Acoustics
+    type: str
+        The type of device (e.g., 'sources' or 'microphones')
+    url: str
+        The URL where the SOFA file can be downloaded
+    homepage: str
+        The URL of the SOFA file homepage
+    license: str
+        The license of the SOFA file
+    contains: List[str]
+        The labels of the sources/microphones contained in the SOFA file,
+        or``None`` if the information is not available
+    """
+
+    path: Path
+    supported: bool = True
+    type: str = "unknown"
+    url: str = "unknown"
+    homepage: str = "unknown"
+    license: str = "unknown"
+    contains: tp.List[str] = None
+
+
 class SOFADatabase(dict):
+    """
+    A small database of SOFA files containing source/microphone directional
+    impulse responses
+
+    The database object is a dictionary-like object where the keys are the
+    names of the SOFA files and the values are objects with the following
+    attributes:
+
+    .. code-block:: python
+
+        db = SOFADatabase()
+
+        # type of device: 'sources' or 'microphones'
+        db["Soundfield_ST450_CUBE"].type
+
+        # list of the labels of the sources/microphones
+        db["Soundfield_ST450_CUBE"].contains
+
+
+    Parameters
+    ----------
+    download: bool, optional
+        If set to `True`, the SOFA files are downloaded if they are not already
+        present in the default folder
+    """
+
     def __init__(self, download=True):
         super().__init__()
 
@@ -63,8 +160,7 @@ class SOFADatabase(dict):
         for name, info in get_sofa_db_info().items():
             path = self.root / f"{name}.sofa"
             if path.exists():
-                dict.__setitem__(self, name, AttrDict(info))
-                self[name]["path"] = path
+                dict.__setitem__(self, name, SOFAFileInfo(path=path, **info))
 
         for path in DEFAULT_SOFA_PATH.glob("*.sofa"):
             name = path.stem
@@ -72,20 +168,14 @@ class SOFADatabase(dict):
                 dict.__setitem__(
                     self,
                     name,
-                    AttrDict(
-                        {
-                            "path": path,
-                            "supported": "???",
-                            "type": "unknown",
-                            "url": "???",
-                            "homepage": "???",
-                            "license": "???",
-                            "contains": None,
-                        }
-                    ),
+                    SOFAFileInfo(path=path),
                 )
 
     def list(self):
+        """
+        Print a list of the available SOFA files and the labels of the
+        different devices they contain
+        """
         for name, info in self.items():
             print(f"- {name} ({info.type})")
             if info.contains is not None:
@@ -94,10 +184,12 @@ class SOFADatabase(dict):
 
     @property
     def root(self):
+        """The path to the folder containing the SOFA files"""
         return DEFAULT_SOFA_PATH
 
     @property
     def db_info_path(self):
+        """The path to the JSON file containing the SOFA files information"""
         return SOFA_INFO
 
     def __setitem__(self, key, val):

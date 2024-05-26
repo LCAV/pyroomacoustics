@@ -82,8 +82,8 @@ akg = MeasuredDirectivityFile("AKG_c480_c414_CUBE", fs=16000)
 
 vec_54_73 = DirectionVector(azimuth=54, colatitude=73, degrees=True)
 
-_, dir_obj_Dmic = akg.get_microphone("AKG_c414K", orientation=vec_54_73)
-_, dir_obj_Emic = eigenmike.get_microphone("EM_32_9", orientation=vec_54_73)
+dir_obj_Dmic = akg.get_mic_directivity("AKG_c414K", orientation=vec_54_73)
+dir_obj_Emic = eigenmike.get_mic_directivity("EM_32_9", orientation=vec_54_73)
 
 dir_obj_Cmic = CardioidFamily(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),

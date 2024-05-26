@@ -20,7 +20,7 @@ from ..directivities import DirectionVector, Directivity
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..utilities import requires_matplotlib, resample
 from .interp import spherical_interpolation
-from .sofa import get_sofa_db, open_sofa_file
+from .sofa import open_sofa_file
 
 
 class MeasuredDirectivity(Directivity):
@@ -205,22 +205,43 @@ class MeasuredDirectivityFile:
         source_labels=None,
     ):
         self.path = Path(path)
-        self.mic_labels, self.source_labels = self._set_labels(
-            self.path, mic_labels, source_labels
-        )
 
         if file_reader_callback is None:
+            # default reader is for SOFA files
             file_reader_callback = open_sofa_file
 
         (
             self.impulse_responses,  # (n_sources, n_mics, taps)
-            self.sources_loc,  # (3, n_sources), spherical coordinates
-            self.mics_loc,  # (3, n_mics), cartesian coordinates
             self.fs,
+            self.source_locs,  # (3, n_sources), spherical coordinates
+            self.mic_locs,  # (3, n_mics), cartesian coordinates
+            src_labels_file,
+            mic_labels_file,
         ) = file_reader_callback(
             path=self.path,
             fs=fs,
         )
+
+        if mic_labels is None:
+            self.mic_labels = mic_labels_file
+        else:
+            if len(mic_labels) != self.mic_locs.shape[1]:
+                breakpoint()
+                raise ValueError(
+                    f"Number of labels provided ({len(mic_labels)}) does not match the "
+                    f"number of microphones ({self.mic_locs.shape[1]})"
+                )
+            self.mic_labels = mic_labels
+
+        if source_labels is None:
+            self.source_labels = src_labels_file
+        else:
+            if len(source_labels) != self.source_locs.shape[1]:
+                raise ValueError(
+                    f"Number of labels provided ({len(source_labels)}) does not match "
+                    f"the number of sources ({self.source_locs.shape[1]})"
+                )
+            self.source_labels = source_labels
 
         self.interp_order = interp_order
         self.interp_n_points = interp_n_points
@@ -232,16 +253,6 @@ class MeasuredDirectivityFile:
             )
         else:
             self.interp_grid = None
-
-    def _set_labels(self, path, mic_labels, src_labels):
-        sofa_db = get_sofa_db()
-        if path.stem in sofa_db:
-            info = sofa_db[path.stem]
-            if info.type == "microphones" and mic_labels is None:
-                mic_labels = info.contains
-            elif info.type == "sources" and src_labels is None:
-                src_labels = info.contains
-        return mic_labels, src_labels
 
     def _interpolate(self, type, mid, grid, impulse_responses):
         if self.interp_order is None:
@@ -272,40 +283,57 @@ class MeasuredDirectivityFile:
 
         raise ValueError(f"Measurement id {meas_id} not found")
 
-    def get_microphone(self, measurement_id, orientation, offset=None):
+    def get_mic_position(self, measurement_id):
         mid = self._get_measurement_index(measurement_id, self.mic_labels)
+
+        if not (0 <= mid < self.mic_locs.shape[1]):
+            raise ValueError(f"Microphone id {mid} not found")
+
+        return self.mic_locs[:, mid]
+
+    def get_source_position(self, measurement_id):
+        mid = self._get_measurement_index(measurement_id, self.source_labels)
+
+        if not (0 <= mid < self.source_locs.shape[1]):
+            raise ValueError(f"Source id {mid} not found")
+
+        # convert to cartesian since the sources are stored by
+        # default in spherical coordinates
+        pos = spher2cart(*self.source_locs[:, mid])
+
+        return pos
+
+    def get_mic_directivity(self, measurement_id, orientation):
+        mid = self._get_measurement_index(measurement_id, self.mic_labels)
+
+        if not (0 <= mid < self.mic_locs.shape[1]):
+            raise ValueError(f"Microphone id {mid} not found")
 
         # select the measurements corresponding to the mic id
         ir = self.impulse_responses[:, mid, :]
-        src_grid = GridSphere(spherical_points=self.sources_loc[:2])
-
-        mic_loc = self.mics_loc[:, mid]
-        if offset is not None:
-            mic_loc += offset
+        src_grid = GridSphere(spherical_points=self.source_locs[:2])
 
         # interpolate the IR
         grid, ir = self._interpolate("mic", mid, src_grid, ir)
 
         dir_obj = MeasuredDirectivity(orientation, grid, ir, self.fs)
-        return mic_loc, dir_obj
+        return dir_obj
 
-    def get_source(self, measurement_id, orientation, offset=None):
+    def get_source_directivity(self, measurement_id, orientation):
         mid = self._get_measurement_index(measurement_id, self.source_labels)
+
+        if not (0 <= mid < self.source_locs.shape[1]):
+            raise ValueError(f"Source id {mid} not found")
 
         # select the measurements corresponding to the mic id
         ir = self.impulse_responses[mid, :, :]
 
         # here we need to swap the coordinate types
-        mic_pos = np.array(cart2spher(self.mics_loc))
+        mic_pos = np.array(cart2spher(self.mic_locs))
         mic_grid = GridSphere(spherical_points=mic_pos[:2])
-
-        # source location
-        src_loc = spher2cart(*self.sources_loc[:, mid])
-        if offset is not None:
-            src_loc += offset
 
         # interpolate the IR
         grid, ir = self._interpolate("source", mid, mic_grid, ir)
 
         dir_obj = MeasuredDirectivity(orientation, grid, ir, self.fs)
-        return src_loc, dir_obj
+        return dir_obj

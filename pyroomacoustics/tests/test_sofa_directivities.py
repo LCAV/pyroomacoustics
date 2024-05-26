@@ -198,12 +198,12 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     )
 
     if sofa_info[sofa_file_name]["type"] == "sources":
-        _, directivity = dir_factory.get_source(
+        directivity = dir_factory.get_source_directivity(
             pattern_id,
             orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
         )
     else:
-        _, directivity = dir_factory.get_microphone(
+        directivity = dir_factory.get_mic_directivity(
             pattern_id,
             orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
         )
@@ -211,13 +211,13 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     # add source with figure_eight directivity
     if sofa_info[sofa_file_name]["type"] == "microphones":
         directivity_SRC = None
-        _, directivity_MIC = dir_factory.get_microphone(
+        directivity_MIC = dir_factory.get_mic_directivity(
             pattern_id,
             orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
         )
         directivity = directivity_MIC
     elif sofa_info[sofa_file_name]["type"] == "sources":
-        _, directivity_SRC = dir_factory.get_source(
+        directivity_SRC = dir_factory.get_source_directivity(
             pattern_id,
             orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
         )
@@ -262,7 +262,8 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
             ax.legend()
             fig.savefig(test_file_path.with_suffix(".pdf"))
             plt.close(fig)
-        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
+        else:
+            assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -388,7 +389,7 @@ def test_sofa_two_sides(
         fs=room.fs,
         interp_order=interp_order,
     )
-    _, src_directivity = src_factory.get_source(
+    src_directivity = src_factory.get_source_directivity(
         src_pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
@@ -397,7 +398,7 @@ def test_sofa_two_sides(
         fs=room.fs,
         interp_order=interp_order,
     )
-    _, mic_directivity = mic_factory.get_microphone(
+    mic_directivity = mic_factory.get_mic_directivity(
         mic_pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
@@ -449,7 +450,8 @@ def test_sofa_two_sides(
             abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
         )
 
-        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
+        if not plot_flag:
+            assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
@@ -543,12 +545,12 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
             orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
             pattern_enum=DirectivityPattern.FIGURE_EIGHT,
         )
-        _, directivity_MIC = dir_factory.get_microphone(
+        directivity_MIC = dir_factory.get_mic_directivity(
             pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
         )
         directivity = directivity_MIC
     elif sofa_info[sofa_file_name]["type"] == "sources":
-        _, directivity_SRC = dir_factory.get_source(
+        directivity_SRC = dir_factory.get_source_directivity(
             pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
         )
         directivity_MIC = CardioidFamily(
@@ -597,7 +599,8 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
             abs(reference_data - rir_1_0).max() / abs(reference_data).max(),
         )
 
-        assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
+        if not plot_flag:
+            assert np.allclose(reference_data, rir_1_0, atol=atol, rtol=rtol)
     else:
         warnings.warn("Did not find the reference data. Output was not checked.")
 
