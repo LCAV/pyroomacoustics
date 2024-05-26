@@ -8,8 +8,8 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+dev/dirpat
+----------
 
 Added
 ~~~~~
@@ -33,6 +33,13 @@ Changed
 
 - In ray tracing, the histograms are now linearly interpolated between
   the bins to obtain smoother RIR
+
+`Unreleased`_
+-------------
+
+Changed
+~~~~~~~
+
 - Extra parameter ``energy_thresh`` added to ``pyroomacoustics.experimental.measure_rt60``.
   The energy tail beyond this threshold is discarded which is useful for noisy RIR
   measurements. The default value is 0.95.
@@ -82,6 +89,7 @@ Bugfix
   the more robust winding number algorithm (#345)
 - Fixes usage of deprecated hann window with new version of scipy in
   `metrics.py` (#344) by @mattpitkin
+
 
 `0.7.3`_ - 2022-12-05
 ---------------------
