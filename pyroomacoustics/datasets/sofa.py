@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from .utils import download_multiple, AttrDict
+from .utils import AttrDict, download_multiple
 
 _pra_data_folder = Path(__file__).parents[1] / "data"
 DEFAULT_SOFA_PATH = _pra_data_folder / "sofa"

@@ -26,9 +26,9 @@ from __future__ import division
 import itertools
 
 import numpy as np
+import soxr
 from scipy import signal
 from scipy.io import wavfile
-import soxr
 
 from .doa import cart2spher
 from .parameters import constants, eps
