@@ -2149,9 +2149,9 @@ class Room(object):
         self.visibility = []
 
         for source in self.sources:
-            n_sources = self.room_engine.image_source_model(source.position)
+            n_visible_sources = self.room_engine.image_source_model(source.position)
 
-            if n_sources > 0:
+            if n_visible_sources > 0:
                 # Copy to python managed memory
                 source.images = self.room_engine.sources.copy()
                 source.orders = self.room_engine.orders.copy()
@@ -2181,6 +2181,10 @@ class Room(object):
                     # if not, it's not visible from anywhere!
                     if not self.is_inside(self.mic_array.R[:, m]):
                         self.visibility[-1][m, :] = 0
+            else:
+                # if we are here, this means even the direct path is not visible
+                # we set the visibility of the direct path as 0
+                self.visibility.append(np.zeros((self.mic_array.M, 1)))
 
         # Update the state
         self.simulator_state["ism_done"] = True
@@ -2314,9 +2318,6 @@ class Room(object):
                                 frequency=bw,
                                 degrees=False,
                             )
-
-                        # Use the Cython extension for the fractional delays
-                        # from .build_rir import fast_rir_builder
 
                         vis = self.visibility[s][m, :].astype(np.int32)
                         # we add the delay due to the factional delay filter to
