@@ -33,6 +33,9 @@ Changed
 
 - In ray tracing, the histograms are now linearly interpolated between
   the bins to obtain smoother RIR
+- Extra parameter ``energy_thresh`` added to ``pyroomacoustics.experimental.measure_rt60``.
+  The energy tail beyond this threshold is discarded which is useful for noisy RIR
+  measurements. The default value is 0.95.
 
 `0.7.4`_ - 2024-04-25
 ---------------------
