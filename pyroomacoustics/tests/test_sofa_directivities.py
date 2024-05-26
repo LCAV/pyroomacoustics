@@ -25,13 +25,13 @@ from pyroomacoustics.directivities import (
     CardioidFamily,
     DirectionVector,
     DirectivityPattern,
+    MeasuredDirectivityFile,
 )
-from pyroomacoustics.doa import GridSphere
-from pyroomacoustics.open_sofa_interpolate import (
-    SOFADirectivityFactory,
+from pyroomacoustics.directivities.interp import (
     calculation_pinv_voronoi_cells,
     calculation_pinv_voronoi_cells_general,
 )
+from pyroomacoustics.doa import GridSphere
 
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]
@@ -190,7 +190,7 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     )
 
     # define source with figure_eight directivity
-    dir_factory = SOFADirectivityFactory(
+    dir_factory = MeasuredDirectivityFile(
         path=sofa_file_name,
         fs=room.fs,
         interp_order=interp_order,
@@ -383,7 +383,7 @@ def test_sofa_two_sides(
         min_phase=min_phase,
     )
 
-    src_factory = SOFADirectivityFactory(
+    src_factory = MeasuredDirectivityFile(
         path=src_sofa_file_name,
         fs=room.fs,
         interp_order=interp_order,
@@ -392,7 +392,7 @@ def test_sofa_two_sides(
         src_pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
-    mic_factory = SOFADirectivityFactory(
+    mic_factory = MeasuredDirectivityFile(
         path=mic_sofa_file_name,
         fs=room.fs,
         interp_order=interp_order,
@@ -531,7 +531,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
     )
 
     # define source with figure_eight directivity
-    dir_factory = SOFADirectivityFactory(
+    dir_factory = MeasuredDirectivityFile(
         path=sofa_file_name,
         fs=16000,
         interp_order=interp_order,

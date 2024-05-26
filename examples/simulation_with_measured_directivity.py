@@ -74,11 +74,11 @@ from pyroomacoustics.directivities import (
     CardioidFamily,
     DirectionVector,
     DirectivityPattern,
+    MeasuredDirectivityFile,
 )
-from pyroomacoustics.open_sofa_interpolate import SOFADirectivityFactory
 
-eigenmike = SOFADirectivityFactory("EM32_Directivity", fs=16000)
-akg = SOFADirectivityFactory("AKG_c480_c414_CUBE", fs=16000)
+eigenmike = MeasuredDirectivityFile("EM32_Directivity", fs=16000)
+akg = MeasuredDirectivityFile("AKG_c480_c414_CUBE", fs=16000)
 
 vec_54_73 = DirectionVector(azimuth=54, colatitude=73, degrees=True)
 

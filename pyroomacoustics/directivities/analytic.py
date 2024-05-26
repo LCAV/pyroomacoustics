@@ -1,12 +1,11 @@
-import abc
-import sys
 from enum import Enum
-from pathlib import Path
 
 import numpy as np
 
-from pyroomacoustics.doa import spher2cart
-from pyroomacoustics.utilities import all_combinations, requires_matplotlib
+from ..doa import spher2cart
+from ..utilities import all_combinations, requires_matplotlib
+from .base import Directivity
+from .direction import DirectionVector
 
 
 class DirectivityPattern(Enum):
@@ -27,104 +26,6 @@ class DirectivityPattern(Enum):
     CARDIOID = 0.5
     SUBCARDIOID = 0.75
     OMNI = 1.0
-
-
-class DirectionVector(object):
-    """
-    Object for representing direction vectors in 3D, parameterized by an azimuth and colatitude
-    angle.
-
-    Parameters
-    ----------
-    azimuth : float
-    colatitude : float, optional
-        Default to PI / 2, only XY plane.
-    degrees : bool
-        Whether provided values are in degrees (True) or radians (False).
-    """
-
-    def __init__(self, azimuth, colatitude=None, degrees=True):
-        if degrees is True:
-            azimuth = np.radians(azimuth)
-            if colatitude is not None:
-                colatitude = np.radians(colatitude)
-        self._azimuth = azimuth
-        if colatitude is None:
-            colatitude = np.pi / 2
-        assert colatitude <= np.pi and colatitude >= 0
-
-        self._colatitude = colatitude
-
-        self._unit_v = np.array(
-            [
-                np.cos(self._azimuth) * np.sin(self._colatitude),
-                np.sin(self._azimuth) * np.sin(self._colatitude),
-                np.cos(self._colatitude),
-            ]
-        )
-
-    def get_azimuth(self, degrees=False):
-        if degrees:
-            return np.degrees(self._azimuth)
-        else:
-            return self._azimuth
-
-    def get_colatitude(self, degrees=False):
-        if degrees:
-            return np.degrees(self._colatitude)
-        else:
-            return self._colatitude
-
-    @property
-    def unit_vector(self):
-        """Direction vector in cartesian coordinates."""
-        return self._unit_v
-
-
-class Directivity(abc.ABC):
-    """
-    Abstract class for directivity patterns.
-
-    """
-
-    def __init__(self, orientation):
-        assert isinstance(orientation, DirectionVector)
-        self._orientation = orientation
-
-    @property
-    def is_impulse_response(self):
-        """
-        Indicates whether the array returned has coefficients
-        for octave bands or is a full-size impulse response
-        """
-        return False
-
-    def get_azimuth(self, degrees=True):
-        return self._orientation.get_azimuth(degrees, degrees=degrees)
-
-    def get_colatitude(self, degrees=True):
-        return self._orientation.get_colatitude(degrees, degrees=degrees)
-
-    def set_orientation(self, orientation):
-        """
-        Set orientation of directivity pattern.
-
-        Parameters
-        ----------
-        orientation : DirectionVector
-            New direction for the directivity pattern.
-        """
-        assert isinstance(orientation, DirectionVector)
-        self._orientation = orientation
-
-    @abc.abstractmethod
-    def get_response(
-        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
-    ):
-        """
-        Get response for provided angles and frequency.
-        """
-        return
 
 
 class CardioidFamily(Directivity):

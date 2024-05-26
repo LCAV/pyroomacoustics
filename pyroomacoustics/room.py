@@ -698,10 +698,9 @@ from . import beamforming as bf
 from . import libroom
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily
+from .directivities import CardioidFamily, MeasuredDirectivity
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
-from .open_sofa_interpolate import MeasuredDirectivity
 from .parameters import Material, Physics, constants, eps, make_materials
 from .simulation import compute_ism_rir, compute_rt_rir
 from .soundsource import SoundSource

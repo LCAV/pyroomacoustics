@@ -22,8 +22,8 @@ from pyroomacoustics.directivities import (
     CardioidFamily,
     DirectionVector,
     DirectivityPattern,
+    MeasuredDirectivityFile,
 )
-from pyroomacoustics.open_sofa_interpolate import SOFADirectivityFactory
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     azimuth_deg = -45.0
     colatitude_deg = 90.0
 
-    hrtf = SOFADirectivityFactory(
+    hrtf = MeasuredDirectivityFile(
         path=args.hrtf,
         fs=fs,
         interp_order=args.interp_order,
