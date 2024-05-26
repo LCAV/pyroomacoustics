@@ -100,7 +100,7 @@ def download_uncompress(url, path=".", compression=None, context=None):
     tf.extractall(path)
 
 
-def download_multiple(files_dict, overwrite=False, verbose=False):
+def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False):
     """
     A utility to download multiple files
 
@@ -126,7 +126,13 @@ def download_multiple(files_dict, overwrite=False, verbose=False):
         if verbose:
             print(f"Download {url} -> {path}...", end="")
 
-        urlretrieve(url, path)
+        try:
+            urlretrieve(url, path)
+        except URLError:
+            if no_fail:
+                continue
+            else:
+                raise URLError(f"Failed to download {url}")
 
         if verbose:
             print(" done.")

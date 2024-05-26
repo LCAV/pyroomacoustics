@@ -14,7 +14,7 @@ def get_sofa_db_info():
     return sofa_info
 
 
-def download_sofa_files(path=None, overwrite=False, verbose=False):
+def download_sofa_files(path=None, overwrite=False, verbose=False, no_fail=False):
     """
     Download the SOFA files containing source/receiver impulse responses
 
@@ -46,7 +46,7 @@ def download_sofa_files(path=None, overwrite=False, verbose=False):
         for name, info in sofa_info.items()
         if info["supported"]
     }
-    download_multiple(files, overwrite=overwrite, verbose=verbose)
+    download_multiple(files, overwrite=overwrite, verbose=verbose, no_fail=no_fail)
 
     return list(files.keys())
 
@@ -56,7 +56,8 @@ class SOFADatabase(dict):
         super().__init__()
 
         if download:
-            download_sofa_files(path=self.root)
+            # specify "no_fail" to avoid errors if internet is not available
+            download_sofa_files(path=self.root, no_fail=True)
 
         self._db = {}
         for name, info in get_sofa_db_info().items():
@@ -65,11 +66,31 @@ class SOFADatabase(dict):
                 dict.__setitem__(self, name, AttrDict(info))
                 self[name]["path"] = path
 
+        for path in DEFAULT_SOFA_PATH.glob("*.sofa"):
+            name = path.stem
+            if name not in self:
+                dict.__setitem__(
+                    self,
+                    name,
+                    AttrDict(
+                        {
+                            "path": path,
+                            "supported": "???",
+                            "type": "unknown",
+                            "url": "???",
+                            "homepage": "???",
+                            "license": "???",
+                            "contains": None,
+                        }
+                    ),
+                )
+
     def list(self):
         for name, info in self.items():
             print(f"- {name} ({info.type})")
-            for channel in info.contains:
-                print(f"  - {channel}")
+            if info.contains is not None:
+                for channel in info.contains:
+                    print(f"  - {channel}")
 
     @property
     def root(self):

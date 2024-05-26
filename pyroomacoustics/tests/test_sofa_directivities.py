@@ -108,7 +108,7 @@ all_materials = pra.Material(
 
 
 def test_dirpat_download():
-    files = download_sofa_files(verbose=True)
+    files = download_sofa_files(verbose=True, no_fail=False)
     for file in files:
         assert file.exists()
 

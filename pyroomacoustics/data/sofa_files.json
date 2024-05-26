@@ -94,5 +94,27 @@
       "EM_32_30",
       "EM_32_31"
     ]
+  },
+  "mit_kemar_large_pinna": {
+    "supported": true,
+    "type": "microphones",
+    "url": "http://sofacoustics.org/data/database/mit/mit_kemar_large_pinna.sofa",
+    "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
+    "license": "custom-attribution",
+    "contains": [
+      "left",
+      "right"
+    ]
+  },
+  "mit_kemar_normal_pinna": {
+    "supported": true,
+    "type": "microphones",
+    "url": "http://sofacoustics.org/data/database/mit/mit_kemar_normal_pinna.sofa",
+    "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
+    "license": "custom-attribution",
+    "contains": [
+      "left",
+      "right"
+    ]
   }
 }
