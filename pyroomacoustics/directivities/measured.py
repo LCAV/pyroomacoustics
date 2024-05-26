@@ -1,24 +1,13 @@
 from pathlib import Path
 
 import numpy as np
-
-try:
-    import sofa
-
-    has_sofa = True
-except ImportError:
-    has_sofa = False
-
-import collections
-import math
-
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 
 from ..datasets import SOFADatabase
 from ..directivities import DirectionVector, Directivity
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
-from ..utilities import requires_matplotlib, resample
+from ..utilities import requires_matplotlib
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
 
