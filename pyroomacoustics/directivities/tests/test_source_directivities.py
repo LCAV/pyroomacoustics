@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import FigureEight, DirectionVector
+from pyroomacoustics.directivities import DirectionVector, FigureEight
 
 # create room
 room = pra.ShoeBox(

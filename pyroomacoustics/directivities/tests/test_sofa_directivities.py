@@ -23,10 +23,10 @@ from pyroomacoustics.datasets.sofa import (
 )
 from pyroomacoustics.directivities import (
     CardioidFamily,
-    Rotation3D,
     DirectionVector,
     FigureEight,
     MeasuredDirectivityFile,
+    Rotation3D,
 )
 from pyroomacoustics.directivities.interp import (
     calculation_pinv_voronoi_cells,

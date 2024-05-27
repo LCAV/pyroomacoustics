@@ -30,7 +30,7 @@ import scipy.linalg as la
 from . import transform
 from . import utilities as u
 from . import windows
-from .directivities import Omnidirectional, DirectionVector, Directivity
+from .directivities import DirectionVector, Directivity, Omnidirectional
 from .parameters import constants
 from .soundsource import build_rir_matrix
 

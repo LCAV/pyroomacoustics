@@ -50,12 +50,12 @@ The directivities are described by an object of a class derived from py:class:`p
 
 """
 from .analytic import (
-    CardioidFamily,
     Cardioid,
-    SubCardioid,
-    HyperCardioid,
+    CardioidFamily,
     FigureEight,
+    HyperCardioid,
     Omnidirectional,
+    SubCardioid,
     cardioid_func,
 )
 from .base import Directivity

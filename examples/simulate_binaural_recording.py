@@ -72,7 +72,6 @@ if __name__ == "__main__":
         interp_order=args.interp_order,
         interp_n_points=args.interp_n_points,
     )
-
     orientation = Rotation3D([colatitude_deg, azimuth_deg], "yz", degrees=True)
     dir_left = hrtf.get_mic_directivity("left", orientation=orientation)
     dir_right = hrtf.get_mic_directivity("right", orientation=orientation)

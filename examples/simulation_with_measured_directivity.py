@@ -72,8 +72,8 @@ from scipy.signal import fftconvolve
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
     Cardioid,
-    FigureEight,
     DirectionVector,
+    FigureEight,
     MeasuredDirectivityFile,
     Rotation3D,
 )

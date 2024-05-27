@@ -64,7 +64,6 @@ from ..utilities import all_combinations, requires_matplotlib
 from .base import Directivity
 from .direction import DirectionVector
 
-
 _FIGURE_EIGHT = 0
 _HYPERCARDIOID = 0.25
 _CARDIOID = 0.5
