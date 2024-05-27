@@ -3,11 +3,7 @@ from unittest import TestCase
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.directivities import FigureEight, DirectionVector
 
 # create room
 room = pra.ShoeBox(
@@ -18,9 +14,8 @@ room = pra.ShoeBox(
 )
 
 # define source with figure_eight directivity
-PATTERN = DirectivityPattern.FIGURE_EIGHT
 ORIENTATION = DirectionVector(azimuth=90, colatitude=90, degrees=True)
-directivity = CardioidFamily(orientation=ORIENTATION, pattern_enum=PATTERN)
+directivity = FigureEight(orientation=ORIENTATION)
 
 # add source with figure_eight directivity
 room.add_source([2.5, 2.5, 2.5], directivity=directivity)

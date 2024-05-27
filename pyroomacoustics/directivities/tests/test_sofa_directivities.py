@@ -23,8 +23,9 @@ from pyroomacoustics.datasets.sofa import (
 )
 from pyroomacoustics.directivities import (
     CardioidFamily,
+    Rotation3D,
     DirectionVector,
-    DirectivityPattern,
+    FigureEight,
     MeasuredDirectivityFile,
 )
 from pyroomacoustics.directivities.interp import (
@@ -200,12 +201,14 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     if sofa_info[sofa_file_name]["type"] == "sources":
         directivity = dir_factory.get_source_directivity(
             pattern_id,
-            orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            # orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            orientation=Rotation3D([0.0, 0.0], rot_order="yz"),
         )
     else:
         directivity = dir_factory.get_mic_directivity(
             pattern_id,
-            orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            # orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            orientation=Rotation3D([0.0, 0.0], rot_order="yz"),
         )
 
     # add source with figure_eight directivity
@@ -213,13 +216,15 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
         directivity_SRC = None
         directivity_MIC = dir_factory.get_mic_directivity(
             pattern_id,
-            orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            # orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            orientation=Rotation3D([0.0, 0.0], rot_order="yz"),
         )
         directivity = directivity_MIC
     elif sofa_info[sofa_file_name]["type"] == "sources":
         directivity_SRC = dir_factory.get_source_directivity(
             pattern_id,
-            orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            # orientation=DirectionVector(azimuth=0, colatitude=0, degrees=False),
+            orientation=Rotation3D([0.0, 0.0], rot_order="yz"),
         )
         directivity_MIC = None
         directivity = directivity_SRC
@@ -232,7 +237,8 @@ def test_sofa_one_side(pattern_id, sofa_file_name, min_phase, save_flag, plot_fl
     room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    directivity.set_orientation(DirectionVector(0.0, 0.0))
+    # directivity.set_orientation(DirectionVector(0.0, 0.0))
+    directivity.set_orientation(Rotation3D([0.0, 0.0], rot_order="yz"))
 
     room.compute_rir()
 
@@ -390,7 +396,10 @@ def test_sofa_two_sides(
         interp_order=interp_order,
     )
     src_directivity = src_factory.get_source_directivity(
-        src_pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
+        src_pattern_id,
+        Rotation3D(
+            [0, 0], rot_order="yz"
+        ),  # DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
     mic_factory = MeasuredDirectivityFile(
@@ -399,7 +408,10 @@ def test_sofa_two_sides(
         interp_order=interp_order,
     )
     mic_directivity = mic_factory.get_mic_directivity(
-        mic_pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
+        mic_pattern_id,
+        Rotation3D(
+            [0, 0], rot_order="yz"
+        ),  # DirectionVector(azimuth=0, colatitude=0, degrees=True)
     )
 
     room.add_source([1.52, 0.883, 1.044], directivity=src_directivity)
@@ -408,9 +420,15 @@ def test_sofa_two_sides(
     room.add_microphone([2.31, 1.65, 1.163], directivity=mic_directivity)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    mic_directivity.set_orientation(DirectionVector(np.radians(np.pi), 0, degrees=True))
+    # mic_directivity.set_orientation(DirectionVector(np.radians(np.pi), 0, degrees=True))
+    mic_directivity.set_orientation(
+        Rotation3D([0.0, np.radians(np.pi)], rot_order="yz", degrees=True)
+    )
+    # src_directivity.set_orientation(
+    # DirectionVector(0, np.radians(np.pi / 2.0), degrees=True)
+    # )
     src_directivity.set_orientation(
-        DirectionVector(0, np.radians(np.pi / 2.0), degrees=True)
+        Rotation3D([np.radians(np.pi / 2.0), 0.0], rot_order="yz", degrees=True)
     )
 
     room.compute_rir()
@@ -541,21 +559,21 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
 
     # add source with figure_eight directivity
     if sofa_info[sofa_file_name]["type"] == "microphones":
-        directivity_SRC = CardioidFamily(
+        directivity_SRC = FigureEight(
             orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
-            pattern_enum=DirectivityPattern.FIGURE_EIGHT,
         )
         directivity_MIC = dir_factory.get_mic_directivity(
-            pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
+            pattern_id,  # DirectionVector(azimuth=0, colatitude=0, degrees=True)
+            Rotation3D([0, 0], rot_order="yz"),
         )
         directivity = directivity_MIC
     elif sofa_info[sofa_file_name]["type"] == "sources":
         directivity_SRC = dir_factory.get_source_directivity(
-            pattern_id, DirectionVector(azimuth=0, colatitude=0, degrees=True)
+            pattern_id,  # DirectionVector(azimuth=0, colatitude=0, degrees=True)
+            Rotation3D([0, 0], rot_order="yz", degrees=True),
         )
-        directivity_MIC = CardioidFamily(
+        directivity_MIC = FigureEight(
             orientation=DirectionVector(azimuth=90, colatitude=90, degrees=True),
-            pattern_enum=DirectivityPattern.FIGURE_EIGHT,
         )
         directivity = directivity_SRC
     else:
@@ -567,7 +585,7 @@ def test_sofa_and_cardioid(pattern_id, sofa_file_name, min_phase, save_flag, plo
     room.add_microphone([2.31, 1.65, 1.163], directivity=directivity_MIC)
 
     # Check set different orientation after intailization of the DIRPATRir class
-    directivity.set_orientation(DirectionVector(0.0, 0.0))
+    directivity.set_orientation(Rotation3D([0.0, 0.0], "yz"))
 
     room.compute_rir()
 

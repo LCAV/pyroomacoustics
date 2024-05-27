@@ -31,16 +31,32 @@ that describes cardioid, super-cardioid, and figure-of-eight microphones.
 
 ### Cardioid Family
 
-Cardioid directional patterns are defined by a unit-length direction vector and a parameter :math:`p`
+Object for directivities coming from the
+`cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_.
+In three dimensions, for an orientation given by unit vector :math:`\\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
+and a gain :math:`G`, the pattern is given by the following equation.
 
 .. math::
+    f(\boldsymbol{r}\,;\,\boldsymbol{d}, p, G) = G (p + (1 - p) \boldsymbol{d}^\top \boldsymbol{r}),
 
-    r = a (1 + p \cos \theta)
+Different values of :math:`p` correspond to different patterns: 0 for
+figure-eight, 0.25 for hyper-cardioid, 0.5 for cardioid, 0.75 for
+sub-cardioid, and 1 for omni.
 
-where :math:`a` is the gain and :math:`\theta` is the angle between the direction vector and the source.
+Specialized objects
+:py:class:`~pyroomacoustics.directivities.analytic.Cardioid`,
+:py:class:`~pyroomacoustics.directivities.analytic.FigureEight`,
+:py:class:`~pyroomacoustics.directivities.analytic.SubCardioid`, and
+:py:class:`~pyroomacoustics.directivities.analytic.HyperCardioid` are provided
+for the different patterns.
+The class :py:class:`~pyroomacoustics.directivities.analytic.CardioidFamily` can be used to make
+a pattern with arbitrary parameter :math:`p`.
+
+.. code-block:: python
+    from pyroomacoustics.directivities import CardioidFamily
+
+    dir = Cardioid([0, 0, 1], gain=1.0)
 """
-from enum import Enum
-
 import numpy as np
 
 from ..doa import spher2cart
@@ -49,52 +65,97 @@ from .base import Directivity
 from .direction import DirectionVector
 
 
-class DirectivityPattern(Enum):
-    """
-    Common cardioid patterns and their corresponding coefficient for the expression:
-
-    .. math::
-
-        r = a (1 + \\cos \\theta),
-
-    where :math:`a` is the coefficient that determines the cardioid pattern and :math:`r` yields
-    the gain at angle :math:`\\theta`.
-
-    """
-
-    FIGURE_EIGHT = 0
-    HYPERCARDIOID = 0.25
-    CARDIOID = 0.5
-    SUBCARDIOID = 0.75
-    OMNI = 1.0
+_FIGURE_EIGHT = 0
+_HYPERCARDIOID = 0.25
+_CARDIOID = 0.5
+_SUBCARDIOID = 0.75
+_OMNI = 1.0
 
 
 class CardioidFamily(Directivity):
-    """
+    r"""
     Object for directivities coming from the
     `cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_.
+    In three dimensions, for an orientation given by unit vector :math:`\\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
+    and a gain :math:`G`, the pattern is given by the following equation.
+
+    .. math::
+        f(\boldsymbol{r}\,;\,\boldsymbol{d}, p, G) = G (p + (1 - p) \boldsymbol{d}^\top \boldsymbol{r}),
+
+    Different values of :math:`p` correspond to different patterns: 0 for
+    figure-eight, 0.25 for hyper-cardioid, 0.5 for cardioid, 0.75 for
+    sub-cardioid, and 1 for omni.
+
+    Note that all the patterns are cylindrically symmetric around the
+    orientation vector.
 
     Parameters
     ----------
-    orientation : DirectionVector
+    orientation: DirectionVector or numpy.ndarray
         Indicates direction of the pattern.
-    pattern_enum : DirectivityPattern
-        Desired pattern for the cardioid.
+    p: float
+        Parameter of the cardioid pattern. A value of 0 corresponds to a
+        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
+        pattern
+        The parameter must be between 0 and 1
     gain: float
-        The linear gain of the directivity pattern.
+        The linear gain of the directivity pattern (default is 1.0)
     """
 
-    def __init__(self, orientation, pattern_enum, gain=1.0):
-        Directivity.__init__(self, orientation)
-        self._p = pattern_enum.value
+    def __init__(self, orientation, p, gain=1.0):
+        if isinstance(orientation, list) or hasattr(orientation, "__array__"):
+            orientation = np.array(orientation)
+            # check if valid direction vector, normalize, make object
+            if orientation.shape != (3,):
+                raise ValueError("Orientation must be a 3D vector.")
+            orientation = orientation / np.linalg.norm(orientation)
+            azimuth, colatitude = spher2cart(orientation)  # returns radians
+            self._orientation = DirectionVector(azimuth, colatitude, degrees=False)
+        elif isinstance(orientation, DirectionVector):
+            self._orientation = orientation
+        else:
+            raise ValueError("Orientation must be a DirectionVector or a 3D vector.")
+
+        self._p = p
+        if not 0 <= self._p <= 1:
+            raise ValueError("The parameter p must be between 0 and 1.")
+
         self._gain = gain
-        self._pattern_name = pattern_enum.name
-        self.filter_len_ir = 1
+        self._pattern_name = f"cardioid family, p={self._p}"
+
+    @property
+    def is_impulse_response(self):
+        # this is not an impulse response, do not make docstring to avoid clutter in the
+        # documentation
+        return False
+
+    @property
+    def filter_len_ir(self):
+        # no impulse response means length 1
+        return 1
 
     @property
     def directivity_pattern(self):
         """Name of cardioid directivity pattern."""
         return self._pattern_name
+
+    def get_azimuth(self, degrees=True):
+        return self._orientation.get_azimuth(degrees, degrees=degrees)
+
+    def get_colatitude(self, degrees=True):
+        return self._orientation.get_colatitude(degrees, degrees=degrees)
+
+    def set_orientation(self, orientation):
+        """
+        Set orientation of directivity pattern.
+
+        Parameters
+        ----------
+        orientation : DirectionVector
+            New direction for the directivity pattern.
+        """
+        assert isinstance(orientation, DirectionVector)
+        self._orientation = orientation
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -125,8 +186,8 @@ class CardioidFamily(Directivity):
 
         if colatitude is not None:
             assert len(azimuth) == len(colatitude)
-        if self._p == DirectivityPattern.OMNI:
-            return np.ones(len(azimuth))
+        if self._p == 1.0:
+            return self._gain * np.ones(len(azimuth))
         else:
             coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
 
@@ -236,6 +297,91 @@ class CardioidFamily(Directivity):
             ax.plot(X, Y)
 
         return ax
+
+
+class Cardioid(CardioidFamily):
+    """
+    Cardioid directivity pattern.
+
+    Parameters
+    ----------
+    orientation: DirectionVector
+        Indicates direction of the pattern.
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
+    """
+
+    def __init__(self, orientation, gain=1.0):
+        super().__init__(orientation, p=_CARDIOID, gain=gain)
+        self._pattern_name = "cardioid"
+
+
+class FigureEight(CardioidFamily):
+    """
+    Figure-of-eight directivity pattern.
+
+    Parameters
+    ----------
+    orientation: DirectionVector
+        Indicates direction of the pattern.
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
+    """
+
+    def __init__(self, orientation, gain=1.0):
+        super().__init__(orientation, p=_FIGURE_EIGHT, gain=gain)
+        self._pattern_name = "figure-eight"
+
+
+class SubCardioid(CardioidFamily):
+    """
+    Sub-cardioid directivity pattern.
+
+    Parameters
+    ----------
+    orientation: DirectionVector
+        Indicates direction of the pattern.
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
+    """
+
+    def __init__(self, orientation, gain=1.0):
+        super().__init__(orientation, p=_SUBCARDIOID, gain=gain)
+        self._pattern_name = "sub-cardioid"
+
+
+class HyperCardioid(CardioidFamily):
+    """
+    Hyper-cardioid directivity pattern.
+
+    Parameters
+    ----------
+    orientation: DirectionVector
+        Indicates direction of the pattern.
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
+    """
+
+    def __init__(self, orientation, gain=1.0):
+        CardioidFamily.__init__(self, orientation, p=_HYPERCARDIOID, gain=gain)
+        self._pattern_name = "hyper-cardioid"
+
+
+class Omnidirectional(CardioidFamily):
+    """
+    Hyper-cardioid directivity pattern.
+
+    Parameters
+    ----------
+    orientation: DirectionVector
+        Indicates direction of the pattern.
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
+    """
+
+    def __init__(self, gain=1.0):
+        CardioidFamily.__init__(self, DirectionVector(0.0, 0.0), p=_OMNI, gain=gain)
+        self._pattern_name = "omni"
 
 
 def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):

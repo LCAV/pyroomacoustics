@@ -30,12 +30,7 @@ import scipy.linalg as la
 from . import transform
 from . import utilities as u
 from . import windows
-from .directivities import (
-    CardioidFamily,
-    DirectionVector,
-    Directivity,
-    DirectivityPattern,
-)
+from .directivities import Omnidirectional, DirectionVector, Directivity
 from .parameters import constants
 from .soundsource import build_rir_matrix
 
@@ -306,10 +301,7 @@ def circular_microphone_array_xyplane(
     if directivity is not None:
         assert isinstance(directivity, Directivity)
     else:
-        orientation = DirectionVector(azimuth=0, colatitude=colatitude, degrees=True)
-        directivity = CardioidFamily(
-            orientation=orientation, pattern_enum=DirectivityPattern.OMNI
-        )
+        directivity = Omnidirectional()
 
     # for plotting
     azimuth_plot = None

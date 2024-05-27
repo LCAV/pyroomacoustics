@@ -23,16 +23,41 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 r"""
-# Directional Responses
+## Directional Responses
 
 Real-world microphones and sound sources usually exhibit directional responses.
 That is, the impulse response (or frequency response) depends on the emission
 or reception angle (for sources and microphones, respectively).
+A concrete example is the human ear attached to the head. The left ear is
+typically more sensitive to sounds coming from the left side than from the right.
 
 This sub-module provides an interface to add such directional responses to
 microphones and sources in the room impulse response simulation.
+
+.. warning::
+    The directional responses are currently only supported for the
+    image source method based simulation.
+
+The directivities are described by an object of a class derived from py:class:`pyroomacoustics.directivities.base.Directivity`.
+
+.. code-block:: python
+    from pyroomacoustics.directivities import Directivity
+
+### Analytical Directional Responses
+
+
+### Measured Directional Responses
+
 """
-from .analytic import CardioidFamily, DirectivityPattern, cardioid_func
+from .analytic import (
+    CardioidFamily,
+    Cardioid,
+    SubCardioid,
+    HyperCardioid,
+    FigureEight,
+    Omnidirectional,
+    cardioid_func,
+)
 from .base import Directivity
-from .direction import DirectionVector
+from .direction import DirectionVector, Rotation3D
 from .measured import MeasuredDirectivity, MeasuredDirectivityFile

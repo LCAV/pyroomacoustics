@@ -5,9 +5,10 @@ from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 
 from ..datasets import SOFADatabase
-from ..directivities import DirectionVector, Directivity
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..utilities import requires_matplotlib
+from .base import Directivity
+from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
 
@@ -18,8 +19,8 @@ class MeasuredDirectivity(Directivity):
 
     Parameters
     ----------
-    orientation: DirectionVector
-        The direction of where the directivity should point
+    orientation: Rotation3D
+        A rotation to apply to the pattern
     grid: doa.Grid
         The grid of unit vectors where the measurements were taken
     impulse_responses: np.ndarray, (n_grid, n_ir)
@@ -29,8 +30,13 @@ class MeasuredDirectivity(Directivity):
     """
 
     def __init__(self, orientation, grid, impulse_responses, fs):
-        super().__init__(orientation)
-        assert isinstance(grid, Grid)
+        if not isinstance(orientation, Rotation3D):
+            raise ValueError("Orientation must be a Rotation3D object")
+
+        if not isinstance(grid, Grid):
+            raise ValueError("Grid must be a Grid object")
+
+        self._orientation = orientation
         self._original_grid = grid
         self._irs = impulse_responses
         self.fs = fs
@@ -53,24 +59,17 @@ class MeasuredDirectivity(Directivity):
 
         Parameters
         ----------
-        orientation : DirectionVector
+        orientation : Rotation3D
             New direction for the directivity pattern.
         """
-        assert isinstance(orientation, DirectionVector)
-        n_a = orientation.get_azimuth(degrees=False)
-        n_c = orientation.get_colatitude(degrees=False)
+        if not isinstance(orientation, Rotation3D):
+            raise ValueError("Orientation must be a Rotation3D object")
 
-        R_y = np.array(
-            [[np.cos(n_c), 0, np.sin(n_c)], [0, 1, 0], [-np.sin(n_c), 0, np.cos(n_c)]]
-        )
-        R_z = np.array(
-            [[np.cos(n_a), -np.sin(n_a), 0], [np.sin(n_a), np.cos(n_a), 0], [0, 0, 1]]
-        )
-        res = np.matmul(R_z, R_y)
+        self._orientation = orientation
 
         # rotate the grid and re-build the KD-tree
         self._grid = GridSphere(
-            cartesian_points=np.matmul(res, self._original_grid.cartesian)
+            cartesian_points=self._orientation.rotate(self._original_grid.cartesian)
         )
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.spherical.T)

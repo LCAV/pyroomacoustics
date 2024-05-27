@@ -71,29 +71,28 @@ from scipy.signal import fftconvolve
 
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
-    CardioidFamily,
+    Cardioid,
+    FigureEight,
     DirectionVector,
-    DirectivityPattern,
     MeasuredDirectivityFile,
+    Rotation3D,
 )
 
 eigenmike = MeasuredDirectivityFile("EM32_Directivity", fs=16000)
 akg = MeasuredDirectivityFile("AKG_c480_c414_CUBE", fs=16000)
 
-vec_54_73 = DirectionVector(azimuth=54, colatitude=73, degrees=True)
+rot_54_73 = Rotation3D([73, 54], "yz", degrees=True)
 
-dir_obj_Dmic = akg.get_mic_directivity("AKG_c414K", orientation=vec_54_73)
-dir_obj_Emic = eigenmike.get_mic_directivity("EM_32_9", orientation=vec_54_73)
+dir_obj_Dmic = akg.get_mic_directivity("AKG_c414K", orientation=rot_54_73)
+dir_obj_Emic = eigenmike.get_mic_directivity("EM_32_9", orientation=rot_54_73)
 
-dir_obj_Cmic = CardioidFamily(
+dir_obj_Cmic = FigureEight(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
-    pattern_enum=DirectivityPattern.FIGURE_EIGHT,
 )
 
 
-dir_obj_Csrc = CardioidFamily(
+dir_obj_Csrc = Cardioid(
     orientation=DirectionVector(azimuth=56, colatitude=123, degrees=True),
-    pattern_enum=DirectivityPattern.CARDIOID,
 )
 
 
@@ -163,7 +162,7 @@ room.add_source([1.52, 0.883, 1.044], directivity=dir_obj_Csrc)
 
 room.add_microphone([2.31, 1.65, 1.163], directivity=dir_mic)
 
-dir_mic.set_orientation(DirectionVector(54, 73))
+dir_mic.set_orientation(Rotation3D([73, 54], rot_order="yz"))
 
 
 room.compute_rir()

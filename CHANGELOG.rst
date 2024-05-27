@@ -33,6 +33,10 @@ Changed
 
 - In ray tracing, the histograms are now linearly interpolated between
   the bins to obtain smoother RIR
+- Changed the API of ``CardioidFamily`` to take a float parameter.
+  New class wrappers for ``Cardioid``, ``Hypercardioid``, ``Supercardioid``,
+  ``Bidirectional`` and ``Omnidirectional`` are added in the ``directivity``
+  sub-module.
 
 `Unreleased`_
 -------------

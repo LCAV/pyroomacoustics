@@ -18,12 +18,7 @@ from scipy.io import wavfile
 from scipy.signal import fftconvolve
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-    MeasuredDirectivityFile,
-)
+from pyroomacoustics.directivities import MeasuredDirectivityFile, Rotation3D
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -78,12 +73,8 @@ if __name__ == "__main__":
         interp_n_points=args.interp_n_points,
     )
 
-    orientation = DirectionVector(
-        azimuth=azimuth_deg, colatitude=colatitude_deg, degrees=True
-    )
-
+    orientation = Rotation3D([colatitude_deg, azimuth_deg], "yz", degrees=True)
     dir_left = hrtf.get_mic_directivity("left", orientation=orientation)
-
     dir_right = hrtf.get_mic_directivity("right", orientation=orientation)
 
     room_dim = [6, 6, 2.4]
