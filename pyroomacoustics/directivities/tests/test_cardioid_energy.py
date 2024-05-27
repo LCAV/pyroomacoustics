@@ -1,18 +1,18 @@
 """
 """
+
 import numpy as np
 import pytest
 
-from pyroomacoustics.doa import cart2spher
 from pyroomacoustics.directivities.analytic import (
     CardioidFamily,
     DirectivityPattern,
-    cardioid_func,
     cardioid_energy,
+    cardioid_func,
 )
-from pyroomacoustics.directivities.integration import spherical_integral
 from pyroomacoustics.directivities.direction import DirectionVector
-
+from pyroomacoustics.directivities.integration import spherical_integral
+from pyroomacoustics.doa import cart2spher
 
 PARAMETERS = [(p, G) for p in [0.0, 0.25, 0.5, 0.75, 1.0] for G in [1.0, 0.5, 2.0]]
 

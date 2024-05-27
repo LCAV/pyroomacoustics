@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import SphericalVoronoi
+
 from pyroomacoustics.doa import fibonacci_spherical_sampling
 
 
