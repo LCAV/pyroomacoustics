@@ -1,3 +1,44 @@
+# Directivity module that provides routines to use analytic and mesured directional
+# responses for sources and microphones.
+# Copyright (C) 2020-2024  Robin Scheibler, Satvik Dixit, Eric Bezzam
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
+r"""
+## Analytic Directional Responses
+
+A class of directional responses can be defined analytically.
+Such respones include in particular the cardioid family of patterns
+that describes cardioid, super-cardioid, and figure-of-eight microphones.
+
+### Cardioid Family
+
+Cardioid directional patterns are defined by a unit-length direction vector and a parameter :math:`p`
+
+.. math::
+
+    r = a (1 + p \cos \theta)
+
+where :math:`a` is the gain and :math:`\theta` is the angle between the direction vector and the source.
+"""
 from enum import Enum
 
 import numpy as np
@@ -39,6 +80,8 @@ class CardioidFamily(Directivity):
         Indicates direction of the pattern.
     pattern_enum : DirectivityPattern
         Desired pattern for the cardioid.
+    gain: float
+        The linear gain of the directivity pattern.
     """
 
     def __init__(self, orientation, pattern_enum, gain=1.0):
@@ -87,8 +130,9 @@ class CardioidFamily(Directivity):
         else:
             coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
 
-            resp = self._gain * self._p + (1 - self._p) * np.matmul(
-                self._orientation.unit_vector, coord
+            resp = self._gain * (
+                self._p
+                + (1 - self._p) * np.matmul(self._orientation.unit_vector, coord)
             )
 
             if magnitude:
@@ -200,7 +244,7 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
 
     Parameters
     -----------
-    x: array_like, shape (..., n_dim)
+    x: array_like, shape (n_dim, ...)
          Cartesian coordinates
     direction: array_like, shape (n_dim)
          Direction vector, should be normalized.
@@ -232,3 +276,7 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
         return np.abs(resp)
     else:
         return resp
+
+
+def cardioid_energy(coef, gain=1.0):
+    return gain**2 * (4.0 * np.pi / 3.0) * (4 * coef**2 - 2 * coef + 1)

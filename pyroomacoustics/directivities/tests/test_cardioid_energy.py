@@ -1,0 +1,61 @@
+"""
+"""
+import numpy as np
+import pytest
+
+from pyroomacoustics.doa import cart2spher
+from pyroomacoustics.directivities.analytic import (
+    CardioidFamily,
+    DirectivityPattern,
+    cardioid_func,
+    cardioid_energy,
+)
+from pyroomacoustics.directivities.integration import spherical_integral
+from pyroomacoustics.directivities.direction import DirectionVector
+
+
+PARAMETERS = [(p, G) for p in [0.0, 0.25, 0.5, 0.75, 1.0] for G in [1.0, 0.5, 2.0]]
+
+
+@pytest.mark.parametrize("p,gain", PARAMETERS)
+def test_cardioid_func_energy(p, gain):
+    n_points = 10000
+    direction = np.array([0.0, 0.0, 1.0])
+
+    def func(points):
+        return cardioid_func(points, direction, p, gain=gain) ** 2
+
+    num = spherical_integral(func, n_points)
+    thy = cardioid_energy(p, gain=gain)
+    assert abs(num - thy) < 1e-4
+
+
+PARAMETERS2 = [
+    (p, G)
+    for p in [
+        DirectivityPattern.FIGURE_EIGHT,
+        DirectivityPattern.OMNI,
+        DirectivityPattern.CARDIOID,
+        DirectivityPattern.SUBCARDIOID,
+        DirectivityPattern.HYPERCARDIOID,
+    ]
+    for G in [1.0, 0.5, 2.0]
+]
+
+
+@pytest.mark.parametrize("p,gain", PARAMETERS2)
+def test_cardioid_family_energy(p, gain):
+    n_points = 10000
+    direction = np.array([0.0, 0.0, 1.0])
+
+    e3 = DirectionVector(0.0, 0.0)  # vector pointing up
+
+    card_obj = CardioidFamily(e3, p, gain=gain)
+
+    def func(points):
+        az, co, _ = cart2spher(points)
+        return card_obj.get_response(az, co, degrees=False) ** 2
+
+    num = spherical_integral(func, n_points)
+    thy = cardioid_energy(p.value, gain=gain)
+    assert abs(num - thy) < 1e-4
