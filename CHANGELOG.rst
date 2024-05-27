@@ -50,6 +50,8 @@ Bugfix
 - Fixes a bug in ``beamforming.circular_microphone_array_xyplane`` (#348)
 - Fixes a bug in ``room.Room.plot_rir`` where the x-axis would have the wrong
   ticks when called with ``kind="tf"``
+- Fixes an issue where the ``visibility`` attribute of the room is not
+  set if there are no visible source or image source in the room. (#313)
 
 `0.7.4`_ - 2024-04-25
 ---------------------

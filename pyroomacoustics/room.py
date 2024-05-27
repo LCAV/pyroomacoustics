@@ -2142,9 +2142,9 @@ class Room(object):
         self.visibility = []
 
         for source in self.sources:
-            n_sources = self.room_engine.image_source_model(source.position)
+            n_visible_sources = self.room_engine.image_source_model(source.position)
 
-            if n_sources > 0:  # Number of image source that are generated
+            if n_visible_sources > 0:
                 # Copy to python managed memory
 
                 source.images = (
@@ -2186,6 +2186,10 @@ class Room(object):
                     # if not, it's not visible from anywhere!
                     if not self.is_inside(self.mic_array.R[:, m]):
                         self.visibility[-1][m, :] = 0
+            else:
+                # if we are here, this means even the direct path is not visible
+                # we set the visibility of the direct path as 0
+                self.visibility.append(np.zeros((self.mic_array.M, 1), dtype=np.int32))
 
         # Update the state
         self.simulator_state["ism_done"] = True
