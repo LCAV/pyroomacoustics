@@ -36,13 +36,12 @@ class MeasuredDirectivity(Directivity):
         if not isinstance(grid, Grid):
             raise ValueError("Grid must be a Grid object")
 
-        self._orientation = orientation
         self._original_grid = grid
         self._irs = impulse_responses
         self.fs = fs
 
         # set the initial orientation
-        self.set_orientation(self._orientation)
+        self.set_orientation(orientation)
 
     @property
     def is_impulse_response(self):
@@ -72,7 +71,7 @@ class MeasuredDirectivity(Directivity):
             cartesian_points=self._orientation.rotate(self._original_grid.cartesian)
         )
         # create the kd-tree
-        self._kdtree = cKDTree(self._grid.spherical.T)
+        self._kdtree = cKDTree(self._grid.cartesian.T)
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -97,7 +96,9 @@ class MeasuredDirectivity(Directivity):
             azimuth = np.radians(azimuth)
             colatitude = np.radians(colatitude)
 
-        _, index = self._kdtree.query(np.column_stack((azimuth, colatitude)))
+        cart = spher2cart(azimuth, colatitude)
+
+        _, index = self._kdtree.query(cart.T)
         return self._irs[index, :]
 
     @requires_matplotlib
