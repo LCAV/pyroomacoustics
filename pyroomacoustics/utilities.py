@@ -24,6 +24,7 @@
 from __future__ import division
 
 import itertools
+import functools
 
 import numpy as np
 import soxr
@@ -36,6 +37,7 @@ from .sync import correlate
 
 
 def requires_matplotlib(func):
+    @functools.wraps(func)  # preserves name, docstrings, and signature of function
     def function_wrapper(*args, **kwargs):
         try:
             import matplotlib.pyplot as plt

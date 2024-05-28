@@ -383,7 +383,7 @@ class Omnidirectional(CardioidFamily):
         self._pattern_name = "omni"
 
 
-def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False):
+def cardioid_func(x, direction, p, gain=1.0, normalize=True, magnitude=False):
     """
     One-shot function for computing cardioid response.
 
@@ -392,23 +392,23 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
     x: array_like, shape (n_dim, ...)
          Cartesian coordinates
     direction: array_like, shape (n_dim)
-         Direction vector, should be normalized.
-    coef: float
-         Parameter for the cardioid function.
+         Direction vector, should be normalized
+    p: float
+         Parameter for the cardioid function (between 0 and 1)
     gain: float
-         The gain.
+         The gain
     normalize : bool
-        Whether to normalize coordinates and direction vector.
+        Whether to normalize coordinates and direction vector
     magnitude : bool
-        Whether to return magnitude, default is False.
+        Whether to return magnitude, default is False
 
     Returns
     -------
     resp : :py:class:`~numpy.ndarray`
         Response at provided angles for the speficied cardioid function.
     """
-    assert coef >= 0.0
-    assert coef <= 1.0
+    if not 0.0 <= p <= 1.0:
+        raise ValueError("The parameter p must be between 0 and 1.")
 
     # normalize positions
     if normalize:
@@ -416,12 +416,30 @@ def cardioid_func(x, direction, coef, gain=1.0, normalize=True, magnitude=False)
         direction /= np.linalg.norm(direction)
 
     # compute response
-    resp = gain * (coef + (1 - coef) * np.matmul(direction, x))
+    resp = gain * (p + (1 - p) * np.matmul(direction, x))
     if magnitude:
         return np.abs(resp)
     else:
         return resp
 
 
-def cardioid_energy(coef, gain=1.0):
-    return gain**2 * (4.0 * np.pi / 3.0) * (4 * coef**2 - 2 * coef + 1)
+def cardioid_energy(p, gain=1.0):
+    r"""
+    This function gives the exact value of the surface integral of the cardioid
+    (family) function on the unit sphere
+
+    .. math::
+
+        E(p, G) = \iint_{\mathbb{S}^2} G^2 \left( p + (1 - p) \boldsymbol{d}^\top \boldsymbol{r} \right)^2 d\boldsymbol{r}
+        = \frac{4 \pi}{3} G^2 \left( 4 p^2 - 2 p + 1 \right).
+
+    This can be used to normalize the energy sent/received.
+
+    Parameters
+    ---------
+    p: float
+        The parameter of the cardioid function (between 0 and 1)
+    gain: float
+        The gain of the cardioid function
+    """
+    return gain**2 * (4.0 * np.pi / 3.0) * (4 * p**2 - 2 * p + 1)

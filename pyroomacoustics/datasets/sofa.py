@@ -62,6 +62,9 @@ def is_dirpat(name):
 
 
 def get_sofa_db():
+    """
+    A helper function to quickly load the SOFA database
+    """
     # we want to avoid loading the database multiple times
     global sofa_db
     try:

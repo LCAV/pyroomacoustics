@@ -22,7 +22,7 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 r"""
-`SOFA <https://www.sofaconventions.org/>` is a very flexible file format for storing
+`SOFA <https://www.sofaconventions.org/>`_ is a very flexible file format for storing
 direction impulse responses. This module provides a function to read SOFA files and
 extract the impulse responses in a format that can be used for simulation.
 """

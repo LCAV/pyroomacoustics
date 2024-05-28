@@ -1,5 +1,5 @@
-Directional Source and Microphone Responses
-===========================================
+Directional Sources and Microphones
+===================================
 
 .. automodule:: pyroomacoustics.directivities
    :members:
@@ -26,8 +26,7 @@ Built-in SOFA Files Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: pyroomacoustics.datasets.sofa
-   :members:
-   :show-inheritance:
+   :members: SOFADatabase, get_sofa_db
    :noindex:
 
 

@@ -174,6 +174,29 @@ class MeasuredDirectivity(Directivity):
 
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
+        """
+        Plot the directivity pattern at a given frequency.
+
+        Parameters
+        ----------
+        freq_bin: int
+            The frequency bin to plot
+        n_grid: int
+            The number of points to use for the interpolation grid
+        ax: matplotlib.axes.Axes, optional
+            The axes to plot on. If not provided, a new figure is created
+        depth: bool
+            If ``True``, directive response is both depicted by color and depth
+            of the surface. If ``False``, then only the color map denotes the
+            intensity. (default ``False``)
+        offset: float
+            An offset to apply to the directivity pattern
+
+        Returns
+        -------
+        ax: matplotlib.axes.Axes
+            The axes on which the directivity is plotted
+        """
         import matplotlib.pyplot as plt
         from matplotlib import cm
 
@@ -225,7 +248,7 @@ class MeasuredDirectivity(Directivity):
 class MeasuredDirectivityFile:
     """
     This class reads measured directivities from a
-    `SOFA <https://www.sofaconventions.org>`_ format file.
+    `SOFA`_ format file.
     Optionally, it can perform interpolation of the impulse responses onto a finer grid.
     The interpolation is done in the spherical harmonics domain.
 
