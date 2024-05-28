@@ -7,7 +7,6 @@ from pyroomacoustics.directivities import (
     DirectionVector,
     FigureEight,
     HyperCardioid,
-    Omnidirectional,
     SubCardioid,
 )
 

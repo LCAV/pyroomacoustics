@@ -41,15 +41,15 @@ def spherical_integral(func, n_points):
 
     Parameters
     -----------
-    func: (callable)
+    func: callable
         The function to integrate. It should take an array of shape (3, n_points)
         and return an array of shape (n_points,)
     n_points: int
         The number of points to use for integration
 
-    Returns:
-    -------------------------------
-    value: (np.ndarray)
+    Returns
+    -------
+    value: np.ndarray
         The value of the integral
     """
 
