@@ -23,8 +23,8 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
-import itertools
 import functools
+import itertools
 
 import numpy as np
 import soxr

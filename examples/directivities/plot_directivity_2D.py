@@ -4,11 +4,11 @@ import numpy as np
 from pyroomacoustics import dB
 from pyroomacoustics.directivities import (
     Cardioid,
-    HyperCardioid,
-    SubCardioid,
-    FigureEight,
-    Omnidirectional,
     DirectionVector,
+    FigureEight,
+    HyperCardioid,
+    Omnidirectional,
+    SubCardioid,
 )
 
 orientation = DirectionVector(azimuth=0, colatitude=90, degrees=True)

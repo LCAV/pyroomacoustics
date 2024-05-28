@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pyroomacoustics.directivities import (
-    HyperCardioid,
-    DirectionVector,
-)
+from pyroomacoustics.directivities import DirectionVector, HyperCardioid
 
 orientation = DirectionVector(azimuth=0, colatitude=45, degrees=True)
 
