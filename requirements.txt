@@ -7,3 +7,4 @@ sounddevice
 samplerate
 mir_eval
 python-sofa
+soxr
