@@ -1,3 +1,74 @@
+# Some classes to apply rotate objects or indicate directions in 3D space.
+# Copyright (C) 2022-2024  Prerak Srivastava, Robin Scheibler
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# You should have received a copy of the MIT License along with this program. If
+# not, see <https://opensource.org/licenses/MIT>.
+r"""
+Source and microphone directivities can be measured in an anechoic chamber.
+Such measurements result in a collection of impulse responses or transfer functions
+each associated with a specific source and receiver (i.e., microphone) location.
+The `SOFA file format <https://www.sofaconventions.org>`_ has been proposed
+as a standard for the storage of such measurements.
+
+This sub-module offers a way to read such measurements from (SOFA) files and
+use the measurement to obtain a more faithful simulation.
+
+The workhorse of this module is the class :py:class:`MeasuredDirectivityFile`
+which reads the content of a file and standardize the data for futher use.
+A single SOFA file can contain multiple measurements (for example corresponding
+to different devices). The class provies a method to retrieve measurements
+from individual sources and turn them into a py:class:`MeasuredDirectivity` object
+that can be used to create a py:class:`pyroomacoustics.MicrophoneArray` object
+with this directivity.
+
+Such measurements do not provide impulse responses for every possible impinging
+direction. Instead, during simulation the impulse response closest to the
+desired direction is used instead. To avoid sharp transitions, the py:class:`MeasuredDirectivityFile`
+provides an interpolation method in the spherical harmonics domain.
+This can be activated by providing an order for the interpolation, e.g, `interp_order=12`.
+
+Here is an example of loading a head-related transfer function and load
+the directivities for left and right ears of a dummy head HRTF.
+
+.. code-block:: python
+
+    from pyroomacoustics.directivities import MeasuredDirectivityFile, Rotation3D
+
+    # the file reader object reads the file and optionally performs interpolation
+    # if the file contains multiple directivities, they are all read
+    hrtf = MeasuredDirectivityFile(
+        path="mit_kemar_normal_pinna.sofa",  # SOFA file is in the database
+        fs=fs,
+        interp_order=12,
+        interp_n_points=1000,
+    )
+
+    # orientations can be provided as rotation matrices
+    orientation = Rotation3D([colatitude_deg, azimuth_deg], "yz", degrees=True)
+
+    # we can then choose which directivities we want from the file
+    dir_left = hrtf.get_mic_directivity("left", orientation=orientation)
+    dir_right = hrtf.get_mic_directivity("right", orientation=orientation)
+
+"""
 from pathlib import Path
 
 import numpy as np
@@ -273,6 +344,14 @@ class MeasuredDirectivityFile:
         raise ValueError(f"Measurement id {meas_id} not found")
 
     def get_mic_position(self, measurement_id):
+        """
+        Get the position of source with id `measurement_id`
+
+        Parameters
+        ----------
+        measurement_id: int or str
+            The id of the source
+        """
         mid = self._get_measurement_index(measurement_id, self.mic_labels)
 
         if not (0 <= mid < self.mic_locs.shape[1]):
@@ -281,6 +360,14 @@ class MeasuredDirectivityFile:
         return self.mic_locs[:, mid]
 
     def get_source_position(self, measurement_id):
+        """
+        Get the position of source with id `measurement_id`
+
+        Parameters
+        ----------
+        measurement_id: int or str
+            The id of the source
+        """
         mid = self._get_measurement_index(measurement_id, self.source_labels)
 
         if not (0 <= mid < self.source_locs.shape[1]):
@@ -293,6 +380,16 @@ class MeasuredDirectivityFile:
         return pos
 
     def get_mic_directivity(self, measurement_id, orientation):
+        """
+        Get a directivity for a microphone
+
+        Parameters
+        ----------
+        measurement_id: int or str
+            The id of the microphone
+        orientation: Rotation3D
+            The orientation of the directivity pattern
+        """
         mid = self._get_measurement_index(measurement_id, self.mic_labels)
 
         if not (0 <= mid < self.mic_locs.shape[1]):
@@ -309,6 +406,16 @@ class MeasuredDirectivityFile:
         return dir_obj
 
     def get_source_directivity(self, measurement_id, orientation):
+        """
+        Get a directivity for a source
+
+        Parameters
+        ----------
+        measurement_id: int or str
+            The id of the source
+        orientation: Rotation3D
+            The orientation of the directivity pattern
+        """
         mid = self._get_measurement_index(measurement_id, self.source_labels)
 
         if not (0 <= mid < self.source_locs.shape[1]):

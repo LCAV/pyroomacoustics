@@ -15,14 +15,16 @@ Added
 ~~~~~
 
 - New global parameters to control the octave bands used for simulation.
-  * ``octave_bands_base_freq``: the base frequency used for the octave bands (default ``125 ``),
+
+  - ``octave_bands_base_freq``: the base frequency used for the octave bands (default ``125``),
     note that together with the sampling frequency this will determine the number of sub-bands
     used in simulation.
-  * ``octave_bands_n_fft``: lengths of the octave band filters (current is default ``512``
+  - ``octave_bands_n_fft``: lengths of the octave band filters (current is default ``512``
     but will be changed to ``128`` in the next release)
-  * ``octave_bands_keep_dc``: extends the lowest band to include the DC offset,
+  - ``octave_bands_keep_dc``: extends the lowest band to include the DC offset,
     the current default is ``False`` to match past behavior, but will be changed to
     ``True`` in the next release because the filters have less oscillations this way.
+
 - Simulation with measured directivity responses in SOFA format (limited file types) is
   possible with the image source model.
 - Adds `soxr <https://github.com/dofuuz/python-soxr>`_ as a dependency since resampling
@@ -36,7 +38,7 @@ Changed
 - Changed the API of ``CardioidFamily`` to take a float parameter.
   New class wrappers for ``Cardioid``, ``Hypercardioid``, ``Supercardioid``,
   ``Bidirectional`` and ``Omnidirectional`` are added in the ``directivity``
-  sub-module.
+  sub-module. The enum of type ``DirectivityPattern`` has been removed.
 
 `Unreleased`_
 -------------

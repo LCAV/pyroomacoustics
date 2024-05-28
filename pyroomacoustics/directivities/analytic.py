@@ -23,21 +23,18 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 r"""
-## Analytic Directional Responses
-
 A class of directional responses can be defined analytically.
 Such respones include in particular the cardioid family of patterns
-that describes cardioid, super-cardioid, and figure-of-eight microphones.
-
-### Cardioid Family
-
-Object for directivities coming from the
-`cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_.
-In three dimensions, for an orientation given by unit vector :math:`\\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
-and a gain :math:`G`, the pattern is given by the following equation.
+that describes cardioid, super-cardioid, and figure-of-eight microphones, (see
+`cardioid family <https://en.wikipedia.org/wiki/Microphone>`_, under Polar patterns, with cardioid, hypercardioid, cardioid, subcardioid, figure-eight, and omnidirectional).
+In three dimensions, for an orientation given by unit vector :math:`\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
+and a gain :math:`G`, the response to direction :math:`\boldsymbol{r}` (also a unit vector) is given by the following equation.
 
 .. math::
     f(\boldsymbol{r}\,;\,\boldsymbol{d}, p, G) = G (p + (1 - p) \boldsymbol{d}^\top \boldsymbol{r}),
+
+Note that :math:`\boldsymbol{d}^\top \boldsymbol{r}` is the inner product of two unit
+vectors, that is, the cosine of the angle between them.
 
 Different values of :math:`p` correspond to different patterns: 0 for
 figure-eight, 0.25 for hyper-cardioid, 0.5 for cardioid, 0.75 for
@@ -46,13 +43,16 @@ sub-cardioid, and 1 for omni.
 Specialized objects
 :py:class:`~pyroomacoustics.directivities.analytic.Cardioid`,
 :py:class:`~pyroomacoustics.directivities.analytic.FigureEight`,
-:py:class:`~pyroomacoustics.directivities.analytic.SubCardioid`, and
-:py:class:`~pyroomacoustics.directivities.analytic.HyperCardioid` are provided
+:py:class:`~pyroomacoustics.directivities.analytic.SubCardioid`,
+:py:class:`~pyroomacoustics.directivities.analytic.HyperCardioid`,
+and :py:class:`~pyroomacoustics.directivities.analytic.Omnidirectional` are provided
 for the different patterns.
 The class :py:class:`~pyroomacoustics.directivities.analytic.CardioidFamily` can be used to make
 a pattern with arbitrary parameter :math:`p`.
 
 .. code-block:: python
+
+    # a cardioid pointing toward the ``z`` direction
     from pyroomacoustics.directivities import CardioidFamily
 
     dir = Cardioid([0, 0, 1], gain=1.0)
@@ -74,7 +74,7 @@ _OMNI = 1.0
 class CardioidFamily(Directivity):
     r"""
     Object for directivities coming from the
-    `cardioid family <https://en.wikipedia.org/wiki/Microphone#Cardioid,_hypercardioid,_supercardioid,_subcardioid>`_.
+    `cardioid family`_.
     In three dimensions, for an orientation given by unit vector :math:`\\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
     and a gain :math:`G`, the pattern is given by the following equation.
 
@@ -165,17 +165,17 @@ class CardioidFamily(Directivity):
         Parameters
         ----------
         azimuth : array_like
-            Azimuth in degrees
+            Azimuth
         colatitude : array_like, optional
-            Colatitude in degrees. Default is to be on XY plane.
+            Colatitude. Default is to be on XY plane.
         magnitude : bool, optional
             Whether to return magnitude of response.
         frequency : float, optional
             For which frequency to compute the response. Cardioid are frequency-independent so this
             value has no effect.
         degrees : bool, optional
-            Whether provided angles are in degrees.
-
+            If ``True``, ``azimuth`` and ``colatitude`` are in degrees.
+            Otherwise, they are in radians.
 
         Returns
         -------

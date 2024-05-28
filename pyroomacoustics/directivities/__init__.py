@@ -23,8 +23,6 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 r"""
-## Directional Responses
-
 Real-world microphones and sound sources usually exhibit directional responses.
 That is, the impulse response (or frequency response) depends on the emission
 or reception angle (for sources and microphones, respectively).
@@ -38,16 +36,46 @@ microphones and sources in the room impulse response simulation.
     The directional responses are currently only supported for the
     image source method based simulation.
 
-The directivities are described by an object of a class derived from py:class:`pyroomacoustics.directivities.base.Directivity`.
+The directivities are described by an object of a class derived from :py:class:`~pyroomacoustics.directivities.base.Directivity`.
+
+Let's dive right in with an example.
+Here, we simulate a shoebox room with a cardioid source and a dummy head
+receiver with two ears (i.e., microphones). This simulates a binaural response.
 
 .. code-block:: python
-    from pyroomacoustics.directivities import Directivity
 
-### Analytical Directional Responses
+    import pyroomacoustics as pra
 
+    room = pra.ShoeBox(
+        p=[5, 3, 3],
+        materials=pra.Material(energy_absorption),
+        fs=16000,
+        max_order=40,
+    )
 
-### Measured Directional Responses
+    # add a cardioid source
+    dir = pra.directivities.Cardioid(DirectionVector(azimuth=-65, colatitude=90) , gain=1.0)
+    room.add_source([3.75, 2.13, 1.41], directivity=dir)
 
+    # add a dummy head receiver from the MIT KEMAR database
+    hrtf = MeasuredDirectivityFile(
+        path="mit_kemar_normal_pinna.sofa",  # SOFA file is in the database
+        fs=room.fs,
+        interp_order=12,  # interpolation order
+        interp_n_points=1000,  # number of points in the interpolation grid
+    )
+
+    # provide the head rotation
+    orientation = Rotation3D([90.0, 30.0], "yz", degrees=True)
+
+    # choose and interpolate the directivities
+    dir_left = hrtf.get_mic_directivity("left", orientation=orientation)
+    dir_right = hrtf.get_mic_directivity("right", orientation=orientation)
+
+    # for a head-related transfer function, the microphone should be co-located
+    mic_pos = [1.05, 1.74, 1.81]
+    room.add_microphone(mic_pos, directivity=dir)
+    room.add_microphone(mic_pos, directivity=dir)
 """
 from .analytic import (
     Cardioid,

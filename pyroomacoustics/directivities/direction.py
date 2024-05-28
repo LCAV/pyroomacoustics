@@ -1,5 +1,5 @@
 # Some classes to apply rotate objects or indicate directions in 3D space.
-# Copyright (C) 2024  Robin Scheibler
+# Copyright (C) 2020-2024  Robin Scheibler, Satvik Dixit, Eric Bezzam
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,19 @@
 #
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
+r"""
+Using directivities makes sources and microphones having a different response
+depending on the location of other objects. This means that their orientation
+in 3D space matters.
+
+Some types of directivities such as ``CardioidFamily`` and derived classes
+are defined only by a vector (i.e., direction). The response is then symmetric
+around the axis defined by this vector.
+
+However, in general, not all directivities are symmetric in this way.
+For the general case, the orientation can be defined by `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`_.
+This is implemented in the class :py:class:`pyroomacoustics.direction.Rotation3D`.
+"""
 import numpy as np
 
 
