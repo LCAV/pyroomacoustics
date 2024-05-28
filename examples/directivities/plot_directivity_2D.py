@@ -3,9 +3,12 @@ import numpy as np
 
 from pyroomacoustics import dB
 from pyroomacoustics.directivities import (
-    CardioidFamily,
+    Cardioid,
+    HyperCardioid,
+    SubCardioid,
+    FigureEight,
+    Omnidirectional,
     DirectionVector,
-    DirectivityPattern,
 )
 
 orientation = DirectionVector(azimuth=0, colatitude=90, degrees=True)
@@ -18,11 +21,11 @@ angles = np.radians(angles)
 # plot each pattern
 fig = plt.figure()
 ax = plt.subplot(111, projection="polar")
-for pattern in DirectivityPattern:
-    dir_obj = CardioidFamily(orientation=orientation, pattern_enum=pattern)
+for obj in [SubCardioid, Cardioid, HyperCardioid, FigureEight]:
+    dir_obj = obj(orientation=orientation)
     resp = dir_obj.get_response(azimuth=angles, magnitude=True, degrees=False)
     resp_db = dB(np.array(resp))
-    ax.plot(angles, resp_db, label=pattern.name)
+    ax.plot(angles, resp_db, label=dir_obj.directivity_pattern)
 
 plt.legend(bbox_to_anchor=(1, 1))
 plt.ylim([lower_gain, 0])

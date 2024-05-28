@@ -33,13 +33,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source",
         type=Path,
-        default=Path(__file__).parent / "input_samples/cmu_arctic_us_axb_a0004.wav",
+        default=Path(__file__).parents[1] / "input_samples/cmu_arctic_us_axb_a0004.wav",
         help="Path to speech or other source audio file",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(__file__).parent
+        default=Path(__file__).parents[1]
         / "output_samples/simulate_binaural_recording.wav",
         help="Path to output file",
     )

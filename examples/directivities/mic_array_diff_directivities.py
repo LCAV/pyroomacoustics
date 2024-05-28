@@ -3,23 +3,20 @@ import numpy as np
 
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
-    CardioidFamily,
+    Cardioid,
+    HyperCardioid,
     DirectionVector,
-    DirectivityPattern,
 )
 
-dir_1 = CardioidFamily(
+dir_1 = Cardioid(
     orientation=DirectionVector(azimuth=180, colatitude=30, degrees=True),
-    pattern_enum=DirectivityPattern.HYPERCARDIOID,
 )
-dir_2 = CardioidFamily(
+dir_2 = HyperCardioid(
     orientation=DirectionVector(azimuth=0, colatitude=30, degrees=True),
-    pattern_enum=DirectivityPattern.HYPERCARDIOID,
 )
 # source_dir = None
-source_dir = CardioidFamily(
+source_dir = HyperCardioid(
     orientation=DirectionVector(azimuth=45, colatitude=90, degrees=True),
-    pattern_enum=DirectivityPattern.CARDIOID,
 )
 
 # create room
