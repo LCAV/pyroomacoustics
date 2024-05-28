@@ -2017,6 +2017,9 @@ class Room(object):
         if self.simulator_state["rt_needed"] and directivity is not None:
             raise NotImplementedError("Directivity not supported with ray tracing.")
 
+        if self.dim != 3 and directivity is not None:
+            raise NotImplementedError("Directivity is only supported for 3D rooms.")
+
         # make sure this is a
         loc = np.array(loc)
 
@@ -2053,6 +2056,9 @@ class Room(object):
         if self.simulator_state["rt_needed"] and directivity is not None:
             raise NotImplementedError("Directivity not supported with ray tracing.")
 
+        if self.dim != 3 and directivity is not None:
+            raise NotImplementedError("Directivity is only supported for 3D rooms.")
+
         if not isinstance(mic_array, MicrophoneArray):
             # if the type is not a microphone array, try to parse a numpy array
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
@@ -2088,6 +2094,9 @@ class Room(object):
 
         if self.simulator_state["rt_needed"] and directivity is not None:
             raise NotImplementedError("Directivity not supported with ray tracing.")
+
+        if self.dim != 3 and directivity is not None:
+            raise NotImplementedError("Directivity is only supported for 3D rooms.")
 
         if directivity is not None:
             from pyroomacoustics import ShoeBox

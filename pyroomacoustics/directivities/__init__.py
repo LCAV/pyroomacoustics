@@ -36,6 +36,10 @@ microphones and sources in the room impulse response simulation.
     The directional responses are currently only supported for the
     image source method based simulation.
 
+.. warning::
+    Directional responses are only supported for 3D rooms.
+
+
 The directivities are described by an object of a class derived from :py:class:`~pyroomacoustics.directivities.base.Directivity`.
 
 Let's dive right in with an example.
