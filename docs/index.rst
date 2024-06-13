@@ -14,6 +14,7 @@ Table of contents
   contributing
   changelog
   pyroomacoustics.room
+  pyroomacoustics.directivities
   pyroomacoustics.materials.database
   pyroomacoustics.transform
   pyroomacoustics.datasets

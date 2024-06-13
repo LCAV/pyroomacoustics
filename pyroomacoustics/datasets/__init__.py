@@ -140,4 +140,5 @@ Example 3 (Google's Speech Commands Dataset)
 from .base import AudioSample, Dataset, Meta, Sample
 from .cmu_arctic import CMUArcticCorpus, CMUArcticSentence, cmu_arctic_speakers
 from .google_speech_commands import GoogleSample, GoogleSpeechCommands
+from .sofa import SOFADatabase, download_sofa_files
 from .timit import Sentence, TimitCorpus, Word

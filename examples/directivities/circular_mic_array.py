@@ -1,11 +1,7 @@
 import matplotlib.pyplot as plt
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.directivities import Cardioid, DirectionVector
 
 three_dim = True  # 2D or 3D
 
@@ -28,9 +24,8 @@ room = pra.ShoeBox(p=room_dim)
 room.add_source(source_loc)
 
 # add circular microphone array
-pattern = DirectivityPattern.CARDIOID
 orientation = DirectionVector(azimuth=mic_rotation, colatitude=colatitude, degrees=True)
-directivity = CardioidFamily(orientation=orientation, pattern_enum=pattern)
+directivity = Cardioid(orientation=orientation)
 mic_array = pra.beamforming.circular_microphone_array_xyplane(
     center=center,
     M=7,

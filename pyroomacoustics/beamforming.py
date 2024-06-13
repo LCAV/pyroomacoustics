@@ -24,20 +24,13 @@
 
 from __future__ import division
 
-import copy
-
 import numpy as np
 import scipy.linalg as la
 
 from . import transform
 from . import utilities as u
 from . import windows
-from .directivities import (
-    CardioidFamily,
-    DirectionVector,
-    Directivity,
-    DirectivityPattern,
-)
+from .directivities import DirectionVector, Directivity, Omnidirectional
 from .parameters import constants
 from .soundsource import build_rir_matrix
 
@@ -308,10 +301,7 @@ def circular_microphone_array_xyplane(
     if directivity is not None:
         assert isinstance(directivity, Directivity)
     else:
-        orientation = DirectionVector(azimuth=0, colatitude=colatitude, degrees=True)
-        directivity = CardioidFamily(
-            orientation=orientation, pattern_enum=DirectivityPattern.OMNI
-        )
+        directivity = Omnidirectional()
 
     # for plotting
     azimuth_plot = None
@@ -345,6 +335,7 @@ def circular_microphone_array_xyplane(
 # =========================================================================
 # Classes (microphone array and beamformer related)
 # =========================================================================
+import copy
 
 
 class MicrophoneArray(object):
@@ -372,14 +363,15 @@ class MicrophoneArray(object):
         self.R = R  # array geometry
 
         self.fs = fs  # sampling frequency of microphones
-        self.directivity = None
-
-        if directivity is not None:
-            self.set_directivity(directivity)
+        self.set_directivity(directivity)
 
         self.signals = None
 
         self.center = np.mean(R, axis=1, keepdims=True)
+
+    @property
+    def is_directive(self):
+        return any([d is not None for d in self.directivity])
 
     def set_directivity(self, directivities):
         """
@@ -399,7 +391,7 @@ class MicrophoneArray(object):
             self.directivity = directivities
         else:
             # only 1 directivity specified
-            assert isinstance(directivities, Directivity)
+            assert directivities is None or isinstance(directivities, Directivity)
             self.directivity = [directivities] * self.nmic
 
     def record(self, signals, fs):
@@ -462,8 +454,8 @@ class MicrophoneArray(object):
             if true, normalize the signal to fit in the dynamic range (default
             `False`)
         bitdepth: int, optional
-            the format of output samples [np.int8/16/32/64 or np.float
-            (default)]
+            the format of output samples [np.int8/16/32/64 or
+            float (default)/np.float32/np.float64]
         """
         from scipy.io import wavfile
 
@@ -472,7 +464,7 @@ class MicrophoneArray(object):
         else:
             signal = self.signals.T  # each column is a channel
 
-        float_types = [float, np.float32, np.float64]
+        float_types = [float, float, np.float32, np.float64]
 
         if bitdepth in float_types:
             bits = None
@@ -509,6 +501,7 @@ class MicrophoneArray(object):
         """
         if isinstance(locs, MicrophoneArray):
             self.R = np.concatenate((self.R, locs.R), axis=1)
+            self.directivity += locs.directivity
         else:
             self.R = np.concatenate((self.R, locs), axis=1)
 

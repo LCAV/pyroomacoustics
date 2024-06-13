@@ -10,7 +10,7 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import great_circ_dist
+from .utils import cart2spher, fibonacci_spherical_sampling, great_circ_dist, spher2cart
 
 
 class Grid:
@@ -37,6 +37,9 @@ class Grid:
         self.colatitude = self.spherical[1, :]
         self.dim = 0
         self.values = None
+
+    def __len__(self):
+        return self.cartesian.shape[1]
 
     @abstractmethod
     def apply(self, func, spherical=False):
@@ -143,8 +146,10 @@ class GridCircle(Grid):
 
 class GridSphere(Grid):
     """
-    This function computes nearly equidistant points on the sphere
-    using the fibonacci method
+    This object represents a grid of points of the sphere.
+
+    If the points are not provided, pseudo-uniform points computed
+    according to the Fibonnaci method are used.
 
     Parameters
     ----------
@@ -152,7 +157,16 @@ class GridSphere(Grid):
         The number of points to sample
     spherical_points: ndarray, optional
         A 2 x n_points array of spherical coordinates with azimuth in
-        the top row and colatitude in the second row. Overrides n_points.
+        the top row and colatitude in the second row. Overrides ``n_points``
+        and ``cartesian_points``.
+    cartesian_points: ndarray, optional
+        A 3 x n_points array of Cartesian coordinates with x, y, z coordinates
+        in the rows. The vectors are normalized to unit-norm in the constructor.
+        Overrides ``n_points``.
+    precompute_neighbors: bool, optional
+        If `True`, the convex hull algorithm is used to find all
+        the neighbors of the grid points. This is used for the peak finding
+        algorithm.
 
     References
     ----------
@@ -160,12 +174,21 @@ class GridSphere(Grid):
     http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
     """
 
-    def __init__(self, n_points=1000, spherical_points=None):
+    def __init__(
+        self,
+        n_points=1000,
+        spherical_points=None,
+        cartesian_points=None,
+        precompute_neighbors=False,
+    ):
         if spherical_points is not None:
             if spherical_points.ndim != 2 or spherical_points.shape[0] != 2:
                 raise ValueError("spherical_points must be a 2D array with two rows.")
-
             n_points = spherical_points.shape[1]
+        elif cartesian_points is not None:
+            if cartesian_points.ndim != 2 or cartesian_points.shape[0] != 3:
+                raise ValueError("cartesian_points must be a 3D array with two rows.")
+            n_points = cartesian_points.shape[1]
 
         # Parent constructor
         Grid.__init__(self, n_points)
@@ -173,36 +196,37 @@ class GridSphere(Grid):
         self.dim = 3
 
         if spherical_points is not None:
-            # If a list of points was provided, use it
-
             self.spherical[:, :] = spherical_points
+            self.cartesian[:] = spher2cart(self.azimuth, self.colatitude)
 
-            # transform to cartesian coordinates
-            self.x[:] = np.cos(self.azimuth) * np.sin(self.colatitude)
-            self.y[:] = np.sin(self.azimuth) * np.sin(self.colatitude)
-            self.z[:] = np.cos(self.colatitude)
+        elif cartesian_points is not None:
+            # normalize all
+            norms = np.linalg.norm(cartesian_points, axis=0, keepdims=True)
+            self.cartesian[:] = cartesian_points / norms
+            self.azimuth[:], self.colatitude[:], _ = cart2spher(self.cartesian)
 
         else:
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            # Fibonnaci sampling
-            offset = 2.0 / n_points
-            increment = np.pi * (3.0 - np.sqrt(5.0))
-
-            self.z[:] = (np.arange(n_points) * offset - 1) + offset / 2
-            rho = np.sqrt(1.0 - self.z**2)
-
-            phi = np.arange(n_points) * increment
-
-            self.x[:] = np.cos(phi) * rho
-            self.y[:] = np.sin(phi) * rho
+            self.x, self.y, self.z = fibonacci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
             self.azimuth[:] = np.arctan2(self.y, self.x)
             self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
 
+        self._neighbors = None
+        if precompute_neighbors:
+            self._compute_neighbors()
+
+    @property
+    def neighbors(self):
+        if self._neighbors is None:
+            self._compute_neighbors()
+        return self._neighbors
+
+    def _compute_neighbors(self):
         # To perform the peak detection in 2D on a non-squared grid it is
         # necessary to know the neighboring points of each grid point.  The
         # Convex Hull of points on the sphere is equivalent to the Delauney
@@ -226,7 +250,7 @@ class GridSphere(Grid):
             adjacency[tri[2]].add(tri[1])
 
         # convert to list of lists
-        self.neighbors = [list(x) for x in adjacency]
+        self._neighbors = [list(x) for x in adjacency]
 
     def apply(self, func, spherical=False):
         """

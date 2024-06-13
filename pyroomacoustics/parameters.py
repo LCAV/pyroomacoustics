@@ -79,6 +79,9 @@ _constants_default = {
     "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
     "sinc_lut_granularity": 20,  # num. points in integer interval in the sinc interp. LUT
     "num_threads": get_num_threads(),  # num. of threads to use
+    "octave_bands_n_fft": 512,
+    "octave_bands_base_freq": 125.0,
+    "octave_bands_keep_dc": False,
 }
 
 

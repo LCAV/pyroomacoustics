@@ -52,6 +52,7 @@ MOCK_MODULES = [
     "mpl_toolkits.mplot3d",
     "joblib",
     "scipy.io",
+    "soxr",
 ]
 
 try:
