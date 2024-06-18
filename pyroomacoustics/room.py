@@ -2258,7 +2258,8 @@ class Room(object):
 
                     # compute the distance from image sources
                     dist = np.sqrt(np.sum((src.images - mic[:, None]) ** 2, axis=0))
-                    time = dist / self.c
+                    # the RIR building routine works in float32, so we cast here
+                    time = (dist / self.c).astype(np.float32)
                     t_max = time.max()
                     N = int(math.ceil(t_max * self.fs))
 

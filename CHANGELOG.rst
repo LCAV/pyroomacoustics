@@ -26,6 +26,8 @@ Bugfix
   ticks when called with ``kind="tf"``
 - Fixes an issue where the ``visibility`` attribute of the room is not
   set if there are no visible source or image source in the room. (#313)
+- Fixes issue with cast reflections delays to float32 in room.py (#353)
+- Fixes calls to ``numpy.linalg.solve`` with Numpy 2.0 API
 
 `0.7.4`_ - 2024-04-25
 ---------------------
