@@ -159,7 +159,7 @@ def ilrma(
             C = np.matmul((X * iR[s, :, None, :]), np.conj(X.swapaxes(1, 2))) / n_frames
 
             WV = np.matmul(W, C)
-            W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))
+            W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, [s]]))[..., 0]
 
             # normalize
             denom = np.matmul(

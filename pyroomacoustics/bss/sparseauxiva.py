@@ -148,7 +148,7 @@ def sparseauxiva(
             W_H = np.conj(np.swapaxes(W, 1, 2))
             WV = np.matmul(W_H, V[:, s, :, :])
             rhs = I[None, :, s][[0] * WV.shape[0], :]
-            W[:, :, s] = np.linalg.solve(WV, rhs)
+            W[:, :, s] = np.linalg.solve(WV, rhs[..., None])[..., 0]
 
             # normalize
             P1 = np.conj(W[:, :, s])

@@ -175,8 +175,8 @@ def fastmnmf(
 
                 try:
                     tmp_FM = np.linalg.solve(
-                        np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, m]
-                    )
+                        np.matmul(Q_FMM, V_FMM), np.eye(n_chan)[None, :, [m]]
+                    )[..., 0]
                 except np.linalg.LinAlgError:
                     # If Gaussian elimination fails due to a singlular matrix, we
                     # switch to the pseudo-inverse solution
