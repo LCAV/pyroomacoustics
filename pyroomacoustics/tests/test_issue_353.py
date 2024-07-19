@@ -39,3 +39,41 @@ def test_issue_353():
     room.add_microphone_array(mic_array_in_room)
 
     room.compute_rir()
+
+def test_issue_353_2():
+    rt60_tgt = 0.451734045124395  # seconds
+    room_dim = [
+                2.496315595944846,
+                2.2147285947364708,
+                3.749472153652182
+            ]  # meters
+
+    fs = 16000
+
+    e_absorption, max_order = pra.inverse_sabine(rt60_tgt, room_dim)
+
+    room = pra.ShoeBox(
+        room_dim, fs=fs, materials=pra.Material(e_absorption), max_order=max_order
+    )
+
+    room.add_source([
+                    0.24784311631630576,
+                    1.690743273038349,
+                    1.9570721698068267
+                ])
+
+    mic_array = np.array([
+                [
+                    0.46378325918698565,
+                ],
+                [
+                    1.5657207092343373,
+                ],
+                [
+                    3.015697444447528,
+                ]
+            ])
+
+    room.add_microphone_array(mic_array)
+
+    room.compute_rir()
