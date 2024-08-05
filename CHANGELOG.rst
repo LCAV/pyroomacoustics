@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes the default value of `energy_thres` in `experimental.rt60` to match the
+  previous behavior of the function (issue #358)
 
 `0.7.5`_ - 2024-06-18
 ---------------------
