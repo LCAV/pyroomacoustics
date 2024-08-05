@@ -18,6 +18,8 @@ Bugfix
   previous behavior of the function (issue #358)
 - Further fixes issue with cast reflections delays to float32 in room.py (#353)
   which was not fully fixed by the previous update
+- Fixes calls to deprecated API of ``scipy.linalg.eigh``
+- Fixes use of deprecated feature of numpy (conversion of singleton array to scalar)
 
 `0.7.5`_ - 2024-06-18
 ---------------------

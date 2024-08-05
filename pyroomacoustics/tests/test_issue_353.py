@@ -132,7 +132,7 @@ params = (
 def test_issue_353_3(room_dims, abs_coeff, spkr_pos, mic_pos, max_order):
     room = pra.ShoeBox(
         room_dims,
-        fs=8000,
+        fs=16000,
         materials=pra.Material(abs_coeff),
         max_order=max_order,
         use_rand_ism=False,
