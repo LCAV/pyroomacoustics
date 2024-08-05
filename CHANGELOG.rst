@@ -11,7 +11,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes the default value of ``energy_thres`` in ``experimental.rt60`` to match the
+  previous behavior of the function (issue #358)
+- Further fixes issue with cast reflections delays to float32 in room.py (#353)
+  which was not fully fixed by the previous update
+- Fixes calls to deprecated API of ``scipy.linalg.eigh``
+- Fixes use of deprecated feature of numpy (conversion of singleton array to scalar)
 
 `0.7.5`_ - 2024-06-18
 ---------------------

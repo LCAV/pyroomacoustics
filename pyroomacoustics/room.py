@@ -2283,7 +2283,13 @@ class Room(object):
                     N = int(math.ceil(t_max * self.fs / hbss) * hbss)
 
                 # this is where we will compose the RIR
-                ir = np.zeros(N + fdl)
+
+                # here we create an array of the right length to
+                # receiver the full RIR
+                # the +1 is due to some rare cases where numerical
+                # errors push the last sample over the end of the
+                # array
+                ir = np.zeros(N + fdl + 1)
 
                 # This is the distance travelled wrt time
                 distance_rir = np.arange(N) / self.fs * self.c

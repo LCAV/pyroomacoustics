@@ -208,7 +208,7 @@ def edm_line_search(R, tdoa, bounds, steps):
     for i in range(d.shape[0]):
         D[-1, :-1] = D[:-1, -1] = (dif + d[i]) ** 2
         w = np.sort(np.abs(la.eigh(D, eigvals_only=True)))
-        # w = la.eigh(D, eigvals_only=True, eigvals=(D.shape[0]-6,D.shape[0]-6))
+        # w = la.eigh(D, eigvals_only=True, subset_by_index=(D.shape[0]-6,D.shape[0]-6))
         cost[i] = np.sum(w[: D.shape[0] - 5])
 
     return cost, d
