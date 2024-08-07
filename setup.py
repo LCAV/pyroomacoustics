@@ -75,8 +75,6 @@ ext_modules = [
             "-Wall",
             "-O3",
             "-DEIGEN_NO_DEBUG",
-            # see https://github.com/microsoft/STL/issues/4875
-            "-D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
         ],
     ),
     Extension(
@@ -132,8 +130,9 @@ def cpp_flag(compiler):
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
+    # see https://github.com/microsoft/STL/issues/4875
     c_opts = {
-        "msvc": ["/EHsc"],
+        "msvc": ["/EHsc", "/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"],
         "unix": [],
     }
 
