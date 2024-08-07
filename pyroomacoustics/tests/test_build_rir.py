@@ -85,8 +85,8 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
     # the number of samples needed
     N = int(np.ceil(time.max() * fs) + fdl + 1)
 
-    ir_ref = np.zeros(N)
-    ir_cython = np.zeros(N)
+    ir_ref = np.zeros(N + 1)
+    ir_cython = np.zeros(N + 1)
 
     ir_cpp_f = ir_cython.astype(np.float32)
 
@@ -132,10 +132,10 @@ def test_short():
     if not build_rir_available:
         return
 
-    N = 100
+    N = 101
     fs = 16000
     fdl = 81
-    rir = np.zeros(N, dtype=np.float32)
+    rir = np.zeros(N + 1, dtype=np.float32)
 
     time = np.array([0.0], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
@@ -163,7 +163,7 @@ def test_long():
     N = 100
     fs = 16000
     fdl = 81
-    rir = np.zeros(N, dtype=np.float32)
+    rir = np.zeros(N + 1, dtype=np.float32)
 
     time = np.array([(N - 1) / fs], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
@@ -182,7 +182,7 @@ def test_errors():
     N = 300
     fs = 16000
     fdl = 81
-    rir = np.zeros(N, dtype=np.float32)
+    rir = np.zeros(N + 1, dtype=np.float32)
 
     time = np.array([100 / fs, 200 / fs], dtype=np.float32)
     alpha = np.array([1.0, 1.0], dtype=np.float32)
@@ -208,8 +208,8 @@ def test_delay_sum(dtype, tol):
     np.random.seed(0)
     irs = np.random.randn(n, taps).astype(dtype)
     delays = np.random.randint(0, rir_len - taps, size=n, dtype=np.int32)
-    out1 = np.zeros(rir_len, dtype=dtype)
-    out2 = np.zeros(rir_len, dtype=dtype)
+    out1 = np.zeros(rir_len + 1, dtype=dtype)
+    out2 = np.zeros(rir_len + 1, dtype=dtype)
 
     libroom.delay_sum(irs, delays, out1, n_threads)
 
