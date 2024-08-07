@@ -41,7 +41,7 @@ jobs:
     - name: Test with pytest
       run: |
         pip install -U pytest setuptools build wheel twine
-        python ./tests/test_build_rir.py
+        python ./pyroomacoustics/tests/test_build_rir.py
         # pytest
     - name: Test the universal wheels
       if: matrix.os == 'ubuntu-latest'
