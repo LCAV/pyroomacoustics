@@ -316,11 +316,8 @@ def measure_runtime(dtype=np.float32, num_threads=4):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    print("frac del 1", flush=True)
     test_fractional_delay(np.float32, 2e-2)
-    print("frac del 2", flush=True)
     test_fractional_delay(np.float64, 2e-2)
-    print("del sum", flush=True)
     test_delay_sum(np.float32, 1e-4)
 
     for t, a, v in zip(times, alphas, visibilities):
@@ -333,17 +330,12 @@ if __name__ == "__main__":
         plt.plot(ir_cython, label="cython")
         plt.legend()
 
-    print("short", flush=True)
     test_short()
-    print("long", flush=True)
     test_long()
-    print("errors", flush=True)
     test_errors()
 
     num_threads = os.cpu_count()
-    print("measure 1", flush=True)
     measure_runtime(dtype=np.float32, num_threads=num_threads)
-    print("measure 2", flush=True)
     measure_runtime(dtype=np.float64, num_threads=num_threads)
 
     plt.show()

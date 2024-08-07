@@ -130,9 +130,8 @@ def cpp_flag(compiler):
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
-    # see https://github.com/microsoft/STL/issues/4875
     c_opts = {
-        "msvc": ["/EHsc", "/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"],
+        "msvc": ["/EHsc"],
         "unix": [],
     }
 

@@ -10,10 +10,14 @@ jobs:
       fail-fast: false
       max-parallel: 12
       matrix:
-        #os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        #python-version: [3.8, 3.9, "3.10", "3.11", "3.12"]
-        os: [windows-latest]
-        python-version: [3.8, 3.9]
+        # switch temporarily to windows-2019 due to a breaking
+        # change making mutex constexpr
+        # a crash occurs if python and the extension are built
+        # with different versions
+        # over time, this should hopefully resolves itself
+        # ref: https://github.com/microsoft/STL/issues/4875
+        os: [ubuntu-latest, macos-13, macos-latest, windows-2019]
+        python-version: [3.8, 3.9, "3.10", "3.11", "3.12"]
         exclude:
           - os: macos-latest
             python-version: 3.8
