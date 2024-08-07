@@ -83,10 +83,10 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
     fdl2 = (fdl - 1) // 2
 
     # the number of samples needed
-    N = int(np.ceil(time.max() * fs) + fdl + 1)
+    N = int(np.ceil(time.max() * fs) + fdl)
 
-    ir_ref = np.zeros(N + 1)
-    ir_cython = np.zeros(N + 1)
+    ir_ref = np.zeros(N)
+    ir_cython = np.zeros(N)
 
     ir_cpp_f = ir_cython.astype(np.float32)
 
@@ -132,10 +132,10 @@ def test_short():
     if not build_rir_available:
         return
 
-    N = 101
+    N = 100
     fs = 16000
     fdl = 81
-    rir = np.zeros(N + 1, dtype=np.float32)
+    rir = np.zeros(N, dtype=np.float32)
 
     time = np.array([0.0], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
@@ -163,7 +163,7 @@ def test_long():
     N = 100
     fs = 16000
     fdl = 81
-    rir = np.zeros(N + 1, dtype=np.float32)
+    rir = np.zeros(N, dtype=np.float32)
 
     time = np.array([(N - 1) / fs], dtype=np.float32)
     alpha = np.array([1.0], dtype=np.float32)
@@ -182,7 +182,7 @@ def test_errors():
     N = 300
     fs = 16000
     fdl = 81
-    rir = np.zeros(N + 1, dtype=np.float32)
+    rir = np.zeros(N, dtype=np.float32)
 
     time = np.array([100 / fs, 200 / fs], dtype=np.float32)
     alpha = np.array([1.0, 1.0], dtype=np.float32)
@@ -208,8 +208,8 @@ def test_delay_sum(dtype, tol):
     np.random.seed(0)
     irs = np.random.randn(n, taps).astype(dtype)
     delays = np.random.randint(0, rir_len - taps, size=n, dtype=np.int32)
-    out1 = np.zeros(rir_len + 1, dtype=dtype)
-    out2 = np.zeros(rir_len + 1, dtype=dtype)
+    out1 = np.zeros(rir_len, dtype=dtype)
+    out2 = np.zeros(rir_len, dtype=dtype)
 
     libroom.delay_sum(irs, delays, out1, n_threads)
 
@@ -316,8 +316,11 @@ def measure_runtime(dtype=np.float32, num_threads=4):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
+    print("frac del 1", flush=True)
     test_fractional_delay(np.float32, 2e-2)
+    print("frac del 2", flush=True)
     test_fractional_delay(np.float64, 2e-2)
+    print("del sum", flush=True)
     test_delay_sum(np.float32, 1e-4)
 
     for t, a, v in zip(times, alphas, visibilities):
@@ -330,12 +333,17 @@ if __name__ == "__main__":
         plt.plot(ir_cython, label="cython")
         plt.legend()
 
+    print("short", flush=True)
     test_short()
+    print("long", flush=True)
     test_long()
+    print("errors", flush=True)
     test_errors()
 
     num_threads = os.cpu_count()
+    print("measure 1", flush=True)
     measure_runtime(dtype=np.float32, num_threads=num_threads)
+    print("measure 2", flush=True)
     measure_runtime(dtype=np.float64, num_threads=num_threads)
 
     plt.show()
