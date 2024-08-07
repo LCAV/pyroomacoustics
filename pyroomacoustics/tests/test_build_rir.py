@@ -83,7 +83,7 @@ def build_rir_wrap(time, alpha, visibility, fs, fdl):
     fdl2 = (fdl - 1) // 2
 
     # the number of samples needed
-    N = int(np.ceil(time.max() * fs) + fdl)
+    N = int(np.ceil(time.max() * fs) + fdl + 1)
 
     ir_ref = np.zeros(N)
     ir_cython = np.zeros(N)
