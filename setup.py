@@ -70,7 +70,14 @@ ext_modules = [
             os.path.join(libroom_src_dir, "ext/eigen"),
         ],
         language="c++",
-        extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],
+        extra_compile_args=[
+            "-DEIGEN_MPL2_ONLY",
+            "-Wall",
+            "-O3",
+            "-DEIGEN_NO_DEBUG",
+            # see https://github.com/microsoft/STL/issues/4875
+            "-D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
+        ],
     ),
     Extension(
         "pyroomacoustics.build_rir",
