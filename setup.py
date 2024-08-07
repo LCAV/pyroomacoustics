@@ -60,7 +60,7 @@ libroom_files = [
 ext_modules = [
     Extension(
         "pyroomacoustics.libroom",
-        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp"]],
+        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp", "rir_builder.cpp"]],
         depends=libroom_files,
         include_dirs=[
             ".",

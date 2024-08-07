@@ -17,6 +17,4 @@ void delay_sum(const py::buffer irs, const py::buffer delays, py::buffer output,
 void fractional_delay(py::buffer out, const py::buffer time, size_t lut_gran,
                       size_t num_threads);
 
-#include "rir_builder.cpp"
-
 #endif  // __RIR_BUILDER_HPP__

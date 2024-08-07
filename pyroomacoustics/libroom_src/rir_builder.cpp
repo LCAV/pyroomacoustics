@@ -324,22 +324,7 @@ void threaded_fractional_delay_impl(
   // relase the GIL from here on
   py::gil_scoped_release release;
 
-  for (size_t idx = 0; idx < n_times; idx++) {
-    // LUT interpolation
-    T x_off_frac = (1. - tim_acc(idx)) * lut_gran_f;
-    T lut_gran_off = std::floor(x_off_frac);
-    T x_off = (x_off_frac - lut_gran_off);
-
-    int lut_pos = int(lut_gran_off);
-    for (size_t k = 0; k < fdl; lut_pos += lut_gran, k++)
-      out_acc(idx, k) =
-          hann[k] *
-          (sinc_lut[lut_pos] +
-           x_off * (sinc_lut[lut_pos + 1] - sinc_lut[lut_pos]));
-  }
-
   // build the RIR
-  /*
   ThreadPool pool(num_threads);
   std::vector<std::future<void>> results;
   for (size_t t_idx = 0; t_idx < num_threads; t_idx++) {
@@ -366,7 +351,6 @@ void threaded_fractional_delay_impl(
   }
 
   for (auto &&result : results) result.get();
-  */
 }
 
 void fractional_delay(py::buffer out, const py::buffer time, size_t lut_gran,
