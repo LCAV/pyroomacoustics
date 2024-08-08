@@ -3153,12 +3153,12 @@ class AnechoicRoom(ShoeBox):
         upper = -np.inf * np.ones((self.dim,))
 
         if self.mic_array is not None:
-            lower = np.min(np.r_[lower[None, :], self.mic_array.R], axis=0)
-            upper = np.max(np.r_[upper[None, :], self.mic_array.R], axis=0)
+            lower = np.min(np.column_stack((lower, self.mic_array.R)), axis=1)
+            upper = np.max(np.column_stack((upper, self.mic_array.R)), axis=1)
 
         for i, source in enumerate(self.sources):
-            lower = np.min(np.r_[lower[None, :], source.position[None, :]], axis=0)
-            upper = np.max(np.c_[upper[None, :], source.position[None, :]], axis=0)
+            lower = np.min(np.row_stack((lower, source.position)), axis=0)
+            upper = np.max(np.row_stack((upper, source.position)), axis=0)
 
         return np.c_[lower, upper]
 

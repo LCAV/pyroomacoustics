@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixes a bug when plotting an anechoic room
+- Fixes a buggy assert from ``rir_build.cpp``
+- Makes the build system consistent for all source files in ``pyroomacoustics/libroom_src``
 
 `0.7.6`_ - 2024-08-05
 ---------------------
