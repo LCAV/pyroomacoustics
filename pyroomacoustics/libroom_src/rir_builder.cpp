@@ -73,8 +73,6 @@ void threaded_rir_builder_impl(
   int max_sample = int(std::ceil(fs * t_max)) + fdl2;
   int min_sample = int(std::floor(fs * t_min)) - fdl2;
 
-  assert(min_samples >= 0);
-
   if (min_sample < 0)
     throw std::runtime_error("minimum time recorded is less than 0");
   if (max_sample >= int(rir_len))

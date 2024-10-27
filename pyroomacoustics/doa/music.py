@@ -150,7 +150,7 @@ class MUSIC(DOA):
             Dc = np.array(self.mode_vec[k, :, n], ndmin=2).T
             Dc_H = np.conjugate(np.array(self.mode_vec[k, :, n], ndmin=2))
             denom = np.linalg.multi_dot([Dc_H, cross, Dc])
-            P[n] = 1 / abs(denom)
+            P[n] = 1 / abs(denom[0, 0])
 
         return P
 

@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     test_fractional_delay(np.float32, 2e-2)
     test_fractional_delay(np.float64, 2e-2)
-    test_delay_sum(np.float32, 1e-6)
+    test_delay_sum(np.float32, 1e-4)
 
     for t, a, v in zip(times, alphas, visibilities):
         ir_ref, ir_cython = build_rir_wrap(t, a, v, fs, fdl)

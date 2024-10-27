@@ -60,7 +60,7 @@ libroom_files = [
 ext_modules = [
     Extension(
         "pyroomacoustics.libroom",
-        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp", "rir_builder.cpp"]],
+        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp"]],
         depends=libroom_files,
         include_dirs=[
             ".",
@@ -70,7 +70,12 @@ ext_modules = [
             os.path.join(libroom_src_dir, "ext/eigen"),
         ],
         language="c++",
-        extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],
+        extra_compile_args=[
+            "-DEIGEN_MPL2_ONLY",
+            "-Wall",
+            "-O3",
+            "-DEIGEN_NO_DEBUG",
+        ],
     ),
     Extension(
         "pyroomacoustics.build_rir",

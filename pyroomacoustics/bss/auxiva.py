@@ -227,7 +227,7 @@ def auxiva(
             )
 
             WV = np.matmul(W_hat, V)
-            W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, s]))
+            W[:, s, :] = np.conj(np.linalg.solve(WV, eyes[:, :, [s]]))[..., 0]
 
             # normalize
             denom = np.matmul(

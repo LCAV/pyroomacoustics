@@ -337,7 +337,14 @@ def compute_squared_gain(a, noise_psd, y):
     d_omega = 2 * np.pi / 1000
     omega_vals = np.arange(-np.pi, np.pi, d_omega)
     vec_integrand = np.vectorize(_lpc_all_pole)
-    integral = integrate.trapz(vec_integrand(omega_vals), omega_vals)
+
+    try:
+        integral = integrate.trapezoid(vec_integrand(omega_vals), omega_vals)
+    except AttributeError:
+        # older versions of scipy do not have the function 'trapezoid'
+        # fall back to the legacy function name
+        integral = integrate.trapz(vec_integrand(omega_vals), omega_vals)
+
     return rhs * 2 * np.pi / N / integral
 
 

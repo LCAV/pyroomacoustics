@@ -1209,7 +1209,7 @@ class Beamformer(MicrophoneArray):
         SINR, v = la.eigh(
             A,
             b=B,
-            eigvals=(self.M * self.Lg - 1, self.M * self.Lg - 1),
+            subset_by_index=(self.M * self.Lg - 1, self.M * self.Lg - 1),
             overwrite_a=True,
             overwrite_b=True,
             check_finite=False,
@@ -1309,7 +1309,7 @@ class Beamformer(MicrophoneArray):
         SINR, v = la.eigh(
             K_s,
             b=K_nq,
-            eigvals=(self.M * self.Lg - 1, self.M * self.Lg - 1),
+            subset_by_index=(self.M * self.Lg - 1, self.M * self.Lg - 1),
             overwrite_a=True,
             overwrite_b=True,
             check_finite=False,

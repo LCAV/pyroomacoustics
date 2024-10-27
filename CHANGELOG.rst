@@ -43,6 +43,35 @@ Changed
 `Unreleased`_
 -------------
 
+Nothing yet
+
+`0.7.7`_ - 2024-09-09
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixes a bug when plotting an anechoic room
+- Fixes a buggy assert from ``rir_build.cpp``
+- Makes the build system consistent for all source files in ``pyroomacoustics/libroom_src``
+- Fixes a call to a deprecated function of scipy.integrate in ``pyroomacoustics/denoise/iterative_wiener`` (issue #362)
+
+`0.7.6`_ - 2024-08-05
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixes the default value of ``energy_thres`` in ``experimental.rt60`` to match the
+  previous behavior of the function (issue #358)
+- Further fixes issue with cast reflections delays to float32 in room.py (#353)
+  which was not fully fixed by the previous update
+- Fixes calls to deprecated API of ``scipy.linalg.eigh``
+- Fixes use of deprecated feature of numpy (conversion of singleton array to scalar)
+
+`0.7.5`_ - 2024-06-18
+---------------------
+
 Changed
 ~~~~~~~
 
@@ -58,6 +87,8 @@ Bugfix
   ticks when called with ``kind="tf"``
 - Fixes an issue where the ``visibility`` attribute of the room is not
   set if there are no visible source or image source in the room. (#313)
+- Fixes issue with cast reflections delays to float32 in room.py (#353)
+- Fixes calls to ``numpy.linalg.solve`` with Numpy 2.0 API
 
 `0.7.4`_ - 2024-04-25
 ---------------------
@@ -603,7 +634,10 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.4...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.7.7...master
+.. _0.7.7: https://github.com/LCAV/pyroomacoustics/compare/v0.7.6...v0.7.7
+.. _0.7.6: https://github.com/LCAV/pyroomacoustics/compare/v0.7.5...v0.7.6
+.. _0.7.5: https://github.com/LCAV/pyroomacoustics/compare/v0.7.4...v0.7.5
 .. _0.7.4: https://github.com/LCAV/pyroomacoustics/compare/v0.7.3...v0.7.4
 .. _0.7.3: https://github.com/LCAV/pyroomacoustics/compare/v0.7.2...v0.7.3
 .. _0.7.2: https://github.com/LCAV/pyroomacoustics/compare/v0.7.1...v0.7.2

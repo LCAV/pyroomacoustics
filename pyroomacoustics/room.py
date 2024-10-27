@@ -2241,9 +2241,9 @@ class Room(object):
 
         volume_room = self.get_volume()
 
-        for m, mic in enumerate(
-            self.mic_array.R.T
-        ):  # Loop over ever microphone present in the room and then for each microphone and source pair present in the room
+        # Loop over ever microphone present in the room and then for each
+        # microphone and source pair present in the room
+        for m, mic in enumerate(self.mic_array.R.T):
             self.rir.append([])
             for s, src in enumerate(self.sources):
                 """
@@ -2253,15 +2253,6 @@ class Room(object):
                 """
                 # fractional delay length
                 fdl = constants.get("frac_delay_length")
-
-                fdl2 = fdl // 2
-
-                # default, just in case both ism and rt are disabled (should never happen)
-                N = fdl
-
-                # Do band-wise RIR construction
-                is_multi_band = self.is_multi_band
-                bws = self.octave_bands.get_bw() if is_multi_band else [self.fs / 2]
 
                 rir_parts = []
 
@@ -3302,12 +3293,12 @@ class AnechoicRoom(ShoeBox):
         upper = -np.inf * np.ones((self.dim,))
 
         if self.mic_array is not None:
-            lower = np.min(np.r_[lower[None, :], self.mic_array.R], axis=0)
-            upper = np.max(np.r_[upper[None, :], self.mic_array.R], axis=0)
+            lower = np.min(np.column_stack((lower, self.mic_array.R)), axis=1)
+            upper = np.max(np.column_stack((upper, self.mic_array.R)), axis=1)
 
         for i, source in enumerate(self.sources):
-            lower = np.min(np.r_[lower[None, :], source.position[None, :]], axis=0)
-            upper = np.max(np.c_[upper[None, :], source.position[None, :]], axis=0)
+            lower = np.min(np.row_stack((lower, source.position)), axis=0)
+            upper = np.max(np.row_stack((upper, source.position)), axis=0)
 
         return np.c_[lower, upper]
 

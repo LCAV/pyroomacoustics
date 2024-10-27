@@ -33,7 +33,7 @@ References
 import numpy as np
 
 
-def measure_rt60(h, fs=1, decay_db=60, energy_thres=0.95, plot=False, rt60_tgt=None):
+def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=None):
     """
     Analyze the RT60 of an impulse response. Optionaly plots some useful information.
 

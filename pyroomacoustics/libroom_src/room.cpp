@@ -832,9 +832,10 @@ bool Room<D>::scat_ray(
       // of scat_per_slot
       if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > energy_thres)
       {
-
-        //output[k].push_back(Hit(travel_dist_at_mic, scat_trans));        
-        //microphones[k].log_histogram(output[k].back(), hit_point);
+        // The (r_sq * p_hit) normalization factor is necessary to equalize the energy
+        // of the IR computed with ray tracing to that of the image source method.
+        // Ref: D. Schroeder, "Physically based real-time auralization of interactive virtual environments",
+        // section 5.4, eq. 5.54.
         double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
         auto p_hit = (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
         Eigen::ArrayXf energy = scat_trans / (r_sq * p_hit) ;
@@ -944,6 +945,10 @@ void Room<D>::simul_ray(
           //   because the ray will continue its way          
           float travel_dist_at_mic = travel_dist + distance;
 
+          // The (r_sq * p_hit) normalization factor is necessary to equalize the energy
+          // of the IR computed with ray tracing to that of the image source method.
+          // Ref: D. Schroeder, "Physically based real-time auralization of interactive virtual environments",
+          // section 5.4, eq. 5.54.
           double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
           auto p_hit = (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
           energy = transmitted / (r_sq * p_hit);
