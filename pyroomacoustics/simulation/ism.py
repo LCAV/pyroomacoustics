@@ -195,8 +195,12 @@ def compute_ism_rir(
         time.max()
     )  # The image source which takes the most time to arrive to this particular microphone
 
-    # What will be the length of RIR according to t_max
-    N = int(math.ceil(t_max * fs + fdl2 + 1))
+    # Here we create an array of the right length to
+    # receiver the full RIR
+    # The +1 is due to some rare cases where numerical
+    # errors push the last sample over the end of the
+    # array
+    N = int(math.ceil(t_max * fs + fdl2 + 1)) + 1
 
     oct_band_amplitude = att / dist
     full_band_imp_resp = []
