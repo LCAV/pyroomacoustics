@@ -1,74 +1,55 @@
+# 2022 (c) Prerak SRIVASTAVA
+# 2024/11/27 Modified by Robin Scheibler
 """
-Simulating RIRs with measured directivity pattern from DIRPAT
+Simulating RIRs with measured directivity patterns from DIRPAT
 ==============================================================
 
-In this example, we show how we can apply and use class DIRPATRir to open measured
-directivity files from the DIRPAT dataset.
+In this example, we show how we can use measured directivity patterns
+from the DIRPAT dataset in a simulation.
 
-The created objects can be directly used to generate RIRs
+The procedure to use the directivity patterns is as follows.
 
-With DIRPATRir object we can generate RIRs with mics and source having either
-frequency independent CARDIOID patterns or
-freqeuncy dependent patterns from DIRPAT dataset.
+1. Read the files potentially containing multiple measurements.
+2. Get a directivity object from the file object with desired orientation.
+   The directivities can be accessed by index or label (if existing).
+   The same pattern can be used multiple times with different orientations.
+3. Provide the directivity pattern object to the microphone object.
 
-Parameters
---------------------------------------
-    orientation :
-        class DirectionVector
-    path : (string)
-        Path towards the DIRPAT sofa file, the ending name of the file should be the same as specified in the DIRPAT dataset
+The DIRPAT database has three different files.
 
-    DIRPAT_pattern_enum : (string)
-        Only used to choose the directivity patterns available in the specific files in the DIRPAT dataset
+The ``AKG_c480_c414_CUBE.sofa`` DIRPAT file include mic patterns for CARDIOID,
+FIGURE_EIGHT, HYPERCARDIOID, OMNI, SUBCARDIOID.
 
-    # AKG_c480_c414_CUBE.sofa DIRPAT file include mic patterns for CARDIOID ,FIGURE_EIGHT,HYPERCARDIOID ,OMNI,SUBCARDIOID
-    a)AKG_c480
-    b)AKG_c414K
-    c)AKG_c414N
-    d)AKG_c414S
-    e)AKG_c414A
+a)AKG_c480
+b)AKG_c414K
+c)AKG_c414N
+d)AKG_c414S
+e)AKG_c414A
 
-    Eigenmic directivity pattern file "EM32_Directivity.sofa", specify mic name at the end to retrive directivity pattern for that particular mic from the eigenmike
-    a)EM_32_* : where * \in [0,31]
-    For example EM_32_9 : Will retrive pattern of mic number "10" from the eigenmic.
+The Eigenmic directivity pattern file ``EM32_Directivity.sofa``, specify mic
+name at the end to retrive directivity pattern for that particular mic from the
+eigenmike. This file contains 32 patterns of the form ``EM_32_*``, where ``*``
+is one of 0, 1, ..., 31. For example, ``EM_32_9`` will retrive pattern of mic
+number "10" from the eigenmic.
 
-    # LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa DIRPAT file include source patterns
-    a)Genelec_8020
-    b)Lambda_labs_CX-1A
-    c)HATS_4128C
-    d)Tannoy_System_1200
-    e)Neumann_KH120A
-    f)Yamaha_DXR8
-    g)BM_1x12inch_driver_closed_cabinet
-    h)BM_1x12inch_driver_open_cabinet
-    i)BM_open_stacked_on_closed_withCrossoverNetwork
-    j)BM_open_stacked_on_closed_fullrange
-    k)Palmer_1x12inch
-    l)Vibrolux_2x10inch
+The ``LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa`` DIRPAT file includes
+some source patterns.
 
-    fs : (int)
-        Sampling frequency of the filters for interpolation.
-        Should be same as the simulator frequency and less than 44100 kHz
-    no_points_on_fibo_sphere : (int)
-        Number of points on the interpolated Fibonacci sphere.
-        if "0" no interpolation will happen.
-
-
-This implementation shows how we can use both DIRPAT object and frequency independent directivity class CardioidFamily together.
-We can also use the objects separately.
-
-~ Prerak SRIVASTAVA, 8/11/2022
+a) Genelec_8020
+b) Lambda_labs_CX-1A
+c) HATS_4128C
+d) Tannoy_System_1200
+e) Neumann_KH120A
+f) Yamaha_DXR8
+g) BM_1x12inch_driver_closed_cabinet
+h) BM_1x12inch_driver_open_cabinet
+i) BM_open_stacked_on_closed_withCrossoverNetwork
+j) BM_open_stacked_on_closed_fullrange
+k) Palmer_1x12inch
+l) Vibrolux_2x10inch
 """
 
-import os
-
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy import signal
-from scipy.fft import fft, fftfreq
-from scipy.io import wavfile
-from scipy.signal import fftconvolve
-
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
     Cardioid,
@@ -78,19 +59,22 @@ from pyroomacoustics.directivities import (
     Rotation3D,
 )
 
+# Reads the file containing the Eigenmike's directivity measurements
 eigenmike = MeasuredDirectivityFile("EM32_Directivity", fs=16000)
+# Reads the file containing the directivity measurements of another microphones
 akg = MeasuredDirectivityFile("AKG_c480_c414_CUBE", fs=16000)
 
+# Create a rotation object to orient the microphones.
 rot_54_73 = Rotation3D([73, 54], "yz", degrees=True)
 
+# Get the directivity objects from the two files
 dir_obj_Dmic = akg.get_mic_directivity("AKG_c414K", orientation=rot_54_73)
 dir_obj_Emic = eigenmike.get_mic_directivity("EM_32_9", orientation=rot_54_73)
 
+# Create two analytical directivities for comparison
 dir_obj_Cmic = FigureEight(
     orientation=DirectionVector(azimuth=90, colatitude=123, degrees=True),
 )
-
-
 dir_obj_Csrc = Cardioid(
     orientation=DirectionVector(azimuth=56, colatitude=123, degrees=True),
 )
@@ -177,9 +161,6 @@ for idx, fb in enumerate(range(44)):
         break
     ax = fig.add_subplot(5, 10, idx + 1, projection="3d")
     dir_mic.plot(freq_bin=fb, ax=ax, depth=True)
-    # ax.set_xticks([])
-    # ax.set_yticks([])
-    # ax.set_zticks([])
     ax.set_title(idx)
 plt.show()
 

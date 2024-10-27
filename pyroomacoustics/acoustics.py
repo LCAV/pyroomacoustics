@@ -29,10 +29,9 @@ import itertools
 import math
 
 import numpy as np
-from scipy import signal
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
-from scipy.signal import butter, fftconvolve, hilbert, sosfiltfilt
+from scipy.signal import butter, fftconvolve
 
 from .parameters import constants
 from .transform import stft
