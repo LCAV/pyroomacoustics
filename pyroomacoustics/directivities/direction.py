@@ -129,7 +129,8 @@ _axis_map = {"x": 0, "y": 1, "z": 2, 0: 0, 1: 1, 2: 2}
 
 class Rotation3D:
     """
-    An object representing 3D rotations by their [Euler angles](https://en.wikipedia.org/wiki/Euler_angles).
+    An object representing 3D rotations by their
+    `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`_.
 
     A rotation in 3D space can be fully described by 3 angles (i.e., the Euler angles). Each rotation is applied
     around one of the three axes and there are 12 possible ways of pickinig the order or the rotations.

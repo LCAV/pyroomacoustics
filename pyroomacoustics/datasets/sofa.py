@@ -24,7 +24,8 @@
 r"""
 Pyroomacoustics contains a small database of SOFA files that have been tested
 and can be used for simultions.
-The database can be loaded using the function :py:class:`~pyroomacoustics.datasets.sofa.SOFADatabase`.
+The database can be loaded using the function
+:py:class:`~pyroomacoustics.datasets.sofa.SOFADatabase`.
 
 .. code-block:: python
 
@@ -33,6 +34,39 @@ The database can be loaded using the function :py:class:`~pyroomacoustics.datase
 
     db = SOFADatabase()
     db.list()
+
+The database contains the following files.
+
+- Three files from the `DIRPAT database
+  <https://phaidra.kug.ac.at/detail/o:68229#?page=1&pagesize=10&collection=o:67857>`_
+  collected by Manuel Brandner, Matthias Frank, and Daniel Rudrich University
+  of Music and Performing Arts, Graz.
+
+  - ``AKG_c480_c414_CUBE.sofa`` containing the directive responses of a
+    microphone with 4 different patterns.
+  - ``EM32_Directivity.sofa`` that contains the directional response of the
+    `Eigenmike em32 <https://eigenmike.com/eigenmike-em32>`_ microphone array.
+  - ``LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa`` that contains 12 source
+    directivities. This file is dynamically downloaded upon its first use.
+  - The files are public domain
+    (`CC0 <https://creativecommons.org/public-domain/cc0/>`_),
+    but if you use them in your research, please cite the following
+    `paper <https://aes2.org/publications/elibrary-page/?id=19538>`_.
+
+    ::
+
+        M. Brandner, M. Frank, and D. Rudrich, "DirPat—Database and
+        Viewer of 2D/3D Directivity Patterns of Sound Sources and Receivers,"
+        in Audio Engineering Society Convention 144, Paper 425, 2018.
+
+- Two head-related transfer functions of the MIT KEMAR dummy head
+  with normal and large pinna. The data was collected by Bill Gardner
+  and Keith Martin from MIT and is free to use provided the authors are
+  cited. See the
+  `full license <https://sound.media.mit.edu/resources/KEMAR/README>`_
+  for more details.
+
+
 """
 
 

@@ -28,9 +28,12 @@ types of directivities. The class provides a common interface to access the
 directivity patterns.
 
 The class should implement the following methods:
-- `get_response` to get the response for a given angle and frequency
-- `is_impulse_response` to indicate whether the directivity is an impulse response or just band coefficients
-- `filter_len_ir` to return the length of the impulse response. This should return 1 if the directivity is not an impulse response.
+
+- ``get_response`` to get the response for a given angle and frequency
+- ``is_impulse_response`` to indicate whether the directivity is an impulse response or
+  just band coefficients
+- ``filter_len_ir`` to return the length of the impulse response. This should return 1
+  if the directivity is not an impulse response.
 """
 import abc
 

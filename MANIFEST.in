@@ -1,7 +1,8 @@
 # Acoustic data for the simulation
 include pyroomacoustics/data/materials.json
-include pyroomacoustics/data/AKG_c480_c414_CUBE.sofa
-include pyroomacoustics/data/EM32_Directivity.sofa
+include pyroomacoustics/data/sofa_files.json
+include pyroomacoustics/data/sofa/AKG_c480_c414_CUBE.sofa
+include pyroomacoustics/data/sofa/EM32_Directivity.sofa
 include pyroomacoustics/data/sofa/mit_kemar_large_pinna.sofa
 include pyroomacoustics/data/sofa/mit_kemar_normal_pinna.sofa
 
@@ -23,9 +24,12 @@ graft pyroomacoustics/tests
 graft pyroomacoustics/adaptive/tests
 graft pyroomacoustics/bss/tests
 graft pyroomacoustics/datasets/tests
+graft pyroomacoustics/denoise/tests
+graft pyroomacoustics/directivities/tests
 graft pyroomacoustics/doa/tests
 graft pyroomacoustics/experimental/tests
 graft pyroomacoustics/libroom_src/tests
+graft pyroomacoustics/phase/tests
 graft pyroomacoustics/transform/tests
 
 global-exclude *.py[co]
