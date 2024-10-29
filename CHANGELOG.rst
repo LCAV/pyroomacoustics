@@ -11,7 +11,55 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+This new version introduces some major changes. In particular, it introduces
+the use of measured microphone and source directivities. This new feature
+allows to simulate more accurately real recording equipments. See the
+`documentation
+<https://pyroomacoustics.readthedocs.io/en/latest/pyroomacoustics.directivities.html>`_
+for more details.
+
+Added
+~~~~~
+
+- New global parameters to control the octave bands used for simulation.
+
+  - ``octave_bands_base_freq``: the base frequency used for the octave bands (default ``125``),
+    note that together with the sampling frequency this will determine the number of sub-bands
+    used in simulation.
+  - ``octave_bands_n_fft``: lengths of the octave band filters (current is default ``512``
+    but will be changed to ``128`` in the next release)
+  - ``octave_bands_keep_dc``: extends the lowest band to include the DC offset,
+    the current default is ``False`` to match past behavior, but will be changed to
+    ``True`` in the next release because the filters have less oscillations this way.
+
+- New parameter ``min_phase`` of class ``Room``. If set to ``True``, the band-pass
+  filters are designed as minimum phase filters.
+
+- Simulation with measured directivity responses in SOFA format (limited file types) is
+  possible with the image source model.
+
+  - A flexible and extensible  SOFA file reader with optional spherical interpolation.
+  - A small database of files is bundled, including the `DIRPAT database
+    <https://aes2.org/publications/elibrary-page/?id=19538>`_, collected by
+    Manuel Brandner, Matthias Frank, and Daniel Rudrich University of Music and
+    Performing Arts Graz, Graz. The file also include two HRTF of the
+    `MIT KEMAR dummy head <https://sound.media.mit.edu/resources/KEMAR/README>`_.
+
+- Introduces a new class ``pyroomacoustics.directivities.Rotation3D`` to specify
+  the orientation of sources and receivers in 3D.
+
+- Adds `soxr <https://github.com/dofuuz/python-soxr>`_ as a dependency since resampling
+  can often be necessary when working with SOFA files.
+
+Changed
+~~~~~~~
+
+- In ray tracing, the histograms are now linearly interpolated between
+  the bins to obtain smoother RIR
+- Changed the API of ``CardioidFamily`` to take a float parameter.
+  New class wrappers for ``Cardioid``, ``Hypercardioid``, ``Supercardioid``,
+  ``Bidirectional`` and ``Omnidirectional`` are added in the ``directivity``
+  sub-module. The enum of type ``DirectivityPattern`` has been removed.
 
 `0.7.7`_ - 2024-09-09
 ---------------------

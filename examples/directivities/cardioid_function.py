@@ -15,7 +15,7 @@ cart = spher2cart(azimuth=azimuth)
 direction = spher2cart(azimuth=225, degrees=True)
 
 # compute response
-resp = cardioid_func(x=cart, direction=direction, coef=0.5, magnitude=True)
+resp = cardioid_func(x=cart, direction=direction, p=0.5, magnitude=True)
 resp_db = dB(np.array(resp))
 
 # plot
@@ -33,7 +33,7 @@ cart = spher2cart(azimuth=spher_coord[:, 0], colatitude=spher_coord[:, 1])
 direction = spher2cart(azimuth=0, colatitude=45, degrees=True)
 
 # compute response
-resp = cardioid_func(x=cart, direction=direction, coef=0.25, magnitude=True)
+resp = cardioid_func(x=cart, direction=direction, p=0.25, magnitude=True)
 
 # plot (surface plot)
 fig = plt.figure()

@@ -23,9 +23,11 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import functools
 import itertools
 
 import numpy as np
+import soxr
 from scipy import signal
 from scipy.io import wavfile
 
@@ -35,6 +37,7 @@ from .sync import correlate
 
 
 def requires_matplotlib(func):
+    @functools.wraps(func)  # preserves name, docstrings, and signature of function
     def function_wrapper(*args, **kwargs):
         try:
             import matplotlib.pyplot as plt
@@ -231,9 +234,9 @@ def highpass(signal, Fs, fc=None, plot=False):
     wc = 2.0 * fc / Fs
 
     # design the filter
-    from scipy.signal import freqz, iirfilter, lfilter
+    from scipy.signal import iirfilter, sosfiltfilt, sosfreqz
 
-    b, a = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type)
+    sos = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")
 
     # plot frequency response of filter if requested
     if plot:
@@ -245,7 +248,7 @@ def highpass(signal, Fs, fc=None, plot=False):
             warnings.warn("Matplotlib is required for plotting")
             return
 
-        w, h = freqz(b, a)
+        w, h = sosfreqz(sos)
 
         plt.figure()
         plt.title("Digital filter frequency response")
@@ -256,7 +259,7 @@ def highpass(signal, Fs, fc=None, plot=False):
         plt.grid()
 
     # apply the filter
-    signal = lfilter(b, a, signal.copy())
+    signal = sosfiltfilt(sos, signal.copy())
 
     return signal
 
@@ -816,3 +819,43 @@ def angle_function(s1, v2):
         co[:] = np.pi / 2
 
     return np.vstack((az, co))
+
+
+def resample(data, old_fs, new_fs):
+    """
+    Resample an ndarray from ``old_fs`` to ``new_fs`` along the last axis.
+
+    Parameters
+    ----------
+    data : numpy array
+        Input data to be resampled.
+    old_fs : int
+        Original sampling rate.
+    new_fs : int
+        New sampling rate.
+
+    Returns
+    -------
+    numpy array
+    """
+    ndim = data.ndim
+
+    if ndim == 1:
+        data = data[:, None]
+    elif ndim == 2:
+        data = data.T
+    else:
+        shape = data.shape
+        data = data.reshape(-1, data.shape[-1]).T
+
+    resampled_data = soxr.resample(data, old_fs, new_fs)
+
+    if ndim == 1:
+        resampled_data = resampled_data[:, 0]
+    elif ndim == 2:
+        resampled_data = resampled_data.T
+    else:
+        new_shape = shape[:-1] + resampled_data.shape[:1]
+        resampled_data = resampled_data.T.reshape(new_shape)
+
+    return resampled_data
