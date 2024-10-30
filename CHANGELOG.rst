@@ -13,6 +13,14 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 Nothing yet
 
+`0.8.1`_ - 2024-10-30
+---------------------
+
+Bugfix
+~~~~~~
+
+- Adds the missing ``pyroomacoustics.directivities`` to the package list in ``setup.py``.
+
 `0.8.0`_ - 2024-10-29
 ---------------------
 
@@ -655,7 +663,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.0...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...master
+.. _0.8.1: https://github.com/LCAV/pyroomacoustics/compare/v0.8.0...v0.8.1
 .. _0.8.0: https://github.com/LCAV/pyroomacoustics/compare/v0.7.7...v0.8.0
 .. _0.7.7: https://github.com/LCAV/pyroomacoustics/compare/v0.7.6...v0.7.7
 .. _0.7.6: https://github.com/LCAV/pyroomacoustics/compare/v0.7.5...v0.7.6
