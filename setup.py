@@ -174,6 +174,7 @@ setup_kwargs = dict(
         "pyroomacoustics",
         "pyroomacoustics.doa",
         "pyroomacoustics.adaptive",
+        "pyroomacoustics.directivities",
         "pyroomacoustics.transform",
         "pyroomacoustics.experimental",
         "pyroomacoustics.datasets",
