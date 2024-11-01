@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Changed
+~~~~~~~
+
+- Fixes typo in ``materials.json``: ``ceiling_fibre_abosrber -> ceiling_fibre_absorber``.
 
 `0.8.1`_ - 2024-10-30
 ---------------------
