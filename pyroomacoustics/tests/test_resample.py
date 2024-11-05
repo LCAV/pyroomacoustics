@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 
 
 @pytest.mark.parametrize(
