@@ -50,7 +50,6 @@ l) Vibrolux_2x10inch
 """
 
 import matplotlib.pyplot as plt
-
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import (
     Cardioid,
