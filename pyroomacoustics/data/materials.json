@@ -356,7 +356,7 @@
         "description": "Plasterboard ceiling on battens with large air-space above",
         "coeffs": [0.20, 0.15, 0.10, 0.08, 0.04, 0.02]
       },
-      "ceiling_fibre_abosrber": {
+      "ceiling_fibre_absorber": {
         "description": "Fibre absorber on perforated sheet metal cartridge, 0,5 mm zinc-plated steel, 1.5 mm hole diameter, 200 mm cavity filled with 20 mm mineral wool (20 kg/m3), inflammable",
         "coeffs": [0.48, 0.97, 1.0, 0.97, 1.0, 1.0, 1.0]
       },

@@ -18,6 +18,7 @@ Changed
   to avoid ``soxr`` dependency. The resample backend is configurable to
   ``soxr``, ``samplerate``, if these packages are available, and otherwise
   falls back to ``scipy.signal.resample_poly``.
+- Fixes typo in ``materials.json``: ``ceiling_fibre_abosrber -> ceiling_fibre_absorber``.
 
 `0.8.1`_ - 2024-10-30
 ---------------------
