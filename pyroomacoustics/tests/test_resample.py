@@ -13,6 +13,7 @@ import pyroomacoustics as pra
 @pytest.mark.parametrize(
     "fs_in, fs_out, backend",
     [
+        (240, 160, None),
         (240, 160, "soxr"),
         (240, 160, "samplerate"),
         (240, 160, "scipy"),
@@ -33,6 +34,7 @@ def test_downsample(fs_in, fs_out, backend):
 @pytest.mark.parametrize(
     "fs_in, fs_out, backend",
     [
+        (160, 240, None),
         (160, 240, "soxr"),
         (160, 240, "samplerate"),
         (160, 240, "scipy"),
