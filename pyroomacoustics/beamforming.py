@@ -418,6 +418,7 @@ class MicrophoneArray(object):
             raise NameError("The signals should be a 2D array.")
 
         if fs != self.fs:
+            self.signals = u.resample(signals, fs, self.fs)
             try:
                 import samplerate
 

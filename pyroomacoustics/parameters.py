@@ -82,6 +82,7 @@ _constants_default = {
     "octave_bands_n_fft": 512,
     "octave_bands_base_freq": 125.0,
     "octave_bands_keep_dc": False,
+    "resample_backend": "soxr",
 }
 
 

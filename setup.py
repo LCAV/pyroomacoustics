@@ -186,13 +186,23 @@ setup_kwargs = dict(
     # Libroom C extension
     ext_modules=ext_modules,
     # Necessary to keep the source files
-    package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
+    package_data={
+        "pyroomacoustics": [
+            "*.pxd",
+            "*.pyx",
+            "data/materials.json",
+            "data/sofa_files.json",
+            "data/sofa/AKG_c480_c414_CUBE.sofa",
+            "data/sofa/EM32_Directivity.sofa",
+            "data/sofa/mit_kemar_large_pinna.sofa",
+            "data/sofa/mit_kemar_normal_pinna.sofa",
+        ]
+    },
     install_requires=[
         "Cython",
         "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
-        "soxr",
     ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,

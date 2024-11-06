@@ -23,17 +23,32 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import fractions
 import functools
 import itertools
+import warnings
 
 import numpy as np
-import soxr
 from scipy import signal
 from scipy.io import wavfile
 
 from .doa import cart2spher
 from .parameters import constants, eps
 from .sync import correlate
+
+try:
+    import soxr
+
+    _has_soxr = True
+except ImportError:
+    _has_soxr = False
+
+try:
+    import samplerate
+
+    _has_samplerate = True
+except ImportError:
+    _has_samplerate = False
 
 
 def requires_matplotlib(func):
@@ -821,25 +836,68 @@ def angle_function(s1, v2):
     return np.vstack((az, co))
 
 
-def resample(data, old_fs, new_fs):
+def resample(data, old_fs, new_fs, backend=None, *args, **kwargs):
     """
     Resample an ndarray from ``old_fs`` to ``new_fs`` along the last axis.
 
     Parameters
     ----------
     data : numpy array
-        Input data to be resampled.
+        Input data to be resampled expected in shape (..., num_samples).
     old_fs : int
         Original sampling rate.
     new_fs : int
         New sampling rate.
+    backend: str
+        The resampling backend to use. Options are as follows.
+        All extra arguments are passed to the backend.
+
+        - `soxr`: The default backend. It is the fastest and most
+          accurate. It is not installed by default, but can be installed
+          via `pip install python-soxr`.
+        - `samplerate`: It is the first fallback backend. It is slower,
+          but as accurate as `soxr`. It is not installed by default, but can
+          be installed by `pip install samplerate`.
+        - `scipy`: It is the fallback when none of the other libraries
+          are installed. This uses `scipy.signal.resample_poly` and is not as
+          good as the other backend. This will generate a warning unless
+          specified explicitely.
+
+        The backend used package-wide is set via the constants,
+        e.g., `pra.constants.set("resample_backend", "soxr")`.
 
     Returns
     -------
-    numpy array
+    The resampled signal.
     """
+
+    if backend is None:
+        # get the package-wide default backend
+        backend = constants.get("resample_backend")
+
+    if backend not in ("soxr", "samplerate", "scipy"):
+        raise ValueError(
+            "Possible choices for the resampling backend are "
+            "soxr | samplerate | scippy."
+        )
+
+    # select the backend
+    if backend == "soxr" and not _has_soxr:
+        backend = "samplerate"
+
+    if backend == "samplerate" and not _has_samplerate:
+        backend = "scipy"
+        warnings.warn(
+            "Neither of the resampling backends `soxr` or `samplerate` are installed. "
+            "Falling back to scipy.signal.resample_poly. To silence this warning, "
+            "specify `backend=scipy` explicitely."
+        )
+
+    # format the data
     ndim = data.ndim
 
+    # for samplerate and soxr the data needs to be in format
+    # (num_samples, num_channels)
     if ndim == 1:
         data = data[:, None]
     elif ndim == 2:
@@ -848,8 +906,25 @@ def resample(data, old_fs, new_fs):
         shape = data.shape
         data = data.reshape(-1, data.shape[-1]).T
 
-    resampled_data = soxr.resample(data, old_fs, new_fs)
+    if backend == "soxr":
+        resampled_data = soxr.resample(data, old_fs, new_fs, *args, **kwargs)
+    elif backend == "samplerate":
+        resampled_data = samplerate.resample(
+            data, new_fs / old_fs, "sinc_best", *args, **kwargs
+        )
+    else:
+        # first, simplify the fraction
+        rate_frac = fractions.Fraction(int(new_fs), int(old_fs))
+        resampled_data = signal.resample_poly(
+            data,
+            up=rate_frac.numerator,
+            down=rate_frac.denominator,
+            axis=0,
+            *args,
+            **kwargs
+        )
 
+    # restore the original shape of the data
     if ndim == 1:
         resampled_data = resampled_data[:, 0]
     elif ndim == 2:
