@@ -11,6 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Nothing yet
+
+`0.8.2`_ - 2024-11-06
+---------------------
+
 Changed
 ~~~~~~~
 
@@ -670,7 +675,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...master
+.. _0.8.2: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...v0.8.2
 .. _0.8.1: https://github.com/LCAV/pyroomacoustics/compare/v0.8.0...v0.8.1
 .. _0.8.0: https://github.com/LCAV/pyroomacoustics/compare/v0.7.7...v0.8.0
 .. _0.7.7: https://github.com/LCAV/pyroomacoustics/compare/v0.7.6...v0.7.7
