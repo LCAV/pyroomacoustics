@@ -3,12 +3,13 @@ from __future__ import division, print_function
 from unittest import TestCase
 
 import numpy as np
+
 from pyroomacoustics.denoise import Subspace
 
 tol = 1e-7
 
 
-def test_cov_computation(skip=1):
+def cov_computation(skip=1):
     """
     Seed is set because not every random signal will satisfy test.
     The input signal should have noise frames in each frame, otherwise
@@ -71,13 +72,13 @@ def test_cov_computation(skip=1):
 
 class TestSubspace(TestCase):
     def test_cov_estimation_skip_1(self):
-        res = test_cov_computation(skip=1)
+        res = cov_computation(skip=1)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
         self.assertEqual(res[2], 0)
 
     def test_cov_estimation_skip_5(self):
-        res = test_cov_computation(skip=5)
+        res = cov_computation(skip=5)
         self.assertTrue(res[0] < tol)
         self.assertTrue(res[1] < tol)
         self.assertEqual(res[2], 0)
@@ -85,14 +86,14 @@ class TestSubspace(TestCase):
 
 if __name__ == "__main__":
     print("SKIP = 1")
-    res = test_cov_computation(skip=1)
+    res = cov_computation(skip=1)
     print("COV_SN error: {}".format(res[0]))
     print("COV_N error: {}".format(res[1]))
     print("n_noise_frames error: {}".format(res[2]))
 
     print()
     print("SKIP = 5")
-    res = test_cov_computation(skip=5)
+    res = cov_computation(skip=5)
     print("COV_SN error: {}".format(res[0]))
     print("COV_N error: {}".format(res[1]))
     print("n_noise_frames error: {}".format(res[2]))

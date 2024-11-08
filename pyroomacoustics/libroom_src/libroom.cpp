@@ -35,6 +35,7 @@
 #include "common.hpp"
 #include "geometry.hpp"
 #include "microphone.hpp"
+#include "rir_builder.hpp"
 #include "room.hpp"
 #include "wall.hpp"
 
@@ -265,20 +266,18 @@ PYBIND11_MODULE(libroom, m) {
 
   // The 2D histogram class
   py::class_<Histogram2D>(m, "Histogram2D")
-    .def(py::init<int, int>())
-    .def("log", &Histogram2D::log)
-    .def("bin", &Histogram2D::bin)
-    .def("get_hist", &Histogram2D::get_hist)
-    .def("reset", &Histogram2D::reset)
-    ;
+      .def(py::init<int, int>())
+      .def("log", &Histogram2D::log)
+      .def("bin", &Histogram2D::bin)
+      .def("get_hist", &Histogram2D::get_hist)
+      .def("reset", &Histogram2D::reset);
 
   // Structure to hold detector hit information
   py::class_<Hit>(m, "Hit")
-    .def(py::init<int>())
-    .def(py::init<const float, const Eigen::ArrayXf &>())
-    .def_readonly("transmitted", &Hit::transmitted)
-    .def_readonly("distance", &Hit::distance)
-    ;
+      .def(py::init<int>())
+      .def(py::init<const float, const Eigen::ArrayXf &>())
+      .def_readonly("transmitted", &Hit::transmitted)
+      .def_readonly("distance", &Hit::distance);
 
   // getter and setter for geometric epsilon
   m.def("set_eps", [](const float &eps) {
@@ -289,30 +288,31 @@ PYBIND11_MODULE(libroom, m) {
   // Routines for the geometry packages
   m.def("ccw3p", &ccw3p, "Determines the orientation of three points");
 
-  m.def("check_intersection_2d_segments",
-      &check_intersection_2d_segments,
-      "A function that checks if two line segments intersect");
+  m.def("check_intersection_2d_segments", &check_intersection_2d_segments,
+        "A function that checks if two line segments intersect");
 
-  m.def("intersection_2d_segments",
-      &intersection_2d_segments,
-      "A function that finds the intersection of two line segments");
+  m.def("intersection_2d_segments", &intersection_2d_segments,
+        "A function that finds the intersection of two line segments");
 
-  m.def("intersection_3d_segment_plane",
-      &intersection_3d_segment_plane,
-      "A function that finds the intersection between a line segment and a plane");
+  m.def("intersection_3d_segment_plane", &intersection_3d_segment_plane,
+        "A function that finds the intersection between a line segment and a "
+        "plane");
 
   m.def("cross", &cross, "Cross product of two 3D vectors");
 
   m.def("is_inside_2d_polygon", &is_inside_2d_polygon,
-      "Checks if a 2D point lies in or out of a planar polygon");
+        "Checks if a 2D point lies in or out of a planar polygon");
 
   m.def("area_2d_polygon", &area_2d_polygon,
-      "Compute the signed area of a planar polygon");
+        "Compute the signed area of a planar polygon");
 
   m.def("cos_angle_between", &cos_angle_between,
-      "Computes the angle between two 2D or 3D vectors");
+        "Computes the angle between two 2D or 3D vectors");
 
   m.def("dist_line_point", &dist_line_point,
       "Computes the distance between a point and an infinite line");
-}
 
+  m.def("rir_builder", &rir_builder, "RIR builder");
+  m.def("delay_sum", &delay_sum, "Delay and sum");
+  m.def("fractional_delay", &fractional_delay, "Fractional delays");
+}

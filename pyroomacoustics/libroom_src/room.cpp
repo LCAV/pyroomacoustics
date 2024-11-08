@@ -625,7 +625,10 @@ std::tuple<Vectorf<D>, int, float> Room<D>::next_wall_hit(
     // The direction vector
     Vectorf<D> dir = end - start;
 
-    for (auto &d : shoebox_orders) {
+    for (size_t shoebox_orders_idx = 0 ; shoebox_orders_idx < D ; shoebox_orders_idx++)
+    {
+      auto d = shoebox_orders[shoebox_orders_idx];
+
       float abs_dir0 = std::abs(dir[d[0]]);
       if (abs_dir0 < libroom_eps) continue;
 
@@ -681,7 +684,7 @@ std::tuple<Vectorf<D>, int, float> Room<D>::next_wall_hit(
       Wall<D> &w = scattered_ray ? walls[obstructing_walls[i]] : walls[i];
 
       // To store the result of this iteration
-      Vectorf<D> temp_hit;
+      Vectorf<D> temp_hit = Vectorf<D>::Zero();
 
       // As a side effect, temp_hit gets a value (VectorXf) here
       int ret = w.intersection(start, end, temp_hit);
@@ -765,15 +768,16 @@ bool Room<D>::scat_ray(const Eigen::ArrayXf &transmitted, const Wall<D> &wall,
       // cosine angle should be positive, but could be negative if normal is
       // facing out of room so we take abs
       float p_lambert = 2 * std::abs(wall.cosine_angle(hit_point_to_mic));
-      Eigen::VectorXf scat_trans =
-          wall.scatter * transmitted * p_hit_equal * p_lambert;
+      Eigen::ArrayXf scat_trans = wall.scatter * transmitted * p_hit_equal * p_lambert;
 
       // We add an entry to output and we increment the right element
       // of scat_per_slot
-      if (travel_dist_at_mic < distance_thres &&
-          scat_trans.maxCoeff() > energy_thres) {
-        // output[k].push_back(Hit(travel_dist_at_mic, scat_trans));
-        // microphones[k].log_histogram(output[k].back(), hit_point);
+      if (travel_dist_at_mic < distance_thres && scat_trans.maxCoeff() > energy_thres)
+      {
+        // The (r_sq * p_hit) normalization factor is necessary to equalize the energy
+        // of the IR computed with ray tracing to that of the image source method.
+        // Ref: D. Schroeder, "Physically based real-time auralization of interactive virtual environments",
+        // section 5.4, eq. 5.54.
         double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
         auto p_hit =
             (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
@@ -883,12 +887,14 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
           //   because the ray will continue its way
           float travel_dist_at_mic = travel_dist + distance;
 
+          // The (r_sq * p_hit) normalization factor is necessary to equalize the energy
+          // of the IR computed with ray tracing to that of the image source method.
+          // Ref: D. Schroeder, "Physically based real-time auralization of interactive virtual environments",
+          // section 5.4, eq. 5.54.
           double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
           auto p_hit =
               (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
           energy = transmitted / (r_sq * p_hit);
-          // energy = transmitted / (travel_dist_at_mic - sqrtf(fmaxf(0.f,
-          // travel_dist_at_mic * travel_dist_at_mic - mic_radius_sq)));
           microphones[k].log_histogram(travel_dist_at_mic, energy, start);
         }
       }

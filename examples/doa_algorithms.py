@@ -42,9 +42,9 @@ Then we perform DOA estimation and compare the errors for different algorithms
 
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import fftconvolve
-import matplotlib.pyplot as plt
 
 import pyroomacoustics as pra
 from pyroomacoustics.doa import circ_dist
@@ -55,6 +55,14 @@ from pyroomacoustics.doa import circ_dist
 # Location of original source
 azimuth = 61.0 / 180.0 * np.pi  # 60 degrees
 distance = 3.0  # 3 meters
+dim = 2  # dimensions (2 or 3)
+room_dim = np.r_[10.0, 10.0]
+
+# Use AnechoicRoom or ShoeBox implementation. The results are equivalent because max_order=0 for both.
+# The plots change a little because in one case there are no walls.
+use_anechoic_class = True
+
+print("============ Using anechoic: {} ==================".format(anechoic))
 
 #######################
 # algorithms parameters
@@ -68,8 +76,10 @@ freq_bins = np.arange(5, 60)  # FFT bins to use for estimation
 sigma2 = 10 ** (-SNR / 10) / (4.0 * np.pi * distance) ** 2
 
 # Create an anechoic room
-room_dim = np.r_[10.0, 10.0]
-aroom = pra.ShoeBox(room_dim, fs=fs, max_order=0, sigma2_awgn=sigma2)
+if use_anechoic_class:
+    aroom = pra.AnechoicRoom(dim, fs=fs, sigma2_awgn=sigma2)
+else:
+    aroom = pra.ShoeBox(room_dim, fs=fs, max_order=0, sigma2_awgn=sigma2)
 
 # add the source
 source_location = room_dim / 2 + distance * np.r_[np.cos(azimuth), np.sin(azimuth)]

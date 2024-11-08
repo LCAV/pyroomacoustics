@@ -1,0 +1,120 @@
+{
+  "Oktava_MK4012_CUBE": {
+    "supported": false,
+    "type": "microphones",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Oktava_MK4012_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": []
+  },
+
+  "LSPs_HATS_GuitarCabinets_Akustikmessplatz": {
+    "supported": true,
+    "type": "sources",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": [
+      "Genelec_8020",
+      "Lambda_labs_CX-1A",
+      "HATS_4128C",
+      "Tannoy_System_1200",
+      "Neumann_KH120A",
+      "Yamaha_DXR8",
+      "BM_1x12inch_driver_closed_cabinet",
+      "BM_1x12inch_driver_open_cabinet",
+      "BM_open_stacked_on_closed_withCrossoverNetwork",
+      "BM_open_stacked_on_closed_fullrange",
+      "Palmer_1x12inch",
+      "Vibrolux_2x10inch"
+    ]
+  },
+
+  "Soundfield_ST450_CUBE":  {
+    "supported": false,
+    "type": "microphones",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Soundfield_ST450_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": []
+  },
+
+  "AKG_c480_c414_CUBE": {
+    "supported": true,
+    "type": "microphones",
+    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=AKG_c480_c414_CUBE.sofa",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
+    "license": "CC0",
+    "contains": [
+      "AKG_c480",
+      "AKG_c414K",
+      "AKG_c414N",
+      "AKG_c414S",
+      "AKG_c414A"
+    ]
+  },
+
+  "EM32_Directivity": {
+    "supported": true,
+    "type": "microphones",
+    "url": "https://phaidra.kug.ac.at/download/o:69292",
+    "homepage": "https://phaidra.kug.ac.at/detail/o:69292",
+    "license": "CC0",
+    "contains": [
+      "EM_32_0",
+      "EM_32_1",
+      "EM_32_2",
+      "EM_32_3",
+      "EM_32_4",
+      "EM_32_5",
+      "EM_32_6",
+      "EM_32_7",
+      "EM_32_8",
+      "EM_32_9",
+      "EM_32_10",
+      "EM_32_11",
+      "EM_32_12",
+      "EM_32_13",
+      "EM_32_14",
+      "EM_32_15",
+      "EM_32_16",
+      "EM_32_17",
+      "EM_32_18",
+      "EM_32_19",
+      "EM_32_20",
+      "EM_32_21",
+      "EM_32_22",
+      "EM_32_23",
+      "EM_32_24",
+      "EM_32_25",
+      "EM_32_26",
+      "EM_32_27",
+      "EM_32_28",
+      "EM_32_29",
+      "EM_32_30",
+      "EM_32_31"
+    ]
+  },
+  "mit_kemar_large_pinna": {
+    "supported": true,
+    "type": "microphones",
+    "url": "http://sofacoustics.org/data/database/mit/mit_kemar_large_pinna.sofa",
+    "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
+    "license": "This data is Copyright 1994 by the MIT Media Laboratory. It is provided free with no restrictions on use, provided the authors are cited when the data is used in any research or commercial application.",
+    "contains": [
+      "left",
+      "right"
+    ]
+  },
+  "mit_kemar_normal_pinna": {
+    "supported": true,
+    "type": "microphones",
+    "url": "http://sofacoustics.org/data/database/mit/mit_kemar_normal_pinna.sofa",
+    "homepage": "https://sound.media.mit.edu/resources/KEMAR/",
+    "license": "This data is Copyright 1994 by the MIT Media Laboratory. It is provided free with no restrictions on use, provided the authors are cited when the data is used in any research or commercial application.",
+    "contains": [
+      "left",
+      "right"
+    ]
+  }
+}

@@ -16,9 +16,10 @@ More on ``mkl_fft`` can be read here:
 https://github.com/IntelPython/mkl_fft
 """
 
-import numpy as np
-from numpy.fft import rfft, irfft
 import warnings
+
+import numpy as np
+from numpy.fft import irfft, rfft
 
 try:
     import pyfftw
@@ -94,7 +95,6 @@ class DFT(object):
         precision="double",
         bits=None,
     ):
-
         self.nfft = nfft
         self.D = D
         self.axis = axis
@@ -157,7 +157,7 @@ class DFT(object):
 
         if transform == "fftw":
             if pyfftw_available:
-                from pyfftw import empty_aligned, FFTW
+                from pyfftw import FFTW, empty_aligned
 
                 self.transform = transform
                 # allocate input (real) and output for pyfftw
@@ -227,20 +227,12 @@ class DFT(object):
 
         # apply DFT
         if self.transform == "fftw":
-            self.a[
-                :,
-            ] = x
-            self.X[
-                :,
-            ] = self._forward()
+            self.a[:,] = x
+            self.X[:,] = self._forward()
         elif self.transform == "mkl":
-            self.X[
-                :,
-            ] = mkl_fft.rfft_numpy(x, self.nfft, axis=self.axis)
+            self.X[:,] = mkl_fft.rfft_numpy(x, self.nfft, axis=self.axis)
         else:
-            self.X[
-                :,
-            ] = rfft(x, self.nfft, axis=self.axis)
+            self.X[:,] = rfft(x, self.nfft, axis=self.axis)
 
         return self.X
 
@@ -269,24 +261,16 @@ class DFT(object):
                     % (X.shape[0], X.shape[1], self.X.shape[0], self.X.shape[1])
                 )
 
-            self.X[
-                :,
-            ] = X
+            self.X[:,] = X
 
         # inverse DFT
         if self.transform == "fftw":
             self.b[:] = self.X
-            self.x[
-                :,
-            ] = self._backward()
+            self.x[:,] = self._backward()
         elif self.transform == "mkl":
-            self.x[
-                :,
-            ] = mkl_fft.irfft_numpy(self.X, self.nfft, axis=self.axis)
+            self.x[:,] = mkl_fft.irfft_numpy(self.X, self.nfft, axis=self.axis)
         else:
-            self.x[
-                :,
-            ] = irfft(self.X, self.nfft, axis=self.axis)
+            self.x[:,] = irfft(self.X, self.nfft, axis=self.axis)
 
         # apply window if needed
         if self.synthesis_window is not None:

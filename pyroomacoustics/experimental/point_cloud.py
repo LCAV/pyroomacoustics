@@ -60,7 +60,6 @@ class PointCloud:
             self.labels = [str(i) for i in range(self.m)]
 
     def __getitem__(self, ref):
-
         if isinstance(ref, (str, unicode)):
             if self.labels is None:
                 raise ValueError("Labels not set for this marker set")
@@ -337,10 +336,9 @@ class PointCloud:
         return np.array([azimuth, elevation])
 
     def plot(self, axes=None, show_labels=True, **kwargs):
-
         try:
-            from mpl_toolkits.mplot3d import Axes3D
             import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
         except ImportError:
             import warnings
 
@@ -348,7 +346,6 @@ class PointCloud:
             return
 
         if self.dim == 2:
-
             # Create a figure if needed
             if axes is None:
                 axes = plt.subplot(111)
@@ -386,7 +383,6 @@ class PointCloud:
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     # number of markers

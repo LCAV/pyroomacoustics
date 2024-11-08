@@ -2,8 +2,8 @@
 Just run the Material command with a bunch of inputs to make sure
 it works as expected
 """
-import pyroomacoustics as pra
 
+import pyroomacoustics as pra
 
 scat_test = {
     "coeffs": [0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.3],
@@ -112,7 +112,6 @@ def test_empty():
 
 
 if __name__ == "__main__":
-
     test_material_e_float()
     test_material_es_float()
     test_material_es_dict

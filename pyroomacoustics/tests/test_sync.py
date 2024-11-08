@@ -1,15 +1,14 @@
 import numpy as np
 from scipy.signal import fftconvolve
+
 import pyroomacoustics as pra
 
 
 def test_correlate():
-
     N = [100, 200, 50, 37]
     M = [47, 82, 151, 893]
 
     for n, m in zip(N, M):
-
         x = np.random.randn(n)
         y = np.random.randn(m)
 
@@ -17,13 +16,11 @@ def test_correlate():
 
 
 def test_tdoa_delay_int():
-
     N = [100, 200, 50, 1000]
     M = [47, 37, 12, 128]
     delays = [27, 4, 10, 347]
 
     for n, m, tau in zip(N, M, delays):
-
         pulse = np.random.randn(m)
         x1 = np.zeros(n)
         x1[:m] = pulse
@@ -38,7 +35,6 @@ def test_tdoa_delay_int():
 
 
 def test_tdoa_delay_frac_phat():
-
     N = [14, 200, 70, 40, 28]
     M = [3, 78, 12, 10, 12]
 
@@ -52,7 +48,6 @@ def test_tdoa_delay_frac_phat():
 
     # test without explicit sampling frequency
     for n, m, tau, fil in zip(N, M, delays, frac_filters):
-
         pulse = np.random.randn(m)
         signal = np.zeros(n)
         signal[:m] = pulse
@@ -74,7 +69,6 @@ def test_tdoa_delay_frac_phat():
 
 
 if __name__ == "__main__":
-
     test_correlate()
     test_tdoa_delay_int()
     test_tdoa_delay_frac_phat()

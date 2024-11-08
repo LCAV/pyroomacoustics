@@ -1,6 +1,7 @@
 """
 Routines to perform grid search on the sphere
 """
+
 from __future__ import absolute_import, division, print_function
 
 from abc import ABCMeta, abstractmethod
@@ -9,7 +10,7 @@ import numpy as np
 import scipy.spatial as sp  # import ConvexHull, SphericalVoronoi
 
 from .detect_peaks import detect_peaks
-from .utils import great_circ_dist
+from .utils import cart2spher, fibonacci_spherical_sampling, great_circ_dist, spher2cart
 
 
 class Grid:
@@ -25,7 +26,6 @@ class Grid:
     __metaclass__ = ABCMeta
 
     def __init__(self, n_points):
-
         self.n_points = n_points
         self.values = None
         self.cartesian = np.zeros((3, n_points))
@@ -38,6 +38,9 @@ class Grid:
         self.dim = 0
         self.values = None
 
+    def __len__(self):
+        return self.cartesian.shape[1]
+
     @abstractmethod
     def apply(self, func, spherical=False):
         return NotImplemented
@@ -47,7 +50,6 @@ class Grid:
         return NotImplemented
 
     def set_values(self, vals):
-
         vals = np.array(vals)
 
         if vals.ndim == 0:
@@ -76,7 +78,6 @@ class GridCircle(Grid):
 
     def __init__(self, n_points=360, azimuth=None):
         if azimuth is not None:
-
             if azimuth.ndim != 1:
                 raise ValueError("Azimuth must be a 1D ndarray.")
 
@@ -100,14 +101,12 @@ class GridCircle(Grid):
         self.y[:] = np.sin(azimuth)
 
     def apply(self, func, spherical=False):
-
         if spherical:
             self.values = func(self.azimuth)
         else:
             self.values = func(self.x, self.y)
 
     def find_peaks(self, k=1):
-
         # make circular
         val_ext = np.append(self.values, self.values[:10])
 
@@ -123,7 +122,6 @@ class GridCircle(Grid):
         return candidates[max_idx]
 
     def plot(self, mark_peaks=0):
-
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -141,7 +139,6 @@ class GridCircle(Grid):
         ax.plot(pts, vals, "-")
 
         if mark_peaks > 0:
-
             idx = self.find_peaks(k=mark_peaks)
 
             ax.plot(pts[idx], vals[idx], "ro")
@@ -149,8 +146,10 @@ class GridCircle(Grid):
 
 class GridSphere(Grid):
     """
-    This function computes nearly equidistant points on the sphere
-    using the fibonacci method
+    This object represents a grid of points of the sphere.
+
+    If the points are not provided, pseudo-uniform points computed
+    according to the Fibonnaci method are used.
 
     Parameters
     ----------
@@ -158,15 +157,16 @@ class GridSphere(Grid):
         The number of points to sample
     spherical_points: ndarray, optional
         A 2 x n_points array of spherical coordinates with azimuth in
-        the top row and colatitude in the second row. Overrides n_points.
-    enable_peak_finding: bool, optional
-        If this is set to True, the list of neighbors of every points
-        in the grid will be precomputed to allow to do peak finding on
-        the sphere (default is True). When set to False, calling the ``find_peak``
-        method will result in an error. Not that setting this to True means
-        that the convex hull of the point is computed which may result in overhead
-        time, especially for a lot of points. If peak finding is not required, it is
-        recommended to set this value to False.
+        the top row and colatitude in the second row. Overrides ``n_points``
+        and ``cartesian_points``.
+    cartesian_points: ndarray, optional
+        A 3 x n_points array of Cartesian coordinates with x, y, z coordinates
+        in the rows. The vectors are normalized to unit-norm in the constructor.
+        Overrides ``n_points``.
+    precompute_neighbors: bool, optional
+        If `True`, the convex hull algorithm is used to find all
+        the neighbors of the grid points. This is used for the peak finding
+        algorithm.
 
     References
     ----------
@@ -174,13 +174,21 @@ class GridSphere(Grid):
     http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
     """
 
-    def __init__(self, n_points=1000, spherical_points=None, enable_peak_finding=True):
+    def __init__(
+        self,
+        n_points=1000,
+        spherical_points=None,
+        cartesian_points=None,
+        precompute_neighbors=False,
+    ):
         if spherical_points is not None:
-
             if spherical_points.ndim != 2 or spherical_points.shape[0] != 2:
                 raise ValueError("spherical_points must be a 2D array with two rows.")
-
             n_points = spherical_points.shape[1]
+        elif cartesian_points is not None:
+            if cartesian_points.ndim != 2 or cartesian_points.shape[0] != 3:
+                raise ValueError("cartesian_points must be a 3D array with two rows.")
+            n_points = cartesian_points.shape[1]
 
         # Parent constructor
         Grid.__init__(self, n_points)
@@ -188,63 +196,61 @@ class GridSphere(Grid):
         self.dim = 3
 
         if spherical_points is not None:
-            # If a list of points was provided, use it
-
             self.spherical[:, :] = spherical_points
+            self.cartesian[:] = spher2cart(self.azimuth, self.colatitude)
 
-            # transform to cartesian coordinates
-            self.x[:] = np.cos(self.azimuth) * np.sin(self.colatitude)
-            self.y[:] = np.sin(self.azimuth) * np.sin(self.colatitude)
-            self.z[:] = np.cos(self.colatitude)
+        elif cartesian_points is not None:
+            # normalize all
+            norms = np.linalg.norm(cartesian_points, axis=0, keepdims=True)
+            self.cartesian[:] = cartesian_points / norms
+            self.azimuth[:], self.colatitude[:], _ = cart2spher(self.cartesian)
 
         else:
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            # Fibonnaci sampling
-            offset = 2.0 / n_points
-            increment = np.pi * (3.0 - np.sqrt(5.0))
-
-            self.z[:] = (np.arange(n_points) * offset - 1) + offset / 2
-            rho = np.sqrt(1.0 - self.z**2)
-
-            phi = np.arange(n_points) * increment
-
-            self.x[:] = np.cos(phi) * rho
-            self.y[:] = np.sin(phi) * rho
+            self.x, self.y, self.z = fibonacci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
             self.azimuth[:] = np.arctan2(self.y, self.x)
             self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
 
+        self._neighbors = None
+        if precompute_neighbors:
+            self._compute_neighbors()
+
+    @property
+    def neighbors(self):
+        if self._neighbors is None:
+            self._compute_neighbors()
+        return self._neighbors
+
+    def _compute_neighbors(self):
         # To perform the peak detection in 2D on a non-squared grid it is
         # necessary to know the neighboring points of each grid point.  The
         # Convex Hull of points on the sphere is equivalent to the Delauney
         # triangulation of the point set, which is what we are looking for.
 
-        self._enable_peak_finding = enable_peak_finding
+        # Now we also want to compute the convex hull
+        self.hull = sp.ConvexHull(self.cartesian.T)
 
-        if self._enable_peak_finding:
-            # Now we also want to compute the convex hull
-            self.hull = sp.ConvexHull(self.cartesian.T)
+        # and create an adjacency list
+        adjacency = [set() for pt in range(self.n_points)]
 
-            # and create an adjacency list
-            adjacency = [set() for pt in range(self.n_points)]
+        # Simplices contains all the triangles that form
+        # the faces of the convex hull. We use this to find which
+        # points are connected on the hull.
+        for tri in self.hull.simplices:
+            adjacency[tri[0]].add(tri[1])
+            adjacency[tri[0]].add(tri[2])
+            adjacency[tri[1]].add(tri[0])
+            adjacency[tri[1]].add(tri[2])
+            adjacency[tri[2]].add(tri[0])
+            adjacency[tri[2]].add(tri[1])
 
-            # Simplices contains all the triangles that form
-            # the faces of the convex hull. We use this to find which
-            # points are connected on the hull.
-            for tri in self.hull.simplices:
-                adjacency[tri[0]].add(tri[1])
-                adjacency[tri[0]].add(tri[2])
-                adjacency[tri[1]].add(tri[0])
-                adjacency[tri[1]].add(tri[2])
-                adjacency[tri[2]].add(tri[0])
-                adjacency[tri[2]].add(tri[1])
-
-            # convert to list of lists
-            self.neighbors = [list(x) for x in adjacency]
+        # convert to list of lists
+        self._neighbors = [list(x) for x in adjacency]
 
     def apply(self, func, spherical=False):
         """
@@ -259,20 +265,15 @@ class GridSphere(Grid):
     def min_max_distance(self):
         """Compute some statistics on the distribution of the points"""
 
-        if not self._enable_peak_finding:
-            raise ValueError("This method requires that peak finding is enabled.")
-
         min_dist = np.inf
         max_dist = 0
 
         dist = []
 
         for u in range(self.n_points):
-
             phi1, theta1 = self.spherical[:, u]
 
             for v in self.neighbors[u]:
-
                 phi2, theta2 = self.spherical[:, v]
 
                 d = great_circ_dist(1, theta1, phi1, theta2, phi2)
@@ -296,15 +297,11 @@ class GridSphere(Grid):
         Find the largest peaks on the grid
         """
 
-        if not self._enable_peak_finding:
-            raise ValueError("This method requires that peak finding is enabled.")
-
         candidates = []
 
         # We start by looking at points whose neighbors all have lower values
         # than themselves
         for v in range(self.n_points):
-
             is_local_max = True
 
             for u in self.neighbors[v]:
@@ -324,7 +321,7 @@ class GridSphere(Grid):
         """Regrid the non-uniform data on a regular mesh"""
 
         if self.values is None:
-            warnings.warn("Cannot regrid: data missing.")
+            warnings.warn("Cannont regrid: data missing.")
             return
 
         # First we need to interpolate the non-uniformly sampled data
@@ -357,7 +354,6 @@ class GridSphere(Grid):
         projection=True,
         points_only=False,
     ):
-
         if points_only:
             dirty_img = None
             dirty_grid_x = None
@@ -414,7 +410,6 @@ class GridSphere(Grid):
             ax.scatter(self.x, self.y, self.z, c="b", marker="o")
 
         if mark_peaks > 0:
-
             id = self.find_peaks(k=mark_peaks)
             s = 1.05
             ax.scatter(
@@ -425,7 +420,6 @@ class GridSphere(Grid):
         voronoi.sort_vertices_of_regions()
 
         if self.values is not None:
-
             col_max = self.values.max()
             col_min = self.values.min()
 
@@ -435,7 +429,6 @@ class GridSphere(Grid):
                 col_map = self.values / col_max
 
         else:
-
             col_map = np.zeros(self.n_points)
 
         cmap = plt.get_cmap("coolwarm")

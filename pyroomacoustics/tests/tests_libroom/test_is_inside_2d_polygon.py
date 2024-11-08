@@ -24,23 +24,14 @@
 from __future__ import division
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 polygons = [
     np.array(
         [  # this one is clockwise
-            [
-                0,
-                4,
-                4,
-                0,
-            ],
-            [
-                0,
-                0,
-                4,
-                4,
-            ],
+            [0, 4, 4, 0],
+            [0, 0, 4, 4],
         ]
     ),
     np.array(
@@ -138,7 +129,6 @@ def test_top_outside():
 
 
 if __name__ == "__main__":
-
     test_inside()
     test_on_border()
     test_on_corner()

@@ -1,6 +1,7 @@
 import shutil
-from pyroomacoustics.datasets.utils import download_uncompress
 import ssl
+
+from pyroomacoustics.datasets.utils import download_uncompress
 
 test_url = "https://github.com/LCAV/pyroomacoustics/archive/master.tar.gz"
 extracted_name = "pyroomacoustics-master"

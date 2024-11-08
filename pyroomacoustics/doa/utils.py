@@ -2,9 +2,14 @@
 This module contains useful functions to compute distances and errors on on
 circles and spheres.
 """
+
 from __future__ import division
 
+import collections
+
 import numpy as np
+
+RegularGrid = collections.namedtuple("RegularGrid", ["azimuth", "colatitude"])
 
 
 def circ_dist(azimuth1, azimuth2, r=1.0):
@@ -56,18 +61,45 @@ def great_circ_dist(r, colatitude1, azimuth1, colatitude2, azimuth2):
     return dist
 
 
+def cart2spher(vectors):
+    """
+    Parameters
+    ----------
+    vectors: array_like, shape (3, n_vectors)
+        The vectors to transform
+
+    Returns
+    -------
+    azimuth: numpy.ndarray, shape (n_vectors,)
+        The azimuth of the vectors
+    colatitude: numpy.ndarray, shape (n_vectors,)
+        The colatitude of the vectors
+    r: numpy.ndarray, shape (n_vectors,)
+        The length of the vectors
+    """
+
+    r = np.linalg.norm(vectors, axis=0)
+
+    azimuth = np.arctan2(vectors[1], vectors[0])
+    colatitude = np.arctan2(np.linalg.norm(vectors[:2], axis=0), vectors[2])
+
+    return azimuth, colatitude, r
+
+
 def spher2cart(azimuth, colatitude=None, r=1, degrees=False):
     """
     Convert a spherical point to cartesian coordinates.
 
     Parameters
     ----------
-    r:
-        radius
     azimuth:
         azimuth
     colatitude:
         colatitude
+    r:
+        radius
+    degrees:
+        If True, indicates that the input angles are in degree (instead of radian)
 
     Returns
     -------
@@ -139,3 +171,91 @@ def polar_distance(x1, x2):
         else:
             index = np.array([index, 1])
     return d, index
+
+
+def fibonacci_spherical_sampling(n_points):
+    """
+    This function computes nearly equidistant points on the sphere
+    using the fibonacci method
+
+    Parameters
+    ----------
+    n_points: int
+        The number of points to sample
+
+    Returns
+    -------
+    points: numpy.ndarray, (3, n_points)
+        The cartesian coordinates of the points
+
+    References
+    ----------
+    http://lgdv.cs.fau.de/uploads/publications/spherical_fibonacci_mapping.pdf
+    http://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    """
+
+    points = np.zeros((3, n_points))
+
+    # Fibonnaci sampling
+    offset = 2.0 / n_points
+    increment = np.pi * (3.0 - np.sqrt(5.0))
+
+    points[2, :] = (np.arange(n_points) * offset - 1) + offset / 2
+    rho = np.sqrt(1.0 - points[2] ** 2)
+
+    phi = np.arange(n_points) * increment
+
+    points[0, :] = np.cos(phi) * rho
+    points[1, :] = np.sin(phi) * rho
+
+    return points
+
+
+def detect_regular_grid(azimuth, colatitude):
+    """
+    This function checks that the linearized azimuth/colatitude where sampled
+    from a regular grid.
+
+    It also checks that the azimuth are uniformly spread in [0, 2 * np.pi).
+    The colatitudes can have arbitrary positions.
+
+    Parameters
+    ----------
+    azimuth: numpy.ndarray (npoints,)
+        The azimuth values in radian
+    colatitude: numpy.ndarray (npoints,)
+        The colatitude values in radian
+
+    Returns
+    -------
+    regular_grid: dict["azimuth", "colatitude"] or None
+        A dictionary with entries for the sorted distinct azimuth an colatitude values
+        of the grid, if the points form a grid.
+        Returns `None` if the points do not form a grid.
+    """
+    if len(azimuth) != len(colatitude):
+        return None
+
+    azimuth_unique = np.unique(azimuth)
+    colatitude_unique = np.unique(colatitude)
+    regular_grid = None
+    if len(azimuth_unique) * len(colatitude_unique) == len(azimuth):
+        # check that the azimuth are uniformly spread
+        az_loop = np.insert(
+            azimuth_unique, len(azimuth_unique), azimuth_unique[0] + 2 * np.pi
+        )
+        delta_az = np.diff(az_loop)
+        if np.allclose(delta_az, 2 * np.pi / len(azimuth_unique)):
+            # remake the grid from the unique points and check
+            # that it matches the original
+            A, C = np.meshgrid(azimuth_unique, colatitude_unique)
+            regrid = np.column_stack([A.flatten(), C.flatten()])
+            regrid = regrid[np.lexsort(regrid.T), :]
+            ogrid = np.column_stack([azimuth, colatitude])
+            ogrid = ogrid[np.lexsort(ogrid.T), :]
+            if np.allclose(regrid, ogrid):
+                regular_grid = RegularGrid(
+                    azimuth=azimuth_unique, colatitude=colatitude_unique
+                )
+
+    return regular_grid

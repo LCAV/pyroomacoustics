@@ -31,7 +31,7 @@ import math
 import numpy as np
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
-from scipy.signal import butter, fftconvolve, sosfiltfilt
+from scipy.signal import butter, fftconvolve
 
 from .parameters import constants
 from .transform import stft
@@ -82,7 +82,6 @@ def bandpass_filterbank(bands, fs=1.0, order=8, output="sos"):
     nyquist = fs / 2.0
 
     for band in bands:
-
         # remove bands above nyquist frequency
         if band[0] >= nyquist:
             raise ValueError("Bands should be below Nyquist frequency")
@@ -160,11 +159,11 @@ class OctaveBandsFactory(object):
         Use third octave bands if True (default: False)
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512):
-
+    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512, keep_dc=False):
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
+        self.keep_dc = keep_dc
 
         # compute the number of bands
         self.n_bands = math.floor(np.log2(fs / base_frequency))
@@ -260,27 +259,7 @@ class OctaveBandsFactory(object):
 
     def _make_filters(self):
         """
-        Create the band-pass filters for the octave bands
-
-        Parameters
-        ----------
-        order: int, optional
-            The order of the IIR filters (default: 8)
-        output: {'ba', 'zpk', 'sos'}
-            Type of output: numerator/denominator ('ba'), pole-zero ('zpk'), or
-            second-order sections ('sos'). Default is 'ba'.
-
-        Returns
-        -------
-        A list of callables that will each apply one of the band-pass filters
-        """
-
-        """
-        filter_bank = bandpass_filterbank(
-            self.bands, fs=self.fs, order=order, output=output
-        )
-
-        return [lambda sig: sosfiltfilt(bpf, sig) for bpf in filter_bank]
+        Creates the band-pass filters for the octave bands
         """
 
         # This seems to work only for Octave bands out of the box
@@ -288,16 +267,27 @@ class OctaveBandsFactory(object):
         n = len(self.centers)
 
         new_bands = [[centers[0] / 2, centers[1]]]
+
         for i in range(1, n - 1):
             new_bands.append([centers[i - 1], centers[i + 1]])
         new_bands.append([centers[-2], self.fs / 2])
 
         n_freq = self.n_fft // 2 + 1
         freq_resp = np.zeros((n_freq, n))
-        freq = np.arange(n_freq) / self.n_fft * self.fs
+
+        freq = (
+            np.arange(n_freq) / self.n_fft * self.fs
+        )  # This only contains positive newfrequencies
 
         for b, (band, center) in enumerate(zip(new_bands, centers)):
+            if b == 0 and self.keep_dc:
+                # Converting Octave bands so that the minimum phase filters do not
+                # have ripples.
+                make_one = freq < center
+                freq_resp[make_one, b] = 1.0
+
             lo = np.logical_and(band[0] <= freq, freq < center)
+
             freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
 
             if b != n - 1:
@@ -311,9 +301,11 @@ class OctaveBandsFactory(object):
             np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
             axes=[0],
         )
-
         # remove the first sample to make them odd-length symmetric filters
         self.filters = filters[1:, :]
+
+        # Octave band filters in frequency domain
+        self.filters_freq_domain = np.fft.fft(filters, axis=0, n=self.n_fft)
 
 
 def critical_bands():

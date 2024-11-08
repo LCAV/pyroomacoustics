@@ -5,7 +5,6 @@ import os
 import sys
 
 # To use a consistent encoding
-from codecs import open
 from os import path
 
 # import version from file
@@ -52,7 +51,10 @@ libroom_files = [
         "geometry.hpp",
         "geometry.cpp",
         "common.hpp",
+        "rir_builder.cpp",
+        "rir_builder.hpp",
         "libroom.cpp",
+        "threadpool.hpp",
     ]
 ]
 ext_modules = [
@@ -69,7 +71,12 @@ ext_modules = [
             os.path.join(libroom_src_dir, "ext/nanoflann/include"),
         ],
         language="c++",
-        extra_compile_args=["-DEIGEN_MPL2_ONLY", "-Wall", "-O3", "-DEIGEN_NO_DEBUG"],
+        extra_compile_args=[
+            "-DEIGEN_MPL2_ONLY",
+            "-Wall",
+            "-O3",
+            "-DEIGEN_NO_DEBUG",
+        ],
     ),
     Extension(
         "pyroomacoustics.build_rir",
@@ -87,6 +94,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
 
 
 ### Build Tools (taken from pybind11 example) ###
+
 
 # As of Python 3.6, CCompiler has a `has_flag` method.
 # cf http://bugs.python.org/issue26689
@@ -167,27 +175,40 @@ setup_kwargs = dict(
         "pyroomacoustics",
         "pyroomacoustics.doa",
         "pyroomacoustics.adaptive",
+        "pyroomacoustics.directivities",
         "pyroomacoustics.transform",
         "pyroomacoustics.experimental",
         "pyroomacoustics.datasets",
         "pyroomacoustics.bss",
         "pyroomacoustics.denoise",
         "pyroomacoustics.phase",
+        "pyroomacoustics.simulation",
     ],
     # Libroom C extension
     ext_modules=ext_modules,
     # Necessary to keep the source files
-    package_data={"pyroomacoustics": ["*.pxd", "*.pyx", "data/materials.json"]},
+    package_data={
+        "pyroomacoustics": [
+            "*.pxd",
+            "*.pyx",
+            "data/materials.json",
+            "data/sofa_files.json",
+            "data/sofa/AKG_c480_c414_CUBE.sofa",
+            "data/sofa/EM32_Directivity.sofa",
+            "data/sofa/mit_kemar_large_pinna.sofa",
+            "data/sofa/mit_kemar_normal_pinna.sofa",
+        ]
+    },
     install_requires=[
         "Cython",
-        "numpy",
+        "numpy>=1.13.0",
         "scipy>=0.18.0",
         "pybind11>=2.2",
     ],
     cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
     zip_safe=False,
-    test_suite="nose.collector",
-    tests_require=["nose"],
+    test_suite="pytest",
+    tests_require=["pytest"],
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
@@ -205,14 +226,11 @@ setup_kwargs = dict(
         "License :: OSI Approved :: MIT License",
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        #'Programming Language :: Python :: 3.3',
-        #'Programming Language :: Python :: 3.4',
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     # What does your project relate to?
     keywords="room acoustics signal processing doa beamforming adaptive",

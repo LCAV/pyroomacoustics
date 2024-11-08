@@ -21,6 +21,7 @@
 Test code for RT60 measurement routine
 """
 import numpy as np
+
 import pyroomacoustics as pra
 
 eps = 1e-15
@@ -67,6 +68,5 @@ def test_rt60_plot():
 
 
 if __name__ == "__main__":
-
     test_rt60()
     test_rt60_plot()

@@ -12,8 +12,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 # mock modules for compilation without installing all packages
 MOCK_MODULES = [
@@ -52,6 +52,7 @@ MOCK_MODULES = [
     "mpl_toolkits.mplot3d",
     "joblib",
     "scipy.io",
+    "soxr",
 ]
 
 try:
@@ -91,6 +92,7 @@ extensions = [
 ]
 
 numpydoc_show_class_members = False
+
 
 # Custom function to define some 'noisy' class members to skip
 def skip_member(app, what, name, obj, skip, options):

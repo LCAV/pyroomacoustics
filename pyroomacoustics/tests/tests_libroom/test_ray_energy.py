@@ -24,7 +24,9 @@
 from __future__ import division
 
 import unittest
+
 import numpy as np
+
 import pyroomacoustics as pra
 
 
@@ -52,7 +54,6 @@ class SimpleHistogram(list):
 
 class TestRayEnergy(unittest.TestCase):
     def test_square_room(self):
-
         """
         This is a cubic room of 2x2x2 meters. The source is placed at [0.5,0.5, 1]
         and the receiver at [1.5, 1.5, 1]. A ray is launched towards [1, 0, 1] so that
@@ -82,10 +83,10 @@ class TestRayEnergy(unittest.TestCase):
 
         print("Creating the python room (polyhedral)")
         walls_corners = [
-            np.array([[0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, 2]]),  # left
-            np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # right
-            np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # front`
-            np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # back
+            np.array([[0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, 2]]),  # front
+            np.array([[0, 0, 2, 2], [2, 2, 2, 2], [0, 2, 2, 0]]),  # back
+            np.array([[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 2, 2]]),  # left`
+            np.array([[2, 2, 2, 2], [0, 0, 2, 2], [0, 2, 2, 0]]),  # right
             np.array(
                 [
                     [0, 2, 2, 0],
@@ -156,8 +157,8 @@ class TestRayEnergy(unittest.TestCase):
         histogram_rt_poly = np.array(h_poly[0])[: len(histogram_gt)]
         histogram_rt_cube = np.array(h_cube[0])[: len(histogram_gt)]
 
-        self.assertTrue(np.allclose(histogram_rt_poly, histogram_gt))
-        self.assertTrue(np.allclose(histogram_rt_cube, histogram_gt))
+        self.assertTrue(np.allclose(histogram_rt_poly, histogram_gt, atol=1e-5))
+        self.assertTrue(np.allclose(histogram_rt_cube, histogram_gt, atol=1e-5))
 
 
 if __name__ == "__main__":

@@ -85,10 +85,10 @@ class DirectionalSampler(RejectionSampler):
 
         if loc is None:
             self._dim = 3
-            self._loc = np.zeros(self._dim, dtype=np.float)
+            self._loc = np.zeros(self._dim, dtype=float)
             self._loc[0] = 1.0
         else:
-            self._loc = np.array(loc, dtype=np.float)
+            self._loc = np.array(loc, dtype=float)
             assert self._loc.ndim == 1
             self._dim = len(self._loc)
 

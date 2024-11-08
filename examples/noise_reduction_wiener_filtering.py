@@ -1,11 +1,12 @@
+import os
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import os
-import pyroomacoustics as pra
-import matplotlib.pyplot as plt
-import time
-from pyroomacoustics.denoise import IterativeWiener
 
+import pyroomacoustics as pra
+from pyroomacoustics.denoise import IterativeWiener
 
 """
 Test and algorithm parameters
@@ -69,7 +70,6 @@ start_time = time.time()
 processed_audio = np.zeros(noisy_signal.shape)
 n = 0
 while noisy_signal.shape[0] - n >= hop:
-
     # to frequency domain, 50% overlap
     stft.analysis(noisy_signal[n : (n + hop)])
 

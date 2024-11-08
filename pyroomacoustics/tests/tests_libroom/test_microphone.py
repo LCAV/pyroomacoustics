@@ -24,7 +24,7 @@ def inspect_directional_receiver_pattern_anechoic():
     room.add_microphone([8, 5, 2])
 
     # add directional receiver
-    grid = pra.doa.GridSphere(n_points=256, enable_peak_finding=False)
+    grid = pra.doa.GridSphere(n_points=256)
     room.room_engine.microphones[0].set_directions(grid.cartesian.T)
 
     room.room_engine.ray_tracing(100000, [2, 5, 2])
@@ -51,7 +51,7 @@ def inspect_directional_receiver_pattern_reverb():
     room.add_microphone([8, 5, 2])
 
     # add directional receiver
-    grid = pra.doa.GridSphere(n_points=256, enable_peak_finding=False)
+    grid = pra.doa.GridSphere(n_points=256)
     room.room_engine.microphones[0].set_directions(grid.cartesian.T)
 
     room.room_engine.ray_tracing(100000, [2, 5, 2])
@@ -69,7 +69,7 @@ def inspect_directional_receiver_pattern_reverb():
 if __name__ == "__main__":
 
     mic = pra.libroom.Microphone([0.0, 0.0, 0.0], 1, 0.1, 1.0)
-    grid = pra.doa.GridSphere(n_points=16, enable_peak_finding=False)
+    grid = pra.doa.GridSphere(n_points=16)
     dirs = grid.cartesian.T.copy()
     mic.set_directions(dirs)
 

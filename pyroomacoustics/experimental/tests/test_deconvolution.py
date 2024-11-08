@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 import numpy as np
 from scipy.signal import fftconvolve
 
@@ -33,7 +34,6 @@ def generate_signals(SNR, x, h, noise):
 
 class TestDeconvolution(TestCase):
     def test_deconvolve_hann_noiseless(self):
-
         h = h_hann
         h_len = h_hann.shape[0]
         SNR = 1000.0
@@ -49,7 +49,6 @@ class TestDeconvolution(TestCase):
         self.assertTrue(rmse < tol)
 
     def test_wiener_deconvolve_hann_noiseless(self):
-
         h = h_hann
         h_len = h_hann.shape[0]
         SNR = 1000.0
@@ -68,7 +67,6 @@ class TestDeconvolution(TestCase):
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
 
     h = h_hann

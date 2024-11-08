@@ -26,7 +26,6 @@ import numpy as np
 
 
 class SubbandLMS:
-
     """
     Frequency domain implementation of LMS. Adaptive filter for each
     subband.
@@ -44,7 +43,6 @@ class SubbandLMS:
     """
 
     def __init__(self, num_taps, num_bands, mu=0.5, nlms=True):
-
         self.num_taps = num_taps
         self.num_bands = num_bands
         self.mu = mu
@@ -53,7 +51,6 @@ class SubbandLMS:
         self.reset()
 
     def reset(self):
-
         # filter bank
         self.W = np.zeros((self.num_taps, self.num_bands), dtype=np.complex64)
 

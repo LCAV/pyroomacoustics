@@ -23,17 +23,36 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import fractions
+import functools
 import itertools
+import warnings
 
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
 
+from .doa import cart2spher
 from .parameters import constants, eps
 from .sync import correlate
 
+try:
+    import soxr
+
+    _has_soxr = True
+except ImportError:
+    _has_soxr = False
+
+try:
+    import samplerate
+
+    _has_samplerate = True
+except ImportError:
+    _has_samplerate = False
+
 
 def requires_matplotlib(func):
+    @functools.wraps(func)  # preserves name, docstrings, and signature of function
     def function_wrapper(*args, **kwargs):
         try:
             import matplotlib.pyplot as plt
@@ -230,9 +249,9 @@ def highpass(signal, Fs, fc=None, plot=False):
     wc = 2.0 * fc / Fs
 
     # design the filter
-    from scipy.signal import freqz, iirfilter, lfilter
+    from scipy.signal import iirfilter, sosfiltfilt, sosfreqz
 
-    b, a = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type)
+    sos = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")
 
     # plot frequency response of filter if requested
     if plot:
@@ -244,7 +263,7 @@ def highpass(signal, Fs, fc=None, plot=False):
             warnings.warn("Matplotlib is required for plotting")
             return
 
-        w, h = freqz(b, a)
+        w, h = sosfreqz(sos)
 
         plt.figure()
         plt.title("Digital filter frequency response")
@@ -255,7 +274,7 @@ def highpass(signal, Fs, fc=None, plot=False):
         plt.grid()
 
     # apply the filter
-    signal = lfilter(b, a, signal.copy())
+    signal = sosfiltfilt(sos, signal.copy())
 
     return signal
 
@@ -310,7 +329,6 @@ def time_dB(signal, Fs, bits=16):
 
 
 def spectrum(signal, Fs, N):
-
     from .stft import spectroplot, stft
     from .windows import hann
 
@@ -335,7 +353,6 @@ def compare_plot(
     title1=None,
     title2=None,
 ):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -411,7 +428,6 @@ def compare_plot(
 
 
 def real_spectrum(signal, axis=-1, **kwargs):
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -565,6 +581,9 @@ def fractional_delay(t0):
 
     N = constants.get("frac_delay_length")
 
+    if isinstance(t0, np.ndarray) and t0.ndim == 1:
+        t0 = t0[:, None]
+
     return np.hanning(N) * np.sinc(np.arange(N) - (N - 1) / 2 - t0)
 
 
@@ -651,7 +670,6 @@ def levinson(r, b):
     epsilon = r[0]
 
     for j in np.arange(1, p):
-
         g = np.sum(np.conj(r[1 : j + 1]) * a[::-1])
         gamma = -g / epsilon
         a = np.concatenate((a, np.zeros(1))) + gamma * np.concatenate(
@@ -659,12 +677,7 @@ def levinson(r, b):
         )
         epsilon = epsilon * (1 - np.abs(gamma) ** 2)
         delta = np.dot(np.conj(r[1 : j + 1]), np.flipud(x))
-        q = (
-            b[
-                j,
-            ]
-            - delta
-        ) / epsilon
+        q = (b[j] - delta) / epsilon
         if len(b.shape) == 1:
             x = np.concatenate((x, np.zeros(1))) + q * np.conj(a[::-1])
         else:
@@ -780,7 +793,8 @@ GEOMETRY UTILITIES
 
 def angle_function(s1, v2):
     """
-    Compute azimuth and colatitude angles in radians for a given set of points `s1` and a singular point `v2`.
+    Compute azimuth and colatitude angles in radians for a given set of points `s1`
+    with respect to a reference point `v2`.
 
     Parameters
     -----------
@@ -792,8 +806,9 @@ def angle_function(s1, v2):
     Returns
     -----------
     numpy array
-        2×N numpy array with azimuth and colatitude angles in radians.
-
+        2×N numpy array with azimuth and colatitude angles in radians in the
+        first and second row, respectively.
+        If the input vectors are 2-D, the colatitude is always fixed to pi/2.
     """
 
     if len(s1.shape) == 1:
@@ -803,28 +818,119 @@ def angle_function(s1, v2):
 
     assert s1.shape[0] == v2.shape[0]
 
-    x_vals = s1[0]
-    y_vals = s1[1]
-    x2 = v2[0]
-    y2 = v2[1]
+    ndim = s1.shape[0]
+    if ndim == 2:
+        s1 = np.concatenate((s1, np.zeros((1, s1.shape[1]))), axis=0)
+        v2 = np.concatenate((v2, np.zeros((1, v2.shape[1]))), axis=0)
 
-    # colatitude calculation for 3-D coordinates
-    if s1.shape[0] == 3 and v2.shape[0] == 3:
+    # this is slightly wasteful for 2d points, but is safer as we are relying
+    # on tried and tested code
+    az, co, r = cart2spher(s1 - v2)
 
-        z2 = v2[2]
-        z_vals = s1[2]
+    if ndim == 2:
+        # this is only necessary to handle correctly the case s1 - v2 = 0
+        # in this case cart2spher returns zero, but we would like to have
+        # colatitude = pi/2 for consistency
+        co[:] = np.pi / 2
 
-        colatitude = np.arctan2(
-            ((x_vals - x2) ** 2 + (y_vals - y2) ** 2) ** 1 / 2, (z_vals - z2)
+    return np.vstack((az, co))
+
+
+def resample(data, old_fs, new_fs, backend=None, *args, **kwargs):
+    """
+    Resample an ndarray from ``old_fs`` to ``new_fs`` along the last axis.
+
+    Parameters
+    ----------
+    data : numpy array
+        Input data to be resampled expected in shape (..., num_samples).
+    old_fs : int
+        Original sampling rate.
+    new_fs : int
+        New sampling rate.
+    backend: str
+        The resampling backend to use. Options are as follows.
+        All extra arguments are passed to the backend.
+
+        - `soxr`: The default backend. It is the fastest and most
+          accurate. It is not installed by default, but can be installed
+          via `pip install python-soxr`.
+        - `samplerate`: It is the first fallback backend. It is slower,
+          but as accurate as `soxr`. It is not installed by default, but can
+          be installed by `pip install samplerate`.
+        - `scipy`: It is the fallback when none of the other libraries
+          are installed. This uses `scipy.signal.resample_poly` and is not as
+          good as the other backend. This will generate a warning unless
+          specified explicitely.
+
+        The backend used package-wide is set via the constants,
+        e.g., `pra.constants.set("resample_backend", "soxr")`.
+
+    Returns
+    -------
+    The resampled signal.
+    """
+
+    if backend is None:
+        # get the package-wide default backend
+        backend = constants.get("resample_backend")
+
+    if backend not in ("soxr", "samplerate", "scipy"):
+        raise ValueError(
+            "Possible choices for the resampling backend are "
+            "soxr | samplerate | scippy."
         )
 
-    # colatitude calculation for 2-D coordinates
-    elif s1.shape[0] == 2 and v2.shape[0] == 2:
+    # select the backend
+    if backend == "soxr" and not _has_soxr:
+        backend = "samplerate"
 
-        num_points = s1.shape[1]
-        colatitude = np.ones(num_points) * np.pi / 2
+    if backend == "samplerate" and not _has_samplerate:
+        backend = "scipy"
+        warnings.warn(
+            "Neither of the resampling backends `soxr` or `samplerate` are installed. "
+            "Falling back to scipy.signal.resample_poly. To silence this warning, "
+            "specify `backend=scipy` explicitely."
+        )
 
-    # azimuth calculation (same for 2-D and 3-D)
-    azimuth = np.arctan2((y_vals - y2), (x_vals - x2))
+    # format the data
+    ndim = data.ndim
 
-    return np.vstack((azimuth, colatitude))
+    # for samplerate and soxr the data needs to be in format
+    # (num_samples, num_channels)
+    if ndim == 1:
+        data = data[:, None]
+    elif ndim == 2:
+        data = data.T
+    else:
+        shape = data.shape
+        data = data.reshape(-1, data.shape[-1]).T
+
+    if backend == "soxr":
+        resampled_data = soxr.resample(data, old_fs, new_fs, *args, **kwargs)
+    elif backend == "samplerate":
+        resampled_data = samplerate.resample(
+            data, new_fs / old_fs, "sinc_best", *args, **kwargs
+        )
+    else:
+        # first, simplify the fraction
+        rate_frac = fractions.Fraction(int(new_fs), int(old_fs))
+        resampled_data = signal.resample_poly(
+            data,
+            up=rate_frac.numerator,
+            down=rate_frac.denominator,
+            axis=0,
+            *args,
+            **kwargs
+        )
+
+    # restore the original shape of the data
+    if ndim == 1:
+        resampled_data = resampled_data[:, 0]
+    elif ndim == 2:
+        resampled_data = resampled_data.T
+    else:
+        new_shape = shape[:-1] + resampled_data.shape[:1]
+        resampled_data = resampled_data.T.reshape(new_shape)
+
+    return resampled_data

@@ -1,12 +1,9 @@
 .. image:: https://github.com/LCAV/pyroomacoustics/raw/master/logo/pyroomacoustics_logo_horizontal.png
-   :scale: 80 %
    :alt: Pyroomacoustics logo
    :align: left
 
 ------------------------------------------------------------------------------
 
-.. image:: https://travis-ci.org/LCAV/pyroomacoustics.svg?branch=pypi-release
-    :target: https://travis-ci.org/LCAV/pyroomacoustics
 .. image:: https://readthedocs.org/projects/pyroomacoustics/badge/?version=pypi-release
     :target: http://pyroomacoustics.readthedocs.io/en/pypi-release/
     :alt: Documentation Status
@@ -217,6 +214,11 @@ A couple of `detailed demos with illustrations <https://github.com/LCAV/pyroomac
 A comprehensive set of examples covering most of the functionalities
 of the package can be found in the ``examples`` folder of the `GitHub
 repository <https://github.com/LCAV/pyroomacoustics/tree/master/examples>`_.
+
+A `video introduction to pyroomacoustics <https://www.youtube.com/watch?v=c3DTtc--_F4>`_.
+
+A `video tutorial series on using pyroomacoustics <https://youtube.com/playlist?list=PL6QnpHKwdPYgxLV_Ijr6K_3Gdyfhk0SHg&si=gsSuUm9Yw2_sjYhr>`_
+covering many advanced topics.
 
 Authors
 -------

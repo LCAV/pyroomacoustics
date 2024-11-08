@@ -61,7 +61,6 @@ class CSSM(MUSIC):
         num_iter=5,
         **kwargs
     ):
-
         MUSIC.__init__(
             self,
             L=L,
@@ -95,7 +94,6 @@ class CSSM(MUSIC):
         # If there are less peaks than expected sources, leave the band out
         # Otherwise, store the location of the peaks.
         for k in range(self.num_freq):
-
             self.grid.set_values(
                 1 / self._compute_spatial_spectrum(C_hat[k, :, :], self.freq_bins[k])
             )
@@ -119,7 +117,6 @@ class CSSM(MUSIC):
 
         # while(i < self.iter or (len(self.src_idx) < self.num_src and i < 20)):
         while i < self.iter:
-
             # coherent sum
             R = self._coherent_sum(C_hat, f0, beta)
 
@@ -137,7 +134,6 @@ class CSSM(MUSIC):
             i += 1
 
     def _coherent_sum(self, C_hat, f0, beta):
-
         R = np.zeros((self.M, self.M))
 
         # coherently sum frequencies
@@ -157,6 +153,6 @@ class CSSM(MUSIC):
 
             Tj = np.dot(np.c_[A0, B], np.linalg.inv(np.c_[Aj, B]))
 
-            R = R + np.dot(np.dot(Tj, C_hat[j, :, :]), np.conjugate(Tj).T)
+            R = R + np.linalg.multi_dot([Tj, C_hat[j, :, :], np.conjugate(Tj).T])
 
         return R

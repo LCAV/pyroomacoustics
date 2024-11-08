@@ -13,12 +13,12 @@ demonstrated here.
     CMU, 2003.
 """
 
-import pyroomacoustics as pra
 import argparse
 import os
 
-if __name__ == "__main__":
+import pyroomacoustics as pra
 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Example of using the CMUArcticCorpus wrapper"
     )

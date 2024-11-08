@@ -2,6 +2,7 @@
 This example program demonstrates the use of ray tracing
 for the simulation of rooms of different sizes.
 """
+
 from __future__ import print_function
 
 import argparse
@@ -32,7 +33,6 @@ size_opts = {
 
 
 def get_rir(size, reverb):
-
     # We construct a non-shoebox room
     pol = size_opts[size]["mult"] * np.array([[0, 0], [0, 4], [3, 2], [3, 0]]).T
     mat = pra.Material(reverb_opts[reverb]["e_abs"])
@@ -66,7 +66,6 @@ def get_rir(size, reverb):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description=(
             "Demonstrates the use of ray tracing for rooms of "

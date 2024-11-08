@@ -4,6 +4,7 @@ This results in a reverberation time slightly longer than desired.
 The simulation is pure image source method.
 The audio sample with the reverb added is saved back to `examples/samples/guitar_16k_reverb.wav`.
 """
+
 import argparse
 
 import matplotlib.pyplot as plt
@@ -15,7 +16,6 @@ import pyroomacoustics as pra
 methods = ["ism", "hybrid"]
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Simulates and adds reverberation to a dry sound sample. Saves it into `./examples/samples`."
     )
@@ -39,10 +39,17 @@ if __name__ == "__main__":
     # We invert Sabine's formula to obtain the parameters for the ISM simulator
     e_absorption, max_order = pra.inverse_sabine(rt60_tgt, room_dim)
 
+    pra.constants.set("octave_bands_keep_dc", True)
+
     # Create the room
     if args.method == "ism":
         room = pra.ShoeBox(
-            room_dim, fs=fs, materials=pra.Material(e_absorption), max_order=max_order
+            room_dim,
+            fs=fs,
+            materials=pra.Material(e_absorption),
+            max_order=max_order,
+            use_rand_ism=True,
+            air_absorption=True,
         )
     elif args.method == "hybrid":
         room = pra.ShoeBox(
@@ -56,11 +63,13 @@ if __name__ == "__main__":
 
     # place the source in the room
     room.add_source([2.5, 3.73, 1.76], signal=audio, delay=0.5)
+    room.add_source([2.5, 4.73, 1.76], signal=audio, delay=0.5)
 
     # define the locations of the microphones
     mic_locs = np.c_[
         [6.3, 4.87, 1.2],
         [6.3, 4.93, 1.2],  # mic 1  # mic 2
+        [6.3, 4.98, 1.2],  # mic 1  # mic 2
     ]
 
     # finally place the array in the room
@@ -80,21 +89,13 @@ if __name__ == "__main__":
     print("The desired RT60 was {}".format(rt60_tgt))
     print("The measured RT60 is {}".format(rt60[1, 0]))
 
-    # Create a plot
-    plt.figure()
-
-    # plot one of the RIR. both can also be plotted using room.plot_rir()
-    rir_1_0 = room.rir[1][0]
-    plt.subplot(2, 1, 1)
-    plt.plot(np.arange(len(rir_1_0)) / room.fs, rir_1_0)
-    plt.title("The RIR from source 0 to mic 1")
-    plt.xlabel("Time [s]")
-
-    # plot signal at microphone 1
-    plt.subplot(2, 1, 2)
-    plt.plot(room.mic_array.signals[1, :])
-    plt.title("Microphone 1 signal")
-    plt.xlabel("Time [s]")
+    # plot the RIRs
+    select = None  # plot all RIR
+    # select = (2, 0)  # uncomment to only plot the RIR from mic 2 -> src 0
+    # select = [(0, 0), (2, 0)]  # only mic 0 -> src 0, mic 2 -> src 0
+    fig, axes = room.plot_rir(select=select, kind="ir")  # impulse responses
+    fig, axes = room.plot_rir(select=select, kind="tf")  # transfer function
+    fig, axes = room.plot_rir(select=select, kind="spec")  # spectrograms
 
     plt.tight_layout()
     plt.show()

@@ -6,11 +6,14 @@ Implementations of adaptive filters from the RLS class. These algorithms
 typically have a higher computational complexity, but a faster convergence.
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
-from .data_structures import Buffer, Powers
+
 from .adaptive_filter import AdaptiveFilter
+from .data_structures import Buffer, Powers
 from .util import hankel_stride_trick
+
 
 # First the classic RLS (for real numbered signals)
 class RLS(AdaptiveFilter):
@@ -32,7 +35,6 @@ class RLS(AdaptiveFilter):
     """
 
     def __init__(self, length, lmbd=0.999, delta=10, dtype=np.float32):
-
         self.lmbd = lmbd
         self.lmbd_inv = 1 / lmbd
         self.delta = delta
@@ -129,7 +131,6 @@ class BlockRLS(RLS):
     """
 
     def __init__(self, length, lmbd=0.999, delta=10, dtype=np.float32, L=None):
-
         # block size
         if L is None:
             self.block = length
@@ -178,7 +179,6 @@ class BlockRLS(RLS):
 
         # Block update
         if self.n % self.block == 0:
-
             x_vec = self.x.top(self.block + self.length - 1)
             d_vec = self.d.top(self.block)
 

@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 room_dim = [15, 14, 16]
@@ -10,6 +11,7 @@ source_position = [2.0, 3.1, 2.0]
 mic_position = [2.0, 1.5, 2.0]
 fs = 16000
 max_order = 5
+
 
 # scenario A
 def get_room_constructor_args():
@@ -49,7 +51,6 @@ def get_room_add_method():
 
 class RoomConstructorSources(unittest.TestCase):
     def test_room_constructor(self):
-
         room_1 = get_room_constructor_args()
         self.assertTrue(isinstance(room_1.sources[0], pra.SoundSource))
 
@@ -64,5 +65,4 @@ class RoomConstructorSources(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

@@ -1,9 +1,11 @@
 from __future__ import division, print_function
+
 from unittest import TestCase
+
 import numpy as np
+
 import pyroomacoustics as pra
 from pyroomacoustics.transform import stft
-
 
 # test parameters
 tol = -100  # dB
@@ -16,7 +18,6 @@ x = np.random.randn(block_size * 20, D).astype(np.float32)
 
 
 def no_overlap(D):
-
     if D == 1:
         x_local = x[:, 0]
     else:
@@ -34,7 +35,6 @@ def no_overlap(D):
 
 
 def half_overlap(D):
-
     if D == 1:
         x_local = x[:, 0]
     else:
@@ -50,16 +50,7 @@ def half_overlap(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop :,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
     )
 
 
@@ -82,21 +73,11 @@ def append_one_sample(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop : -1,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop : -1,]))
     )
 
 
 def hop_one_sample(D):
-
     if D == 1:
         x_local = x[:, 0]
     else:
@@ -113,16 +94,7 @@ def hop_one_sample(D):
     x_r = stft.synthesis(X, L=block_size, hop=hop, win=synthesis_win)
 
     return pra.dB(
-        np.max(
-            np.abs(
-                x_local[
-                    : -block_size + hop,
-                ]
-                - x_r[
-                    block_size - hop :,
-                ]
-            )
-        )
+        np.max(np.abs(x_local[: -block_size + hop,] - x_r[block_size - hop :,]))
     )
 
 
@@ -145,7 +117,6 @@ class TestSTFTOneShot(TestCase):
 
 
 if __name__ == "__main__":
-
     print()
     print("TEST INFO")
     print("-------------------------------------------------------------")
