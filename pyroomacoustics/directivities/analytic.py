@@ -416,7 +416,7 @@ class CardioidFamilySampler(random.sampler.DirectionalSampler):
         return cardioid_func(
             x.T,
             direction=self._loc,
-            coef=self._coeff,
+            p=self._coeff,
             gain=1.0,
             normalize=False,
             magnitude=True,

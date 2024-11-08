@@ -209,7 +209,7 @@ class GridSphere(Grid):
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            self.x, self.y, self.z = fibonacci_spherical_sampling(n_points)
+            self.x[:], self.y[:], self.z[:] = fibonacci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
@@ -389,10 +389,7 @@ class GridSphere(Grid):
     def plot_old(self, plot_points=False, mark_peaks=0):
         """Plot the points on the sphere with their values"""
 
-        from scipy import rand
-
         try:
-            import matplotlib.colors as colors
             import matplotlib.pyplot as plt
 
             # from mpl_toolkits.mplot3d import Axes3D

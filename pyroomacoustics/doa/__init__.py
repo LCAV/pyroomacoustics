@@ -118,6 +118,7 @@ from .srp import *
 from .tops import *
 from .utils import *
 from .waves import *
+from .histogram import SphericalHistogram
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {

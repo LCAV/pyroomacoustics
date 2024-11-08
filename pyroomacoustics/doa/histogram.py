@@ -38,10 +38,14 @@ class SphericalHistogram:
 
         if self.n_dim == 3:
             self._grid = GridSphere(
-                n_points=self.n_bins, enable_peak_finding=enable_peak_finding
+                n_points=self.n_bins, precompute_neighbors=enable_peak_finding
             )
         else:
             raise NotImplementedError("Only 3D histogram has been implemented")
+
+        import pdb
+
+        pdb.set_trace()
 
         # we need to know the area of each bin
         self._voronoi = SphericalVoronoi(self._grid.cartesian.T)
@@ -51,7 +55,7 @@ class SphericalHistogram:
         self._kd_tree = cKDTree(self._grid.cartesian.T)
 
         # the counter variables for every bin
-        self._bins = np.zeros(self.n_bins, dtype=np.int)
+        self._bins = np.zeros(self.n_bins, dtype=int)
 
         # the total number of points in the histogram
         self._total_count = 0

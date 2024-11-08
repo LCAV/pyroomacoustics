@@ -20,14 +20,13 @@ if __name__ == "__main__":
 
     for loc, scale in zip([[1, 1, 1]], [10, 1, 0.1]):
         print(loc, scale)
-        sampler = CardioidFamilySampler(
-            loc=loc, coeff=pra.DirectivityPattern.FIGURE_EIGHT.value
-        )
+        # Figure-of-eight
+        sampler = CardioidFamilySampler(loc=loc, p=0)
 
         points = sampler(size=10000).T  # shape (n_dim, n_points)
 
         # Create a spherical histogram
-        hist = pra.SphericalHistogram(n_bins=500)
+        hist = pra.doa.SphericalHistogram(n_bins=500)
         hist.push(points)
         hist.plot()
 
