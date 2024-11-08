@@ -413,7 +413,7 @@ class CardioidFamilySampler(random.sampler.DirectionalSampler):
         self._coeff = p
 
     def _pattern(self, x):
-        return cardioid_func(
+        response = cardioid_func(
             x.T,
             direction=self._loc,
             p=self._coeff,
@@ -421,6 +421,9 @@ class CardioidFamilySampler(random.sampler.DirectionalSampler):
             normalize=False,
             magnitude=True,
         )
+        # The number of rays needs to be proportional to the
+        # response energy.
+        return response**2
 
 
 def cardioid_func(x, direction, p, gain=1.0, normalize=True, magnitude=False):

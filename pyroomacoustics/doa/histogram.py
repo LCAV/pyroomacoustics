@@ -43,10 +43,6 @@ class SphericalHistogram:
         else:
             raise NotImplementedError("Only 3D histogram has been implemented")
 
-        import pdb
-
-        pdb.set_trace()
-
         # we need to know the area of each bin
         self._voronoi = SphericalVoronoi(self._grid.cartesian.T)
         self._areas = self._voronoi.calculate_areas()

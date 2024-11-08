@@ -82,6 +82,35 @@ from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
+from .. import random
+
+
+class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
+    """
+    This object draws samples from the distribution defined by the energy
+    of the measured directional response object.
+
+    Parameters
+    ----------
+    loc: array_like
+        The unit vector pointing in the main direction of the cardioid
+    p: float
+        Parameter of the cardioid pattern. A value of 0 corresponds to a
+        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
+        pattern
+        The parameter must be between 0 and 1
+    """
+
+    def __init__(self, kdtree, energy):
+        super().__init__()
+        self._kdtree = kdtree
+        # Normalize to maximum energy 1 because that is also the
+        # maximum value of the proposal unnormalized uniform distribution.
+        self._energy = energy / energy.max()
+
+    def _pattern(self, x):
+        _, index = self._kdtree.query(x)
+        return self._energy[index]
 
 
 class MeasuredDirectivity(Directivity):
@@ -144,6 +173,10 @@ class MeasuredDirectivity(Directivity):
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
 
+        # create the ray sampler
+        ir_energy = np.square(self._irs).mean(axis=-1)
+        self._ray_sampler = MeasuredDirectivitySampler(self._kdtree, ir_energy)
+
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
@@ -173,7 +206,7 @@ class MeasuredDirectivity(Directivity):
         return self._irs[index, :]
 
     def sample_rays(self, n_rays):
-        raise NotImplementedError()
+        return self._ray_sampler(n_rays).T
 
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
@@ -241,7 +274,7 @@ class MeasuredDirectivity(Directivity):
             Y *= V
             Z *= V
 
-        surf = ax.plot_surface(
+        _ = ax.plot_surface(
             X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
         )
 

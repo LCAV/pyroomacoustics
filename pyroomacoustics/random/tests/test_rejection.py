@@ -23,7 +23,13 @@ if __name__ == "__main__":
         # Figure-of-eight
         sampler = CardioidFamilySampler(loc=loc, p=0)
 
-        points = sampler(size=10000).T  # shape (n_dim, n_points)
+        # Measured eigenmike response
+        eigenmike = pra.MeasuredDirectivityFile("EM32_Directivity", fs=16000)
+        rot_54_73 = pra.Rotation3D([73, 54], "yz", degrees=True)
+        dir_obj_Emic = eigenmike.get_mic_directivity("EM_32_9", orientation=rot_54_73)
+        sampler = dir_obj_Emic._ray_sampler
+
+        points = sampler(size=100000).T  # shape (n_dim, n_points)
 
         # Create a spherical histogram
         hist = pra.doa.SphericalHistogram(n_bins=500)
