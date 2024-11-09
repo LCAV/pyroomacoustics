@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import numpy as np
+
 import pyroomacoustics as pra
 from pyroomacoustics.simulation.ism import source_angle_shoebox
 

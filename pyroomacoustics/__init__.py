@@ -120,9 +120,9 @@ __version__
 
 import warnings
 
-from . import adaptive, bss, datasets, denoise, doa, experimental, random
+from . import adaptive, bss, datasets, denoise, doa, experimental
 from . import libroom as libroom
-from . import phase, transform
+from . import phase, random, transform
 from .acoustics import *
 from .beamforming import *
 from .directivities import *

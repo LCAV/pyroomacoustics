@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from pyroomacoustics import dB
 from pyroomacoustics.directivities import (
     CardioidFamily,

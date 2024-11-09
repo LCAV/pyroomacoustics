@@ -59,11 +59,11 @@ a pattern with arbitrary parameter :math:`p`.
 """
 import numpy as np
 
+from .. import random
 from ..doa import spher2cart
 from ..utilities import all_combinations, requires_matplotlib
 from .base import Directivity
 from .direction import DirectionVector
-from .. import random
 
 _FIGURE_EIGHT = 0
 _HYPERCARDIOID = 0.25

@@ -112,13 +112,13 @@ from .cssm import *
 from .doa import *
 from .frida import *
 from .grid import *
+from .histogram import SphericalHistogram
 from .music import *
 from .normmusic import *
 from .srp import *
 from .tops import *
 from .utils import *
 from .waves import *
-from .histogram import SphericalHistogram
 
 # Create this dictionary as a shortcut to different algorithms
 algorithms = {

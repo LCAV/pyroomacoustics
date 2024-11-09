@@ -75,6 +75,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 
+from .. import random
 from ..datasets import SOFADatabase
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..utilities import requires_matplotlib
@@ -82,7 +83,6 @@ from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
-from .. import random
 
 
 class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):

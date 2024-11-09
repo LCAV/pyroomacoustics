@@ -15,9 +15,9 @@ def test_stat_prop_power_spherical():
 
 if __name__ == "__main__":
 
-    import numpy as np
     import matplotlib.pyplot as plt
     import mpl_toolkits.mplot3d.axes3d as axes3d
+    import numpy as np
 
     # let's visualize samples in the sphere
 

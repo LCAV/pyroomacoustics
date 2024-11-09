@@ -1,11 +1,11 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from pyroomacoustics import dB, all_combinations
+from pyroomacoustics import all_combinations, dB
 from pyroomacoustics.directivities import (
-    DirectivityPattern,
-    DirectionVector,
     CardioidFamily,
+    DirectionVector,
+    DirectivityPattern,
     cardioid_func,
 )
 from pyroomacoustics.doa import spher2cart
