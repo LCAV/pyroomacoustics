@@ -25,13 +25,14 @@
 # not, see <https://opensource.org/licenses/MIT>.
 from __future__ import division
 
+import dataclasses
 import itertools
 import math
 
 import numpy as np
 from scipy.fftpack import dct
 from scipy.interpolate import interp1d
-from scipy.signal import butter, fftconvolve
+from scipy.signal import butter, fftconvolve, hilbert
 
 from .parameters import constants
 from .transform import stft
@@ -126,6 +127,161 @@ def octave_bands(fc=1000, third=False, start=0.0, n=8):
     return bands, fcentre
 
 
+def magnitude_response_to_minimum_phase(magnitude_response, n_fft, axis=-1, eps=1e-5):
+    """
+    Creates a minimum phase filter from its magnitude response following
+    the method proposed here.
+    https://ccrma.stanford.edu/~jos/sasp/Minimum_Phase_Filter_Design.html
+
+    Parameters
+    ----------
+    magnitude_response: np.ndarray
+        The response
+    n_fft: int
+        The FFT size to use
+    axis: int
+        The axis where to make the transformation
+
+    Returns
+    -------
+    The minimum phase impulse response with given magnitude response.
+    """
+    magnitude_response = np.moveaxis(magnitude_response, axis, -1)
+
+    n_freq = n_fft // 2 + 1
+    if n_fft % 2 == 0:
+        padding = n_fft - 2 * (magnitude_response.shape[-1] - 1)
+    else:
+        padding = n_fft - 2 * (magnitude_response.shape[-1] - 1) - 1
+
+    if padding < 0:
+        raise ValueError(
+            "The FFT size should at least twice the frequency response size."
+        )
+
+    zero_pad = np.zeros(
+        magnitude_response.shape[:-1] + (padding,), dtype=magnitude_response.dtype
+    )
+    freq_resp = np.concatenate(
+        (magnitude_response, zero_pad, magnitude_response[..., :0:-1]), axis=-1
+    )
+
+    freq_resp = np.maximum(freq_resp, eps)
+    m_p = np.imag(-hilbert(np.log(freq_resp), axis=-1))
+    freq_resp = freq_resp[..., :n_freq] * np.exp(1j * m_p[..., :n_freq])
+
+    freq_resp = np.moveaxis(freq_resp, -1, axis)
+    filters = np.fft.irfft(freq_resp, n=n_fft, axis=axis)
+    return filters
+
+
+def cosine_magnitude_octave_filter_response(n_fft, centers, fs, keep_dc=True):
+    """
+    Creates the magnitude response of a cosine octave-band filterbank as
+    described in D. Schroeder's PhD thesis.
+    """
+
+    # This seems to work only for Octave bands out of the box
+    n = len(centers)
+
+    new_bands = [[centers[0] / 2, centers[1]]]
+
+    for i in range(1, n - 1):
+        new_bands.append([centers[i - 1], centers[i + 1]])
+    new_bands.append([centers[-2], fs / 2])
+
+    n_freq = n_fft // 2 + 1
+    mag_resp = np.zeros((n_freq, n))
+
+    freq = np.arange(n_freq) / n_fft * fs  # This only contains positive newfrequencies
+
+    for b, (band, center) in enumerate(zip(new_bands, centers)):
+        lo = np.logical_and(band[0] <= freq, freq < center)
+
+        mag_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
+
+        if b == 0 and keep_dc:
+            # Converting Octave bands so that the minimum phase filters do not
+            # have ripples.
+            make_one = freq < center
+            mag_resp[make_one, b] = 1.0
+
+        if b != n - 1:
+            hi = np.logical_and(center <= freq, freq < band[1])
+            mag_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
+        else:
+            hi = center <= freq
+            mag_resp[hi, b] = 1.0
+
+    n_freq = n_fft // 2 + 1
+    km = np.round(centers / fs * n_fft).astype(int)
+    k1, k2 = [], []
+    freq = np.arange(mag_resp.shape[0])
+    for band in range(mag_resp.shape[1]):
+        f_nz = freq[mag_resp[:, band] > 0]
+        k1.append(f_nz[0])
+        k2.append(f_nz[-1] + 1)
+    k1 = np.array(k1)
+    k2 = np.array(k2)
+
+    return mag_resp.T, n_freq, k1, km, k2
+
+
+def antoni_magnitude_octave_filter_response(
+    n_fft, centers, bands, fs, overlap_ratio, slope
+):
+    """
+    Implementation adapted from
+    https://github.com/pyfar/pyfar/blob/main/pyfar/dsp/filter/fractional_octaves.py#L339
+    MIT License.
+    """
+    n_freq = n_fft // 2 + 1
+
+    # Discretize the bands boundaries.
+    k1 = np.round(bands[:, 0] / fs * n_fft).astype(int)
+    km = np.round(centers / fs * n_fft).astype(int)
+    k2 = np.round(bands[:, 1] / fs * n_fft).astype(int)
+
+    G = np.ones((km.shape[0], n_freq))
+
+    P = np.round(overlap_ratio * (k2 - km)).astype(int)
+
+    # Corrects the start and end of the first and last bands, respectively.
+    k1[0] = 0
+    k2[-1] = n_freq
+
+    k_low, k_high = [0], []
+    for band in range(1, km.shape[0]):
+
+        if P[band] > 0:
+            p = np.arange(-P[band], P[band] + 1)
+
+            # Compute phi according to eq. (18) and (19).
+            phi = p / P[band]
+            for _ in range(slope):
+                phi = np.sin(np.pi / 2 * phi)
+            phi = 0.5 * (phi + 1)
+
+            # Build the decreasing part of the previous band.
+            G[band - 1, k1[band] - P[band] : k1[band] + P[band] + 1] = np.cos(
+                np.pi / 2 * phi
+            )
+            # apply fade in in to next channel
+            G[band, k1[band] - P[band] : k1[band] + P[band] + 1] = np.sin(
+                np.pi / 2 * phi
+            )
+
+        # set current and next channel to zero outside their range
+        G[band - 1, k1[band] + P[band] :] = 0.0
+        G[band, : k1[band] - P[band]] = 0.0
+
+        k_high.append(k1[band] + P[band])
+        k_low.append(k1[band] - P[band])
+    k_high.append(n_freq)
+
+    return G, n_freq, np.array(k_low), km, np.array(k_high)
+
+
 class OctaveBandsFactory(object):
     """
     A class to process uniformly all properties that are defined on octave
@@ -155,15 +311,22 @@ class OctaveBandsFactory(object):
         The center frequency of the first octave band (default: 125 Hz)
     fs: float, optional
         The sampling frequency used (default: 16000 Hz)
-    third_octave: bool, optional
-        Use third octave bands if True (default: False)
+    n_fft: bool, optional
+        The FFT size to use
+    keep_dc: bool
+        If True, include all the lower frequencies in the first filter
+    min_phase: bool
+        If True, make the filters minimum phase
     """
 
-    def __init__(self, base_frequency=125.0, fs=16000, n_fft=512, keep_dc=False):
+    def __init__(
+        self, base_frequency=125.0, fs=16000, n_fft=512, keep_dc=False, min_phase=False
+    ):
         self.base_freq = base_frequency
         self.fs = fs
         self.n_fft = n_fft
         self.keep_dc = keep_dc
+        self.min_phase = min_phase
 
         # compute the number of bands
         self.n_bands = math.floor(np.log2(fs / base_frequency))
@@ -172,13 +335,13 @@ class OctaveBandsFactory(object):
             fc=self.base_freq, n=self.n_bands, third=False
         )
 
-        self._make_filters()
+        self.filters, self.magnitude_response = self._make_filters()
 
     def get_bw(self):
         """Returns the bandwidth of the bands"""
-        return np.array([b2 - b1 for b1, b2 in self.bands])
+        return np.array([min(b2, self.fs // 2) - max(b1, 0) for b1, b2 in self.bands])
 
-    def analysis(self, x, band=None):
+    def analysis(self, x, band=None, mode="same"):
         """
         Process a signal x through the filter bank
 
@@ -198,15 +361,34 @@ class OctaveBandsFactory(object):
         else:
             bands = [band]
 
-        output = np.zeros((x.shape[0], len(bands)), dtype=x.dtype)
+        filters = self.filters[:, bands]
 
-        for i, b in enumerate(bands):
-            output[:, i] = fftconvolve(x, self.filters[:, b], mode="same")
+        x = np.stack([x] * len(bands), axis=-1)
+        output = fftconvolve(x, filters, mode=mode, axes=(-2,))
 
         if output.shape[1] == 1:
             return output[:, 0]
         else:
             return output
+
+    def synthesis(self, coeffs, min_phase=False):
+        """
+        Parameters
+        ----------
+        coeffs: np.ndarray
+            The band coefficents (..., n_bands)
+
+        Returns:
+            The impulse responses with the correct levels (..., n_taps)
+        """
+        ir = np.einsum("...b,tb->...t", coeffs, self.filters)
+        if min_phase:
+            mag_resp = np.abs(np.fft.rfft(ir, axis=-1))
+            return magnitude_response_to_minimum_phase(
+                mag_resp, self.n_fft, axis=-1, eps=1e-7
+            )
+        else:
+            return ir
 
     def __call__(self, coeffs=0.0, center_freqs=None, interp_kind="linear", **kwargs):
         """
@@ -261,51 +443,329 @@ class OctaveBandsFactory(object):
         """
         Creates the band-pass filters for the octave bands
         """
-
-        # This seems to work only for Octave bands out of the box
-        centers = self.centers
-        n = len(self.centers)
-
-        new_bands = [[centers[0] / 2, centers[1]]]
-
-        for i in range(1, n - 1):
-            new_bands.append([centers[i - 1], centers[i + 1]])
-        new_bands.append([centers[-2], self.fs / 2])
-
-        n_freq = self.n_fft // 2 + 1
-        freq_resp = np.zeros((n_freq, n))
-
-        freq = (
-            np.arange(n_freq) / self.n_fft * self.fs
-        )  # This only contains positive newfrequencies
-
-        for b, (band, center) in enumerate(zip(new_bands, centers)):
-            if b == 0 and self.keep_dc:
-                # Converting Octave bands so that the minimum phase filters do not
-                # have ripples.
-                make_one = freq < center
-                freq_resp[make_one, b] = 1.0
-
-            lo = np.logical_and(band[0] <= freq, freq < center)
-
-            freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
-
-            if b != n - 1:
-                hi = np.logical_and(center <= freq, freq < band[1])
-                freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
-            else:
-                hi = center <= freq
-                freq_resp[hi, b] = 1.0
-
-        filters = np.fft.fftshift(
-            np.fft.irfft(freq_resp, n=self.n_fft, axis=0),
-            axes=[0],
+        mag_resp, *_ = cosine_magnitude_octave_filter_response(
+            self.n_fft, self.centers, self.fs, self.keep_dc
         )
-        # remove the first sample to make them odd-length symmetric filters
-        self.filters = filters[1:, :]
+        mag_resp = mag_resp.T
+
+        # Delay the filters to match mode="same" of fftconvolve.
+        n_freq = self.n_fft // 2 + 1
+        delay = np.exp(
+            2j * np.pi * np.arange(n_freq) * (self.n_fft // 2 + 1) / self.n_fft
+        )
+        filters = np.fft.irfft(mag_resp * delay[:, None], n=self.n_fft, axis=0)
+
+        if self.min_phase:
+            magnitude_response = np.abs(np.fft.rfft(filters, axis=0))
+            filters = magnitude_response_to_minimum_phase(
+                magnitude_response, self.n_fft, axis=0, eps=2e-2
+            )
 
         # Octave band filters in frequency domain
         self.filters_freq_domain = np.fft.fft(filters, axis=0, n=self.n_fft)
+
+        return filters, mag_resp
+
+
+@dataclasses.dataclass(frozen=True)
+class OLFOBSignal:
+    coeffs: list[np.ndarray]
+    windows: list[np.ndarray]
+    n_fft: int
+    bands_lower_bins: np.ndarray
+    bands_center_bins: np.ndarray
+    bands_upper_bins: np.ndarray
+    output_length: int
+    output_dtype: type
+
+
+class OrthogonalLikeFractionalOctaveBands(object):
+    """
+    This class implements a type of fractional octave filter bank with
+    both perfect reconstruction and energy conservation.
+
+    J. Antoni, Orthogonal-like fractional-octave-band filters, J. Acoust. Soc.
+    Am., 127, 2, February 2010
+
+    Attributes
+    ----------
+    base_freq: float
+        The center frequency of the first octave band
+    fs: float
+        The target sampling frequency
+    n_bands: int
+        The number of octave bands needed to cover from base_freq to fs / 2
+        (i.e. floor(log2(fs / base_freq)))
+    bands: list of tuple
+        The list of bin boundaries for the octave bands
+    centers
+        The list of band centers
+
+    Parameters
+    ----------
+    base_frequency: float, optional
+        The center frequency of the first octave band (default: 125 Hz)
+    fs: float, optional
+        The sampling frequency used (default: 16000 Hz)
+    n_fft: bool, optional
+        The FFT size to use
+    keep_dc: bool
+        If True, include all the lower frequencies in the first filter
+    min_phase: bool
+        If True, make the filters minimum phase
+    """
+
+    def __init__(
+        self,
+        base_frequency: float = 125.0,
+        fs: float = 16000,
+        n_fft: int = 512,
+        band_overlap_ratio: float = 0.5,
+        slope: int = 0,
+    ):
+        if not (0.0 <= band_overlap_ratio <= 0.5):
+            raise ValueError("The band overlap ratio should be in [0, 0.5].")
+
+        self.base_freq = base_frequency
+        self.fs = fs
+        self.n_fft = n_fft
+        self.overlap_ratio = band_overlap_ratio
+        self.slope = slope
+
+        # compute the number of bands
+        self.n_bands = math.floor(np.log2(fs / base_frequency))
+
+        self.bands, self.centers = octave_bands(
+            fc=self.base_freq, n=self.n_bands, third=False
+        )
+
+        self.filters = self._make_filters()
+
+    def get_bw(self):
+        """Returns the bandwidth of the bands"""
+        return np.array([min(b2, self.fs // 2) - max(b1, 0) for b1, b2 in self.bands])
+
+    def _make_window_function(self, n_fft) -> np.ndarray:
+        """
+        Implementation adapted from
+        https://github.com/pyfar/pyfar/blob/main/pyfar/dsp/filter/fractional_octaves.py#L339
+        MIT License.
+        """
+
+        return antoni_magnitude_octave_filter_response(
+            n_fft, self.centers, self.bands, self.fs, self.overlap_ratio, self.slope
+        )
+
+    def _make_filters(self) -> np.ndarray:
+        """
+        Make filters with perfect reconstruction, but not energy conservation,
+        as implemented in pyfar.
+        https://github.com/pyfar/pyfar/blob/main/pyfar/dsp/filter/fractional_octaves.py#L339
+        MIT License.
+        """
+
+        G, n_freq, *_ = self._make_window_function(self.n_fft)
+
+        # Force -6 dB at the cut-off frequencies. This is not part of Antony (2010)
+        G = G**2
+
+        # generate linear phase
+        frequencies = np.arange(n_freq) / self.n_fft * self.fs
+        group_delay = self.n_fft / 2 / self.fs
+        G = G.astype(complex) * np.exp(-1j * 2 * np.pi * frequencies * group_delay)
+        # get impulse responses
+        filters = np.fft.irfft(G, n=self.n_fft, axis=-1)
+
+        filters *= np.hanning(filters.shape[-1])
+
+        return filters.T
+
+    def wavelet_analysis(self, x, oversampling=2):
+        """
+        Compute the decomposition proposed by Antoni 2008.
+
+        Parameters
+        ----------
+        x: ndarray (..., n_samples)
+            The input signal
+        oversampling: int
+            Oversampling of FFT to use (default: 2).
+
+        Returns
+        -------
+        ndarray (..., n_samples, n_bands)
+            The input signal filters through all the bands
+        """
+        n_fft = 2 ** math.ceil(math.log2(oversampling * x.shape[-1]))
+        X = np.fft.rfft(x, axis=-1, n=n_fft) / np.sqrt(n_fft)
+
+        G, n_freq, k1, km, k2 = self._make_window_function(n_fft)
+
+        Nm = np.ceil((k2 - k1) / 2.0).astype(int)  # index of Nm is i in the paper.
+        upper = np.max(k1 + 2 * Nm)
+        if upper > n_freq:
+            padding = np.zeros(X.shape[:-1] + (upper - n_freq,), dtype=X.dtype)
+            X = np.concatenate((X, padding), axis=-1)
+            padding = np.zeros(G.shape[:-1] + (upper - n_freq,), dtype=G.dtype)
+            G = np.concatenate((G, padding), axis=-1)
+
+        W = []  # X_ij in the paper
+        windows_nonzero = []
+        for band, N in enumerate(Nm):
+            k = k1[band] + np.arange(2 * N, dtype=int)
+            delta = np.sqrt(1 / (2.0 * N))
+            windows_nonzero.append(G[band, k])
+
+            # Analysis
+            j = np.arange(-N + 1, N + 1)
+            factor = 1j**band * delta
+            cexp = np.exp(1j * np.pi * (km[band] - k1[band]) * j / N)
+            W_pos = np.fft.fft(G[band, k] * X[..., k], axis=-1)
+            W_neg = np.conj(np.fft.fft(G[band, k] * np.conj(X[..., k]), axis=-1))
+            W_np = np.concatenate(
+                (W_neg[..., N - 1 : 0 : -1], W_pos[..., : N + 1]), axis=-1
+            )
+            W.append(factor * cexp * W_np)
+
+        return OLFOBSignal(
+            coeffs=W,
+            windows=windows_nonzero,
+            n_fft=n_fft,
+            bands_lower_bins=k1,
+            bands_center_bins=km,
+            bands_upper_bins=k2,
+            output_length=x.shape[-1],
+            output_dtype=X.dtype,
+        )
+
+    def wavelet_synthesis(self, signal: OLFOBSignal):
+        """
+        Given the decomposition of the signal by Antoni 2008, compute
+        the octave band signals.
+        """
+
+        n_freq = signal.n_fft // 2 + 1
+        W = signal.coeffs
+        G = signal.windows
+        k1 = signal.bands_lower_bins
+        km = signal.bands_center_bins
+
+        X_padded_length = np.max(k1 + 2 * W[-1].shape[-1])
+        X_filt = np.zeros(
+            W[0].shape[:-1] + (X_padded_length, len(W)), dtype=signal.output_dtype
+        )
+
+        for band, (coeffs, window) in enumerate(zip(W, G)):
+            N = coeffs.shape[-1] // 2
+            k = k1[band] + np.arange(2 * N, dtype=int)
+            delta = np.sqrt(1 / (2.0 * N))
+
+            # Synthesis
+            factor = (-1j) ** band * window * delta
+            cexp1 = np.exp(-1j * np.pi * (k - km[band]) * (N - 1) / N)
+            cexp2 = np.exp(-1j * np.pi * (km[band] - k1[band]) * np.arange(2 * N) / N)
+            Y = np.conj(np.fft.fft(np.conj(cexp2 * coeffs)))  # * np.sqrt(2 * N)
+            X_filt[..., k1[band] : k1[band] + 2 * N, band] = factor * cexp1 * Y
+
+        # Synthesize the output band-pass signals.
+        y = np.fft.irfft(X_filt[..., :n_freq, :], axis=-2) * np.sqrt(signal.n_fft)
+        return y[..., : signal.output_length, :]
+
+    def energy(self, x, oversampling=2):
+        """
+        Computes the per-band energy of the input signal.
+        """
+        signal = self.wavelet_analysis(x, oversampling=oversampling)
+        energy = 2.0 * np.array([(abs(w) ** 2).sum() for w in signal.coeffs])
+        return energy
+
+    def analysis(self, x, oversampling=2):
+        """
+        Process a signal x through the filter bank
+
+        Parameters
+        ----------
+        x: ndarray (..., n_samples)
+            The input signal
+        oversampling: int
+            Oversampling of FFT to use (default: 2).
+
+        Returns
+        -------
+        ndarray (..., n_samples, n_bands)
+            The input signal filters through all the bands
+        """
+
+        signal = self.wavelet_analysis(x, oversampling=oversampling)
+        return self.wavelet_synthesis(signal)
+
+    def synthesis(self, coeffs, min_phase=False):
+        """
+        Parameters
+        ----------
+        coeffs: np.ndarray
+            The band coefficents (..., n_bands)
+
+        Returns:
+            The impulse responses with the correct levels (..., n_taps)
+        """
+        ir = np.einsum("...b,tb->...t", coeffs, self.filters)
+        if min_phase:
+            mag_resp = np.abs(np.fft.rfft(ir, axis=-1))
+            return magnitude_response_to_minimum_phase(
+                mag_resp, self.n_fft, axis=-1, eps=1e-7
+            )
+        else:
+            return ir
+
+    def __call__(self, coeffs=0.0, center_freqs=None, interp_kind="linear", **kwargs):
+        """
+        Takes as input a list of values with optional corresponding center frequency.
+        Returns a list with the correct number of octave bands. Interpolation and
+        extrapolation are used to fill in the missing values.
+
+        Parameters
+        ----------
+        coeffs: list
+            A list of values to use for the octave bands
+        center_freqs: list, optional
+            The optional list of center frequencies
+        interp_kind: str
+            Specifies the kind of interpolation as a string (‘linear’,
+            ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic’, ‘cubic’, ‘previous’,
+            ‘next’, where ‘zero’, ‘slinear’, ‘quadratic’ and ‘cubic’ refer to a
+            spline interpolation of zeroth, first, second or third order;
+            ‘previous’ and ‘next’ simply return the previous or next value of
+            the point) or as an integer specifying the order of the spline
+            interpolator to use. Default is ‘linear’.
+        """
+
+        if not isinstance(coeffs, (list, np.ndarray)):
+            # when the parameter is a scalar just do flat extrapolation
+            ret = [coeffs] * self.n_bands
+
+        if len(coeffs) == 1:
+            ret = coeffs * int(self.n_bands)
+
+        else:
+            # by default infer the center freq to be the low ones
+            if center_freqs is None:
+                center_freqs = self.centers[: len(coeffs)]
+
+            # create the interpolator in log domain
+            interpolator = interp1d(
+                np.log2(center_freqs),
+                coeffs,
+                fill_value="extrapolate",
+                kind=interp_kind,
+            )
+            ret = interpolator(np.log2(self.centers))
+
+            # now clip between 0. and 1.
+            ret[ret < 0.0] = 0.0
+            ret[ret > 1.0] = 1.0
+
+        return ret
 
 
 def critical_bands():
@@ -407,7 +867,7 @@ def bands_hz2s(bands_hz, Fs, N, transform="dft"):
         else:
             j += 1
 
-    return np.array(bands_s, dtype=np.int)
+    return np.array(bands_s, dtype=int)
 
 
 def melscale(f):

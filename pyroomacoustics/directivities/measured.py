@@ -83,6 +83,8 @@ from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
+from ..parameters import constants
+from ..acoustics import OctaveBandsFactory
 
 
 class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
@@ -92,13 +94,10 @@ class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
 
     Parameters
     ----------
-    loc: array_like
-        The unit vector pointing in the main direction of the cardioid
-    p: float
-        Parameter of the cardioid pattern. A value of 0 corresponds to a
-        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
-        pattern
-        The parameter must be between 0 and 1
+    kdtree: array_like
+        A kd-tree for the measurement points in cartesian coordinates.
+    energy: array_like
+        The energy measured at each measurement point.
     """
 
     def __init__(self, kdtree, energy):
@@ -143,6 +142,18 @@ class MeasuredDirectivity(Directivity):
         # set the initial orientation
         self.set_orientation(orientation)
 
+    def _compute_octave_bands_energy(self):
+        self.octave_bands = OctaveBandsFactory(
+            fs=self.fs,
+            n_fft=constants.get("octave_bands_n_fft"),
+            keep_dc=constants.get("octave_bands_keep_dc"),
+            base_frequency=constants.get("octave_bands_base_freq"),
+        )
+
+        ir_per_band = self.octave_bands.analysis(self._irs)
+
+        self.energy = np.square(ir_per_band).sum(axis=0)
+
     @property
     def is_impulse_response(self):
         return True
@@ -174,7 +185,7 @@ class MeasuredDirectivity(Directivity):
         self._kdtree = cKDTree(self._grid.cartesian.T)
 
         # create the ray sampler
-        ir_energy = np.square(self._irs).mean(axis=-1)
+        ir_energy = np.square(self._irs).sum(axis=-1)
         self._ray_sampler = MeasuredDirectivitySampler(self._kdtree, ir_energy)
 
     def get_response(
