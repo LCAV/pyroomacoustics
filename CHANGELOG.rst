@@ -11,7 +11,20 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+This new release introduces source and receiver directivities for the ray
+tracing simulation engine.
+
+Added
+~~~~~
+
+- New ``pyroomacoustics.random`` module that provides some primitives for sampling
+  at random from arbitrary distributions on the sphere. This is used for source directivities
+  in the ray tracing simulator.
+
+- New octave filter bank with energy conservation and perfect reconstruction described
+  in Antoni, "Orthogonal-like fractional-octave-band filters," 2009.
+  The filter bank is implemented in ``pyroomacoustics.acoustics.AntoniOctaveFilterBank``.
+
 
 `0.8.2`_ - 2024-11-06
 ---------------------
