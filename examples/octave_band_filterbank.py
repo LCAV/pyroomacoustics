@@ -26,11 +26,11 @@ J. Antoni, Orthogonal-like fractional-octave-band filters, J. Acoust. Soc.
 Am., 127, 2, February 2010
 """
 
-import numpy as np
-import pyroomacoustics as pra
-from scipy.signal import chirp
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.signal import chirp
 
+import pyroomacoustics as pra
 
 if __name__ == "__main__":
 

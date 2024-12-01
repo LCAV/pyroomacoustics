@@ -29,6 +29,7 @@ import abc
 import dataclasses
 import itertools
 import math
+from typing import List
 
 import numpy as np
 from scipy.fftpack import dct
@@ -525,9 +526,9 @@ class AntoniOctaveFilterBankParameters:
     of a signal with the Antoni octave filter bank.
     """
 
-    windows: list[np.ndarray]
+    windows: List[np.ndarray]
     n_fft: int
-    analyzed_band_indices: list[int]
+    analyzed_band_indices: List[int]
     bands_lower_bins: np.ndarray
     bands_center_bins: np.ndarray
     bands_upper_bins: np.ndarray
@@ -571,6 +572,8 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
     slope: int
         A parameter controlling the transition between bands.
         The larger, the sharper the transition.
+    third: bool
+        If set to True, a third Octave band filter bank is created.
     """
 
     def __init__(
@@ -580,6 +583,7 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         n_fft: int = 512,
         band_overlap_ratio: float = 0.5,
         slope: int = 0,
+        third: bool = False,
     ):
         if not (0.0 <= band_overlap_ratio <= 0.5):
             raise ValueError("The band overlap ratio should be in [0, 0.5].")
@@ -594,7 +598,7 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         self.n_bands = math.floor(np.log2(fs / base_frequency))
 
         self.bands, self.centers = octave_bands(
-            fc=self.base_freq, n=self.n_bands, third=False
+            fc=self.base_freq, n=self.n_bands, third=third
         )
 
         G, *_ = self._make_window_function(self.n_fft)
@@ -668,7 +672,7 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         padded_length = X.shape[-1]
         if upper > n_freq:
             padding = np.zeros(X.shape[:-1] + (upper - n_freq,), dtype=X.dtype)
-            padded_length += (upper - n_freq)
+            padded_length += upper - n_freq
             X = np.concatenate((X, padding), axis=-1)
             padding = np.zeros(G.shape[:-1] + (upper - n_freq,), dtype=G.dtype)
             G = np.concatenate((G, padding), axis=-1)
@@ -731,7 +735,8 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         km = parameters.bands_center_bins
 
         X_filt = np.zeros(
-            W[0].shape[:-1] + (parameters.padded_length, len(W)), dtype=parameters.output_dtype
+            W[0].shape[:-1] + (parameters.padded_length, len(W)),
+            dtype=parameters.output_dtype,
         )
 
         for idx, band in enumerate(parameters.analyzed_band_indices):

@@ -76,15 +76,15 @@ from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 
 from .. import random
+from ..acoustics import OctaveBandsFactory
 from ..datasets import SOFADatabase
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
+from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
-from ..parameters import constants
-from ..acoustics import OctaveBandsFactory
 
 
 class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
@@ -183,8 +183,6 @@ class MeasuredDirectivity(Directivity):
         )
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
-
-        # create the ray sampler
         ir_energy = np.square(self._irs).sum(axis=-1)
         self._ray_sampler = MeasuredDirectivitySampler(self._kdtree, ir_energy)
 
@@ -245,13 +243,11 @@ class MeasuredDirectivity(Directivity):
             The axes on which the directivity is plotted
         """
         import matplotlib.pyplot as plt
-        from matplotlib import cm
 
         cart = self._grid.cartesian.T
         length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
-        g = np.linspace(-1, 1, n_grid)
         AZ, COL = np.meshgrid(
             np.linspace(0, 2 * np.pi, n_grid), np.linspace(0, np.pi, n_grid // 2)
         )

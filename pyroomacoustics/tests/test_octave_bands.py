@@ -3,10 +3,9 @@ This test verifies properties of octave band filters.
 """
 
 import numpy as np
-import pyroomacoustics as pra
-
 import pytest
 
+import pyroomacoustics as pra
 
 _FS = 16000
 _NFFT = 4096
@@ -75,9 +74,7 @@ def test_octave_bands_multi_band(octave_bands):
 
 
 def test_octave_bands_interpolation():
-    octave_bands = pra.AntoniOctaveFilterBank(
-        fs=_FS, n_fft=pra.constants.get("octave_bands_n_fft")
-    )
+    octave_bands = pra.AntoniOctaveFilterBank(fs=_FS, n_fft=256)
     coeffs = np.arange(octave_bands.n_bands)[::-1] + 1
 
     interpolation_filter = octave_bands.synthesis(
