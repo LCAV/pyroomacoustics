@@ -714,7 +714,7 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         )
 
     def wavelet_synthesis(
-        self, signal: list[np.ndarray], parameters: AntoniOctaveFilterBankParameters
+        self, signal: List[np.ndarray], parameters: AntoniOctaveFilterBankParameters
     ) -> np.ndarray:
         """
         Given the decomposition of the signal by Antoni 2008, compute
