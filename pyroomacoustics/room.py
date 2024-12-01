@@ -686,17 +686,14 @@ References
 from __future__ import division, print_function
 
 import math
-import os
-import sys
 import warnings
 
 import numpy as np
 import scipy.spatial as spatial
-from scipy.interpolate import interp1d
 
 from . import beamforming as bf
 from . import libroom
-from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
+from .acoustics import AntoniOctaveFilterBank, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, MeasuredDirectivity
 from .experimental import measure_rt60
@@ -921,11 +918,12 @@ class Room(object):
         self.max_order = max_order
         self.sigma2_awgn = sigma2_awgn
 
-        self.octave_bands = OctaveBandsFactory(
+        self.octave_bands = AntoniOctaveFilterBank(
             fs=self.fs,
             n_fft=constants.get("octave_bands_n_fft"),
-            keep_dc=constants.get("octave_bands_keep_dc"),
+            # keep_dc=constants.get("octave_bands_keep_dc"),
             base_frequency=constants.get("octave_bands_base_freq"),
+            slope=0,
         )
         self.max_rand_disp = max_rand_disp
 
@@ -1308,10 +1306,10 @@ class Room(object):
             materials = [Material(0.0, 0.0)] * n_walls
 
         # Resample material properties at octave bands
-        octave_bands = OctaveBandsFactory(
+        octave_bands = AntoniOctaveFilterBank(
             fs=fs,
             n_fft=constants.get("octave_bands_n_fft"),
-            keep_dc=constants.get("octave_bands_keep_dc"),
+            # keep_dc=constants.get("octave_bands_keep_dc"),
             base_frequency=constants.get("octave_bands_base_freq"),
         )
         if not Material.all_flat(materials):
