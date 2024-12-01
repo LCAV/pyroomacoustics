@@ -410,7 +410,12 @@ class OctaveBandsFactory(BaseOctaveFilterBank):
 
     def get_bw(self):
         """Returns the bandwidth of the bands"""
-        return np.array([min(b2, self.fs // 2) - max(b1, 0) for b1, b2 in self.bands])
+        bands = self.bands
+        if self.keep_dc:
+            bands[0] = [0.0, bands[0][1]]
+        bands[-1] = [bands[-1][0], self.fs / 2]
+
+        return np.array([min(b2, self.fs // 2) - max(b1, 0) for b1, b2 in bands])
 
     def analysis(self, x, band=None, mode="same"):
         """
@@ -594,12 +599,12 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         self.overlap_ratio = band_overlap_ratio
         self.slope = slope
 
-        # compute the number of bands
-        self.n_bands = math.floor(np.log2(fs / base_frequency))
-
+        # Compute the number of octaves.
+        n_octaves = math.floor(np.log2(fs / base_frequency))
         self.bands, self.centers = octave_bands(
-            fc=self.base_freq, n=self.n_bands, third=third
+            fc=self.base_freq, n=n_octaves, third=third
         )
+        self.n_bands = self.centers.shape[0]
 
         G, *_ = self._make_window_function(self.n_fft)
         self.filters = G.T

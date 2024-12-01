@@ -57,6 +57,7 @@ if __name__ == "__main__":
         band_overlap_ratio=0.5,
         slope=0,
         n_fft=n_fft,
+        third=False,
     )
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 5))
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 
         sum_reconstruction = np.sum(abs(filters_spectrum), axis=1)
 
-        for b in range(octave_bands.n_bands):
+        for b in range(ob.shape[-1]):
             c = antoni_octave_bands.centers[b]
             line_label = (
                 (f"{c if c < 1000 else c / 1000:.0f}{'k' if c >= 1000 else ''}Hz")
@@ -105,9 +106,9 @@ if __name__ == "__main__":
     }
 
     # Compare the energy of the original coefficients to those after filtering.
-    energy = (antoni_octave_bands.get_bw() / octave_bands.fs * 2.0) * coeffs**2
+    energy = (octave_bands.get_bw() / octave_bands.fs * 2.0) * coeffs**2
     bar_labels = [
-        f"{c if c < 1000 else c / 1000:.0f}{'k' if c > 1000 else ''}"
+        f"{c if c < 1000 else c / 1000:.0f}{'k' if c >= 1000 else ''}"
         for c in antoni_octave_bands.centers
     ] + ["Total"]
     bar_energy_original = energy.tolist() + [energy.sum()]
@@ -131,7 +132,7 @@ if __name__ == "__main__":
         axes[1].plot(np.arange(H.shape[-1]) * fs / values.shape[-1], H, label=lbl)
         axes[1].set_xlabel("Frequency (Hz)")
 
-        energy_bands = antoni_octave_bands.energy(values).tolist()
+        energy_bands = antoni_octave_bands.energy(values, oversampling=4).tolist()
         energy_bands += [sum(energy_bands)]
         axes[2].bar(bar_x(idx), energy_bands, label=lbl, width=bar_width)
 
