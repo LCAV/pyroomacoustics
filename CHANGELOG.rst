@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixes issue #382: When providing a ``MicrophoneArray`` object with
+  directivity to ``Room.add_microphone_array``, the directivity was dropped
+  from the object.
 
 `0.8.2`_ - 2024-11-06
 ---------------------

@@ -1980,7 +1980,7 @@ class Room(object):
                     ).format(self.dim, obj.dim)
                 )
 
-            if "mic_array" not in self.__dict__ or self.mic_array is None:
+            if not hasattr(self, "mic_array") or self.mic_array is None:
                 self.mic_array = obj
             else:
                 self.mic_array.append(obj)
@@ -2046,6 +2046,12 @@ class Room(object):
             As an alternative, a
             :py:obj:`~pyroomacoustics.beamforming.MicrophoneArray` can be
             provided.
+        directivity: list of Directivity objects, optional
+            If ``mic_array`` is provided as a numpy array, an optional
+            :py:obj:`~pyroomacoustics.directivities.Directivity` object or
+            list thereof can be provided.
+            If ``mic_array`` is a MicrophoneArray object, passing an argument here
+            will result in an error.
 
         Returns
         -------
@@ -2064,7 +2070,12 @@ class Room(object):
             mic_array = MicrophoneArray(mic_array, self.fs, directivity)
         else:
             # if the type is microphone array
-            mic_array.set_directivity(directivity)
+            if directivity is not None:
+                raise ValueError(
+                    "When providing a MicrophoneArray object, the directivities should "
+                    "be provided in the object, not via the `directivity` parameter "
+                    "of this method."
+                )
 
             if self.simulator_state["rt_needed"] and mic_array.is_directive:
                 raise NotImplementedError("Directivity not supported with ray tracing.")
