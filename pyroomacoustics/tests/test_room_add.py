@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import pyroomacoustics as pra
 
@@ -8,6 +9,18 @@ source_loc0 = [1.5, 1.7, 2.1]
 source_loc1 = [3.5, 7.7, 2.1]
 mic0 = [7, 8, 3.9]
 mic1 = [7.87, 3.6, 6.1]
+mic_dir0 = pra.FigureEight(
+    orientation=pra.DirectionVector(azimuth=90, colatitude=15, degrees=True)
+)
+mic_dir1 = pra.FigureEight(
+    orientation=pra.DirectionVector(azimuth=180, colatitude=15, degrees=True)
+)
+src_dir0 = pra.FigureEight(
+    orientation=pra.DirectionVector(azimuth=270, colatitude=15, degrees=True)
+)
+src_dir1 = pra.FigureEight(
+    orientation=pra.DirectionVector(azimuth=0, colatitude=15, degrees=True)
+)
 
 
 def test_add_source_mic():
@@ -56,12 +69,21 @@ def test_add_source_mic_obj():
     assert room.mic_array.R.shape == (3, 2)
 
 
-def test_add_source_mic_obj_2():
+@pytest.mark.parametrize("with_dir", ((True,), (False,)))
+def test_add_source_mic_obj_2(with_dir):
     room = pra.ShoeBox(room_size)
 
-    source0 = pra.SoundSource(source_loc0, signal=sig)
-    source1 = pra.SoundSource(source_loc1, signal=sig)
-    mic_array = pra.MicrophoneArray(np.c_[mic0, mic1], fs=room.fs)
+    if with_dir:
+        sdir0 = src_dir0
+        sdir1 = src_dir1
+        mdir = [mic_dir0, mic_dir1]
+    else:
+        sdir0 = sdir1 = None
+        mdir = [None, None]
+
+    source0 = pra.SoundSource(source_loc0, signal=sig, directivity=sdir0)
+    source1 = pra.SoundSource(source_loc1, signal=sig, directivity=sdir1)
+    mic_array = pra.MicrophoneArray(np.c_[mic0, mic1], fs=room.fs, directivity=mdir)
 
     room.add(source0).add(source1).add(mic_array)
 
@@ -72,6 +94,19 @@ def test_add_source_mic_obj_2():
     assert np.allclose(room.mic_array.R[:, 0], mic0)
     assert np.allclose(room.mic_array.R[:, 1], mic1)
     assert room.mic_array.R.shape == (3, 2)
+    # Test directivities.
+    assert room.sources[0].directivity is sdir0
+    assert room.sources[1].directivity is sdir1
+    assert all(d is md for d, md in zip(room.mic_array.directivity, mdir))
+
+
+def test_add_source_mic_obj_with_dir_error():
+    room = pra.ShoeBox(room_size)
+
+    mic_array = pra.MicrophoneArray(np.c_[mic0, mic1], fs=room.fs)
+
+    with pytest.raises(ValueError):
+        room.add_microphone_array(mic_array, directivity=[mic_dir0, mic_dir1])
 
 
 def test_add_source_mic_ndarray():
