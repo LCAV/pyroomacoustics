@@ -18,6 +18,9 @@ Bugfix
   directivity to ``Room.add_microphone_array``, the directivity was dropped
   from the object.
 
+- Fixes issue #380: Caused by the attribute ``cartesian`` of ``GridSphere`` not
+  being set properly when the grid is only initialized with a number of points.
+
 `0.8.2`_ - 2024-11-06
 ---------------------
 

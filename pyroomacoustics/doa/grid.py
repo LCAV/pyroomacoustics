@@ -209,12 +209,11 @@ class GridSphere(Grid):
             # If no list was provided, samples points on the sphere
             # as uniformly as possible
 
-            self.x, self.y, self.z = fibonacci_spherical_sampling(n_points)
+            self.x[:], self.y[:], self.z[:] = fibonacci_spherical_sampling(n_points)
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
-            self.azimuth[:] = np.arctan2(self.y, self.x)
-            self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
+            self.azimuth[:], self.colatitude[:], _ = cart2spher(self.cartesian)
 
         self._neighbors = None
         if precompute_neighbors:
