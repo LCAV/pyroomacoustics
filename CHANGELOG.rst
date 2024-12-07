@@ -21,6 +21,9 @@ Bugfix
 - Fixes issue #380: Caused by the attribute ``cartesian`` of ``GridSphere`` not
   being set properly when the grid is only initialized with a number of points.
 
+- Fixes issue #355: Makes the MicrophoneArray class more bug-proof and adds
+  some tests.
+
 `0.8.2`_ - 2024-11-06
 ---------------------
 
