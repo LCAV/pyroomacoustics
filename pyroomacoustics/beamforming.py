@@ -24,6 +24,8 @@
 
 from __future__ import division
 
+from typing import Sequence
+
 import numpy as np
 import scipy.linalg as la
 
@@ -342,25 +344,22 @@ class MicrophoneArray(object):
     """Microphone array class."""
 
     def __init__(self, R, fs, directivity=None):
-        R = np.array(R)
-        self.dim = R.shape[0]  # are we in 2D or in 3D
-        self.nmic = R.shape[1]  # number of microphones
+        # The array geometry is stored in a (dim, n_mics) array.
+        self.R = np.array(R)  # array geometry
 
         # Check the shape of the passed array
-        if self.dim != 2 and self.dim != 3:
+        if self.dim not in (2, 3):
             dim_mismatch = True
         else:
             dim_mismatch = False
 
-        if R.ndim != 2 or dim_mismatch:
+        if self.R.ndim != 2 or dim_mismatch:
             raise ValueError(
                 "The location of microphones should be described by an array_like "
                 "object with 2 dimensions of shape `(2 or 3, n_mics)` "
                 "where `n_mics` is the number of microphones. Each column contains "
                 "the location of a microphone."
             )
-
-        self.R = R  # array geometry
 
         self.fs = fs  # sampling frequency of microphones
         self.set_directivity(directivity)
@@ -370,28 +369,64 @@ class MicrophoneArray(object):
         self.center = np.mean(R, axis=1, keepdims=True)
 
     @property
+    def dim(self):
+        return self.R.shape[0]  # are we in 2D or in 3D
+
+    def __len__(self):
+        return self.R.shape[1]
+
+    @property
+    def nmic(self):
+        """The number of microphones of the array."""
+        return self.__len__()
+
+    @property
+    def M(self):
+        """The number of microphones of the array."""
+        return self.__len__()
+
+    @property
     def is_directive(self):
         return any([d is not None for d in self.directivity])
 
     def set_directivity(self, directivities):
         """
-        This functions sets self.directivity as a list of directivities with `n_mics` entries,
-        where `n_mics` is the number of microphones
+        This functions sets self.directivity as a list of directivities with
+        `n_mics` entries, where `n_mics` is the number of microphones.
+
         Parameters
         -----------
         directivities:
-            single directivity for all microphones or a list of directivities for each microphone
+            A single directivity for all microphones or a list of directivities
+            for each microphone
 
         """
 
-        if isinstance(directivities, list):
+        def _is_correct_type(directivity):
+            return directivity is None or isinstance(directivity, Directivity)
+
+        if isinstance(directivities, Sequence):
             # list of directivities specified
-            assert all(isinstance(x, Directivity) for x in directivities)
-            assert len(directivities) == self.nmic
-            self.directivity = directivities
+            for d in directivities:
+                if not _is_correct_type(d):
+                    raise TypeError(
+                        "Directivities should be of Directivity type, or None (got "
+                        f"{type(d)})."
+                    )
+            if not len(directivities) == self.nmic:
+                raise ValueError(
+                    "Please provide a single Directivity for all microphones, or one "
+                    f"per microphone. Got {len(directivities)} directivities for "
+                    f"{self.nmic} mics."
+                )
+            self.directivity = list(directivities)
         else:
+            if not _is_correct_type(directivities):
+                raise TypeError(
+                    "Directivities should be of Directivity type, or None (got "
+                    f"{type(directivities)})."
+                )
             # only 1 directivity specified
-            assert directivities is None or isinstance(directivities, Directivity)
             self.directivity = [directivities] * self.nmic
 
     def record(self, signals, fs):
@@ -505,6 +540,7 @@ class MicrophoneArray(object):
             self.directivity += locs.directivity
         else:
             self.R = np.concatenate((self.R, locs), axis=1)
+            self.directivity += [None] * locs.shape[1]
 
         # in case there was already some signal recorded, just pad with zeros
         if self.signals is not None:
@@ -517,13 +553,6 @@ class MicrophoneArray(object):
                 ),
                 axis=0,
             )
-
-    def __len__(self):
-        return self.R.shape[1]
-
-    @property
-    def M(self):
-        return self.__len__()
 
 
 class Beamformer(MicrophoneArray):

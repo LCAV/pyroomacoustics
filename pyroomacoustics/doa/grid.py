@@ -213,8 +213,7 @@ class GridSphere(Grid):
 
             # Create convenient arrays
             # to access both in cartesian and spherical coordinates
-            self.azimuth[:] = np.arctan2(self.y, self.x)
-            self.colatitude[:] = np.arctan2(np.sqrt(self.x**2 + self.y**2), self.z)
+            self.azimuth[:], self.colatitude[:], _ = cart2spher(self.cartesian)
 
         self._neighbors = None
         if precompute_neighbors:
