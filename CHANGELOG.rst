@@ -18,6 +18,12 @@ Bugfix
   directivity to ``Room.add_microphone_array``, the directivity was dropped
   from the object.
 
+- Fixes issues #381: When creating a room with from_corners with multi-band
+  material, and then making it 3D with ``extrude`` with a single band material
+  for the floor and ceiling, an error would occur.
+  After the fix, the materials for floor and ceiling are automatically extended
+  to multi-band, as expected.
+
 - Fixes issue #380: Caused by the attribute ``cartesian`` of ``GridSphere`` not
   being set properly when the grid is only initialized with a number of points.
 
@@ -30,7 +36,7 @@ Bugfix
 Changed
 ~~~~~~~
 
-- Makes the ``pyroomacoustics.utilities.resample`` backend is made configurable
+- Makes the ``pyroomacoustics.utilities.resample`` backend configurable
   to avoid ``soxr`` dependency. The resample backend is configurable to
   ``soxr``, ``samplerate``, if these packages are available, and otherwise
   falls back to ``scipy.signal.resample_poly``.

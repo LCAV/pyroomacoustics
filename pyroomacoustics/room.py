@@ -1395,9 +1395,11 @@ class Room(object):
         if libroom.area_2d_polygon(floor_corners) <= 0:
             floor_corners = np.fliplr(floor_corners)
 
-        walls = []
+        wall_corners = {}
+        wall_materials = {}
         for i in range(nw):
-            corners = np.array(
+            name = str(i)
+            wall_corners[name] = np.array(
                 [
                     np.r_[floor_corners[:, i], 0],
                     np.r_[floor_corners[:, (i + 1) % nw], 0],
@@ -1405,14 +1407,33 @@ class Room(object):
                     np.r_[floor_corners[:, i], 0] + height * v_vec,
                 ]
             ).T
-            walls.append(
-                wall_factory(
-                    corners,
-                    self.walls[i].absorption,
-                    self.walls[i].scatter,
-                    name=str(i),
+
+            if len(self.walls[i].absorption) == 1:
+                # Single band
+                wall_materials[name] = Material(
+                    energy_absorption=float(self.walls[i].absorption),
+                    scattering=float(self.walls[i].scatter),
                 )
-            )
+            elif len(self.walls[i].absorption) == self.octave_bands.n_bands:
+                # Multi-band
+                abs_dict = {
+                    "coeffs": self.walls[i].absorption,
+                    "center_freqs": self.octave_bands.centers,
+                    "description": "",
+                }
+                sca_dict = {
+                    "coeffs": self.walls[i].scatter,
+                    "center_freqs": self.octave_bands.centers,
+                    "description": "",
+                }
+                wall_materials[name] = Material(
+                    energy_absorption=abs_dict,
+                    scattering=sca_dict,
+                )
+            else:
+                raise ValueError(
+                    "Encountered a material with inconsistent number of bands."
+                )
 
         ############################
         # BEGIN COMPATIBILITY CODE #
@@ -1477,12 +1498,23 @@ class Room(object):
         # we need the floor corners to ordered clockwise (for the normal to point outward)
         new_corners["floor"] = np.fliplr(new_corners["floor"])
 
-        for key in ["floor", "ceiling"]:
+        # Concatenate new walls param with old ones.
+        wall_corners.update(new_corners)
+        wall_materials.update(materials)
+
+        # If some of the materials used are multi-band, we need to resample
+        # all of them to have the same number of values
+        if not Material.all_flat(wall_materials):
+            for name, mat in wall_materials.items():
+                mat.resample(self.octave_bands)
+
+        walls = []
+        for key, corners in wall_corners.items():
             walls.append(
                 wall_factory(
-                    new_corners[key],
-                    materials[key].absorption_coeffs,
-                    materials[key].scattering_coeffs,
+                    corners,
+                    wall_materials[key].absorption_coeffs,
+                    wall_materials[key].scattering_coeffs,
                     name=key,
                 )
             )
