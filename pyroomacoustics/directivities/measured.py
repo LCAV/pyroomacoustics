@@ -75,13 +75,41 @@ import numpy as np
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 
+from .. import random
+from ..acoustics import OctaveBandsFactory
 from ..datasets import SOFADatabase
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
+from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
+
+
+class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
+    """
+    This object draws samples from the distribution defined by the energy
+    of the measured directional response object.
+
+    Parameters
+    ----------
+    kdtree: array_like
+        A kd-tree for the measurement points in cartesian coordinates.
+    energy: array_like
+        The energy measured at each measurement point.
+    """
+
+    def __init__(self, kdtree, energy):
+        super().__init__()
+        self._kdtree = kdtree
+        # Normalize to maximum energy 1 because that is also the
+        # maximum value of the proposal unnormalized uniform distribution.
+        self._energy = energy / energy.max()
+
+    def _pattern(self, x):
+        _, index = self._kdtree.query(x)
+        return self._energy[index]
 
 
 class MeasuredDirectivity(Directivity):
@@ -114,6 +142,18 @@ class MeasuredDirectivity(Directivity):
         # set the initial orientation
         self.set_orientation(orientation)
 
+    def _compute_octave_bands_energy(self):
+        self.octave_bands = OctaveBandsFactory(
+            fs=self.fs,
+            n_fft=constants.get("octave_bands_n_fft"),
+            keep_dc=constants.get("octave_bands_keep_dc"),
+            base_frequency=constants.get("octave_bands_base_freq"),
+        )
+
+        ir_per_band = self.octave_bands.analysis(self._irs)
+
+        self.energy = np.square(ir_per_band).sum(axis=0)
+
     @property
     def is_impulse_response(self):
         return True
@@ -143,6 +183,8 @@ class MeasuredDirectivity(Directivity):
         )
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
+        ir_energy = np.square(self._irs).sum(axis=-1)
+        self._ray_sampler = MeasuredDirectivitySampler(self._kdtree, ir_energy)
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -172,6 +214,9 @@ class MeasuredDirectivity(Directivity):
         _, index = self._kdtree.query(cart.T)
         return self._irs[index, :]
 
+    def sample_rays(self, n_rays):
+        return self._ray_sampler(n_rays).T
+
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
         """
@@ -198,13 +243,11 @@ class MeasuredDirectivity(Directivity):
             The axes on which the directivity is plotted
         """
         import matplotlib.pyplot as plt
-        from matplotlib import cm
 
         cart = self._grid.cartesian.T
         length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
-        g = np.linspace(-1, 1, n_grid)
         AZ, COL = np.meshgrid(
             np.linspace(0, 2 * np.pi, n_grid), np.linspace(0, np.pi, n_grid // 2)
         )
@@ -238,7 +281,7 @@ class MeasuredDirectivity(Directivity):
             Y *= V
             Z *= V
 
-        surf = ax.plot_surface(
+        _ = ax.plot_surface(
             X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
         )
 

@@ -84,6 +84,7 @@ receiver with two ears (i.e., microphones). This simulates a binaural response.
 from .analytic import (
     Cardioid,
     CardioidFamily,
+    CardioidFamilySampler,
     FigureEight,
     HyperCardioid,
     Omnidirectional,

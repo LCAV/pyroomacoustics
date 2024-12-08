@@ -92,3 +92,21 @@ class Directivity(abc.ABC):
             Response at provided angles.
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def sample_rays(self, n_rays):
+        """
+        This method samples unit vectors from the sphere according to
+        the distribution of the source
+
+        Parameters
+        ----------
+        n_rays: int
+            The number of rays to sample
+
+        Returns
+        -------
+        ray_directions: numpy.ndarray, shape (n_dim, n_rays)
+            An array containing the unit vectors in its columns
+        """
+        raise NotImplementedError

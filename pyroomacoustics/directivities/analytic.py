@@ -59,6 +59,7 @@ a pattern with arbitrary parameter :math:`p`.
 """
 import numpy as np
 
+from .. import random
 from ..doa import spher2cart
 from ..utilities import all_combinations, requires_matplotlib
 from .base import Directivity
@@ -121,6 +122,12 @@ class CardioidFamily(Directivity):
 
         self._gain = gain
         self._pattern_name = f"cardioid family, p={self._p}"
+
+        # this is the object that will allow to sample rays according to the
+        # distribution corresponding to the source directivity
+        self._ray_sampler = CardioidFamilySampler(
+            loc=self._orientation.unit_vector, p=self._p
+        )
 
     @property
     def is_impulse_response(self):
@@ -199,6 +206,9 @@ class CardioidFamily(Directivity):
                 return np.abs(resp)
             else:
                 return resp
+
+    def sample_rays(self, n_rays):
+        return self._ray_sampler(n_rays).T
 
     @requires_matplotlib
     def plot_response(
@@ -381,6 +391,39 @@ class Omnidirectional(CardioidFamily):
     def __init__(self, gain=1.0):
         CardioidFamily.__init__(self, DirectionVector(0.0, 0.0), p=_OMNI, gain=gain)
         self._pattern_name = "omni"
+
+
+class CardioidFamilySampler(random.sampler.DirectionalSampler):
+    """
+    This object draws samples from a cardioid shaped distribution on the sphere
+
+    Parameters
+    ----------
+    loc: array_like
+        The unit vector pointing in the main direction of the cardioid
+    p: float
+        Parameter of the cardioid pattern. A value of 0 corresponds to a
+        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
+        pattern
+        The parameter must be between 0 and 1
+    """
+
+    def __init__(self, loc=None, p=0.5):
+        super().__init__(loc=loc)
+        self._coeff = p
+
+    def _pattern(self, x):
+        response = cardioid_func(
+            x.T,
+            direction=self._loc,
+            p=self._coeff,
+            gain=1.0,
+            normalize=False,
+            magnitude=True,
+        )
+        # The number of rays needs to be proportional to the
+        # response energy.
+        return response**2
 
 
 def cardioid_func(x, direction, p, gain=1.0, normalize=True, magnitude=False):

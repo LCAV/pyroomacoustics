@@ -290,9 +290,7 @@ def compute_ism_rir(
             irs *= oct_band_amplitude.T
 
         else:
-            ir_att = interpolate_octave_bands(
-                octave_bands, oct_band_amplitude, min_phase=min_phase
-            )
+            ir_att = octave_bands.synthesis(oct_band_amplitude.T, min_phase=min_phase)
             full_band_imp_resp.append(ir_att)
             irs = multi_convolve(*full_band_imp_resp)
 
