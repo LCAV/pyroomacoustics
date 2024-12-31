@@ -36,7 +36,7 @@ if __name__ == "__main__":
         hist.push(points)
         hist.plot()
 
-        """
+        r"""
         ax.scatter(X, Y, Z, s=50)
         ax.plot(
             *np.stack((torch.zeros_like(loc), loc)).T,

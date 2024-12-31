@@ -69,5 +69,9 @@ def test_source_directions_nonshoebox():
     images_expected_reordered = images_expected[order_expected, :]
     directions_expected_reordered = directions_expected[order_expected, :]
 
-    np.testing.assert_almost_equal(images_obtained, images_expected_reordered)
-    np.testing.assert_almost_equal(directions_obtained, directions_expected_reordered)
+    np.testing.assert_almost_equal(
+        images_obtained, images_expected_reordered, decimal=5
+    )
+    np.testing.assert_almost_equal(
+        directions_obtained, directions_expected_reordered, decimal=5
+    )

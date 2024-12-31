@@ -34,7 +34,7 @@ if __name__ == "__main__":
         X, Y, Z = pra.random.power_spherical(loc=loc, scale=scale, size=1000).T
 
         ax.scatter(X, Y, Z, s=50)
-        """
+        r"""
         ax.plot(
             *np.stack((torch.zeros_like(loc), loc)).T,
             linewidth=4,

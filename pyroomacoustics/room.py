@@ -2237,7 +2237,9 @@ class Room(object):
                 self.visibility.append(np.zeros((self.mic_array.M, 1), dtype=np.int32))
                 # We also need a fake array of directions as this is expected later in
                 # the code.
-                source.directions = np.zeros((self.mic_array.M, self.dim, 1), dtype=np.float32)
+                source.directions = np.zeros(
+                    (self.mic_array.M, self.dim, 1), dtype=np.float32
+                )
 
         # Update the state
         self.simulator_state["ism_done"] = True
