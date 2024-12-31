@@ -1409,8 +1409,8 @@ class Room(object):
             if len(self.walls[i].absorption) == 1:
                 # Single band
                 wall_materials[name] = Material(
-                    energy_absorption=float(self.walls[i].absorption),
-                    scattering=float(self.walls[i].scatter),
+                    energy_absorption=float(self.walls[i].absorption[0]),
+                    scattering=float(self.walls[i].scatter[0]),
                 )
             elif len(self.walls[i].absorption) == self.octave_bands.n_bands:
                 # Multi-band
@@ -2139,14 +2139,6 @@ class Room(object):
         if self.dim != 3 and directivity is not None:
             raise NotImplementedError("Directivity is only supported for 3D rooms.")
 
-        if directivity is not None:
-            from pyroomacoustics import ShoeBox
-
-            if not isinstance(self, ShoeBox):
-                raise NotImplementedError(
-                    "Source directivity only supported for ShoeBox room."
-                )
-
         if isinstance(position, SoundSource):
             if directivity is not None:
                 if isinstance(directivity, CardioidFamily) or isinstance(
@@ -2241,8 +2233,11 @@ class Room(object):
                         self.visibility[-1][m, :] = 0
             else:
                 # if we are here, this means even the direct path is not visible
-                # we set the visibility of the direct path as 0
+                # we set the visibility of the direct path as 0.
                 self.visibility.append(np.zeros((self.mic_array.M, 1), dtype=np.int32))
+                # We also need a fake array of directions as this is expected later in
+                # the code.
+                source.directions = np.zeros((self.mic_array.M, self.dim, 1), dtype=np.float32)
 
         # Update the state
         self.simulator_state["ism_done"] = True
@@ -2305,13 +2300,14 @@ class Room(object):
                         src,
                         mic,
                         self.mic_array.directivity[m],
+                        src.directions[m, :, :],
                         self.visibility[s][m, :],
                         fdl,
                         self.c,
                         self.fs,
                         self.octave_bands,
-                        air_abs_coeffs=self.air_absorption,
                         min_phase=self.min_phase,
+                        air_abs_coeffs=self.air_absorption,
                     )
                     rir_parts.append(ir_ism)
 
