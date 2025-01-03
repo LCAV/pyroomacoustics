@@ -27,7 +27,7 @@ A class to make collect histograms of data distributed on the sphere.
 import numpy as np
 from scipy.spatial import SphericalVoronoi, cKDTree
 
-from .doa import GridSphere
+from ..doa import GridSphere
 
 
 class SphericalHistogram:
@@ -59,6 +59,14 @@ class SphericalHistogram:
         # we cache the histogram bins
         self._cache_dirty = False
         self._cache_histogram = np.zeros(self.n_bins)
+
+    @property
+    def grid(self):
+        return self._grid
+
+    @property
+    def bin_areas(self):
+        return self._areas
 
     @property
     def n_dim(self):

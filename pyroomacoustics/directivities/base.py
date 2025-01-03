@@ -94,7 +94,7 @@ class Directivity(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sample_rays(self, n_rays):
+    def sample_rays(self, n_rays, rng=None):
         """
         This method samples unit vectors from the sphere according to
         the distribution of the source
@@ -103,6 +103,10 @@ class Directivity(abc.ABC):
         ----------
         n_rays: int
             The number of rays to sample
+        rng: numpy.random.Generator or None, optional
+            A random number generator object from numpy or None.
+            If None is passed numpy.random.default_rng is used to create
+            a Generator object.
 
         Returns
         -------

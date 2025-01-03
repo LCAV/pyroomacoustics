@@ -73,12 +73,13 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree, SphericalVoronoi
 
 from .. import random
 from ..acoustics import OctaveBandsFactory
 from ..datasets import SOFADatabase
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
+from ..directivities.integration import spherical_integral
 from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
@@ -87,7 +88,7 @@ from .interp import spherical_interpolation
 from .sofa import open_sofa_file
 
 
-class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
+class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
     """
     This object draws samples from the distribution defined by the energy
     of the measured directional response object.
@@ -101,15 +102,30 @@ class MeasuredDirectivitySampler(random.sampler.DirectionalSampler):
     """
 
     def __init__(self, kdtree, energy):
-        super().__init__()
+        super().__init__(kdtree.m)
         self._kdtree = kdtree
-        # Normalize to maximum energy 1 because that is also the
-        # maximum value of the proposal unnormalized uniform distribution.
         self._energy = energy / energy.max()
+
+        self._sampler = random.sampler.RejectionSampler(
+            desired_func=self._pattern,
+            proposal_dist=random.distributions.UnnormalizedUniformSpherical(self.dim),
+            scale=1.0,
+        )
+
+        # The normalizing constant of the pdf is computed by spherical integration.
+        sv = SphericalVoronoi(kdtree.data)
+        w_ = sv.calculate_areas()
+        self._normalizing_constant = np.sum(w_ * self._energy)
 
     def _pattern(self, x):
         _, index = self._kdtree.query(x)
         return self._energy[index]
+
+    def pdf(self, x):
+        return self._pattern(x) / self._normalizing_constant
+
+    def sample(self, size=None, rng=None):
+        return self._sampler(size=size, rng=rng)
 
 
 class MeasuredDirectivity(Directivity):
@@ -184,7 +200,9 @@ class MeasuredDirectivity(Directivity):
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
         ir_energy = np.square(self._irs).sum(axis=-1)
-        self._ray_sampler = MeasuredDirectivitySampler(self._kdtree, ir_energy)
+        self.energy_distribution = MeasuredDirectivityEnergyDistribution(
+            self._kdtree, ir_energy
+        )
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -214,8 +232,8 @@ class MeasuredDirectivity(Directivity):
         _, index = self._kdtree.query(cart.T)
         return self._irs[index, :]
 
-    def sample_rays(self, n_rays):
-        return self._ray_sampler(n_rays).T
+    def sample_rays(self, n_rays, rng=None):
+        return self.energy_distribution.sample(size=n_rays, rng=rng).T
 
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):

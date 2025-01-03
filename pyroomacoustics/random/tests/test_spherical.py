@@ -26,7 +26,7 @@ if __name__ == "__main__":
     X, Y, Z = np.sin(PHI) * np.cos(THETA), np.sin(PHI) * np.sin(THETA), np.cos(PHI)
 
     fig = plt.figure(figsize=(8, 8))
-    ax = fig.gca(projection="3d")
+    ax = fig.add_subplot(111, projection="3d")
     ax.plot_wireframe(X, Y, Z, linewidth=1, alpha=0.25, color="gray")
 
     for loc, scale in zip(np.eye(3), [10, 1, 0.1]):

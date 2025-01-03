@@ -25,7 +25,7 @@ class Distribution(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def sample(self):
+    def sample(self, shape=None, rng=None):
         pass
 
     def __call__(self, *args, **kwargs):
@@ -54,6 +54,10 @@ class AdHoc(Distribution):
 class UniformSpherical(Distribution):
     """
     Uniform distribution on the n-sphere
+
+    Parameters
+    ----------
+    dim: The number of dimensions of the random vectors.
     """
 
     def __init__(self, dim=3):
@@ -69,27 +73,50 @@ class UniformSpherical(Distribution):
         return self._area
 
     def pdf(self, x):
-        return 1.0 / self._n_sphere_area
+        scale = 1.0 / self._n_sphere_area
+        return np.ones_like(x, shape=x.shape[:-1]) * scale
 
-    def sample(self, size=None):
-        return uniform_spherical(dim=self.dim, size=size)
+    def sample(self, size=None, rng=None):
+        return uniform_spherical(dim=self.dim, size=size, rng=rng)
+
+
+class UnnormalizedUniformSpherical(UniformSpherical):
+    """A convenience class to use for rejection sampling."""
+
+    @property
+    def _n_sphere_area(self):
+        return 1.0
 
 
 class PowerSpherical(Distribution):
-    def __init__(self, dim=3, loc=None, scale=None):
-        super().__init__(dim)
-
-        # first canonical basis vector
+    def __init__(self, loc=None, scale=None):
         if loc is None:
-            self._loc = np.zeros(self.dim)
-            self._loc[0] = 1.0
+            loc = np.array([1.0, 0.0, 0.0])
         else:
-            self._loc = loc
+            loc = np.array(loc)
 
-        if not scale:
+            if loc.ndim != 1:
+                raise ValueError(
+                    f"The location should be a 1d array (got {loc.shape=})"
+                )
+
+        if scale is None:
             self._scale = 1.0
-        else:
+        elif scale > 0.0:
             self._scale = scale
+        else:
+            raise ValueError(f"Scale should be a positive number (got {scale}).")
+
+        super().__init__(len(loc))
+
+        loc_norm = np.linalg.norm(loc)
+        if abs(loc_norm - 1.0) > 1e-5:
+            raise ValueError(
+                "The location parameter should be a unit "
+                f"norm vector (got norm={loc_norm})."
+            )
+
+        self._loc = loc
 
         # computation the normalizing constant
         a = (self.dim - 1) / 2 + self.scale
@@ -108,6 +135,9 @@ class PowerSpherical(Distribution):
     @property
     def scale(self):
         return self._scale
+
+    def sample(self, size=None, rng=None):
+        return power_spherical(loc=self._loc, scale=self._scale, size=size, rng=rng)
 
     def pdf(self, x):
         assert (

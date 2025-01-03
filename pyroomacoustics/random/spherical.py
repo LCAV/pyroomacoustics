@@ -1,10 +1,9 @@
 import numpy as np
-from numpy.random import default_rng
 
 _eps = 1e-7
 
 
-def uniform_spherical(dim=3, size=None):
+def uniform_spherical(dim=3, size=None, rng=None):
     """
     Generates uniform samples on the n-sphere
 
@@ -14,6 +13,9 @@ def uniform_spherical(dim=3, size=None):
         The number of samples to generate
     dim: int, optional
         The number of dimensions of the sphere, the default is dim=3
+    rng: numpy.random.Generator or None
+        A numpy.random.Generator object or None. If None, numpy.random.default_rng
+        is used to obtain a Generator object.
 
     Returns
     -------
@@ -21,13 +23,14 @@ def uniform_spherical(dim=3, size=None):
         The samples draw from the uniform distribution on the n-sphere
     """
     if size is None:
-        size = [1, dim]
+        size = [dim]
     elif isinstance(size, int):
         size = [size, dim]
     else:
         size = list(size) + [dim]
 
-    rng = default_rng()
+    if rng is None:
+        rng = np.random.default_rng()
 
     out = rng.standard_normal(size=size)
     out /= np.linalg.norm(out, axis=-1, keepdims=True)
@@ -35,7 +38,7 @@ def uniform_spherical(dim=3, size=None):
     return out
 
 
-def power_spherical(loc=None, scale=None, dim=3, size=None):
+def power_spherical(loc=None, scale=None, size=None, rng=None):
     """
     Generates power spherical samples on the (n-1)-sphere according to
 
@@ -45,37 +48,45 @@ def power_spherical(loc=None, scale=None, dim=3, size=None):
     Parameters
     ----------
     loc: float or array_like of floats, optional
-        The location (i.e., direction) unit vector
+        The location (i.e., direction) unit vector. If None, then
+        ``loc = np.array([1.0, 0.0, 0.0])`` is used.
     scale: float or array_like of floats
         The scale parameter descibing the spread of the distribution
-    dim: int, optional
-        The number of dimensions of the sphere, the default is dim=3
     size: int or tuple of ints, optional
         The number of samples to generate
+    rng: numpy.random.Generator or None
+        A numpy.random.Generator object or None. If None, numpy.random.default_rng
+        is used to obtain a Generator object.
 
     Returns
     -------
     out: ndarray, shape (*size, dim)
         The samples draw from the uniform distribution on the n-sphere
     """
+    if loc is None:
+        loc = np.array([1.0, 0.0, 0.0])
+    else:
+        loc = np.array(loc)
 
+    if loc.ndim != 1:
+        raise ValueError(f"The location should be a 1d array (got {loc.shape=})")
+
+    e1 = np.zeros_like(loc)
+    e1[0] = 1.0
+
+    dim = len(loc)
     if size is None:
-        size = [1, dim]
+        size = [dim]
     elif isinstance(size, int):
         size = [size, dim]
     else:
         size = list(size) + [dim]
 
-    e1 = np.zeros(dim)
-    e1[0] = 1.0
-
-    if loc is None:
-        loc = e1.copy()
-
     if scale is None:
         scale = 1.0
 
-    rng = default_rng()
+    if rng is None:
+        rng = np.random.default_rng()
 
     z = rng.beta((dim - 1.0) / 2.0 + scale, (dim - 1) / 2.0, size=size[:-1])
     v = uniform_spherical(size=size[:-1], dim=dim - 1)

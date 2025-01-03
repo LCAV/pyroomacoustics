@@ -40,10 +40,13 @@ class RejectionSampler:
     def dim(self):
         return self._dim
 
-    def __call__(self, size=None):
+    def __call__(self, size=None, rng=None):
 
         if not size:
             size = 1
+
+        if rng is None:
+            rng = self._rng
 
         flat_size = int(np.prod(size))  # flat size
 
@@ -54,11 +57,11 @@ class RejectionSampler:
 
             n_propose = flat_size - offset
 
-            proposal = self._proposal_dist.sample(size=n_propose)
+            proposal = self._proposal_dist.sample(size=n_propose, rng=rng)
             proposal_pdf_value = self._proposal_dist.pdf(proposal)
             desired_pdf_value = self._desired_func(proposal)
             u = (
-                self._rng.uniform(size=proposal_pdf_value.shape)
+                rng.uniform(size=proposal_pdf_value.shape)
                 * proposal_pdf_value
                 * self._scale
             )
@@ -78,34 +81,3 @@ class RejectionSampler:
         else:
             final_shape = list(size) + [self.dim]
         return samples.reshape(final_shape)
-
-
-class DirectionalSampler(RejectionSampler):
-    def __init__(self, loc=None):
-
-        if loc is None:
-            self._dim = 3
-            self._loc = np.zeros(self._dim, dtype=float)
-            self._loc[0] = 1.0
-        else:
-            self._loc = np.array(loc, dtype=float)
-            assert self._loc.ndim == 1
-            self._dim = len(self._loc)
-
-        self._loc /= np.linalg.norm(self._loc)
-
-        # proposal distribution is the unnormalized uniform spherical distribution
-        unnormalized_uniform = distributions.AdHoc(
-            lambda x: np.ones_like(x.shape[-1]), uniform_spherical, self._dim
-        )
-        super().__init__(self._pattern, unnormalized_uniform)
-
-    @abc.abstractmethod
-    def _pattern(self, x):
-        """
-        Parameters
-        ----------
-        x: array_like, shape (..., n_dim)
-             Cartesian coordinates
-        """
-        pass

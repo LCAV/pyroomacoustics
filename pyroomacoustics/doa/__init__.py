@@ -112,7 +112,6 @@ from .cssm import *
 from .doa import *
 from .frida import *
 from .grid import *
-from .histogram import SphericalHistogram
 from .music import *
 from .normmusic import *
 from .srp import *

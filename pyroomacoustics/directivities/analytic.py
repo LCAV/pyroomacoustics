@@ -62,6 +62,7 @@ import numpy as np
 from .. import random
 from ..doa import spher2cart
 from ..utilities import all_combinations, requires_matplotlib
+from .. import random
 from .base import Directivity
 from .direction import DirectionVector
 
@@ -124,8 +125,8 @@ class CardioidFamily(Directivity):
         self._pattern_name = f"cardioid family, p={self._p}"
 
         # this is the object that will allow to sample rays according to the
-        # distribution corresponding to the source directivity
-        self._ray_sampler = CardioidFamilySampler(
+        # distribution corresponding to the source energy directivity
+        self.energy_distribution = CardioidEnergyDistribution(
             loc=self._orientation.unit_vector, p=self._p
         )
 
@@ -207,8 +208,8 @@ class CardioidFamily(Directivity):
             else:
                 return resp
 
-    def sample_rays(self, n_rays):
-        return self._ray_sampler(n_rays).T
+    def sample_rays(self, n_rays, rng=None):
+        return self.energy_distribution.sample(n_rays, rng=rng).T
 
     @requires_matplotlib
     def plot_response(
@@ -393,39 +394,6 @@ class Omnidirectional(CardioidFamily):
         self._pattern_name = "omni"
 
 
-class CardioidFamilySampler(random.sampler.DirectionalSampler):
-    """
-    This object draws samples from a cardioid shaped distribution on the sphere
-
-    Parameters
-    ----------
-    loc: array_like
-        The unit vector pointing in the main direction of the cardioid
-    p: float
-        Parameter of the cardioid pattern. A value of 0 corresponds to a
-        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
-        pattern
-        The parameter must be between 0 and 1
-    """
-
-    def __init__(self, loc=None, p=0.5):
-        super().__init__(loc=loc)
-        self._coeff = p
-
-    def _pattern(self, x):
-        response = cardioid_func(
-            x.T,
-            direction=self._loc,
-            p=self._coeff,
-            gain=1.0,
-            normalize=False,
-            magnitude=True,
-        )
-        # The number of rays needs to be proportional to the
-        # response energy.
-        return response**2
-
-
 def cardioid_func(x, direction, p, gain=1.0, normalize=True, magnitude=False):
     """
     One-shot function for computing cardioid response.
@@ -486,3 +454,63 @@ def cardioid_energy(p, gain=1.0):
         The gain of the cardioid function
     """
     return gain**2 * (4.0 * np.pi / 3.0) * (4 * p**2 - 2 * p + 1)
+
+
+class CardioidEnergyDistribution(random.distributions.Distribution):
+    """
+    This object draws samples from a cardioid shaped distribution on the sphere
+
+    Parameters
+    ----------
+    loc: array_like or None
+        The unit vector pointing in the main direction of the cardioid.
+        If None, the location defaults to [1, 0, 0].
+    p: float or None
+        Parameter of the cardioid pattern. A value of 0 corresponds to a
+        figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
+        pattern. When None, p is set to 0.5.
+        The parameter must be between 0 and 1
+    """
+
+    def __init__(self, loc=None, p=None):
+        super().__init__(dim=3)
+        if loc is None:
+            loc = np.array([1.0, 0.0, 0.0])
+
+        loc_norm = np.linalg.norm(loc)
+        if abs(loc_norm - 1.0) > 1e-5:
+            raise ValueError(
+                "The location parameter should be a unit "
+                f"norm vector (got norm={loc_norm})."
+            )
+
+        self._loc = loc
+
+        if not (0.0 <= p <= 1.0):
+            raise ValueError(f"The value of p should be between 0.0 and 1.0 (got {p=})")
+
+        self._coeff = p
+
+        self._sampler = random.sampler.RejectionSampler(
+            desired_func=self._unnormalized_pdf,
+            proposal_dist=random.distributions.UnnormalizedUniformSpherical(dim=3),
+            scale=1.0,
+        )
+
+    def _unnormalized_pdf(self, x):
+        x = np.moveaxis(x, -1, 0)
+        response = cardioid_func(
+            x,
+            direction=self._loc,
+            p=self._coeff,
+            gain=1.0,
+            normalize=False,
+            magnitude=True,
+        )
+        return response**2
+
+    def pdf(self, x):
+        return self._unnormalized_pdf(x) / cardioid_energy(p=self._coeff)
+
+    def sample(self, size=None, rng=None):
+        return self._sampler(size=size, rng=rng)
