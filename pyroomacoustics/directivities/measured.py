@@ -73,13 +73,13 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.spatial import cKDTree, SphericalVoronoi
+from scipy.spatial import SphericalVoronoi, cKDTree
 
 from .. import random
 from ..acoustics import OctaveBandsFactory
 from ..datasets import SOFADatabase
-from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..directivities.integration import spherical_integral
+from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity

@@ -1,7 +1,7 @@
 import numpy as np
-import pyroomacoustics as pra
-
 import pytest
+
+import pyroomacoustics as pra
 
 
 @pytest.mark.parametrize("p", (0.0, 0.25, 0.5, 0.75, 1.0))

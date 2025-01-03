@@ -2,8 +2,9 @@
 Tests the distribution objects for the pdf area and the sampler functions.
 """
 
-import pytest
 import numpy as np
+import pytest
+
 import pyroomacoustics as pra
 from pyroomacoustics.directivities.integration import spherical_integral
 

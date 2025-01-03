@@ -1,7 +1,8 @@
-import pyroomacoustics as pra
 import numpy as np
-from pyroomacoustics.directivities import CardioidEnergyDistribution, SphericalHistogram
 import pytest
+
+import pyroomacoustics as pra
+from pyroomacoustics.directivities import CardioidEnergyDistribution, SphericalHistogram
 
 
 def test_rejection_sampler_power_spherical():

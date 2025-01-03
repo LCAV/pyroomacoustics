@@ -62,7 +62,6 @@ import numpy as np
 from .. import random
 from ..doa import spher2cart
 from ..utilities import all_combinations, requires_matplotlib
-from .. import random
 from .base import Directivity
 from .direction import DirectionVector
 

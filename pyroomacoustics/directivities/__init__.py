@@ -83,21 +83,21 @@ receiver with two ears (i.e., microphones). This simulates a binaural response.
 """
 from .analytic import (
     Cardioid,
+    CardioidEnergyDistribution,
     CardioidFamily,
     FigureEight,
     HyperCardioid,
     Omnidirectional,
     SubCardioid,
-    cardioid_func,
     cardioid_energy,
-    CardioidEnergyDistribution,
+    cardioid_func,
 )
-from .histogram import SphericalHistogram
-from .integration import spherical_integral
 from .base import Directivity
 from .direction import DirectionVector, Rotation3D
+from .histogram import SphericalHistogram
+from .integration import spherical_integral
 from .measured import (
     MeasuredDirectivity,
-    MeasuredDirectivityFile,
     MeasuredDirectivityEnergyDistribution,
+    MeasuredDirectivityFile,
 )
