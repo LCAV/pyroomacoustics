@@ -128,11 +128,10 @@ def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False)
 
         try:
             urlretrieve(url, path)
-        except URLError:
+        except URLError as exc:
             if no_fail:
                 continue
-            else:
-                raise URLError(f"Failed to download {url}")
+            raise URLError(f"Failed to download {url}") from exc
 
         if verbose:
             print(" done.")
