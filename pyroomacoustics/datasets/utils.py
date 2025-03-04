@@ -22,7 +22,6 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 
-import bz2
 import os
 import tarfile
 from pathlib import Path
