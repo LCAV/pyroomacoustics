@@ -27,11 +27,11 @@ import tarfile
 from pathlib import Path
 
 try:
-    from urllib.request import urlopen, urlretrieve
     from urllib.error import URLError
+    from urllib.request import urlopen, urlretrieve
 except ImportError:
     # support for python 2.7, should be able to remove by now
-    from urllib import urlopen, urlretrieve, URLError
+    from urllib import URLError, urlopen, urlretrieve
 
 
 class AttrDict(object):
