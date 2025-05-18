@@ -44,13 +44,13 @@ def projection_back(Y, ref, clip_up=None, clip_down=None):
 
     .. math::
 
-        0 & = E[y^*\\, (z^* y - x)]
+        0 & = E[y^*\, (z^* y - x)]
 
-        0 & = z^*\\, E[|y|^2] - E[y^* x]
+        0 & = z^*\, E[|y|^2] - E[y^* x]
 
-        z^* & = \\frac{E[y^* x]}{E[|y|^2]}
+        z^* & = \frac{E[y^* x]}{E[|y|^2]}
 
-        z & = \\frac{E[y x^*]}{E[|y|^2]}
+        z & = \frac{E[y x^*]}{E[|y|^2]}
 
     In practice, the expectations are replaced by the sample
     mean.

@@ -37,7 +37,7 @@ class SpectralSub(object):
 
     .. math::
 
-        G[k, n] = \max \\left \{ \\left ( \dfrac{P[k, n]-\\beta P_N[k, n]}{P[k, n]} \\right )^\\alpha, G_{min} \\right \},
+        G[k, n] = \max \left \{ \left ( \dfrac{P[k, n]-\beta P_N[k, n]}{P[k, n]} \right )^\alpha, G_{min} \right \},
 
     where :math:`G_{min} = 10^{-(db\_reduc/20)}` and :math:`db\_reduc` is the
     maximum reduction (in dB) that we are willing to perform for each bin (a
@@ -64,7 +64,7 @@ class SpectralSub(object):
     `Here <https://www.vocal.com/noise-reduction/musical-noise/>`_ is nice
     article about noise reduction and musical noise.
 
-    Adjusting the constants :math:`\\beta` and :math:`\\alpha` also presents a
+    Adjusting the constants :math:`\beta` and :math:`\alpha` also presents a
     trade-off between suppression and undesirable artefacts, i.e. more
     noticeable musical noise.
 
