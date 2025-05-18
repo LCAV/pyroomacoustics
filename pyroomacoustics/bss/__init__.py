@@ -48,7 +48,7 @@ References
     for blind speech separation based on AuxIVA and incomplete demixing transform,*
     Proc. IEEE, IWAENC, pp. 1-5, Sept. 2016.
 
-.. [5] K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
+.. [5] K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
 
 .. [6] K. Sekiguchi, Y. Bando, A. A. Nugraha, K. Yoshii, T. Kawahara, *Fast Multichannel

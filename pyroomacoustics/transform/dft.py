@@ -3,16 +3,16 @@
 
 """
 Class for performing the Discrete Fourier Transform (DFT) and inverse DFT for
-real signals, including multichannel. It is also possible to specific an 
+real signals, including multichannel. It is also possible to specific an
 analysis or synthesis window.
 
 When available, it is possible to use the ``pyfftw`` or ``mkl_fft`` packages.
 Otherwise the default is to use ``numpy.fft.rfft``/``numpy.fft.irfft``.
 
-More on ``pyfftw`` can be read here: 
+More on ``pyfftw`` can be read here:
 https://pyfftw.readthedocs.io/en/latest/index.html
 
-More on ``mkl_fft`` can be read here: 
+More on ``mkl_fft`` can be read here:
 https://github.com/IntelPython/mkl_fft
 """
 

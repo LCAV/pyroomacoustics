@@ -5,9 +5,10 @@ In this case, there should be no difference with not using a directivity at all.
 Ref: `Issue 398 <https://github.com/LCAV/pyroomacoustics/issues/398>`_
 """
 
-import numpy as np
-import pyroomacoustics as pra
 import matplotlib.pyplot as plt
+import numpy as np
+
+import pyroomacoustics as pra
 
 
 def test_omni_delay_analytical_vs_measured():
