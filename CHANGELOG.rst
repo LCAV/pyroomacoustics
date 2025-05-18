@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixes issue #398: When using measured directivities, the global delay for the
+  fractional delays was applied twice. The fix makes sure the delay is applied
+  only once.
 
 `0.8.3`_ - 2024-12-08
 ---------------------
