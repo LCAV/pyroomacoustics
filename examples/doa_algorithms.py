@@ -13,21 +13,21 @@ finding in 2D using one of several algorithms
 - TOPS [5]_
 - FRIDA [6]_
 
-.. [1] R. Schmidt, *Multiple emitter location and signal parameter estimation*, 
+.. [1] R. Schmidt, *Multiple emitter location and signal parameter estimation*,
     IEEE Trans. Antennas Propag., Vol. 34, Num. 3, pp 276--280, 1986
 
-.. [2] J. H. DiBiase, J H, *A high-accuracy, low-latency technique for talker localization 
+.. [2] J. H. DiBiase, J H, *A high-accuracy, low-latency technique for talker localization
     in reverberant environments using microphone arrays*, PHD Thesis, Brown University, 2000
 
-.. [3] H. Wang, M. Kaveh, *Coherent signal-subspace processing for the detection and 
-    estimation of angles of arrival of multiple wide-band sources*, IEEE Trans. Acoust., 
+.. [3] H. Wang, M. Kaveh, *Coherent signal-subspace processing for the detection and
+    estimation of angles of arrival of multiple wide-band sources*, IEEE Trans. Acoust.,
     Speech, Signal Process., Vol. 33, Num. 4, pp 823--831, 1985
 
-.. [4] E. D. di Claudio, R. Parisi, *WAVES: Weighted average of signal subspaces for 
-    robust wideband direction finding*, IEEE Trans. Signal Process., Vol. 49, Num. 10, 
+.. [4] E. D. di Claudio, R. Parisi, *WAVES: Weighted average of signal subspaces for
+    robust wideband direction finding*, IEEE Trans. Signal Process., Vol. 49, Num. 10,
     2179--2191, 2001
 
-.. [5] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband 
+.. [5] Y. Yeo-Sun, L. M. Kaplan, J. H. McClellan, *TOPS: New DOA estimator for wideband
     signals*, IEEE Trans. Signal Process., Vol. 54, Num 6., pp 1977--1989, 2006
 
 .. [6] H. Pan, R. Scheibler, E. Bezzam, I. Dokmanić, and M. Vetterli, *FRIDA:

@@ -29,7 +29,7 @@ The method implemented is described in the following publication
 4) Fast Multichannel Nonnegative Matrix Factorization (FastMNMF)
 The method implemented is described in the following publication
 
-    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source 
+    K. Sekiguchi, A. A. Nugraha, Y. Bando, K. Yoshii, *Fast Multichannel Source
     Separation Based on Jointly Diagonalizable Spatial Covariance Matrices*, EUSIPCO, 2019.
 
 5) Fast Multichannel Nonnegative Matrix Factorization 2 (FastMNMF2)
