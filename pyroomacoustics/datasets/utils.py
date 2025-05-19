@@ -22,16 +22,16 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 
-import bz2
 import os
 import tarfile
 from pathlib import Path
 
 try:
+    from urllib.error import URLError
     from urllib.request import urlopen, urlretrieve
 except ImportError:
     # support for python 2.7, should be able to remove by now
-    from urllib import urlopen, urlretrieve
+    from urllib import URLError, urlopen, urlretrieve
 
 
 class AttrDict(object):
@@ -128,11 +128,10 @@ def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False)
 
         try:
             urlretrieve(url, path)
-        except URLError:
+        except URLError as exc:
             if no_fail:
                 continue
-            else:
-                raise URLError(f"Failed to download {url}")
+            raise URLError(f"Failed to download {url}") from exc
 
         if verbose:
             print(" done.")
