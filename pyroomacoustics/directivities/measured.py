@@ -73,15 +73,59 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.spatial import cKDTree
+from scipy.spatial import SphericalVoronoi, cKDTree
 
+from .. import random
+from ..acoustics import OctaveBandsFactory
 from ..datasets import SOFADatabase
+from ..directivities.integration import spherical_integral
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
+from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
 from .direction import Rotation3D
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
+
+
+class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
+    """
+    This object draws samples from the distribution defined by the energy
+    of the measured directional response object.
+
+    Parameters
+    ----------
+    kdtree: array_like
+        A kd-tree for the measurement points in cartesian coordinates.
+    energy: array_like
+        The energy measured at each measurement point.
+    """
+
+    def __init__(self, kdtree, energy):
+        super().__init__(kdtree.m)
+        self._kdtree = kdtree
+        self._energy = energy / energy.max()
+
+        self._sampler = random.sampler.RejectionSampler(
+            desired_func=self._pattern,
+            proposal_dist=random.distributions.UnnormalizedUniformSpherical(self.dim),
+            scale=1.0,
+        )
+
+        # The normalizing constant of the pdf is computed by spherical integration.
+        sv = SphericalVoronoi(kdtree.data)
+        w_ = sv.calculate_areas()
+        self._normalizing_constant = np.sum(w_ * self._energy)
+
+    def _pattern(self, x):
+        _, index = self._kdtree.query(x)
+        return self._energy[index]
+
+    def pdf(self, x):
+        return self._pattern(x) / self._normalizing_constant
+
+    def sample(self, size=None, rng=None):
+        return self._sampler(size=size, rng=rng)
 
 
 class MeasuredDirectivity(Directivity):
@@ -114,6 +158,18 @@ class MeasuredDirectivity(Directivity):
         # set the initial orientation
         self.set_orientation(orientation)
 
+    def _compute_octave_bands_energy(self):
+        self.octave_bands = OctaveBandsFactory(
+            fs=self.fs,
+            n_fft=constants.get("octave_bands_n_fft"),
+            keep_dc=constants.get("octave_bands_keep_dc"),
+            base_frequency=constants.get("octave_bands_base_freq"),
+        )
+
+        ir_per_band = self.octave_bands.analysis(self._irs)
+
+        self.energy = np.square(ir_per_band).sum(axis=0)
+
     @property
     def is_impulse_response(self):
         return True
@@ -143,6 +199,10 @@ class MeasuredDirectivity(Directivity):
         )
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
+        ir_energy = np.square(self._irs).sum(axis=-1)
+        self.energy_distribution = MeasuredDirectivityEnergyDistribution(
+            self._kdtree, ir_energy
+        )
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -172,6 +232,9 @@ class MeasuredDirectivity(Directivity):
         _, index = self._kdtree.query(cart.T)
         return self._irs[index, :]
 
+    def sample_rays(self, n_rays, rng=None):
+        return self.energy_distribution.sample(size=n_rays, rng=rng).T
+
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
         """
@@ -198,13 +261,11 @@ class MeasuredDirectivity(Directivity):
             The axes on which the directivity is plotted
         """
         import matplotlib.pyplot as plt
-        from matplotlib import cm
 
         cart = self._grid.cartesian.T
         length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
-        g = np.linspace(-1, 1, n_grid)
         AZ, COL = np.meshgrid(
             np.linspace(0, 2 * np.pi, n_grid), np.linspace(0, np.pi, n_grid // 2)
         )
@@ -238,7 +299,7 @@ class MeasuredDirectivity(Directivity):
             Y *= V
             Z *= V
 
-        surf = ax.plot_surface(
+        _ = ax.plot_surface(
             X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
         )
 
