@@ -65,7 +65,11 @@ def cal_sph_basis(azimuth, colatitude, degree):  # theta_target,phi_target
     m, n = np.array([ms]), np.array([ns])
 
     # compute all the spherical harmonics at once
-    Ysh = scipy.special.sph_harm(m, n, azimuth[:, None], colatitude[:, None])
+    try:
+        Ysh = scipy.special.sph_harm_y(n, m, colatitude[:, None], azimuth[:, None])
+    except AttributeError:
+        # Deprecated since scipy v1.15.0.
+        Ysh = scipy.special.sph_harm(m, n, azimuth[:, None], colatitude[:, None])
 
     return Ysh
 

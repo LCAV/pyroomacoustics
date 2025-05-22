@@ -134,24 +134,6 @@ def compute_ism_rir(
     # dist shape (n) : n0 of image sources
     time = dist / c  # Calculate time of arrival for each image source
 
-    # we add the delay due to the factional delay filter to
-    # the arrival times to avoid problems when propagation
-    # is shorter than the delay to to the filter
-    # hence: time + fdl2
-    delay = fdl2 / fs
-    time += delay
-
-    t_max = (
-        time.max()
-    )  # The image source which takes the most time to arrive to this particular microphone
-
-    # Here we create an array of the right length to
-    # receiver the full RIR
-    # The +1 is due to some rare cases where numerical
-    # errors push the last sample over the end of the
-    # array
-    N = int(math.ceil(t_max * fs + fdl2 + 1)) + 1
-
     oct_band_amplitude = att / dist
     full_band_imp_resp = []
 
@@ -256,6 +238,27 @@ def compute_ism_rir(
     else:
         # Case 1) or 2)
         # Single- or Octave-bands RIR construction
+
+        # we add the delay due to the factional delay filter to
+        # the arrival times to avoid problems when propagation
+        # is shorter than the delay to to the filter
+        # hence: time + fdl2
+        # Note: for case 3), the fractional delays are applied as filter
+        # so that the delay should not be applied to the times directly
+        delay = fdl2 / fs
+        time += delay
+
+        # The image source which takes the most time to arrive to this
+        # particular microphone
+        t_max = time.max()
+
+        # Here we create an array of the right length to
+        # receiver the full RIR
+        # The +1 is due to some rare cases where numerical
+        # errors push the last sample over the end of the
+        # array
+        N = int(math.ceil(t_max * fs + fdl2 + 1)) + 1
+
         n_bands = oct_band_amplitude.shape[0]
         rir = np.zeros(N, dtype=np.float32)  # ir for every band
         for b in range(n_bands):  # Loop through every band

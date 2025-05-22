@@ -2,7 +2,7 @@
 Adaptive Filter in STFT Domain Example
 ======================================
 
-In this example, we will run adaptive filters for system 
+In this example, we will run adaptive filters for system
 identification, but in the frequeny domain.
 """
 

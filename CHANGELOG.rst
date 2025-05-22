@@ -38,6 +38,16 @@ Changed
 - Bumped the numpy requirement to v1.17.0 to use the ``numpy.random.Generator`` objects.
 
 
+`0.8.4`_ - 2025-05-19
+---------------------
+
+Bugfix
+~~~~~~
+
+- Fixes issue #398: When using measured directivities, the global delay for the
+  fractional delays was applied twice. The fix makes sure the delay is applied
+  only once.
+
 `0.8.3`_ - 2024-12-08
 ---------------------
 
@@ -722,7 +732,8 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...master
+.. _0.8.4: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...v0.8.4
 .. _0.8.3: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...v0.8.3
 .. _0.8.2: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...v0.8.2
 .. _0.8.1: https://github.com/LCAV/pyroomacoustics/compare/v0.8.0...v0.8.1

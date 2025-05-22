@@ -492,7 +492,7 @@ This can be turned simply by providing the keyword argument ``air_absorption=Tru
 The coefficients are also temperature and humidity dependent and the default values are as follows.
 
 ========= ========    ====== ====== ====== ===== ===== ===== ===== =====
-Temp. (C) Hum. (%)    125 Hz 250 Hz 500 Hz 1 kHz 2 kHz 4 kHz 8 kHz 
+Temp. (C) Hum. (%)    125 Hz 250 Hz 500 Hz 1 kHz 2 kHz 4 kHz 8 kHz
 ========= ========    ====== ====== ====== ===== ===== ===== ===== =====
 10        30-50       0.1    0.2    0.5    1.1   2.7   9.4   29.0  x1e-3
 10        50-70       0.1    0.2    0.5    0.8   1.8   5.9   21.1  x1e-3
@@ -641,7 +641,7 @@ setting the maximum image image order of the room simulation to zero. This
 allows for early development and testing of various audio-based algorithms,
 without worrying about room acoustics at first. Thanks to the modular framework
 of pyroomacoustics, room acoustics can easily be added, after this first
-testing stage, for more realistic simulations. 
+testing stage, for more realistic simulations.
 
 Use this if you can neglect room effects (e.g. you operate in an anechoic room
 or outdoors), or if you simply want to test your algorithm in the best-case
@@ -651,7 +651,7 @@ room), see `./examples/doa_anechoic_room.py`.
 
 .. code-block:: python
 
-    # Create anechoic room. 
+    # Create anechoic room.
     room = pra.AnechoicRoom(fs=16000)
 
     # Place the microphone array around the origin.
