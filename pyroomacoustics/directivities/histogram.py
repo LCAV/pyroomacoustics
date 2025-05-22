@@ -25,9 +25,10 @@ r"""
 A class to collect histograms of data distributed on the sphere.
 """
 import numpy as np
-from scipy.spatial import SphericalVoronoi, cKDTree
+from scipy.spatial import cKDTree
 
 from ..doa import GridSphere
+from .integration import robust_spherical_voronoi_areas
 
 
 class SphericalHistogram:
@@ -44,8 +45,7 @@ class SphericalHistogram:
             raise NotImplementedError("Only 3D histogram has been implemented")
 
         # we need to know the area of each bin
-        self._voronoi = SphericalVoronoi(self._grid.cartesian.T)
-        self._areas = self._voronoi.calculate_areas()
+        self._areas = robust_spherical_voronoi_areas(self._grid.cartesian.T)
 
         # now we also need a KD-tree to do nearest neighbor search
         self._kd_tree = cKDTree(self._grid.cartesian.T)

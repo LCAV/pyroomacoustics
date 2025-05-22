@@ -95,7 +95,7 @@ from .analytic import (
 from .base import Directivity
 from .direction import DirectionVector, Rotation3D
 from .histogram import SphericalHistogram
-from .integration import spherical_integral
+from .integration import spherical_integral, robust_spherical_voronoi_areas
 from .measured import (
     MeasuredDirectivity,
     MeasuredDirectivityEnergyDistribution,

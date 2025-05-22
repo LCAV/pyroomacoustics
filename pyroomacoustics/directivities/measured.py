@@ -88,6 +88,76 @@ from .interp import spherical_interpolation
 from .sofa import open_sofa_file
 
 
+def robust_spherical_voronoi_areas(data):
+    """
+    Computes areas of the spherical voronoi diagram even when the data points
+    span less than 3 dimensions.
+    """
+    if data.shape[1] != 3:
+        raise ValueError(
+            f"Only measurement points in 3D are handled (got {data.shape[1]})."
+        )
+
+    if data.shape[0] == 1:
+        # The whole energy is on a single point.
+        return 4.0 * np.pi
+    elif data.shape[0] == 2:
+        # Each point gets half the area of the sphere.
+        return np.ones(2) * 2.0 * np.pi
+    elif data.shape[0] == 3:
+        # Make sure the lengths are normalized.
+        data = data / np.linalg.norm(data, axis=1, keepdims=True)
+        # The angle between all the points.
+        angles = np.arccos(data @ data.T)
+        return np.mean(abs(angles), axis=1)
+    else:
+        try:
+            # This is the normal case we expect to hit most often.
+            sv = SphericalVoronoi(data)
+            return sv.calculate_areas()
+        except ValueError as e:
+            if not repr(e).startswith("Rank"):
+                # We can still deal with low rank point sets, but not other types of
+                # exceptions, e.g., duplicate points.
+                raise e
+
+            rank = np.linalg.matrix_rank(data - data[0], tol=1e-6)
+            if rank == 1:
+                # If the rank is 1 and data.shape[0] != 1, there are
+                # necessarily duplicate points.
+                raise ValueError(
+                    "There are duplicate points in the measurement locations."
+                )
+            # The only possibility here is that the all the point live in a subspace
+            # of dimension 2.
+
+            # Make sure the lengths are normalized.
+            data = data / np.linalg.norm(data, axis=1, keepdims=True)
+
+            # Find a basis and project in the 2D space.
+            u, s, v = np.linalg.svd(data)
+
+            data = data @ v[:2, :].T
+
+            # Find all the angles of the vectors in the 2D plane.
+            angles = np.tan2(data[:, 1], data[:, 0])
+
+            # We need to sort the angles in increasing order and keep track of
+            # the reverse permutation.
+            sorted_indices = np.argsort(angles)
+            reverse = np.empty_like(sorted_indices)
+            reverse[sorted_indices] = np.arange(len(sorted_indices))
+
+            # The area
+            angles_sorted = angles[sorted_indices]
+            delta = angles_sorted - np.roll(angles_sorted, 1)
+            areas = 0.5 * (delta + np.roll(delta, -1))
+            # Now we need to divide by 2 * pi to get the ratio for each point
+            # and then multiply by 4 * pi to get the volume of the sphere.
+            # Thus, we only need to multply by 2.
+            return 2.0 * areas[reverse]
+
+
 class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
     """
     This object draws samples from the distribution defined by the energy
@@ -113,8 +183,7 @@ class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
         )
 
         # The normalizing constant of the pdf is computed by spherical integration.
-        sv = SphericalVoronoi(kdtree.data)
-        w_ = sv.calculate_areas()
+        w_ = robust_spherical_voronoi_areas(kdtree.data)
         self._normalizing_constant = np.sum(w_ * self._energy)
 
     def _pattern(self, x):
