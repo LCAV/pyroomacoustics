@@ -2255,6 +2255,7 @@ class Room(object):
         for s, src in enumerate(self.sources):
             self.room_engine.ray_tracing(self.rt_args["n_rays"], src.position)
 
+            # There is one histogram for each mic/source pair.
             for r in range(self.mic_array.M):
                 self.rt_histograms[r].append([])
                 for h in self.room_engine.microphones[r].histograms:
@@ -2263,7 +2264,6 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
-        # Basically, histograms for 2 mics corresponding to each source , the histograms are in each octave bands hence (7,2500) 2500 histogram length
         # update the state
         self.simulator_state["rt_done"] = True
 

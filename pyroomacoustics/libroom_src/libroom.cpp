@@ -60,6 +60,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("set_params", &Room<3>::set_params)
       .def("add_mic", &Room<3>::add_mic)
       .def("reset_mics", &Room<3>::reset_mics)
+      .def("broadcast_bands_to", &Room<3>::broadcast_bands_to)
       .def("image_source_model", &Room<3>::image_source_model)
       .def("get_wall", &Room<3>::get_wall)
       .def("get_max_distance", &Room<3>::get_max_distance)
@@ -80,7 +81,7 @@ PYBIND11_MODULE(libroom, m) {
                Room<3>::ray_tracing)
       .def("ray_tracing",
            (void (Room<3>::*)(
-               const Eigen::Matrix<float, 3, Eigen::Dynamic> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, 3> &vectors,
                const Vectorf<3> &source_pos)) &
                Room<3>::ray_tracing)
       .def("ray_tracing", (void (Room<3>::*)(size_t nb_phis, size_t nb_thetas,
@@ -121,6 +122,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("set_params", &Room<2>::set_params)
       .def("add_mic", &Room<2>::add_mic)
       .def("reset_mics", &Room<2>::reset_mics)
+      .def("broadcast_bands_to", &Room<2>::broadcast_bands_to)
       .def("image_source_model", &Room<2>::image_source_model)
       .def("get_wall", &Room<2>::get_wall)
       .def("get_max_distance", &Room<2>::get_max_distance)
@@ -141,7 +143,7 @@ PYBIND11_MODULE(libroom, m) {
                Room<2>::ray_tracing)
       .def("ray_tracing",
            (void (Room<2>::*)(
-               const Eigen::Matrix<float, 2, Eigen::Dynamic> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, 2> &vectors,
                const Vectorf<2> &source_pos)) &
                Room<2>::ray_tracing)
       .def("ray_tracing", (void (Room<2>::*)(size_t nb_phis, size_t nb_thetas,

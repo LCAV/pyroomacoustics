@@ -22,7 +22,7 @@
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
 r"""
-A class to make collect histograms of data distributed on the sphere.
+A class to collect histograms of data distributed on the sphere.
 """
 import numpy as np
 from scipy.spatial import SphericalVoronoi, cKDTree

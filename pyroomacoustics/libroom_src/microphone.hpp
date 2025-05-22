@@ -70,8 +70,7 @@ class Microphone {
       : loc(_loc), n_dirs(1), n_bands(_n_bands), hist_resolution(_hist_res) {
     n_dist_bins_init = size_t(max_dist_init / hist_resolution) + 1;
     // Initialize the histograms
-    histograms.resize(n_dirs);
-    for (auto &hist : histograms) hist.init(n_bands, n_dist_bins_init);
+    reset();
   }
 
   Microphone(const Vectorf<D> &_loc, int _n_bands, float _hist_res,
@@ -88,9 +87,8 @@ class Microphone {
     kdtree = new my_kd_tree_t(D, std::cref(directions), 10 /* max leaf */);
     n_dirs = directions.rows();
 
-    // Initialize the histograms
-    histograms.resize(n_dirs);
-    for (auto &hist : histograms) hist.init(n_bands, n_dist_bins_init);
+    // Initialize the histograms.
+    reset();
   }
 
   void make_omni() {
@@ -106,9 +104,13 @@ class Microphone {
     }
   }
 
-  void reset() {
-    for (auto h = histograms.begin(); h != histograms.end(); ++h) h->reset();
+  void reset(int _n_bands) {
+    n_bands = _n_bands;
+    // Initialize the histograms
+    histograms.resize(n_dirs);
+    for (auto &hist : histograms) hist.init(n_bands, n_dist_bins_init);
   }
+  void reset() { reset(n_bands); }
 
   const Vectorf<D> &get_loc() const { return loc; };
 

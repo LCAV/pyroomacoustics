@@ -204,6 +204,20 @@ class Room
         mic->reset();
     }
 
+    void broadcast_bands_to(int new_n_bands)
+    {
+      /* If the number of bands is 1, this function will copy the value over
+       * the given number of bands
+       */
+      n_bands = new_n_bands;
+      // Walls
+      for (auto wall = walls.begin() ; wall != walls.end() ; ++wall)
+        wall->broadcast_bands_to(new_n_bands);
+      // Microphones: resets and resizes the histograms to have new_n_bands.
+      for (auto mic = microphones.begin() ; mic != microphones.end() ; ++mic)
+        mic->reset(new_n_bands);
+    }
+
     Wall<D> &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
@@ -244,7 +258,7 @@ class Room
         );
 
     void ray_tracing(
-        const Eigen::Matrix<float,D,Eigen::Dynamic> &unit_vectors,
+        const Eigen::Matrix<float,Eigen::Dynamic,D> &unit_vectors,
         const Vectorf<D> &source_pos
         );
 
