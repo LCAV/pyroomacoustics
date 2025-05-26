@@ -1,15 +1,15 @@
 import numpy as np
-import pytest
-
 import pyroomacoustics as pra
+import pytest
 
 
 @pytest.mark.parametrize("p", (0.0, 0.25, 0.5, 0.75, 1.0))
-def test_pdf_integral(p):
+@pytest.mark.parametrize("gain", (0.5, 1.0))
+def test_pdf_integral(p, gain):
 
     loc = np.ones(3) / np.sqrt(3.0)
 
-    distribution = pra.directivities.CardioidEnergyDistribution(loc=loc, p=p)
+    distribution = pra.directivities.CardioidEnergyDistribution(loc=loc, p=p, gain=gain)
 
     def pdf(x):
         return distribution.pdf(x.T)
@@ -20,12 +20,13 @@ def test_pdf_integral(p):
 
 
 @pytest.mark.parametrize("p", (0.0, 0.25, 0.5, 0.75, 1.0))
-def test_rejection_sampler_cardioid(p):
+@pytest.mark.parametrize("gain", (0.5, 1.0))
+def test_rejection_sampler_cardioid(p, gain):
 
     loc = np.ones(3) / np.sqrt(3.0)
 
     cardioid_energy_distribution = pra.directivities.CardioidEnergyDistribution(
-        loc=loc, p=p
+        loc=loc, p=p, gain=gain
     )
 
     rng = np.random.default_rng(94877675)
@@ -63,3 +64,23 @@ def test_rejection_sampler_cardioid_repeatability(p):
     random_points2 = cardioid_energy_distribution.sample(size=(100000,), rng=rng)
 
     np.testing.assert_allclose(random_points1, random_points2)
+
+
+@pytest.mark.parametrize("p", (0.0, 0.25, 0.5, 0.75, 1.0))
+@pytest.mark.parametrize("gain", (1.0, 0.5))
+@pytest.mark.parametrize(
+    "rng,rtol", [(None, 0.02), (np.random.default_rng(94877675), 0.08)]
+)
+def test_sample_rays(p, gain, rng, rtol):
+    loc = np.ones(3) / np.sqrt(3.0)
+
+    dir_obj = pra.directivities.CardioidFamily(loc, p, gain=gain)
+
+    rays, energies = dir_obj.sample_rays(100_000, rng=rng)
+
+    measured_total_energy = np.mean(energies)
+
+    # Expected quantities.
+    expected_total_energy = dir_obj.energy_distribution.total_energy
+
+    np.testing.assert_allclose(expected_total_energy, measured_total_energy, atol=0.01)

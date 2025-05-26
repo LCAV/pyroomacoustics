@@ -60,7 +60,7 @@ a pattern with arbitrary parameter :math:`p`.
 import numpy as np
 
 from .. import random
-from ..doa import spher2cart
+from ..doa import cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..utilities import all_combinations, requires_matplotlib
 from .base import Directivity
 from .direction import DirectionVector
@@ -109,7 +109,7 @@ class CardioidFamily(Directivity):
             if orientation.shape != (3,):
                 raise ValueError("Orientation must be a 3D vector.")
             orientation = orientation / np.linalg.norm(orientation)
-            azimuth, colatitude = spher2cart(orientation)  # returns radians
+            azimuth, colatitude, _ = cart2spher(orientation)  # returns radians
             self._orientation = DirectionVector(azimuth, colatitude, degrees=False)
         elif isinstance(orientation, DirectionVector):
             self._orientation = orientation
@@ -126,7 +126,7 @@ class CardioidFamily(Directivity):
         # this is the object that will allow to sample rays according to the
         # distribution corresponding to the source energy directivity
         self.energy_distribution = CardioidEnergyDistribution(
-            loc=self._orientation.unit_vector, p=self._p
+            loc=self._orientation.unit_vector, p=self._p, gain=self._gain
         )
 
     @property
@@ -163,6 +163,12 @@ class CardioidFamily(Directivity):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
 
+    def _get_response_from_cartesian_vector(self, vectors):
+        """vectors.shape == (3, n_points)."""
+        return self._gain * (
+            self._p + (1 - self._p) * np.matmul(self._orientation.unit_vector, vectors)
+        )
+
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
@@ -197,10 +203,7 @@ class CardioidFamily(Directivity):
         else:
             coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
 
-            resp = self._gain * (
-                self._p
-                + (1 - self._p) * np.matmul(self._orientation.unit_vector, coord)
-            )
+            resp = self._get_response_from_cartesian_vector(coord)
 
             if magnitude:
                 return np.abs(resp)
@@ -208,7 +211,16 @@ class CardioidFamily(Directivity):
                 return resp
 
     def sample_rays(self, n_rays, rng=None):
-        return self.energy_distribution.sample(n_rays, rng=rng).T
+        if rng is None:
+            rays = fibonacci_spherical_sampling(n_points=n_rays).T
+            energies = (
+                self._get_response_from_cartesian_vector(rays.T) ** 2 * 4.0 * np.pi
+            )
+        else:
+            rays = self.energy_distribution.sample(n_rays, rng=rng)
+            energies = np.ones(n_rays) * self.energy_distribution.total_energy
+        # Cardioid have a single band.
+        return rays, energies[:, np.newaxis]
 
     @requires_matplotlib
     def plot_response(
@@ -469,9 +481,11 @@ class CardioidEnergyDistribution(random.distributions.Distribution):
         figure-eight pattern, 0.5 to a cardioid pattern, and 1 to an omni
         pattern. When None, p is set to 0.5.
         The parameter must be between 0 and 1
+    gain: float
+        The linear gain of the directivity pattern (default is 1.0)
     """
 
-    def __init__(self, loc=None, p=None):
+    def __init__(self, loc=None, p=None, gain=1.0):
         super().__init__(dim=3)
         if loc is None:
             loc = np.array([1.0, 0.0, 0.0])
@@ -484,11 +498,14 @@ class CardioidEnergyDistribution(random.distributions.Distribution):
             )
 
         self._loc = loc
+        self._gain = gain
 
         if not (0.0 <= p <= 1.0):
             raise ValueError(f"The value of p should be between 0.0 and 1.0 (got {p=})")
 
         self._coeff = p
+
+        self._cardioid_energy = cardioid_energy(p=self._coeff, gain=self._gain)
 
         self._sampler = random.sampler.RejectionSampler(
             desired_func=self._unnormalized_pdf,
@@ -496,20 +513,24 @@ class CardioidEnergyDistribution(random.distributions.Distribution):
             scale=1.0,
         )
 
+    @property
+    def total_energy(self):
+        return self._cardioid_energy
+
     def _unnormalized_pdf(self, x):
         x = np.moveaxis(x, -1, 0)
         response = cardioid_func(
             x,
             direction=self._loc,
             p=self._coeff,
-            gain=1.0,
+            gain=self._gain,
             normalize=False,
             magnitude=True,
         )
         return response**2
 
     def pdf(self, x):
-        return self._unnormalized_pdf(x) / cardioid_energy(p=self._coeff)
+        return self._unnormalized_pdf(x) / self.total_energy
 
     def sample(self, size=None, rng=None):
         return self._sampler(size=size, rng=rng)

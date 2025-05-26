@@ -112,5 +112,8 @@ class Directivity(abc.ABC):
         -------
         ray_directions: numpy.ndarray, shape (n_dim, n_rays)
             An array containing the unit vectors in its columns
+        energies: numpy.ndarray, shape (n_rays, n_bands)
+            An energy carried per ray so that the expectation over all the rays
+            is the energy of the band, i.e., np.mean(energies) == band energy.
         """
         raise NotImplementedError

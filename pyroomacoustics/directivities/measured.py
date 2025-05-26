@@ -76,7 +76,7 @@ from scipy.interpolate import griddata
 from scipy.spatial import SphericalVoronoi, cKDTree
 
 from .. import random
-from ..acoustics import OctaveBandsFactory
+from ..acoustics import AntoniOctaveFilterBank
 from ..datasets import SOFADatabase
 from ..directivities.integration import spherical_integral
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
@@ -84,78 +84,9 @@ from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
 from .direction import Rotation3D
+from .integration import robust_spherical_voronoi_areas
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
-
-
-def robust_spherical_voronoi_areas(data):
-    """
-    Computes areas of the spherical voronoi diagram even when the data points
-    span less than 3 dimensions.
-    """
-    if data.shape[1] != 3:
-        raise ValueError(
-            f"Only measurement points in 3D are handled (got {data.shape[1]})."
-        )
-
-    if data.shape[0] == 1:
-        # The whole energy is on a single point.
-        return 4.0 * np.pi
-    elif data.shape[0] == 2:
-        # Each point gets half the area of the sphere.
-        return np.ones(2) * 2.0 * np.pi
-    elif data.shape[0] == 3:
-        # Make sure the lengths are normalized.
-        data = data / np.linalg.norm(data, axis=1, keepdims=True)
-        # The angle between all the points.
-        angles = np.arccos(data @ data.T)
-        return np.mean(abs(angles), axis=1)
-    else:
-        try:
-            # This is the normal case we expect to hit most often.
-            sv = SphericalVoronoi(data)
-            return sv.calculate_areas()
-        except ValueError as e:
-            if not repr(e).startswith("Rank"):
-                # We can still deal with low rank point sets, but not other types of
-                # exceptions, e.g., duplicate points.
-                raise e
-
-            rank = np.linalg.matrix_rank(data - data[0], tol=1e-6)
-            if rank == 1:
-                # If the rank is 1 and data.shape[0] != 1, there are
-                # necessarily duplicate points.
-                raise ValueError(
-                    "There are duplicate points in the measurement locations."
-                )
-            # The only possibility here is that the all the point live in a subspace
-            # of dimension 2.
-
-            # Make sure the lengths are normalized.
-            data = data / np.linalg.norm(data, axis=1, keepdims=True)
-
-            # Find a basis and project in the 2D space.
-            u, s, v = np.linalg.svd(data)
-
-            data = data @ v[:2, :].T
-
-            # Find all the angles of the vectors in the 2D plane.
-            angles = np.tan2(data[:, 1], data[:, 0])
-
-            # We need to sort the angles in increasing order and keep track of
-            # the reverse permutation.
-            sorted_indices = np.argsort(angles)
-            reverse = np.empty_like(sorted_indices)
-            reverse[sorted_indices] = np.arange(len(sorted_indices))
-
-            # The area
-            angles_sorted = angles[sorted_indices]
-            delta = angles_sorted - np.roll(angles_sorted, 1)
-            areas = 0.5 * (delta + np.roll(delta, -1))
-            # Now we need to divide by 2 * pi to get the ratio for each point
-            # and then multiply by 4 * pi to get the volume of the sphere.
-            # Thus, we only need to multply by 2.
-            return 2.0 * areas[reverse]
 
 
 class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
@@ -169,9 +100,12 @@ class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
         A kd-tree for the measurement points in cartesian coordinates.
     energy: array_like
         The energy measured at each measurement point.
+    areas: array_like
+        The areas of the spherical voronoi of the kd-tree.
+        If not provided, they are computed.
     """
 
-    def __init__(self, kdtree, energy):
+    def __init__(self, kdtree, energy, areas=None):
         super().__init__(kdtree.m)
         self._kdtree = kdtree
         self._energy = energy / energy.max()
@@ -183,8 +117,9 @@ class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
         )
 
         # The normalizing constant of the pdf is computed by spherical integration.
-        w_ = robust_spherical_voronoi_areas(kdtree.data)
-        self._normalizing_constant = np.sum(w_ * self._energy)
+        if areas is None:
+            areas = robust_spherical_voronoi_areas(kdtree.data)
+        self._normalizing_constant = np.sum(areas * self._energy)
 
     def _pattern(self, x):
         _, index = self._kdtree.query(x)
@@ -224,20 +159,10 @@ class MeasuredDirectivity(Directivity):
         self._irs = impulse_responses
         self.fs = fs
 
+        self._compute_band_energies()
+
         # set the initial orientation
         self.set_orientation(orientation)
-
-    def _compute_octave_bands_energy(self):
-        self.octave_bands = OctaveBandsFactory(
-            fs=self.fs,
-            n_fft=constants.get("octave_bands_n_fft"),
-            keep_dc=constants.get("octave_bands_keep_dc"),
-            base_frequency=constants.get("octave_bands_base_freq"),
-        )
-
-        ir_per_band = self.octave_bands.analysis(self._irs)
-
-        self.energy = np.square(ir_per_band).sum(axis=0)
 
     @property
     def is_impulse_response(self):
@@ -247,6 +172,35 @@ class MeasuredDirectivity(Directivity):
     def filter_len_ir(self):
         """Length of the impulse response in samples"""
         return self._irs.shape[-1]
+
+    def _compute_band_energies(self):
+        # Use an energy preserving octave band to compute the per octave
+        # band energy of the impulse responses.
+        octave_bands = AntoniOctaveFilterBank(
+            base_frequency=constants.get("octave_bands_base_freq"),
+            fs=self.fs,
+            n_fft=constants.get("octave_bands_n_fft"),
+        )
+
+        # Energies per direction and octave band, shape == (n_grid, n_bands).
+        # Normalized per bandwidth and area.
+        self.areas = robust_spherical_voronoi_areas(self._original_grid.cartesian.T)
+        norm = octave_bands.get_bw()
+        self.energies = np.array([octave_bands.energy(ir) / norm for ir in self._irs])
+
+        # The total energy per direction over all bands.
+        self.energy_per_direction = self.energies.sum(axis=-1)
+
+        # We need to normalize by the total band energy because the rays are drawn
+        # over all the bands together.
+        self.total_energy = np.sum(self.energies * self.areas[:, None])
+
+        # Ray energies to use with the deterministic sampler.
+        self.energies_coeff_deterministic = self.energies * 4.0 * np.pi
+
+        # Ray energies to use with the random sampler.
+        norm = (self.energy_per_direction / self.total_energy)[:, None]
+        self.energies_coeff_random = self.energies / norm
 
     def set_orientation(self, orientation):
         """
@@ -266,11 +220,13 @@ class MeasuredDirectivity(Directivity):
         self._grid = GridSphere(
             cartesian_points=self._orientation.rotate(self._original_grid.cartesian)
         )
+
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
-        ir_energy = np.square(self._irs).sum(axis=-1)
+
+        # Create the energy directional distribution.
         self.energy_distribution = MeasuredDirectivityEnergyDistribution(
-            self._kdtree, ir_energy
+            self._kdtree, self.energy_per_direction, areas=self.areas
         )
 
     def get_response(
@@ -302,7 +258,16 @@ class MeasuredDirectivity(Directivity):
         return self._irs[index, :]
 
     def sample_rays(self, n_rays, rng=None):
-        return self.energy_distribution.sample(size=n_rays, rng=rng).T
+        if rng is None:
+            rays = fibonacci_spherical_sampling(n_points=n_rays).T
+            energies_coeff = self.energies_coeff_deterministic
+        else:
+            rays = self.energy_distribution.sample(size=n_rays, rng=rng)
+            energies_coeff = self.energies_coeff_random
+
+        _, index = self._kdtree.query(rays)
+        energies = energies_coeff[index, :]
+        return rays, energies
 
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):

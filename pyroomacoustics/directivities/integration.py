@@ -39,6 +39,7 @@ def robust_spherical_voronoi_areas(data):
     """
     Computes areas of the spherical voronoi diagram even when the data points
     span less than 3 dimensions.
+    The input data has shape (n_points, 3) and the output (n_points,).
     """
     if data.shape[1] != 3:
         raise ValueError(

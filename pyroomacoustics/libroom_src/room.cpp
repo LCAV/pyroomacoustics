@@ -945,10 +945,10 @@ template <size_t D>
 void Room<D>::ray_tracing(
     const Eigen::Matrix<float, Eigen::Dynamic, D> &unit_vectors,
     const Vectorf<D> &source_pos) {
-  float energy_0 = 2.f / unit_vectors.cols();
+  float energy_0 = 2.f / unit_vectors.rows();
 
-  for (int c = 0; c < unit_vectors.cols(); c++)
-    simul_ray(unit_vectors.row(c), source_pos, energy_0);
+  for (int r = 0; r < unit_vectors.rows(); r++)
+    simul_ray(unit_vectors.row(r), source_pos, energy_0);
 }
 
 template <size_t D>
