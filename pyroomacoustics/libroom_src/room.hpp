@@ -243,13 +243,13 @@ class Room
         float phi,
         float theta,
         const Vectorf<D> &source_pos,
-        float energy_0
+        const Eigen::ArrayXf &energy_0
         );
 
     void simul_ray(
         const Vectorf<D> &ray_direction,
         const Vectorf<D> &source_pos,
-        float energy_0
+        const Eigen::ArrayXf &energy_0
         );
 
     void ray_tracing(
@@ -259,6 +259,7 @@ class Room
 
     void ray_tracing(
         const Eigen::Matrix<float,Eigen::Dynamic,D> &unit_vectors,
+        const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
         const Vectorf<D> &source_pos
         );
 

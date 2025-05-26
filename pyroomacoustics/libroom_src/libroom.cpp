@@ -68,11 +68,11 @@ PYBIND11_MODULE(libroom, m) {
       .def("scat_ray", &Room<3>::scat_ray)
       .def("simul_ray",
            (void (Room<3>::*)(float phi, float theta,
-                              const Vectorf<3> &source_pos, float energy_0)) &
+                              const Vectorf<3> &source_pos, const Eigen::ArrayXf &energy_0)) &
                Room<3>::simul_ray)
       .def("simul_ray",
            (void (Room<3>::*)(const Vectorf<3> &ray_direction,
-                              const Vectorf<3> &source_pos, float energy_0)) &
+                              const Vectorf<3> &source_pos, const Eigen::ArrayXf &energy_0)) &
                Room<3>::simul_ray)
       .def("ray_tracing",
            (void (Room<3>::*)(
@@ -82,6 +82,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("ray_tracing",
            (void (Room<3>::*)(
                const Eigen::Matrix<float, Eigen::Dynamic, 3> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
                const Vectorf<3> &source_pos)) &
                Room<3>::ray_tracing)
       .def("ray_tracing", (void (Room<3>::*)(size_t nb_phis, size_t nb_thetas,
@@ -130,11 +131,11 @@ PYBIND11_MODULE(libroom, m) {
       .def("scat_ray", &Room<2>::scat_ray)
       .def("simul_ray",
            (void (Room<2>::*)(float phi, float theta,
-                              const Vectorf<2> &source_pos, float energy_0)) &
+                              const Vectorf<2> &source_pos, const Eigen::ArrayXf &energy_0)) &
                Room<2>::simul_ray)
       .def("simul_ray",
            (void (Room<2>::*)(const Vectorf<2> &ray_direction,
-                              const Vectorf<2> &source_pos, float energy_0)) &
+                              const Vectorf<2> &source_pos, const Eigen::ArrayXf &energy_0)) &
                Room<2>::simul_ray)
       .def("ray_tracing",
            (void (Room<2>::*)(
@@ -144,6 +145,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("ray_tracing",
            (void (Room<2>::*)(
                const Eigen::Matrix<float, Eigen::Dynamic, 2> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
                const Vectorf<2> &source_pos)) &
                Room<2>::ray_tracing)
       .def("ray_tracing", (void (Room<2>::*)(size_t nb_phis, size_t nb_thetas,

@@ -795,7 +795,7 @@ bool Room<D>::scat_ray(const Eigen::ArrayXf &transmitted, const Wall<D> &wall,
 
 template <size_t D>
 void Room<D>::simul_ray(float phi, float theta, const Vectorf<D> &source_pos,
-                        float energy_0) {
+                        const Eigen::ArrayXf &energy_0) {
   // the direction of the ray (unit vector)
   Vectorf<D> dir;
   if (D == 2)
@@ -809,7 +809,7 @@ void Room<D>::simul_ray(float phi, float theta, const Vectorf<D> &source_pos,
 
 template <size_t D>
 void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
-                        const Vectorf<D> &source_pos, float energy_0) {
+                        const Vectorf<D> &source_pos, const Eigen::ArrayXf &energy_0) {
   /*This function simulates one ray and fills the output vectors of
    every microphone with all the entries produced by this ray
    (any specular or scattered ray reaching a microphone)
@@ -842,7 +842,7 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
   int specular_counter(0);
 
   // Convert the energy threshold to transmission threshold
-  float e_thres = energy_0 * energy_thres;
+  float e_thres = energy_0.maxCoeff() * energy_thres;
   float distance_thres = time_thres * sound_speed;
 
   //---------------------------------------------
@@ -929,7 +929,8 @@ void Room<D>::ray_tracing(
     const Eigen::Matrix<float, D - 1, Eigen::Dynamic> &angles,
     const Vectorf<D> &source_pos) {
   // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
-  float energy_0 = 2.f / angles.cols();
+  float energy_value = 2.f / angles.cols();
+  Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   for (int k(0); k < angles.cols(); k++) {
     float phi = angles.coeff(0, k);
@@ -944,11 +945,16 @@ void Room<D>::ray_tracing(
 template <size_t D>
 void Room<D>::ray_tracing(
     const Eigen::Matrix<float, Eigen::Dynamic, D> &unit_vectors,
+    const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
     const Vectorf<D> &source_pos) {
   float energy_0 = 2.f / unit_vectors.rows();
 
+  if (unit_vectors.rows() != energies.rows()) {
+    throw std::runtime_error("Error: The same number of rays and energies is expected.");
+  }
+
   for (int r = 0; r < unit_vectors.rows(); r++)
-    simul_ray(unit_vectors.row(r), source_pos, energy_0);
+    simul_ray(unit_vectors.row(r), source_pos, energy_0 * energies.row(r));
 }
 
 template <size_t D>
@@ -969,7 +975,8 @@ void Room<D>::ray_tracing(size_t nb_phis, size_t nb_thetas,
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = 2.f / (nb_phis * nb_thetas);
+  float energy_value = 2.f / (nb_phis * nb_thetas);
+  Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------
 
@@ -1010,7 +1017,8 @@ void Room<D>::ray_tracing(size_t n_rays, const Vectorf<D> &source_pos) {
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = 2.f / n_rays;
+  float energy_value = 2.f / n_rays;
+  Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------
   if (D == 3) {
