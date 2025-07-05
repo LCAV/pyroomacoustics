@@ -10,8 +10,9 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
 -------------
-
-Nothing yet
+Bugfix:
+~~~~~~
+in `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
 
 `0.8.4`_ - 2025-05-19
 ---------------------
