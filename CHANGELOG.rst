@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixes MicrophoneArray.append(MicrophoneArray)
+  AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
 
 `0.8.4`_ - 2025-05-19
 ---------------------

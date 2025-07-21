@@ -99,3 +99,11 @@ def test_microphone_array_append(shape1, shape2, with_dir, from_raw_locs):
 
     assert mic_array.nmic == shape1[1] + shape2[1]
     assert len(mic_array.directivity) == shape1[1] + shape2[1]
+
+
+def test_microphone_array_append_with_existing_signals():
+    mic_array = pra.MicrophoneArray(np.ones((3, 2)), fs=_FS)
+    mic_array.signals = np.random.randn(2, 1000)
+    new_mic_array = pra.MicrophoneArray(np.ones((3, 1)), fs=_FS)
+    mic_array.append(new_mic_array)
+    assert mic_array.nmic == 3
