@@ -24,8 +24,8 @@
 
 import os
 import tarfile
-from pathlib import Path
 import time
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen, urlretrieve
 
