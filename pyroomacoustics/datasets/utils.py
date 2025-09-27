@@ -25,6 +25,7 @@
 import os
 import tarfile
 from pathlib import Path
+import time
 from urllib.error import URLError
 from urllib.request import urlopen, urlretrieve
 
@@ -95,7 +96,9 @@ def download_uncompress(url, path=".", compression=None, context=None):
     tf.extractall(path)
 
 
-def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False):
+def download_multiple(
+    files_dict, overwrite=False, verbose=False, no_fail=False, backoff_time=None
+):
     """
     A utility to download multiple files
 
@@ -106,10 +109,24 @@ def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False)
     overwrite: bool
         If `True` if the local file exists, it will be overwritten. If `False`
         (default), existing files are skipped.
+    verbose: bool
+        If `True` writes to stdout the result of the operation.
+    no_fail: bool
+        If `True`, silently skip the file if the download fails.
+    backoff_time: None or float
+        The time to wait between downloading two files. If `None`, the time is zero.
     """
     skip_ok = not overwrite
 
-    for path, url in files_dict.items():
+    if backoff_time < 0.0:
+        raise ValueError(f"Time should be positive (got {backoff_time=}).")
+    if backoff_time is None:
+        backoff_time = 0.0
+
+    # Put everything in a list so we can check what is the last element.
+    paths_and_urls = list(files_dict.items())
+
+    for path, url in paths_and_urls:
         path = Path(path)
         if path.exists() and skip_ok:
             if verbose:
@@ -123,6 +140,9 @@ def download_multiple(files_dict, overwrite=False, verbose=False, no_fail=False)
 
         try:
             urlretrieve(url, path)
+
+            if path != paths_and_urls[-1][0] and backoff_time > 0.0:
+                time.sleep(backoff_time)
         except URLError:
             if no_fail:
                 continue

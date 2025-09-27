@@ -159,7 +159,11 @@ def download_sofa_files(path=None, overwrite=False, verbose=False, no_fail=False
         for name, info in sofa_info.items()
         if info["supported"]
     }
-    download_multiple(files, overwrite=overwrite, verbose=verbose, no_fail=no_fail)
+
+    # Set a small backoff time to avoid hitting the API rate limit.
+    download_multiple(
+        files, overwrite=overwrite, verbose=verbose, no_fail=no_fail, backoff_time=0.05
+    )
 
     return list(files.keys())
 
