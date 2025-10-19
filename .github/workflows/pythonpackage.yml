@@ -24,7 +24,16 @@ jobs:
           - os: macos-latest
             python-version: 3.9
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    # ➡️ CRITICAL FIX: Set a short temporary directory
+    - name: Set short temp path for Windows build
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+      run: |
+        $short_temp = "C:\T"
+        mkdir $short_temp -Force
+        echo "TEMP=$short_temp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "TMP=$short_temp" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Checkout submodules
       shell: bash
       run: |
@@ -39,7 +48,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
     - name: Workaround for windows and python 3.8
-      if: matrix.os == 'windows-2019' && matrix.python-version == 3.8
+      if: matrix.os == 'windows-latest' && matrix.python-version == 3.8
       run: |
         pip install netCDF4<=1.5.8 
         # There is no binary package of netCF4>=1.6.0 for windows and python 3.7
