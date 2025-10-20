@@ -2,7 +2,7 @@
   "Oktava_MK4012_CUBE": {
     "supported": false,
     "type": "microphones",
-    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Oktava_MK4012_CUBE.sofa",
+    "url": "https://phaidra.kug.ac.at/api/object/o:68229/comp/COMP000001",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
     "contains": []
@@ -11,7 +11,7 @@
   "LSPs_HATS_GuitarCabinets_Akustikmessplatz": {
     "supported": true,
     "type": "sources",
-    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa",
+    "url": "https://phaidra.kug.ac.at/api/object/o:68229/comp/COMP000003",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
     "contains": [
@@ -33,7 +33,7 @@
   "Soundfield_ST450_CUBE":  {
     "supported": false,
     "type": "microphones",
-    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=Soundfield_ST450_CUBE.sofa",
+    "url": "https://phaidra.kug.ac.at/api/object/o:68229/comp/COMP000000",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
     "contains": []
@@ -42,7 +42,7 @@
   "AKG_c480_c414_CUBE": {
     "supported": true,
     "type": "microphones",
-    "url": "https://fedora.kug.ac.at/fedora/objects/o:68229/methods/bdef:Container/get?param0=AKG_c480_c414_CUBE.sofa",
+    "url": "https://phaidra.kug.ac.at/api/object/o:68229/comp/COMP000002",
     "homepage": "https://phaidra.kug.ac.at/detail/o:68229",
     "license": "CC0",
     "contains": [
@@ -57,7 +57,7 @@
   "EM32_Directivity": {
     "supported": true,
     "type": "microphones",
-    "url": "https://phaidra.kug.ac.at/download/o:69292",
+    "url": "https://phaidra.kug.ac.at/api/object/o:69292/download",
     "homepage": "https://phaidra.kug.ac.at/detail/o:69292",
     "license": "CC0",
     "contains": [

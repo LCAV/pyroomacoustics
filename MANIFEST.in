@@ -1,10 +1,11 @@
 # Acoustic data for the simulation
 include pyroomacoustics/data/materials.json
-include pyroomacoustics/data/sofa_files.json
 include pyroomacoustics/data/sofa/AKG_c480_c414_CUBE.sofa
 include pyroomacoustics/data/sofa/EM32_Directivity.sofa
+include pyroomacoustics/data/sofa/LSPs_HATS_GuitarCabinets_Akustikmessplatz.sofa
 include pyroomacoustics/data/sofa/mit_kemar_large_pinna.sofa
 include pyroomacoustics/data/sofa/mit_kemar_normal_pinna.sofa
+include pyroomacoustics/data/sofa_files.json
 
 # The header files for the compiled extension
 include pyroomacoustics/libroom_src/*.h

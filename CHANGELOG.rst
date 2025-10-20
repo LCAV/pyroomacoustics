@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+Bugfix
+~~~~~~
+
+- Fixes broken links for the Dirpat database SOFA files (issue #409).
 
 `0.8.4`_ - 2025-05-19
 ---------------------

@@ -97,22 +97,6 @@ all_materials = {
     ),
 }
 
-"""
-all_materials = pra.Material(0.1)
-all_materials = pra.Material(
-    energy_absorption={
-        "coeffs": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-)
-"""
-
-
-def test_dirpat_download():
-    files = download_sofa_files(verbose=True, no_fail=False)
-    for file in files:
-        assert file.exists()
-
 
 SOFA_ONE_SIDE_PARAMETERS = [
     ("AKG_c480", "AKG_c480_c414_CUBE", False, False, save_plot),
