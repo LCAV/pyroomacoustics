@@ -9,9 +9,8 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.io import wavfile
-
 import pyroomacoustics as pra
+from scipy.io import wavfile
 
 methods = ["ism", "hybrid"]
 
