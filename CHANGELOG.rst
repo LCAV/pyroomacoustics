@@ -11,7 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Bugfix
+~~~~~~
+
+- Fixes a bug that would decrease the energy of every ray by the scattering coefficient
+  at every reflection when using scattering > 0.0.
+
 
 `0.8.6`_ - 2025-10-20
 ---------------------
