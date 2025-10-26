@@ -83,6 +83,9 @@ _constants_default = {
     "octave_bands_base_freq": 125.0,
     "octave_bands_keep_dc": False,
     "resample_backend": "soxr",
+    "rir_hpf_enable": True,
+    "rir_hpf_fc": 10.0,
+    "rir_hpf_kwargs": {"n": 2, "rp": 5.0, "rs": 60.0, "type": "butter"},
 }
 
 

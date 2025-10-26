@@ -693,6 +693,7 @@ import warnings
 import numpy as np
 import scipy.spatial as spatial
 from scipy.interpolate import interp1d
+from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
 from . import libroom
@@ -704,6 +705,7 @@ from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .simulation import compute_ism_rir, compute_rt_rir
 from .soundsource import SoundSource
+from .utilities import design_highpass_filter_sos
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -2280,6 +2282,13 @@ class Room(object):
         if self.simulator_state["rt_needed"] and not self.simulator_state["rt_done"]:
             self.ray_tracing()
 
+        # If the RIR highpass filter is enabled, compute the coefficients.
+        rir_hpf_sos = None
+        if constants.get("rir_hpf_enable"):
+            rir_hpf_sos = design_highpass_filter_sos(
+                self.fs, constants.get("rir_hpf_fc"), **constants.get("rir_hpf_kwargs")
+            )
+
         self.rir = []
 
         volume_room = self.get_volume()
@@ -2337,6 +2346,10 @@ class Room(object):
                     rir = np.zeros(max_len)
                     for r in rir_parts:
                         rir[: r.shape[0]] += r
+
+                # Apply the high-pass filter if requested.
+                if rir_hpf_sos is not None:
+                    rir = sosfiltfilt(rir_hpf_sos, rir)
 
                 self.rir[m].append(rir)
 

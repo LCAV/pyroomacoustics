@@ -11,7 +11,16 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+
+Changed
+~~~~~~~
+
+- Adds a highpass filter on by default on all the computed RIR. This avoids artifacts
+  where the RIR gets a large DC offsets when the reflections are very dense.
+  The highpass filter is controlled by the global option 'rir_hpf_enable'. In addition,
+  the cut-off frequency and the parameters of the filters can be set via the options
+  'rir_hpf_fc' and 'rir_hpf_kwargs', respectively.
+
 
 `0.8.6`_ - 2025-10-20
 ---------------------

@@ -31,6 +31,7 @@ import warnings
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
+from scipy.signal import iirfilter, sosfiltfilt, sosfreqz
 
 from .doa import cart2spher
 from .parameters import constants, eps
@@ -233,25 +234,20 @@ def normalize_pwr(sig1, sig2):
     return sig1.copy() * np.sqrt(p2 / p1)
 
 
+def design_highpass_filter_sos(fs, fc, n=4, rp=5, rs=60, type="butter"):
+    """Computes second-order section coefficients of a highpass filter."""
+    # normalized cut-off frequency
+    wc = 2.0 * fc / fs
+    return iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")
+
+
 def highpass(signal, Fs, fc=None, plot=False):
     """Filter out the really low frequencies, default is below 50Hz"""
 
     if fc is None:
         fc = constants.get("fc_hp")
 
-    # have some predefined parameters
-    rp = 5  # minimum ripple in dB in pass-band
-    rs = 60  # minimum attenuation in dB in stop-band
-    n = 4  # order of the filter
-    type = "butter"
-
-    # normalized cut-off frequency
-    wc = 2.0 * fc / Fs
-
-    # design the filter
-    from scipy.signal import iirfilter, sosfiltfilt, sosfreqz
-
-    sos = iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")
+    sos = design_highpass_filter_sos(Fs, fc, n=4, rp=5, rs=60)
 
     # plot frequency response of filter if requested
     if plot:
