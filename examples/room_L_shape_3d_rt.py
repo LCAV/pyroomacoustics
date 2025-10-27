@@ -46,8 +46,9 @@ room.add_microphone([3.0, 2.25, 0.6])
 # Use the following function to compute the rir using either 'ism' method, 'rt' method, or 'hybrid' method
 chrono = time.time()
 room.compute_rir()
+rt60 = room.measure_rt60()[0, 0]
 print("Done in", time.time() - chrono, "seconds.")
-print("RT60:", room.measure_rt60()[0, 0])
+print("RT60:", rt60)
 
 room.plot_rir()
 plt.show()

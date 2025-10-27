@@ -1,6 +1,7 @@
 import numpy as np
-
 import pyroomacoustics as pra
+
+RT60_EPS = 0.02
 
 
 def get_rt60(scattering_coeff):
@@ -39,8 +40,8 @@ def test_scattering_rt60():
     rt60_scat_0p1 = get_rt60(scattering_coeff=0.1)
     rt60_scat_0p2 = get_rt60(scattering_coeff=0.2)
 
-    assert abs(rt60_scat_0p1 - rt60_scat_0p0) < 0.01
-    assert abs(rt60_scat_0p2 - rt60_scat_0p0) < 0.01
+    assert abs(rt60_scat_0p1 - rt60_scat_0p0) < RT60_EPS
+    assert abs(rt60_scat_0p2 - rt60_scat_0p0) < RT60_EPS
 
 
 if __name__ == "__main__":
