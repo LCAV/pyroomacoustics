@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyroomacoustics as pra
 
 RT60_EPS = 0.02
