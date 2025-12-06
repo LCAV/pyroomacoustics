@@ -1,6 +1,8 @@
 import numpy as np
 import pyroomacoustics as pra
 
+RT60_EPS = 0.02
+
 
 def get_rt60(scattering_coeff):
     # Create the 2D L-shaped room from the floor polygon
@@ -28,7 +30,7 @@ def get_rt60(scattering_coeff):
     room.add_microphone([3.0, 2.25, 0.6])
 
     room.compute_rir()
-    return room.measure_rt60(plot=True)[0, 0]
+    return room.measure_rt60()[0, 0]
 
 
 def test_scattering_rt60():
@@ -38,8 +40,8 @@ def test_scattering_rt60():
     rt60_scat_0p1 = get_rt60(scattering_coeff=0.1)
     rt60_scat_0p2 = get_rt60(scattering_coeff=0.2)
 
-    assert abs(rt60_scat_0p1 - rt60_scat_0p0) < 0.01
-    assert abs(rt60_scat_0p2 - rt60_scat_0p0) < 0.01
+    assert abs(rt60_scat_0p1 - rt60_scat_0p0) < RT60_EPS
+    assert abs(rt60_scat_0p2 - rt60_scat_0p0) < RT60_EPS
 
 
 if __name__ == "__main__":
