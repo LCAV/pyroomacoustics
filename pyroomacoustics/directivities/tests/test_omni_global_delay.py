@@ -10,6 +10,9 @@ import numpy as np
 
 import pyroomacoustics as pra
 
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
+
 
 def test_omni_delay_analytical_vs_measured():
 

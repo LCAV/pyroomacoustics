@@ -13,9 +13,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pytest
-
 import pyroomacoustics as pra
+import pytest
 from pyroomacoustics.datasets.sofa import (
     DEFAULT_SOFA_PATH,
     download_sofa_files,
@@ -33,6 +32,9 @@ from pyroomacoustics.directivities.interp import (
     calculation_pinv_voronoi_cells_general,
 )
 from pyroomacoustics.doa import GridSphere
+
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
 
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]

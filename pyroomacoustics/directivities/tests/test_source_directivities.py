@@ -1,9 +1,11 @@
 from unittest import TestCase
 
 import numpy as np
-
 import pyroomacoustics as pra
 from pyroomacoustics.directivities import DirectionVector, FigureEight
+
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
 
 # create room
 room = pra.ShoeBox(
