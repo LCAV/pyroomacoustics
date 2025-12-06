@@ -20,12 +20,10 @@ import pyroomacoustics as pra
 
 # Create the 2D L-shaped room from the floor polygon
 pol = np.array([[0, 0], [0, 10], [7.5, 10], [7.5, 6], [5, 6], [5, 0]]).T
-r_absor = 0.1
 mat = pra.Material(0.15, 0.1)
 room = pra.Room.from_corners(
     pol,
     fs=16000,
-    # absorption=r_absor,
     materials=mat,
     max_order=3,
     ray_tracing=True,
@@ -48,8 +46,9 @@ room.add_microphone([3.0, 2.25, 0.6])
 # Use the following function to compute the rir using either 'ism' method, 'rt' method, or 'hybrid' method
 chrono = time.time()
 room.compute_rir()
+rt60 = room.measure_rt60()[0, 0]
 print("Done in", time.time() - chrono, "seconds.")
-print("RT60:", room.measure_rt60()[0, 0])
+print("RT60:", rt60)
 
 room.plot_rir()
 plt.show()
