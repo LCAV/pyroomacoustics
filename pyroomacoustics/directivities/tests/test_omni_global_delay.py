@@ -6,6 +6,7 @@ Ref: `Issue 398 <https://github.com/LCAV/pyroomacoustics/issues/398>`_
 """
 
 import numpy as np
+
 import pyroomacoustics as pra
 
 # Disable the high-pass filter to keep consistent test result.
