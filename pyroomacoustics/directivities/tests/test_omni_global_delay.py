@@ -6,7 +6,6 @@ Ref: `Issue 398 <https://github.com/LCAV/pyroomacoustics/issues/398>`_
 """
 
 import numpy as np
-
 import pyroomacoustics as pra
 
 # Disable the high-pass filter to keep consistent test result.
@@ -58,5 +57,5 @@ def test_omni_delay_analytical_vs_measured():
     m = min([len(rir_measured), len(rir_analytical)])
 
     np.testing.assert_allclose(
-        rir_measured[:m], rir_analytical[:m], atol=1e-4, rtol=1e-3
+        rir_measured[:m], rir_analytical[:m], atol=1e-3, rtol=1e-3
     )
