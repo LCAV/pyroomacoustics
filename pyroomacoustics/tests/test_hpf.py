@@ -1,6 +1,7 @@
-import pyroomacoustics as pra
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+import pyroomacoustics as pra
 
 # Make sure the high-pass filter is used.
 pra.constants.set("rir_hpf_enable", True)

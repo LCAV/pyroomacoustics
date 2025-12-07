@@ -5,8 +5,9 @@ unit sphere. The test is performed for different values of the parameter p and t
 """
 
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 from pyroomacoustics.directivities.analytic import (
     CardioidFamily,
     cardioid_energy,

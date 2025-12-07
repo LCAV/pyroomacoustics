@@ -1,7 +1,8 @@
 # When using the HPF, we expect the RIR to be zero mean.
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 
 
 @pytest.mark.parametrize("hpf_enable", [(True,), (False,)])

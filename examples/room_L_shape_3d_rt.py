@@ -14,8 +14,9 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pyroomacoustics as pra
 from scipy.io import wavfile
+
+import pyroomacoustics as pra
 
 # Create the 2D L-shaped room from the floor polygon
 pol = np.array([[0, 0], [0, 10], [7.5, 10], [7.5, 6], [5, 6], [5, 0]]).T

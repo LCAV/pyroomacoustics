@@ -13,8 +13,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 from pyroomacoustics.datasets.sofa import (
     DEFAULT_SOFA_PATH,
     download_sofa_files,
