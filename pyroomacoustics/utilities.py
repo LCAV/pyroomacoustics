@@ -235,7 +235,35 @@ def normalize_pwr(sig1, sig2):
 
 
 def design_highpass_filter_sos(fs, fc, n=4, rp=5, rs=60, type="butter"):
-    """Computes second-order section coefficients of a highpass filter."""
+    """Computes second-order section coefficients of an IIR highpass filter.
+
+    Parameters:
+    -----------
+    `fs`: float
+        Sampling frequency. (Hz)
+    `fc`: float
+        Cut-off frequency. (Hz)
+    `n`: int
+        Order of the filter.
+    `rp: float
+        For Chebyshev and elliptic filters, provides the maximum ripple in the
+        passband. (dB)
+    `rs`: float
+        For Chebyshev and elliptic filters, provides the minimum attenuation in
+        the stop band. (dB)
+    `type`: str
+        The type of IIR filter to design:
+        - Butterworth : ‘butter’
+        - Chebyshev I : ‘cheby1’
+        - Chebyshev II : ‘cheby2’
+        - Cauer/elliptic: ‘ellip’
+        - Bessel/Thomson: ‘bessel’
+
+    Returns
+    -------
+    nd-array
+        Second-order sections representation of the IIR filter.
+    """
     # normalized cut-off frequency
     wc = 2.0 * fc / fs
     return iirfilter(n, Wn=wc, rp=rp, rs=rs, btype="highpass", ftype=type, output="sos")

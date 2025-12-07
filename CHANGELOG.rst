@@ -745,7 +745,7 @@ Changed
 
 
 .. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.6...master
-.. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
+.. _0.8.6: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
 .. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...v0.8.5
 .. _0.8.4: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...v0.8.4
 .. _0.8.3: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...v0.8.3

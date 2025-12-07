@@ -23,6 +23,10 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 r"""
+Pyroomacoustics has a large number of configuration options for the simulation.
+Please consult the dedicated section about
+:py:mod:`pyroomacoustics.parameters`.
+
 Room
 ====
 
@@ -670,6 +674,7 @@ room), see `./examples/doa_anechoic_room.py`.
 
     # run the simulation
     room.simulate()
+
 
 References
 ----------
