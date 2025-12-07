@@ -1,4 +1,4 @@
-pyroomacoustics.parameters module
+Simulation and Control Parameters
 =================================
 
 .. automodule:: pyroomacoustics.parameters

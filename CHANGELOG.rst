@@ -11,6 +11,15 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Changed
+~~~~~~~
+
+- Adds a highpass filter on by default on all the computed RIR. This avoids artifacts
+  where the RIR gets a large DC offsets when the reflections are very dense.
+  The highpass filter is controlled by the global option 'rir_hpf_enable'. In addition,
+  the cut-off frequency and the parameters of the filters can be set via the options
+  'rir_hpf_fc' and 'rir_hpf_kwargs', respectively.
+
 Bugfix
 ~~~~~~
 
@@ -736,7 +745,7 @@ Changed
 
 
 .. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.6...master
-.. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
+.. _0.8.6: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
 .. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...v0.8.5
 .. _0.8.4: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...v0.8.4
 .. _0.8.3: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...v0.8.3

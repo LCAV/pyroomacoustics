@@ -34,6 +34,9 @@ from pyroomacoustics.directivities.interp import (
 )
 from pyroomacoustics.doa import GridSphere
 
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
+
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]
 save_plot = False
