@@ -974,10 +974,6 @@ void Room<D>::simul_ray(
           hit_point,
           travel_dist
           );
-
-      // The overall ray's energy gets decreased by the total
-      // amount of scattered energy
-      transmitted *= (1.f - wall.scatter);
     }
 
     // Check if we reach the thresholds for this ray

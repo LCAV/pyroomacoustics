@@ -34,6 +34,9 @@ from pyroomacoustics.directivities.interp import (
 )
 from pyroomacoustics.doa import GridSphere
 
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
+
 sofa_info = get_sofa_db_info()
 supported_sofa = [name for name, info in sofa_info.items() if info["supported"] == True]
 save_plot = False
@@ -96,22 +99,6 @@ all_materials = {
         scattering=0.54,
     ),
 }
-
-"""
-all_materials = pra.Material(0.1)
-all_materials = pra.Material(
-    energy_absorption={
-        "coeffs": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-        "center_freqs": [125, 250, 500, 1000, 2000, 4000, 8000],
-    },
-)
-"""
-
-
-def test_dirpat_download():
-    files = download_sofa_files(verbose=True, no_fail=False)
-    for file in files:
-        assert file.exists()
 
 
 SOFA_ONE_SIDE_PARAMETERS = [

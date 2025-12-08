@@ -155,8 +155,12 @@ class OctaveBandsFactory(object):
         The center frequency of the first octave band (default: 125 Hz)
     fs: float, optional
         The sampling frequency used (default: 16000 Hz)
-    third_octave: bool, optional
-        Use third octave bands if True (default: False)
+    n_fft: int, optional
+        The number of points to use for constructing the filters. The filters
+        are constructed in the frequency domain by using an FFT of this size.
+    keep_dc: bool, optional
+        When, `True`, the first filter is a shelf filter that includes the DC
+        component. When `False`, it is a regular octave band filter.
     """
 
     def __init__(self, base_frequency=125.0, fs=16000, n_fft=512, keep_dc=False):

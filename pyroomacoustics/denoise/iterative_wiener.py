@@ -43,7 +43,7 @@ class IterativeWiener(object):
 
     .. math::
 
-        H(\\omega) = \dfrac{P_S(\\omega)}{P_S(\\omega) + \\sigma_d^2},
+        H(\omega) = \dfrac{P_S(\omega)}{P_S(\omega) + \sigma_d^2},
 
 
     where :math:`P_S(\omega)` is the speech power spectral density and
@@ -84,12 +84,12 @@ class IterativeWiener(object):
 
     .. math::
 
-        \sigma_d^2[k] = \\alpha \cdot \sigma_d^2[k-1] + (1-\\alpha) \cdot \sigma_y^2,
+        \sigma_d^2[k] = \alpha \cdot \sigma_d^2[k-1] + (1-\alpha) \cdot \sigma_y^2,
 
-    where :math:`\\alpha` is the smoothing parameter and :math:`\sigma_y^2` is
-    the energy of the input frame. A high value of :math:`\\alpha` will update
+    where :math:`\alpha` is the smoothing parameter and :math:`\sigma_y^2` is
+    the energy of the input frame. A high value of :math:`\alpha` will update
     the noise level very slowly, while a low value will make it very sensitive
-    to changes at the input. The value for :math:`\\alpha` can be set with the
+    to changes at the input. The value for :math:`\alpha` can be set with the
     `alpha` parameter.
 
     **When speech is identified in the input frame**, an iterative procedure is
@@ -257,7 +257,7 @@ def compute_speech_psd(a, g2, nfft):
 
     .. math::
 
-        P_S(\\omega) = \dfrac{g^2}{\\left \| 1 - \sum_{k=1}^p a_k \cdot e^{-jk\omega} \\right \|^2},
+        P_S(\omega) = \dfrac{g^2}{\left \| 1 - \sum_{k=1}^p a_k \cdot e^{-jk\omega} \right \|^2},
 
     where :math:`p` is the LPC order, :math:`a_k` are the LPC coefficients, and
     :math:`g` is an estimated gain factor.
@@ -297,7 +297,7 @@ def compute_squared_gain(a, noise_psd, y):
 
     .. math::
 
-        \dfrac{N}{2\pi} \int_{-\pi}^{\pi} \dfrac{g^2}{\\left \| 1 - \sum_{k=1}^p a_k \cdot e^{-jk\omega} \\right \|^2} d\omega = \sum_{n=0}^{N-1} y^2(n) - N\cdot\sigma_d^2,
+        \dfrac{N}{2\pi} \int_{-\pi}^{\pi} \dfrac{g^2}{\left \| 1 - \sum_{k=1}^p a_k \cdot e^{-jk\omega} \right \|^2} d\omega = \sum_{n=0}^{N-1} y^2(n) - N\cdot\sigma_d^2,
 
 
     where :math:`N` is the number of noisy samples :math:`y`, :math:`a_k`

@@ -14,6 +14,49 @@ Bugfix:
 ~~~~~~
 in `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
 
+
+`0.9.0`_ - 2025-12-07
+---------------------
+
+Changed
+~~~~~~~
+
+- Adds a highpass filter on by default on all the computed RIR. This avoids artifacts
+  where the RIR gets a large DC offsets when the reflections are very dense.
+  The highpass filter is controlled by the global option 'rir_hpf_enable'. In addition,
+  the cut-off frequency and the parameters of the filters can be set via the options
+  'rir_hpf_fc' and 'rir_hpf_kwargs', respectively.
+
+Bugfix
+~~~~~~
+
+- Fixes a bug that would decrease the energy of every ray by the scattering coefficient
+  at every reflection when using scattering > 0.0.
+
+
+`0.8.6`_ - 2025-10-20
+---------------------
+
+Changed
+~~~~~~~
+
+- Removed the SOFA files from the pypi source distribution to avoid going over
+  the 100MB file size limit.
+
+`0.8.5`_ - 2025-10-20
+---------------------
+
+Changed
+~~~~~~~
+
+- Drops support for python 3.8.
+- Adds support for python 3.13 and 3.14.
+
+Bugfix
+~~~~~~
+
+- Fixes broken links for the Dirpat database SOFA files (issue #409).
+
 `0.8.4`_ - 2025-05-19
 ---------------------
 
@@ -708,7 +751,10 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.9.0...master
+.. _0.9.0: https://github.com/LCAV/pyroomacoustics/compare/v0.8.6...v0.9.0
+.. _0.8.6: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
+.. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...v0.8.5
 .. _0.8.4: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...v0.8.4
 .. _0.8.3: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...v0.8.3
 .. _0.8.2: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...v0.8.2
