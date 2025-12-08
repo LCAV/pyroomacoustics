@@ -11,7 +11,14 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet
+During the testing PR moving sound source #335, I found some issues, which I tried to improve with this PR:
+
+- It was not possible to simulate rooms of standard dimensions, but only rooms with significantly unrealistic measurements (e.g., 2D room 100 * 100 m, which was in the test_moving_sound.py file).
+- Step size is always the same for the x and y dimensions ‒ movement is possible only in four directions.
+- Parameters for the x and y directions are Boolean variables that indicate the direction of a movement (True for forward movement and False for backward movement).
+- The sound between the simulation steps is not smoothed, in which case you can hear the transitions between the steps.
+
+Method simulate_moving_source was implemented.
 
 
 `0.9.0`_ - 2025-12-07

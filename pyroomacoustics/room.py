@@ -2193,6 +2193,74 @@ class Room(object):
         if directivity is not None:
             sndsrc.set_directivity(directivity)
         return self.add(sndsrc)
+        
+    def simulate_moving_source(
+            self,
+            start_position,
+            end_position,
+            signal=None,
+            delay=0,
+            fs=8000,
+    ):
+        """
+        Simulates a moving source in the room by given trajectory.
+
+        Parameters
+        ----------
+        start_position: array_like or ndarray
+            The start position of the source. The position needs to be within the room dimension.
+        end_position: array_like or ndarray
+            The end position of the source. The position needs to be within the room dimension.
+        signal: ndarray, shape: (n_samples,), optional
+            The signal played by the source
+        delay: float, optional
+            A time delay until the source signal starts in the simulation
+        fs: int
+            The sampling frequency in Hz. Default is 8000.
+
+        Returns
+        -------
+        recorded_signal: ndarray
+            The recorded signals at the microphone array with the moving source, shape (n_channels, n_samples).
+        """
+
+        start_position = np.array(start_position)
+        end_position = np.array(end_position)
+
+        num_steps = len(signal) // fs # Calculate the number of simulation steps based on the signal length and sampling frequency
+        trajectory = np.linspace(start_position, end_position,
+                                 num_steps + 1)  # Compute linear trajectory coordinates between the start and end position, including the end position as the last simulation step
+
+        first = True
+        recorded_signal = None
+
+        for step in range(num_steps + 1):
+            source_location = trajectory[step]
+            distance = np.linalg.norm(source_location - self.mic_array.R[:, 0])  # Use the position of the first microphone for distance calculation; currently, only one microphone is supported
+
+            attenuation = 1 / max(distance, 0.1)  # Attenuation is calculated according to the inverted distance value; the minimum distance is limited to 10 cm
+
+            self.sources = []
+            self.add_source(
+                position=source_location,
+                delay=delay,
+                signal=signal[step * fs: (step + 1) * fs] * attenuation, # Scale the signal based on the calculated attenuation
+            )
+
+            self.simulate()
+            new_signal = self.mic_array.signals[:, :fs]
+
+            if first:
+                recorded_signal = new_signal # Initialization of recorded_signal
+                first = False
+            else:
+                recorded_signal = np.concatenate((recorded_signal, new_signal), axis=1)
+                window_size = 5 # Window size for smoothing (constant 5 was chosen based on a psychoacoustic point of view; in the future, it is possible to make it a parameter)
+                window = np.hanning(window_size) / np.sum(np.hanning(window_size)) # Create and normalize the Hanning window of the specified size
+                for channel in range(recorded_signal.shape[0]): # Apply the smoothing window to each channel
+                    recorded_signal[channel, :] = np.convolve(recorded_signal[channel, :], window, mode='same') # The convolution smooths the recorded signal by averaging nearby values using the created window
+
+        return recorded_signal
 
     def image_source_model(self):
         if not self.simulator_state["ism_needed"]:
