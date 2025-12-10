@@ -12,8 +12,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 -------------
 Bugfix:
 ~~~~~~
-in `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
 
+- In `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
+
+- Fixes MicrophoneArray.append(MicrophoneArray)
+  AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
 
 `0.9.0`_ - 2025-12-07
 ---------------------

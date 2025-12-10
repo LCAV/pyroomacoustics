@@ -538,9 +538,11 @@ class MicrophoneArray(object):
         if isinstance(locs, MicrophoneArray):
             self.R = np.concatenate((self.R, locs.R), axis=1)
             self.directivity += locs.directivity
+            n_new_mics = locs.R.shape[1]
         else:
             self.R = np.concatenate((self.R, locs), axis=1)
             self.directivity += [None] * locs.shape[1]
+            n_new_mics = locs.shape[1]
 
         # in case there was already some signal recorded, just pad with zeros
         if self.signals is not None:
@@ -548,7 +550,7 @@ class MicrophoneArray(object):
                 (
                     self.signals,
                     np.zeros(
-                        (locs.shape[1], self.signals.shape[1]), dtype=self.signals.dtype
+                        (n_new_mics, self.signals.shape[1]), dtype=self.signals.dtype
                     ),
                 ),
                 axis=0,
