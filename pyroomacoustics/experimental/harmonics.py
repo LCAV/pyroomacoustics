@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.special
 
-from .base import Directivity
+from ..directivities.base import Directivity
 
 
 def get_mn_in_acn_order(order):
