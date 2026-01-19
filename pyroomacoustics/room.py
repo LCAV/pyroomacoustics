@@ -2354,7 +2354,7 @@ class Room(object):
 
                 # Apply the high-pass filter if requested.
                 if rir_hpf_sos is not None:
-                    rir = sosfiltfilt(rir_hpf_sos, rir)
+                    rir = np.ascontiguousarray(sosfiltfilt(rir_hpf_sos, rir))
 
                 self.rir[m].append(rir)
 
