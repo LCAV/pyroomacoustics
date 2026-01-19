@@ -1418,8 +1418,8 @@ class Room(object):
             if len(self.walls[i].absorption) == 1:
                 # Single band
                 wall_materials[name] = Material(
-                    energy_absorption=float(self.walls[i].absorption),
-                    scattering=float(self.walls[i].scatter),
+                    energy_absorption=float(self.walls[i].absorption.item()),
+                    scattering=float(self.walls[i].scatter.item()),
                 )
             elif len(self.walls[i].absorption) == self.octave_bands.n_bands:
                 # Multi-band
