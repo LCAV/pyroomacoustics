@@ -2951,7 +2951,7 @@ class Room(object):
         # and walls.
         inv_rt60 = 0.0
         for i, bw in enumerate(bandwidths):
-            m = 0.0 if not self.air_absorption else self.air_absorption[i]
+            m = 0.0 if self.air_absorption is None else self.air_absorption[i]
             for w in self.walls:
                 inv_rt60 += bw / rt60_fn(w.area(), V, w.absorption[i], m, c)
 

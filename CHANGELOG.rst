@@ -13,6 +13,16 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Bugfix:
 ~~~~~~
 
+- Fixes the computation of the RIR based on ray tracing. In particular the sequence
+  energy shaping and the band weights.
+
+- Fixes the lowest band shelf filter in the octave bands.
+
+- Fixes the computation of the octave band widths.
+
+- Fixes `pra.experimental.measure_rt60`: Compute the T60 using a fit. Default is
+  log-domain. Adds option to fit in linear domain.
+
 - In `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
 
 - Fixes MicrophoneArray.append(MicrophoneArray)
