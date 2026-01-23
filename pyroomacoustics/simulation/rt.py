@@ -30,6 +30,7 @@ import math
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.signal import fftconvolve
 
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
@@ -78,11 +79,10 @@ def interp_hist(hist, N):
     return out
 
 
-def seq_bin_power(seq, hbss):
-    seq_rot = seq.reshape((-1, hbss))  # shape 72,64
-    power = np.sum(seq_rot**2, axis=1)
-    power[power <= 0.0] = 1.0
-    return power
+def seq_rolling_power(seq, hbss, filter_length_mult=1):
+    """Smooth local energy of the sequence."""
+    filter = np.ones(filter_length_mult * hbss) / filter_length_mult
+    return fftconvolve(seq**2, filter, mode="same")
 
 
 def compute_rt_rir(
@@ -96,6 +96,7 @@ def compute_rt_rir(
     octave_bands,
     air_abs_coeffs=None,
 ):
+
     # get the maximum length from the histograms
     # Sum vertically across octave band for each value in
     # histogram (7,2500) -> (2500) -> np .nonzero(
@@ -125,37 +126,40 @@ def compute_rt_rir(
     # this is the random sequence for the tail generation
     seq = sequence_generation(volume_room, N / fs, c, fs)
     seq = seq[:N]  # take values according to N as seq is larger
+    seq_original_power = np.mean(seq**2)
 
     n_bands = histograms[0].shape[0]
     bws = octave_bands.get_bw() if n_bands > 1 else [fs / 2]
 
+    hist_bands = histograms[0][:, :n_bins]
+
     rir_bands = np.zeros((n_bands, N))
-    for b, bw in enumerate(bws):  # Loop through every band
+    for b, bw in enumerate(np.sort(bws)):  # Loop through every band
         if n_bands > 1:
             seq_bp = octave_bands.analysis(seq, band=b)
         else:
             seq_bp = seq.copy()
 
-        # Take only those bins which have some non-zero values for that specific octave bands.
-        hist = histograms[0][b, :n_bins]
+        # This accounts for the relative energy weight of this band in the full sequence.
+        band_weight = np.mean(seq_bp**2) / seq_original_power
 
-        # we normalize the histogram by the sequence power in that bin
-        seq_power = seq_bin_power(seq_bp, hbss)
+        # We normalize the histogram by the sequence power in that bin.
+        seq_power = seq_rolling_power(seq_bp, hbss, filter_length_mult=2)
+        nonzero = seq_power > 0.0
+        seq_power_norm = np.where(nonzero, 1.0 / np.where(nonzero, seq_power, 1.0), 0.0)
 
-        # we linarly interpolate the histogram to smoothly cover all the samples
-        hist_lin_interp = interp_hist(hist / seq_power, N)
+        # We linarly interpolate the histogram to smoothly cover all the samples.
+        hist = interp_hist(hist_bands[b], N)
 
-        # Normalize the band power
-        # the (bw / fs * 2.0) is necessary to normalize the band power
-        # this is the contribution of the octave band to total energy
-        seq_bp *= np.sqrt(bw / fs * 2.0 * hist_lin_interp)
+        # Compute the gain to be applied to the sequence.
+        gain = np.sqrt(hist * seq_power_norm * band_weight)
 
-        # Impulse response for every octave band for each microphone
-        rir_bands[b] = seq_bp
+        # Impulse response for every octave band for each microphone.
+        rir_bands[b] = seq_bp * gain
 
     if air_abs_coeffs is not None:
         if rir_bands.shape[0] == 1:
-            # do the octave band analysis if it was not done in the first step
+            # Do the octave band analysis if it was not done in the first step.
             rir_bands = np.array(
                 [
                     octave_bands.analysis(rir_bands[0], band=b)
