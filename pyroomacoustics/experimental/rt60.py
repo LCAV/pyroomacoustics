@@ -31,6 +31,7 @@ References
     J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, Mar. 1968.
 """
 import math
+
 import numpy as np
 from scipy.optimize import curve_fit
 

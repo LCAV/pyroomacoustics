@@ -1,8 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import pyroomacoustics as pra
+import numpy as np
 import pytest
 from scipy.optimize import curve_fit
+
+import pyroomacoustics as pra
 
 pra.constants.set("octave_bands_keep_dc", True)
 
