@@ -2272,7 +2272,8 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
-        # Basically, histograms for 2 mics corresponding to each source , the histograms are in each octave bands hence (7,2500) 2500 histogram length
+        # Basically, histograms for 2 mics corresponding to each source , the
+        # histograms are in each octave bands hence (7,2500) 2500 histogram length
         # update the state
         self.simulator_state["rt_done"] = True
 
@@ -2931,46 +2932,34 @@ class Room(object):
         formula: str
             The formula to use for the calculation, 'sabine' (default) or 'eyring'
         """
-
-        rt60 = 0.0
-
         if self.is_multi_band:
             bandwidths = self.octave_bands.get_bw()
         else:
             bandwidths = [1.0]
 
         V = self.volume
-        S = np.sum([w.area() for w in self.walls])
         c = self.c
 
+        if formula == "eyring":
+            rt60_fn = rt60_eyring
+        elif formula == "sabine":
+            rt60_fn = rt60_sabine
+        else:
+            raise ValueError("Only Eyring and Sabine's formulas are supported")
+
+        # The harmonic mean will naturally average the absorption over the Octave bands
+        # and walls.
+        inv_rt60 = 0.0
         for i, bw in enumerate(bandwidths):
-            # average absorption coefficients
-            a = 0.0
+            m = 0.0 if not self.air_absorption else self.air_absorption[i]
             for w in self.walls:
-                if len(w.absorption) == 1:
-                    a += w.area() * w.absorption[0]
-                else:
-                    a += w.area() * w.absorption[i]
-            a /= S
+                inv_rt60 += bw / rt60_fn(w.area(), V, w.absorption[i], m, c)
 
-            try:
-                m = self.air_absorption[i]
-            except:
-                m = 0.0
+        return np.sum(bandwidths) / inv_rt60
 
-            if formula == "eyring":
-                rt60_loc = rt60_eyring(S, V, a, m, c)
-            elif formula == "sabine":
-                rt60_loc = rt60_sabine(S, V, a, m, c)
-            else:
-                raise ValueError("Only Eyring and Sabine's formulas are supported")
-
-            rt60 += rt60_loc * bw
-
-        rt60 /= np.sum(bandwidths)
-        return rt60
-
-    def measure_rt60(self, decay_db=60, plot=False):
+    def measure_rt60(
+        self, decay_db=60, plot=False, label=None, linear_domain_fit=False
+    ):
         """
         Measures the reverberation time (RT60) of the simulated RIR.
 
@@ -2984,6 +2973,8 @@ class Room(object):
             dB, the RT60 is twice the time measured.
         plot: bool
             Displays a graph of the Schroeder curve and the estimated RT60.
+        label: str, optional
+            Optional label to use in a plot.
 
         Returns
         -------
@@ -2995,8 +2986,14 @@ class Room(object):
 
         for m in range(self.n_mics):
             for s in range(self.n_sources):
+                label = f"{label}-{m}-{s}" if label else ""
                 rt60[m, s] = measure_rt60(
-                    self.rir[m][s], fs=self.fs, plot=plot, decay_db=decay_db
+                    self.rir[m][s],
+                    fs=self.fs,
+                    plot=plot,
+                    decay_db=decay_db,
+                    label=label,
+                    linear_domain_fit=linear_domain_fit,
                 )
 
         return rt60
@@ -3316,9 +3313,6 @@ class AnechoicRoom(ShoeBox):
         # The materials are not actually used because max_order is set to 0 and ray-tracing to False.
         # Anyways, we use the energy_absorption and scattering corresponding to an anechoic room.
         materials = Material(energy_absorption=1.0, scattering=0.0)
-
-        # Set deprecated parameter
-        absorption = None
 
         ShoeBox.__init__(
             self,
