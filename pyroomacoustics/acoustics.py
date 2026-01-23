@@ -180,7 +180,12 @@ class OctaveBandsFactory(object):
 
     def get_bw(self):
         """Returns the bandwidth of the bands"""
-        return np.array([b2 - b1 for b1, b2 in self.bands])
+        bandwidths = []
+        for b, (b1, b2) in enumerate(self.bands):
+            lo = 0.0 if b == 0 and self.keep_dc else b1
+            hi = min(b2, self.fs / 2.0)
+            bandwidths.append(hi - lo)
+        return np.array(bandwidths)
 
     def analysis(self, x, band=None):
         """
@@ -290,14 +295,17 @@ class OctaveBandsFactory(object):
                 make_one = freq < center
                 freq_resp[make_one, b] = 1.0
 
-            lo = np.logical_and(band[0] <= freq, freq < center)
-
-            freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
+            else:
+                # Rising side.
+                lo = np.logical_and(band[0] <= freq, freq < center)
+                freq_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
 
             if b != n - 1:
+                # Falling side.
                 hi = np.logical_and(center <= freq, freq < band[1])
                 freq_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
             else:
+                # Shelve for the last octave band.
                 hi = center <= freq
                 freq_resp[hi, b] = 1.0
 
@@ -606,7 +614,7 @@ def rt60_eyring(S, V, a, m, c):
 
 def rt60_sabine(S, V, a, m, c):
     """
-    This is the Eyring formula for estimation of the reverberation time.
+    This is the Sabine formula for estimation of the reverberation time.
 
     Parameters
     ----------
