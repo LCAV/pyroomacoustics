@@ -27,6 +27,8 @@ Bugfix:
 
 - Fixes MicrophoneArray.append(MicrophoneArray)
   AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
+- Fixes issue #421: When generating a highpass filtered room impulse response make
+  sure that the output is a memory contiguous NumPy array.
 
 `0.9.0`_ - 2025-12-07
 ---------------------
@@ -488,7 +490,7 @@ Changed
 - Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
 - Changed initialization of FastMNMF to accelerate convergence
 - Fixed bug in doa/tops (float -> integer division)
-- Added vectorised functions in MUSIC 
+- Added vectorised functions in MUSIC
 - Use the vectorised functions in _process of MUSIC
 
 
