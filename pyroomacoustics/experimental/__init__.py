@@ -14,12 +14,10 @@ __all__ = [
     "localization",
     "signals",
     "rt60",
-    "harmonics",
 ]
 
 from .deconvolution import deconvolve, wiener_deconvolve
 from .delay_calibration import DelayCalibration
-from .harmonics import RealSHDirectivity
 from .localization import edm_line_search, tdoa, tdoa_loc
 from .measure_ir import measure_ir
 from .physics import calculate_speed_of_sound

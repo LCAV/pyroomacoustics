@@ -1,7 +1,7 @@
 import numpy as np
-import pyroomacoustics as pra
 
-from pyroomacoustics.experimental.harmonics import (
+import pyroomacoustics as pra
+from pyroomacoustics.directivities.harmonics import (
     get_mn_in_acn_order,
     real_sph_harm,
 )
@@ -23,7 +23,7 @@ def test_harmonics_directivity():
     for m, n in zip(*get_mn_in_acn_order(order)):
         room.add_microphone(
             [0.0, 0.0, 1.0],
-            directivity=pra.experimental.RealSHDirectivity(
+            directivity=pra.experimental.RealSphericalHarmonicsDirectivity(
                 m, n, condon_shortley_phase=condon_shortley_phase
             ),
         )
