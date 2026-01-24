@@ -27,7 +27,8 @@ from .base import Directivity
 
 
 def get_mn_in_acn_order(order):
-    """Calculates the (m,n) pairs in ACN order up to a given order.
+    """
+    Calculates the (m,n) pairs in ACN order up to a given order.
 
     Parameters:
     order : int
@@ -45,7 +46,8 @@ def get_mn_in_acn_order(order):
 
 
 def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
-    """Calculates the real spherical harmonics.
+    """
+    Calculates the real spherical harmonics.
 
     Parameters:
     n : int
