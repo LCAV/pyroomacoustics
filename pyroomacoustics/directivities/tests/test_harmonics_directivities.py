@@ -23,7 +23,7 @@ def test_harmonics_directivity():
     for m, n in zip(*get_mn_in_acn_order(order)):
         room.add_microphone(
             [0.0, 0.0, 1.0],
-            directivity=pra.experimental.RealSphericalHarmonicsDirectivity(
+            directivity=pra.directivities.RealSphericalHarmonicsDirectivity(
                 m, n, condon_shortley_phase=condon_shortley_phase
             ),
         )
