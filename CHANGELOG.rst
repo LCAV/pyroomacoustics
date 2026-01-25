@@ -40,23 +40,27 @@ Changed
 `Unreleased`_
 -------------
 
-Bugfix:
-~~~~~~
+Changed
+~~~~~~~
 
-- Fixes the computation of the RIR based on ray tracing. In particular the sequence
-  energy shaping and the band weights.
+- Refactor the way the RIR is weighted with the histogram in simulation/rt.py.
 
-- Fixes the lowest band shelf filter in the octave bands.
-
-- Fixes the computation of the octave band widths.
-
-- Fixes `pra.experimental.measure_rt60`: Compute the T60 using a fit. Default is
+- Improves ``pra.experimental.measure_rt60``: Compute the T60 using a fit. Default is
   log-domain. Adds option to fit in linear domain.
 
-- In `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
+Bugfix
+~~~~~~
 
-- Fixes MicrophoneArray.append(MicrophoneArray)
-  AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
+- Fixes the lowest octave band filter that was malformed when using
+  ``octave_bands_keep_dc=True``.
+
+- Fixes the computation of the octave band widths that were not correct for the lowest
+  and high bands.
+
+- In ``doa.py``, the ``ax.xaxis.grid`` and ``ax.yaxis.grid`` parameters were changed from ``b`` to ``visible``.
+
+- Fixes ``MicrophoneArray.append(MicrophoneArray) AttributeError: 'MicrophoneArray'
+  object has no attribute 'shape'.``
 
 - Fixes issue #421: When generating a highpass filtered room impulse response make
   sure that the output is a memory contiguous NumPy array.
