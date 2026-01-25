@@ -31,10 +31,12 @@ def get_mn_in_acn_order(order):
     Calculates the (m,n) pairs in ACN order up to a given order.
 
     Parameters:
+    ----------
     order : int
         Maximum degree of the spherical harmonics.
 
     Returns:
+    ----------
     all_m : ndarray
         Array of orders m in ACN order.
     all_n : ndarray
@@ -50,6 +52,7 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     Calculates the real spherical harmonics.
 
     Parameters:
+    ----------
     n : int
         Degree of the spherical harmonic.
     m : int
@@ -62,6 +65,7 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
         If True, includes the Condon-Shortley phase factor (-1)^m. Default is False.
 
     Returns:
+    ----------
     y_real : ndarray
         Real spherical harmonics evaluated at the given angles.
     """
