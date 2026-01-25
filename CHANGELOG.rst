@@ -8,12 +8,9 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
-Bugfix:
-~~~~~~
+`Ray Tracing Directivity`_
+--------------------------
 
-<<<<<<< HEAD
 This new release introduces source and receiver directivities for the ray
 tracing simulation engine.
 
@@ -34,7 +31,18 @@ Added
 
 - A method ``sample_rays`` is added to the ``Directivity`` objects to provide a
   unified interface to sample rays of sources used for ray tracing.
-=======
+
+Changed
+~~~~~~~
+
+- Bumped the numpy requirement to v1.17.0 to use the ``numpy.random.Generator`` objects.
+
+`Unreleased`_
+-------------
+
+Bugfix:
+~~~~~~
+
 - Fixes the computation of the RIR based on ray tracing. In particular the sequence
   energy shaping and the band weights.
 
@@ -49,20 +57,16 @@ Added
 
 - Fixes MicrophoneArray.append(MicrophoneArray)
   AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
+
 - Fixes issue #421: When generating a highpass filtered room impulse response make
   sure that the output is a memory contiguous NumPy array.
 
 `0.9.0`_ - 2025-12-07
 ---------------------
->>>>>>> fix/rt_octave_bands
 
 Changed
 ~~~~~~~
 
-<<<<<<< HEAD
-- Bumped the numpy requirement to v1.17.0 to use the ``numpy.random.Generator`` objects.
-
-=======
 - Adds a highpass filter on by default on all the computed RIR. This avoids artifacts
   where the RIR gets a large DC offsets when the reflections are very dense.
   The highpass filter is controlled by the global option 'rir_hpf_enable'. In addition,
@@ -108,7 +112,6 @@ Bugfix
 - Fixes issue #398: When using measured directivities, the global delay for the
   fractional delays was applied twice. The fix makes sure the delay is applied
   only once.
->>>>>>> fix/rt_octave_bands
 
 `0.8.3`_ - 2024-12-08
 ---------------------
