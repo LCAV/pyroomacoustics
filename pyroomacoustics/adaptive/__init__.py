@@ -6,7 +6,7 @@ This sub-package provides implementations of popular adaptive filter algorithms.
 
 RLS
     | Recursive Least Squares
-    | :py:obj:`pyroomacoustics.adaptive.rls` 
+    | :py:obj:`pyroomacoustics.adaptive.rls`
 LMS
     | Least Mean Squares and Normalized Least Mean Squares
     | :py:obj:`pyroomacoustics.adaptive.lms`
@@ -15,12 +15,12 @@ All these classes derive from the base class
 :py:obj:`pyroomacoustics.adaptive.adaptive_filter.AdaptiveFilter` that offer
 a generic way of running an adaptive filter.
 
-The above classes are applicable for time domain processing. For frequency 
+The above classes are applicable for time domain processing. For frequency
 domain adaptive filtering, there is the SubbandLMS class. After using a DFT or
-STFT block, the SubbandLMS class can be used to used to apply LMS or NLMS to 
-each frequency band. A shorter adaptive filter can be used on each band as 
+STFT block, the SubbandLMS class can be used to used to apply LMS or NLMS to
+each frequency band. A shorter adaptive filter can be used on each band as
 opposed to the filter required in the time domain version. Roughly, a filter of
-M taps applied to each band (total of B) corresponds to a time domain filter 
+M taps applied to each band (total of B) corresponds to a time domain filter
 with N = M x B taps.
 
 How to use the adaptive filter module
@@ -43,7 +43,7 @@ is repeatedly called to provide new samples to the algorithm.
     print('Reconstructed filter:', rls.w)
 
 
-The SubbandLMS class has the same methods as the time domain 
+The SubbandLMS class has the same methods as the time domain
 approaches. However, the signal must be in the frequency domain. This
 can be done with the STFT block in the `transform` sub-package of
 `pyroomacoustics`.
@@ -53,17 +53,17 @@ can be done with the STFT block in the `transform` sub-package of
     # initialize STFT and SubbandLMS blocks
     block_size = 128
     stft_x = pra.transform.STFT(N=block_size,
-        hop=block_size//2, 
+        hop=block_size//2,
         analysis_window=pra.hann(block_size))
     stft_d = pra.transform.STFT(N=block_size,
-        hop=block_size//2, 
+        hop=block_size//2,
         analysis_window=pra.hann(block_size))
-    nlms = pra.adaptive.SubbandLMS(num_taps=6, 
+    nlms = pra.adaptive.SubbandLMS(num_taps=6,
         num_bands=block_size//2+1, mu=0.5, nlms=True)
 
     # preparing input and reference signals
     ...
-    
+
     # apply block-by-block
     for n in range(num_blocks):
 

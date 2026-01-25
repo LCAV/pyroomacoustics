@@ -30,10 +30,59 @@ References
 .. [1] M. R. Schroeder, "New Method of Measuring Reverberation Time,"
     J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, Mar. 1968.
 """
+import math
+
 import numpy as np
+from scipy.optimize import curve_fit
 
 
-def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=None):
+def _fit_exp_and_extrapolate(
+    data_db, fs, extrapolate_value_db=-60.0, linear_domain_fit=False
+):
+    """Non-linear fit to an exponential f(t) = b * np.exp(a * t)."""
+    # Fix the origin.
+    data = data_db - data_db[0]
+
+    N = data.shape[0]
+    t = np.arange(N) / fs
+
+    # We use a least-square fit in log-domain as initialization.
+    X = np.column_stack((t, np.ones(N)))
+    p, *_ = np.linalg.lstsq(X, data)
+
+    if not linear_domain_fit:
+        return extrapolate_value_db / p[0]
+
+    # Non-linear fit using scipy.optimize.curve_fit.
+
+    def model(x, a, b):
+        return b * np.exp(a * x)
+
+    def jac(x, a, b):
+        u = np.exp(a * x)
+        return np.column_stack((x * b * u, u))
+
+    # Provide an initial guess [a, b]
+    initial_guess = [p[0] / (10.0 * np.log10(np.e)), 10.0 ** (p[1] / 10.0)]
+
+    # Perform the fit in the linear domain.
+    # Empirically, this takes less than 10 iterations.
+    popt, pcov = curve_fit(model, t, 10.0 ** (data / 10.0), p0=initial_guess, jac=jac)
+
+    # This is the estimate of the T60 (or other value) based on the fit.
+    return (extrapolate_value_db / 10.0) * np.log(10.0) / popt[0]
+
+
+def measure_rt60(
+    h,
+    fs=1,
+    decay_db=60,
+    energy_thres=1.0,
+    plot=False,
+    rt60_tgt=None,
+    label=None,
+    linear_domain_fit=False,
+):
     """
     Analyze the RT60 of an impulse response. Optionaly plots some useful information.
 
@@ -57,6 +106,11 @@ def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=No
     rt60_tgt: float
         This parameter can be used to indicate a target RT60 to which we want
         to compare the estimated value.
+    label: str, optional
+        A label to use in a plot.
+    linear_domain_fit: bool, optional
+        When True, applies a direct fit of an exponential to the data in the linear domain.
+        When False, a linear fit is done in the logarithm domain (default).
     """
 
     h = np.array(h)
@@ -84,21 +138,24 @@ def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=No
 
     # -5 dB headroom
     try:
-        i_5db = np.min(np.where(energy_db < -5)[0])
+        i_5db = np.min(np.where(energy_db < -5.0)[0])
     except ValueError:
         return 0.0
     e_5db = energy_db[i_5db]
-    t_5db = i_5db / fs
+
     # after decay
     try:
-        i_decay = np.min(np.where(energy_db < -5 - decay_db)[0])
+        i_decay = np.min(np.where(energy_db < e_5db - decay_db)[0])
     except ValueError:
         i_decay = len(energy_db)
-    t_decay = i_decay / fs
 
-    # compute the decay time
-    decay_time = t_decay - t_5db
-    est_rt60 = (60 / decay_db) * decay_time
+    # Compute the RT60 estimate using a fitting method.
+    est_rt60 = _fit_exp_and_extrapolate(
+        energy_db[i_5db:i_decay],
+        fs,
+        extrapolate_value_db=-60.0,
+        linear_domain_fit=linear_domain_fit,
+    )
 
     if plot:
         import matplotlib.pyplot as plt
@@ -116,18 +173,26 @@ def measure_rt60(h, fs=1, decay_db=60, energy_thres=1.0, plot=False, rt60_tgt=No
 
         T = get_time(power_db, fs)
 
+        # Optional label for the legend.
+        label = f" {label}" if label else ""
+
         # plot power and energy
-        plt.plot(get_time(energy_db, fs), energy_db, label="Energy")
+        plt.plot(get_time(energy_db, fs), energy_db, label=f"Energy{label}")
 
         # now the linear fit
-        plt.plot([0, est_rt60], [e_5db, -65], "--", label="Linear Fit")
-        plt.plot(T, np.ones_like(T) * -60, "--", label="-60 dB")
+        plt.plot([0, est_rt60], [e_5db, -65], "--", label=f"Linear Fit{label}")
+        plt.plot(T, np.ones_like(T) * -60, "--", label=f"-60 dB{label}")
+        plt.plot(T, np.ones_like(T) * -5.0, "--", label=f"-5 dB{label}")
         plt.vlines(
-            est_rt60, energy_db_min, 0, linestyles="dashed", label="Estimated RT60"
+            est_rt60,
+            energy_db_min,
+            0,
+            linestyles="dashed",
+            label=f"Estimated RT60{label}",
         )
 
         if rt60_tgt is not None:
-            plt.vlines(rt60_tgt, energy_db_min, 0, label="Target RT60")
+            plt.vlines(rt60_tgt, energy_db_min, 0, label=f"Target RT60{label}")
 
         plt.legend()
 

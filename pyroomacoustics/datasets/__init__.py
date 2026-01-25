@@ -134,7 +134,7 @@ Example 3 (Google's Speech Commands Dataset)
     plt.figure()
     matches[0].plot()
     plt.show()
-  
+
 """
 
 from .base import AudioSample, Dataset, Meta, Sample

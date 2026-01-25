@@ -23,6 +23,10 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 r"""
+Pyroomacoustics has a large number of configuration options for the simulation.
+Please consult the dedicated section about
+:py:mod:`pyroomacoustics.parameters`.
+
 Room
 ====
 
@@ -492,7 +496,7 @@ This can be turned simply by providing the keyword argument ``air_absorption=Tru
 The coefficients are also temperature and humidity dependent and the default values are as follows.
 
 ========= ========    ====== ====== ====== ===== ===== ===== ===== =====
-Temp. (C) Hum. (%)    125 Hz 250 Hz 500 Hz 1 kHz 2 kHz 4 kHz 8 kHz 
+Temp. (C) Hum. (%)    125 Hz 250 Hz 500 Hz 1 kHz 2 kHz 4 kHz 8 kHz
 ========= ========    ====== ====== ====== ===== ===== ===== ===== =====
 10        30-50       0.1    0.2    0.5    1.1   2.7   9.4   29.0  x1e-3
 10        50-70       0.1    0.2    0.5    0.8   1.8   5.9   21.1  x1e-3
@@ -641,7 +645,7 @@ setting the maximum image image order of the room simulation to zero. This
 allows for early development and testing of various audio-based algorithms,
 without worrying about room acoustics at first. Thanks to the modular framework
 of pyroomacoustics, room acoustics can easily be added, after this first
-testing stage, for more realistic simulations. 
+testing stage, for more realistic simulations.
 
 Use this if you can neglect room effects (e.g. you operate in an anechoic room
 or outdoors), or if you simply want to test your algorithm in the best-case
@@ -651,7 +655,7 @@ room), see `./examples/doa_anechoic_room.py`.
 
 .. code-block:: python
 
-    # Create anechoic room. 
+    # Create anechoic room.
     room = pra.AnechoicRoom(fs=16000)
 
     # Place the microphone array around the origin.
@@ -670,6 +674,7 @@ room), see `./examples/doa_anechoic_room.py`.
 
     # run the simulation
     room.simulate()
+
 
 References
 ----------
@@ -690,6 +695,7 @@ import warnings
 
 import numpy as np
 import scipy.spatial as spatial
+from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
 from . import libroom
@@ -701,6 +707,7 @@ from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
 from .simulation import compute_ism_rir, compute_rt_rir
 from .soundsource import SoundSource
+from .utilities import design_highpass_filter_sos
 
 
 def wall_factory(corners, absorption, scattering, name=""):
@@ -1409,8 +1416,8 @@ class Room(object):
             if len(self.walls[i].absorption) == 1:
                 # Single band
                 wall_materials[name] = Material(
-                    energy_absorption=float(self.walls[i].absorption[0]),
-                    scattering=float(self.walls[i].scatter[0]),
+                    energy_absorption=float(self.walls[i].absorption.item()),
+                    scattering=float(self.walls[i].scatter.item()),
                 )
             elif len(self.walls[i].absorption) == self.octave_bands.n_bands:
                 # Multi-band
@@ -2263,7 +2270,8 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
-        # Basically, histograms for 2 mics corresponding to each source , the histograms are in each octave bands hence (7,2500) 2500 histogram length
+        # Basically, histograms for 2 mics corresponding to each source , the
+        # histograms are in each octave bands hence (7,2500) 2500 histogram length
         # update the state
         self.simulator_state["rt_done"] = True
 
@@ -2277,6 +2285,13 @@ class Room(object):
 
         if self.simulator_state["rt_needed"] and not self.simulator_state["rt_done"]:
             self.ray_tracing()
+
+        # If the RIR highpass filter is enabled, compute the coefficients.
+        rir_hpf_sos = None
+        if constants.get("rir_hpf_enable"):
+            rir_hpf_sos = design_highpass_filter_sos(
+                self.fs, constants.get("rir_hpf_fc"), **constants.get("rir_hpf_kwargs")
+            )
 
         self.rir = []
 
@@ -2336,6 +2351,10 @@ class Room(object):
                     rir = np.zeros(max_len)
                     for r in rir_parts:
                         rir[: r.shape[0]] += r
+
+                # Apply the high-pass filter if requested.
+                if rir_hpf_sos is not None:
+                    rir = np.ascontiguousarray(sosfiltfilt(rir_hpf_sos, rir))
 
                 self.rir[m].append(rir)
 
@@ -2680,46 +2699,34 @@ class Room(object):
         formula: str
             The formula to use for the calculation, 'sabine' (default) or 'eyring'
         """
-
-        rt60 = 0.0
-
         if self.is_multi_band:
             bandwidths = self.octave_bands.get_bw()
         else:
             bandwidths = [1.0]
 
         V = self.volume
-        S = np.sum([w.area() for w in self.walls])
         c = self.c
 
+        if formula == "eyring":
+            rt60_fn = rt60_eyring
+        elif formula == "sabine":
+            rt60_fn = rt60_sabine
+        else:
+            raise ValueError("Only Eyring and Sabine's formulas are supported")
+
+        # The harmonic mean will naturally average the absorption over the Octave bands
+        # and walls.
+        inv_rt60 = 0.0
         for i, bw in enumerate(bandwidths):
-            # average absorption coefficients
-            a = 0.0
+            m = 0.0 if self.air_absorption is None else self.air_absorption[i]
             for w in self.walls:
-                if len(w.absorption) == 1:
-                    a += w.area() * w.absorption[0]
-                else:
-                    a += w.area() * w.absorption[i]
-            a /= S
+                inv_rt60 += bw / rt60_fn(w.area(), V, w.absorption[i], m, c)
 
-            try:
-                m = self.air_absorption[i]
-            except:
-                m = 0.0
+        return np.sum(bandwidths) / inv_rt60
 
-            if formula == "eyring":
-                rt60_loc = rt60_eyring(S, V, a, m, c)
-            elif formula == "sabine":
-                rt60_loc = rt60_sabine(S, V, a, m, c)
-            else:
-                raise ValueError("Only Eyring and Sabine's formulas are supported")
-
-            rt60 += rt60_loc * bw
-
-        rt60 /= np.sum(bandwidths)
-        return rt60
-
-    def measure_rt60(self, decay_db=60, plot=False):
+    def measure_rt60(
+        self, decay_db=60, plot=False, label=None, linear_domain_fit=False
+    ):
         """
         Measures the reverberation time (RT60) of the simulated RIR.
 
@@ -2733,6 +2740,8 @@ class Room(object):
             dB, the RT60 is twice the time measured.
         plot: bool
             Displays a graph of the Schroeder curve and the estimated RT60.
+        label: str, optional
+            Optional label to use in a plot.
 
         Returns
         -------
@@ -2744,8 +2753,14 @@ class Room(object):
 
         for m in range(self.n_mics):
             for s in range(self.n_sources):
+                label = f"{label}-{m}-{s}" if label else ""
                 rt60[m, s] = measure_rt60(
-                    self.rir[m][s], fs=self.fs, plot=plot, decay_db=decay_db
+                    self.rir[m][s],
+                    fs=self.fs,
+                    plot=plot,
+                    decay_db=decay_db,
+                    label=label,
+                    linear_domain_fit=linear_domain_fit,
                 )
 
         return rt60
@@ -3065,9 +3080,6 @@ class AnechoicRoom(ShoeBox):
         # The materials are not actually used because max_order is set to 0 and ray-tracing to False.
         # Anyways, we use the energy_absorption and scattering corresponding to an anechoic room.
         materials = Material(energy_absorption=1.0, scattering=0.0)
-
-        # Set deprecated parameter
-        absorption = None
 
         ShoeBox.__init__(
             self,

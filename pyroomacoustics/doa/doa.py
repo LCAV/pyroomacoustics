@@ -557,8 +557,8 @@ class DOA(object):
         ax.set_xticks(np.linspace(0, 2 * np.pi, num=12, endpoint=False))
         ax.xaxis.set_label_coords(0.5, -0.11)
         ax.set_yticks(np.linspace(0, 1, 2))
-        ax.xaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle=":")
-        ax.yaxis.grid(b=True, color=[0.3, 0.3, 0.3], linestyle="--")
+        ax.xaxis.grid(visible=True, color=[0.3, 0.3, 0.3], linestyle=":")
+        ax.yaxis.grid(visible=True, color=[0.3, 0.3, 0.3], linestyle="--")
         ax.set_ylim([0, 1.05 * (base + height)])
 
         plt.tight_layout()
