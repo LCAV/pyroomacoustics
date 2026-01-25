@@ -169,6 +169,11 @@ class Histogram2D
     {
       return array;
     }
+
+    Eigen::ArrayXXi get_counts() const
+    {
+      return counts;
+    }
 };
 
 #endif // __COMMON_HPP__

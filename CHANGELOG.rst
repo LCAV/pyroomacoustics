@@ -10,13 +10,29 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
 -------------
-Bugfix:
+
+Changed
+~~~~~~~
+
+- Refactor the way the RIR is weighted with the histogram in simulation/rt.py.
+
+- Improves ``pra.experimental.measure_rt60``: Compute the T60 using a fit. Default is
+  log-domain. Adds option to fit in linear domain.
+
+Bugfix
 ~~~~~~
 
-- In `doa.py`, the `ax.xaxis.grid` and `ax.yaxis.grid` parameters were changed from `b` to `visible`.
+- Fixes the lowest octave band filter that was malformed when using
+  ``octave_bands_keep_dc=True``.
 
-- Fixes MicrophoneArray.append(MicrophoneArray)
-  AttributeError: 'MicrophoneArray' object has no attribute 'shape'.
+- Fixes the computation of the octave band widths that were not correct for the lowest
+  and high bands.
+
+- In ``doa.py``, the ``ax.xaxis.grid`` and ``ax.yaxis.grid`` parameters were changed from ``b`` to ``visible``.
+
+- Fixes ``MicrophoneArray.append(MicrophoneArray) AttributeError: 'MicrophoneArray'
+  object has no attribute 'shape'.``
+
 - Fixes issue #421: When generating a highpass filtered room impulse response make
   sure that the output is a memory contiguous NumPy array.
 

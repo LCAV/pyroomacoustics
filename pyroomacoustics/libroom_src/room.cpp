@@ -32,6 +32,10 @@
 const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
 
+// Initial energy of a particule.
+// The value 2.0 is necessary to match the scale of the ISM.
+const double energy_0_numerator = 2.0f;
+
 size_t number_image_sources_2(size_t max_order) {
   /*
   ¦* The number of image sources for a given maximum order in 2D
@@ -995,7 +999,7 @@ void Room<D>::ray_tracing(
   )
 {
   // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
-  float energy_0 = 2.f / angles.cols();
+  float energy_0 = energy_0_numerator / angles.cols();
 
   for (int k(0) ; k < angles.cols() ; k++)
   {
@@ -1035,7 +1039,7 @@ void Room<D>::ray_tracing(
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = 2.f / (nb_phis * nb_thetas);
+  float energy_0 = energy_0_numerator / (nb_phis * nb_thetas);
 
   // ------------------ RAY TRACING --------------------
 
@@ -1085,7 +1089,7 @@ void Room<D>::ray_tracing(
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = 2.f / n_rays;
+  float energy_0 = energy_0_numerator / n_rays;
 
   // ------------------ RAY TRACING --------------------
   if (D == 3)
