@@ -126,7 +126,6 @@ def compute_rt_rir(
     # this is the random sequence for the tail generation
     seq = sequence_generation(volume_room, N / fs, c, fs)
     seq = seq[:N]  # take values according to N as seq is larger
-    seq_original_power = np.mean(seq**2)
 
     n_bands = histograms[0].shape[0]
     bws = octave_bands.get_bw() if n_bands > 1 else [fs / 2]
@@ -140,9 +139,6 @@ def compute_rt_rir(
         else:
             seq_bp = seq.copy()
 
-        # This accounts for the relative energy weight of this band in the full sequence.
-        band_weight = np.mean(seq_bp**2) / seq_original_power
-
         # We normalize the histogram by the sequence power in that bin.
         seq_power = seq_rolling_power(seq_bp, hbss, filter_length_mult=2)
         nonzero = seq_power > 0.0
@@ -150,6 +146,9 @@ def compute_rt_rir(
 
         # We linarly interpolate the histogram to smoothly cover all the samples.
         hist = interp_hist(hist_bands[b], N)
+
+        # This accounts for the relative energy weight of this band in the full sequence.
+        band_weight = bw / fs * 2.0
 
         # Compute the gain to be applied to the sequence.
         gain = np.sqrt(hist * seq_power_norm * band_weight)
