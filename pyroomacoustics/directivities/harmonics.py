@@ -97,7 +97,7 @@ class RealSphericalHarmonicsDirectivity(Directivity):
     """
     A class for real spherical harmonic directivity patterns.
 
-    Parameters
+    Parameters:
     ----------
     m: int
         Order of the spherical harmonic.
