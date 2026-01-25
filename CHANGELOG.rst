@@ -8,8 +8,8 @@ The format is based on `Keep a
 Changelog <http://keepachangelog.com/en/1.0.0/>`__ and this project
 adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+`Ray Tracing Directivity`_
+--------------------------
 
 This new release introduces source and receiver directivities for the ray
 tracing simulation engine.
@@ -37,6 +37,75 @@ Changed
 
 - Bumped the numpy requirement to v1.17.0 to use the ``numpy.random.Generator`` objects.
 
+`Unreleased`_
+-------------
+
+Changed
+~~~~~~~
+
+- Refactor the way the RIR is weighted with the histogram in simulation/rt.py.
+
+- Improves ``pra.experimental.measure_rt60``: Compute the T60 using a fit. Default is
+  log-domain. Adds option to fit in linear domain.
+
+Bugfix
+~~~~~~
+
+- Fixes the lowest octave band filter that was malformed when using
+  ``octave_bands_keep_dc=True``.
+
+- Fixes the computation of the octave band widths that were not correct for the lowest
+  and high bands.
+
+- In ``doa.py``, the ``ax.xaxis.grid`` and ``ax.yaxis.grid`` parameters were changed from ``b`` to ``visible``.
+
+- Fixes ``MicrophoneArray.append(MicrophoneArray) AttributeError: 'MicrophoneArray'
+  object has no attribute 'shape'.``
+
+- Fixes issue #421: When generating a highpass filtered room impulse response make
+  sure that the output is a memory contiguous NumPy array.
+
+`0.9.0`_ - 2025-12-07
+---------------------
+
+Changed
+~~~~~~~
+
+- Adds a highpass filter on by default on all the computed RIR. This avoids artifacts
+  where the RIR gets a large DC offsets when the reflections are very dense.
+  The highpass filter is controlled by the global option 'rir_hpf_enable'. In addition,
+  the cut-off frequency and the parameters of the filters can be set via the options
+  'rir_hpf_fc' and 'rir_hpf_kwargs', respectively.
+
+Bugfix
+~~~~~~
+
+- Fixes a bug that would decrease the energy of every ray by the scattering coefficient
+  at every reflection when using scattering > 0.0.
+
+
+`0.8.6`_ - 2025-10-20
+---------------------
+
+Changed
+~~~~~~~
+
+- Removed the SOFA files from the pypi source distribution to avoid going over
+  the 100MB file size limit.
+
+`0.8.5`_ - 2025-10-20
+---------------------
+
+Changed
+~~~~~~~
+
+- Drops support for python 3.8.
+- Adds support for python 3.13 and 3.14.
+
+Bugfix
+~~~~~~
+
+- Fixes broken links for the Dirpat database SOFA files (issue #409).
 
 `0.8.4`_ - 2025-05-19
 ---------------------
@@ -456,7 +525,7 @@ Changed
 - Changed while loop to iterate up to `room_isinside_max_iter` in `pyroomacoustics.room.Room.isinside`
 - Changed initialization of FastMNMF to accelerate convergence
 - Fixed bug in doa/tops (float -> integer division)
-- Added vectorised functions in MUSIC 
+- Added vectorised functions in MUSIC
 - Use the vectorised functions in _process of MUSIC
 
 
@@ -732,7 +801,10 @@ Changed
    ``pyroomacoustics.datasets.timit``
 
 
-.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...master
+.. _Unreleased: https://github.com/LCAV/pyroomacoustics/compare/v0.9.0...master
+.. _0.9.0: https://github.com/LCAV/pyroomacoustics/compare/v0.8.6...v0.9.0
+.. _0.8.6: https://github.com/LCAV/pyroomacoustics/compare/v0.8.5...v0.8.6
+.. _0.8.5: https://github.com/LCAV/pyroomacoustics/compare/v0.8.4...v0.8.5
 .. _0.8.4: https://github.com/LCAV/pyroomacoustics/compare/v0.8.3...v0.8.4
 .. _0.8.3: https://github.com/LCAV/pyroomacoustics/compare/v0.8.2...v0.8.3
 .. _0.8.2: https://github.com/LCAV/pyroomacoustics/compare/v0.8.1...v0.8.2

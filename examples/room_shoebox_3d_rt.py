@@ -104,7 +104,7 @@ if __name__ == "__main__":
         plt.legend()
 
         plt.figure(2)
-        rt60 = shoebox.measure_rt60(plot=True, decay_db=60)
+        rt60 = shoebox.measure_rt60(plot=True, decay_db=30.0, linear_domain_fit=True)
 
         print(f"  RT60:")
         print(f"    - Eyring   {rt60_eyring:.3f} s")

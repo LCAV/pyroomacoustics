@@ -143,6 +143,8 @@ def magnitude_response_to_minimum_phase(magnitude_response, n_fft, axis=-1, eps=
         The FFT size to use
     axis: int
         The axis where to make the transformation
+    eps: float
+        A small positive constant to use for numerical stability.
 
     Returns
     -------
@@ -198,20 +200,22 @@ def cosine_magnitude_octave_filter_response(n_fft, centers, fs, keep_dc=True):
     freq = np.arange(n_freq) / n_fft * fs  # This only contains positive newfrequencies
 
     for b, (band, center) in enumerate(zip(new_bands, centers)):
-        lo = np.logical_and(band[0] <= freq, freq < center)
-
-        mag_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
-
         if b == 0 and keep_dc:
             # Converting Octave bands so that the minimum phase filters do not
             # have ripples.
             make_one = freq < center
             mag_resp[make_one, b] = 1.0
+        else:
+            # Rising side.
+            lo = np.logical_and(band[0] <= freq, freq < center)
+            mag_resp[lo, b] = 0.5 * (1 + np.cos(2 * np.pi * freq[lo] / center))
 
         if b != n - 1:
+            # Falling side.
             hi = np.logical_and(center <= freq, freq < band[1])
             mag_resp[hi, b] = 0.5 * (1 - np.cos(2 * np.pi * freq[hi] / band[1]))
         else:
+            # Shelve for the last octave band.
             hi = center <= freq
             mag_resp[hi, b] = 1.0
 
@@ -410,12 +414,12 @@ class OctaveBandsFactory(BaseOctaveFilterBank):
 
     def get_bw(self):
         """Returns the bandwidth of the bands"""
-        bands = self.bands
-        if self.keep_dc:
-            bands[0] = [0.0, bands[0][1]]
-        bands[-1] = [bands[-1][0], self.fs / 2]
-
-        return np.array([min(b2, self.fs // 2) - max(b1, 0) for b1, b2 in bands])
+        bandwidths = []
+        for b, (b1, b2) in enumerate(self.bands):
+            lo = 0.0 if b == 0 and self.keep_dc else b1
+            hi = min(b2, self.fs / 2.0)
+            bandwidths.append(hi - lo)
+        return np.array(bandwidths)
 
     def analysis(self, x, band=None, mode="same"):
         """
@@ -1153,7 +1157,7 @@ def rt60_eyring(S, V, a, m, c):
 
 def rt60_sabine(S, V, a, m, c):
     """
-    This is the Eyring formula for estimation of the reverberation time.
+    This is the Sabine formula for estimation of the reverberation time.
 
     Parameters
     ----------

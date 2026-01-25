@@ -7,6 +7,7 @@ unit sphere. The test is performed for different values of the parameter p and t
 import numpy as np
 import pytest
 
+import pyroomacoustics as pra
 from pyroomacoustics.directivities.analytic import (
     CardioidFamily,
     cardioid_energy,
@@ -17,6 +18,9 @@ from pyroomacoustics.directivities.integration import spherical_integral
 from pyroomacoustics.doa import cart2spher
 
 PARAMETERS = [(p, G) for p in [0.0, 0.25, 0.5, 0.75, 1.0] for G in [1.0, 0.5, 2.0]]
+
+# Disable the high-pass filter to keep consistent test result.
+pra.constants.set("rir_hpf_enable", False)
 
 
 @pytest.mark.parametrize("p,gain", PARAMETERS)
@@ -35,7 +39,6 @@ def test_cardioid_func_energy(p, gain):
 @pytest.mark.parametrize("p,gain", PARAMETERS)
 def test_cardioid_family_energy(p, gain):
     n_points = 10000
-    direction = np.array([0.0, 0.0, 1.0])
 
     e3 = DirectionVector(0.0, 0.0)  # vector pointing up
 

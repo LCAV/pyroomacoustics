@@ -33,6 +33,10 @@
 const double pi = 3.14159265358979323846;
 const double pi_2 = 1.57079632679489661923;
 
+// Initial energy of a particule.
+// The value 2.0 is necessary to match the scale of the ISM.
+const double energy_0_numerator = 2.0f;
+
 size_t number_image_sources_2(size_t max_order) {
   /*
   ¦* The number of image sources for a given maximum order in 2D
@@ -907,11 +911,13 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
     // Let's shoot the scattered ray induced by the rebound on the wall
     if (wall.scatter.maxCoeff() > 0.f) {
       // Shoot the scattered ray
-      scat_ray(transmitted, wall, start, hit_point, travel_dist);
-
-      // The overall ray's energy gets decreased by the total
-      // amount of scattered energy
-      transmitted *= (1.f - wall.scatter);
+      scat_ray(
+          transmitted,
+          wall,
+          start,
+          hit_point,
+          travel_dist
+          );
     }
 
     // Check if we reach the thresholds for this ray
@@ -929,7 +935,7 @@ void Room<D>::ray_tracing(
     const Eigen::Matrix<float, D - 1, Eigen::Dynamic> &angles,
     const Vectorf<D> &source_pos) {
   // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
-  float energy_value = 2.f / angles.cols();
+  float energy_value = energy_0_numerator / angles.cols();
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   for (int k(0); k < angles.cols(); k++) {
@@ -975,7 +981,7 @@ void Room<D>::ray_tracing(size_t nb_phis, size_t nb_thetas,
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_value = 2.f / (nb_phis * nb_thetas);
+  float energy_value = energy_0_numerator / (nb_phis * nb_thetas);
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------
@@ -1017,7 +1023,7 @@ void Room<D>::ray_tracing(size_t n_rays, const Vectorf<D> &source_pos) {
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_value = 2.f / n_rays;
+  float energy_value = energy_0_numerator / n_rays;
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------

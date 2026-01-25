@@ -274,6 +274,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("log", &Histogram2D::log)
       .def("bin", &Histogram2D::bin)
       .def("get_hist", &Histogram2D::get_hist)
+      .def("get_counts", &Histogram2D::get_counts)
       .def("reset", &Histogram2D::reset);
 
   // Structure to hold detector hit information
