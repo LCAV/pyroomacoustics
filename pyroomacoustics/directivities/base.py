@@ -110,7 +110,7 @@ class Directivity(abc.ABC):
 
         Returns
         -------
-        ray_directions: numpy.ndarray, shape (n_dim, n_rays)
+        ray_directions: numpy.ndarray, shape (n_rays, n_dim)
             An array containing the unit vectors in its columns
         energies: numpy.ndarray, shape (n_rays, n_bands)
             An energy carried per ray so that the expectation over all the rays

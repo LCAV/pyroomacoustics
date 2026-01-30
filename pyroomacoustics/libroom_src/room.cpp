@@ -953,7 +953,7 @@ void Room<D>::ray_tracing(
     const Eigen::Matrix<float, Eigen::Dynamic, D> &unit_vectors,
     const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
     const Vectorf<D> &source_pos) {
-  float energy_0 = 2.f / unit_vectors.rows();
+  float energy_0 = energy_0_numerator / unit_vectors.rows();
 
   if (unit_vectors.rows() != energies.rows()) {
     throw std::runtime_error("Error: The same number of rays and energies is expected.");
