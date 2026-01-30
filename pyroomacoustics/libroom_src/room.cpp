@@ -34,7 +34,7 @@ const double pi_2 = 1.57079632679489661923;
 
 // Initial energy of a particule.
 // The value 2.0 is necessary to match the scale of the ISM.
-const double energy_0_numerator = 2.0f;
+const float energy_0_numerator = 2.0f;
 
 size_t number_image_sources_2(size_t max_order) {
   /*
@@ -968,7 +968,7 @@ void Room<D>::simul_ray(
     transmitted *= wall.get_energy_reflection();
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-    if (wall.scatter.maxCoeff() > 0.f)
+    if (wall.does_scatter)
     {
       // Shoot the scattered ray
       scat_ray(
@@ -978,6 +978,7 @@ void Room<D>::simul_ray(
           hit_point,
           travel_dist
           );
+
     }
 
     // Check if we reach the thresholds for this ray
@@ -986,7 +987,18 @@ void Room<D>::simul_ray(
 
     // set up for next iteration
     specular_counter += 1;
+
     dir = wall.normal_reflect(dir);  // conserves length
+
+    if (wall.does_scatter)
+    {
+      // Compute the scattered direction.
+      // We inverse the direction because the wall normal is pointing outward.
+      Vectorf<D> scat_dir = -wall.sample_lambertian_reflection();
+      dir = wall.average_scatter * scat_dir + (1.f - wall.average_scatter) * dir;
+      dir = dir.normalized();
+    }
+
     start = hit_point;
   }
 }

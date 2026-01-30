@@ -1003,6 +1003,14 @@ class Room(object):
         else:
             self.room_engine = libroom.Room(*args)
 
+        # Obtain a random seed from numpy to set the room engine to a repeatable state.
+        seed = np.random.randint(0, 2**32)
+        self.set_seed(seed)
+
+    def set_seed(self, seed):
+        """Sets the seed of the libroom simulator."""
+        libroom.set_rng_seed(seed)
+
     def _update_room_engine_params(self):
         # Now, if it exists, set the parameters of room engine
         if self.room_engine is not None:

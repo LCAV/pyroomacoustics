@@ -30,6 +30,7 @@
 #include "wall.hpp"
 #include "geometry.hpp"
 #include "common.hpp"
+#include "random.hpp"
 
 template<>
 float Wall<2>::area() const
@@ -57,6 +58,12 @@ void Wall<D>::init()
   energy_reflection = 1.f - absorption;
   transmission.resize(absorption.size());
   transmission = energy_reflection.sqrt();
+
+  // keep the average scattering coefficient handy
+  average_scatter = scatter.mean();
+  does_scatter = scatter.maxCoeff() > 0.f;
+
+
 
   if (absorption.size() != scatter.size())
   {
@@ -331,3 +338,22 @@ float Wall<D>::cosine_angle(
 }
 
 
+template<size_t D>
+Vectorf<D> Wall<D>::sample_lambertian_reflection() const {
+    auto& engine = rng::get_engine();
+    std::uniform_real_distribution<float> dist(0.0, 1.0);
+
+    // Malley's Method
+    float u1 = dist(engine);
+    float u2 = dist(engine);
+
+    float r = std::sqrt(u1);
+    float phi = 2.0f * static_cast<float>(M_PI) * u2;
+
+    float x_l = r * std::cos(phi);
+    float y_l = r * std::sin(phi);
+    float z_l = std::sqrt(std::max(0.0, 1.0 - u1));
+
+    // Transform to world space using the basis and normal
+    return (basis * Eigen::Vector2f(x_l, y_l)) + (z_l * normal);
+}
