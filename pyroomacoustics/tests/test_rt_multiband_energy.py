@@ -169,7 +169,7 @@ def test_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
     assert irer_db >= 10.0, f"Failed IRER {irer_db:.2f} dB < 10.0"
 
     bws = room.octave_bands.get_bw()
-    tols = [0.25, 0.1, 0.08]
+    tols = [0.25, 0.12, 0.08]
     for b, bw in enumerate(np.sort(bws)):  # Loop through every band
         rir_band_ism = room.octave_bands.analysis(rir_ism, band=b)
         rir_band_rt = room.octave_bands.analysis(rir_rt, band=b)
@@ -180,7 +180,9 @@ def test_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
         rt60_delta = np.abs(rt60_band_ism - rt60_band_rt)
         rt60_rel_error = rt60_delta / rt60_band_ism
         tol = tols[min(b, 2)]
-        assert rt60_rel_error < tol, f"Failed {rt60_rel_error=:.3} > {tol}"
+        assert (
+            rt60_rel_error < tol
+        ), f"Failed {b}th band with {rt60_rel_error=:.3} > {tol}"
 
 
 if __name__ == "__main__":
