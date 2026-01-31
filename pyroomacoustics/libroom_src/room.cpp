@@ -27,14 +27,8 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include "constants.hpp"
 #include "room.hpp"
-
-const double pi = 3.14159265358979323846;
-const double pi_2 = 1.57079632679489661923;
-
-// Initial energy of a particule.
-// The value 2.0 is necessary to match the scale of the ISM.
-const float energy_0_numerator = 2.0f;
 
 size_t number_image_sources_2(size_t max_order) {
   /*
@@ -1011,12 +1005,12 @@ void Room<D>::ray_tracing(
   )
 {
   // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
-  float energy_0 = energy_0_numerator / angles.cols();
+  float energy_0 = constants::ENERGY_0 / angles.cols();
 
   for (int k(0) ; k < angles.cols() ; k++)
   {
     float phi = angles.coeff(0,k);
-    float theta = pi_2;
+    float theta = constants::HALF_PI;
 
     if (D == 3)
       theta = angles.coeff(1,k);
@@ -1051,13 +1045,13 @@ void Room<D>::ray_tracing(
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = energy_0_numerator / (nb_phis * nb_thetas);
+  float energy_0 = constants::ENERGY_0 / (nb_phis * nb_thetas);
 
   // ------------------ RAY TRACING --------------------
 
   for (size_t i(0); i < nb_phis; ++i)
   {
-    float phi = 2 * pi * (float) i / nb_phis;
+    float phi = constants::TWO_PI * (float) i / nb_phis;
 
     for (size_t j(0); j < nb_thetas; ++j)
     {
@@ -1067,7 +1061,7 @@ void Room<D>::ray_tracing(
       // For 2D, this parameter means nothing, but we set it to
       // PI/2 to be consistent
       if (D == 2) {
-        theta = pi_2;
+        theta = constants::HALF_PI;
       }
 
       // Trace this ray
@@ -1101,13 +1095,13 @@ void Room<D>::ray_tracing(
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_0 = energy_0_numerator / n_rays;
+  float energy_0 = constants::ENERGY_0 / n_rays;
 
   // ------------------ RAY TRACING --------------------
   if (D == 3)
   {
     auto offset = 2.f / n_rays;
-    auto increment = pi * (3.f - sqrt(5.f));  // phi increment
+    auto increment = constants::PI * (3.f - sqrt(5.f));  // phi increment
 
     for (size_t i(0); i < n_rays ; ++i)
     {
@@ -1127,7 +1121,7 @@ void Room<D>::ray_tracing(
   }
   else if (D == 2)
   {
-    float offset = 2. * pi / n_rays;
+    float offset = constants::TWO_PI / n_rays;
     for (size_t i(0) ; i < n_rays ; ++i)
       simul_ray(i * offset, 0.f, source_pos, energy_0);
   }

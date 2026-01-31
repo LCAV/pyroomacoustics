@@ -30,6 +30,7 @@
 #include "wall.hpp"
 #include "geometry.hpp"
 #include "common.hpp"
+#include "constants.hpp"
 #include "random.hpp"
 
 template<>
@@ -348,7 +349,7 @@ Vectorf<D> Wall<D>::sample_lambertian_reflection() const {
     float u2 = dist(engine);
 
     float r = std::sqrt(u1);
-    float phi = 2.0f * static_cast<float>(M_PI) * u2;
+    float phi = constants::TWO_PI * u2;
 
     float x_l = r * std::cos(phi);
     float y_l = r * std::sin(phi);
