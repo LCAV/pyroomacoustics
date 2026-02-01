@@ -49,9 +49,7 @@ PYBIND11_MODULE(libroom, m) {
   m.doc() =
       "Libroom room simulation extension plugin";  // optional module docstring
                                                    //
-  m.def("set_rng_seed", [](std::uint64_t seed) {
-      rng::set_seed(seed);
-  }, "Sets the seed for the internal C++ random number generator.");
+  m.def("set_rng_seed", &rng::set_seed, "Sets the seed for the internal C++ random number generator.");
 
   // The 3D Room class
   py::class_<Room<3>>(m, "Room")
