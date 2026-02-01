@@ -129,6 +129,7 @@ from .directivities import *
 from .metrics import *
 from .multirate import *
 from .parameters import *
+from .random import get_rng, seed
 from .recognition import *
 from .room import *
 from .soundsource import *

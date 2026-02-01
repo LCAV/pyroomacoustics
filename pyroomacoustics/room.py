@@ -1003,14 +1003,6 @@ class Room(object):
         else:
             self.room_engine = libroom.Room(*args)
 
-        # Obtain a random seed from numpy to set the room engine to a repeatable state.
-        seed = np.random.randint(0, 2**32 - 1)
-        self.set_seed(seed)
-
-    def set_seed(self, seed):
-        """Sets the seed of the libroom simulator."""
-        libroom.set_rng_seed(seed)
-
     def _update_room_engine_params(self):
         # Now, if it exists, set the parameters of room engine
         if self.room_engine is not None:
@@ -1111,8 +1103,6 @@ class Room(object):
         self.rt_args["hist_bin_size"] = self.rt_args["hist_bin_size_samples"] / self.fs
 
         if n_rays is None:
-            n_rays_auto_flag = True
-
             # We follow Vorlaender 2008, Eq. (11.12) to set the default number of rays
             # It depends on the mean hit rate we want to target
             target_mean_hit_count = 20

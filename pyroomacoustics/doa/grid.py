@@ -390,7 +390,6 @@ class GridSphere(Grid):
 
         try:
             import matplotlib.pyplot as plt
-
             import mpl_toolkits.mplot3d as a3
         except ImportError:
             import warnings

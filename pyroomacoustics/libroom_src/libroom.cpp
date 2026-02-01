@@ -29,6 +29,7 @@
 #include <pybind11/stl.h>
 
 #include <Eigen/Dense>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -48,7 +49,7 @@ PYBIND11_MODULE(libroom, m) {
   m.doc() =
       "Libroom room simulation extension plugin";  // optional module docstring
                                                    //
-  m.def("set_rng_seed", [](unsigned int seed) {
+  m.def("set_rng_seed", [](std::uint64_t seed) {
       rng::set_seed(seed);
   }, "Sets the seed for the internal C++ random number generator.");
 

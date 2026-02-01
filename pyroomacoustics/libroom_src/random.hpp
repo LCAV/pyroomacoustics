@@ -2,15 +2,16 @@
 #define __RANDOM_HPP__
 
 #include <random>
+#include <cstdint>
 
 namespace rng {
-    // We use a static engine so it persists across calls
-    inline std::mt19937& get_engine() {
-        static std::mt19937 engine;
+    // Use the 64-bit version of Mersenne Twister
+    inline std::mt19937_64& get_engine() {
+        static std::mt19937_64 engine;
         return engine;
     }
 
-    inline void set_seed(unsigned int seed) {
+    inline void set_seed(std::uint64_t seed) {
         get_engine().seed(seed);
     }
 }
