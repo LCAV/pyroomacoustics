@@ -28,6 +28,7 @@ Access to a package-wide random number generator (RNG).
 TODO: Replace all calls to ``np.random`` by this RNG.
 """
 import numpy as np
+
 from .. import libroom
 
 
