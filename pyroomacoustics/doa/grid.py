@@ -388,13 +388,9 @@ class GridSphere(Grid):
     def plot_old(self, plot_points=False, mark_peaks=0):
         """Plot the points on the sphere with their values"""
 
-        from scipy import rand
-
         try:
-            import matplotlib.colors as colors
             import matplotlib.pyplot as plt
 
-            # from mpl_toolkits.mplot3d import Axes3D
             import mpl_toolkits.mplot3d as a3
         except ImportError:
             import warnings

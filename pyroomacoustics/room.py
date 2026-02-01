@@ -1004,7 +1004,7 @@ class Room(object):
             self.room_engine = libroom.Room(*args)
 
         # Obtain a random seed from numpy to set the room engine to a repeatable state.
-        seed = np.random.randint(0, 2**32)
+        seed = np.random.randint(0, 2**32 - 1)
         self.set_seed(seed)
 
     def set_seed(self, seed):
