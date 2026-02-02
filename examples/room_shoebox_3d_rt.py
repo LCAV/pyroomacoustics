@@ -20,7 +20,6 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 import pyroomacoustics as pra
 
 np.random.seed(0)
