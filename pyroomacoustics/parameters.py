@@ -144,12 +144,6 @@ import numpy as np
 # tolerance for computations
 eps = 1e-10
 
-_rng = np.random.default_rng()
-
-
-def set_rng(rng):
-    _rng = rng
-
 
 def get_num_threads():
     """

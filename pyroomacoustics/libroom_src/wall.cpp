@@ -24,7 +24,6 @@
  * not, see <https://opensource.org/licenses/MIT>.
  */
 
-#include <iostream>
 #include <cmath>
 
 #include "wall.hpp"

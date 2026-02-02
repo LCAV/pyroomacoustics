@@ -61,6 +61,29 @@ def test_sample_lambertian_reflection():
     np.testing.assert_allclose(est[mask], ref[mask], rtol=0.1, atol=1e-4)
 
 
+def test_repeatable_sampling():
+    # A test wall.
+    corners = np.eye(3)[::-1]
+    wall = pra.libroom.Wall(corners)
+
+    n_points = 20
+
+    pra.libroom.set_rng_seed(0)
+    # These samples should be different.
+    samples_1 = np.array([wall.sample_lambertian_reflection() for _ in range(n_points)])
+    samples_2 = np.array([wall.sample_lambertian_reflection() for _ in range(n_points)])
+
+    assert np.all(
+        np.linalg.norm(samples_1 - samples_2, axis=1) > 1e-2
+    ), "Samples without changing the seed are the same."
+
+    # These should be identical because we reset the seed.
+    pra.libroom.set_rng_seed(0)
+    samples_3 = np.array([wall.sample_lambertian_reflection() for _ in range(n_points)])
+
+    np.testing.assert_allclose(samples_1, samples_3)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 

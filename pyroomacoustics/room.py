@@ -702,6 +702,7 @@ from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
 from . import libroom
+from . import random
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, MeasuredDirectivity
@@ -1725,7 +1726,8 @@ class Room(object):
             # plot the walls
             for w in self.walls:
                 tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
-                tri.set_color(colors.rgb2hex(np.random.rand(3)))
+                rng = random.get_rng()
+                tri.set_color(colors.rgb2hex(rng.uniform(size=3)))
                 tri.set_edgecolor("k")
                 ax.add_collection3d(tri)
 
@@ -1912,7 +1914,8 @@ class Room(object):
                 freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs / 1000)
                 ax.plot(freq, H)
             elif kind == "spec":
-                h = h + np.random.randn(*h.shape) * 1e-15
+                rng = random.get_rng()
+                h = h + rng.normal(size=h.shape) * 1e-15
                 ax.specgram(h, Fs=self.fs / 1000)
             else:
                 raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
@@ -2231,7 +2234,8 @@ class Room(object):
                     max_disp = self.max_rand_disp
 
                     # add a random displacement to each cartesian coordinate
-                    disp = np.random.uniform(
+                    rng = random.get_rng()
+                    disp = rng.uniform(
                         -max_disp, max_disp, size=(self.dim, n_images)
                     )
                     source.images += disp
@@ -2713,7 +2717,8 @@ class Room(object):
 
         # add white gaussian noise if necessary
         if self.sigma2_awgn is not None:
-            signals += np.random.normal(0.0, np.sqrt(self.sigma2_awgn), signals.shape)
+            rng = random.get_rng()
+            signals += rng.normal(0.0, np.sqrt(self.sigma2_awgn), size=signals.shape)
 
         # record the signals in the microphones
         self.mic_array.record(signals, self.fs)
@@ -2799,6 +2804,9 @@ class Room(object):
         # a corner case happen is virtually zero. If the test raises a corner
         # case, we will repeat the test with a different reference point.
 
+        # Obtain the package wide RNG.
+        rng = random.get_rng()
+
         # get the bounding box
         bbox = self.get_bbox()
         bbox_center = np.mean(bbox, axis=1)
@@ -2808,7 +2816,7 @@ class Room(object):
         it = 0
         while it < constants.get("room_isinside_max_iter"):
             # Get random point outside the bounding box
-            random_vec = np.random.randn(self.dim)
+            random_vec = rng.normal(size=self.dim)
             random_vec /= np.linalg.norm(random_vec)
             p0 = bbox_center + 2 * bbox_max_dist * random_vec
 

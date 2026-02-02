@@ -950,7 +950,6 @@ void Room<D>::simul_ray(
           double r_sq = double(travel_dist_at_mic) * travel_dist_at_mic;
           auto p_hit = (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
           energy = transmitted / (r_sq * p_hit);
-          // energy = transmitted / (travel_dist_at_mic - sqrtf(fmaxf(0.f, travel_dist_at_mic * travel_dist_at_mic - mic_radius_sq)));
 
           microphones[k].log_histogram(travel_dist_at_mic, energy, start);
         }
@@ -1184,12 +1183,12 @@ bool Room<D>::contains(const Vectorf<D> point)
     n_intersections = 0;
     ambiguous_intersection = false;
 
-    outside_point[0] -= (float)(rand() % 27) / 50;
-    outside_point[1] -= (float)(rand() % 22) / 26;
+    outside_point[0] -= rng::uniform(0.0f, 0.54f);
+    outside_point[1] -= rng::uniform(0.0f, 0.8461f);
 
     if (D == 3)
     {
-      outside_point[2] -= (float)(rand() % 24 / 47);
+      outside_point[2] -= rng::uniform(0.0f, 0.501f);
     }
 
     for (size_t i(0); i < n_walls; ++i)

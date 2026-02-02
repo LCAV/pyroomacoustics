@@ -31,18 +31,27 @@ import numpy as np
 
 from .. import libroom
 
+_rng = None
+
 
 def _set_libroom_seed(seed=None):
     global _rng
+
+    # Just a safeguard in case this is called directly. It shouldn't be, though.
+    if _rng is None:
+        _rng = np.random.default_rng()
+
     if seed is None:
         seed = _rng.integers(2**64 - 1, size=(), dtype=np.uint64)
-        seed = int(seed)
-    libroom.set_rng_seed(seed)
+
+    libroom.set_rng_seed(int(seed))
 
 
 def get_rng():
     """Access to the package global RNG."""
     global _rng
+    if _rng is None:
+        seed()
     return _rng
 
 
@@ -63,6 +72,3 @@ def seed(numpy=None, libroom=None):
     global _rng
     _rng = np.random.default_rng(seed=numpy)
     _set_libroom_seed(seed=libroom)
-
-
-seed()
