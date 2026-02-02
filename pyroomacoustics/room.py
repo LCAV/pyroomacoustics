@@ -429,6 +429,22 @@ A few example programs are provided in ``./examples``.
 - ``./examples/room_from_stl.py`` demonstrates how to import a model from an STL file
 
 
+Random vs Deterministic Simulation
+----------------------------------
+
+Pyroomacoustics relies on Numpy's and C++'s random number generation routines
+to obtain randomness. By default, these generators are initialized with some
+true randomness the first time they are used.
+
+However, it is often useful to make the simulation fully deterministic and
+repeatable. In this case, a seed can be provided at the start of the program as
+follows.
+
+.. code-block:: python
+
+    # Globally seed pyroomacoustics.
+    pra.random.seed(42)
+
 
 Wall Materials
 --------------
@@ -674,7 +690,6 @@ room), see `./examples/doa_anechoic_room.py`.
 
     # run the simulation
     room.simulate()
-
 
 References
 ----------

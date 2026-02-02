@@ -25,7 +25,16 @@
 r"""
 Access to a package-wide random number generator (RNG).
 
-TODO: Replace all calls to ``np.random`` by this RNG.
+The simulation can be made deterministic by fixing a seed.
+
+.. code-block:: python
+
+    # Globally seed pyroomacoustics.
+    pra.random.seed(42)
+
+    # Seed the numpy and libroom RNGs separately
+    pra.random.seed(numpy=42, libroom=43)
+
 """
 import numpy as np
 
