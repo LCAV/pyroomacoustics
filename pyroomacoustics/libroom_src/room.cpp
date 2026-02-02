@@ -1183,12 +1183,12 @@ bool Room<D>::contains(const Vectorf<D> point)
     n_intersections = 0;
     ambiguous_intersection = false;
 
-    outside_point[0] -= rng::uniform(0.0f, 0.54f);
-    outside_point[1] -= rng::uniform(0.0f, 0.8461f);
+    outside_point[0] -= rng::uniform(0.05f, 0.54f);
+    outside_point[1] -= rng::uniform(0.05f, 0.8461f);
 
     if (D == 3)
     {
-      outside_point[2] -= rng::uniform(0.0f, 0.501f);
+      outside_point[2] -= rng::uniform(0.05f, 0.501f);
     }
 
     for (size_t i(0); i < n_walls; ++i)
