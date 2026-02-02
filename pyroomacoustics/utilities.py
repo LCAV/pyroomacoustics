@@ -120,7 +120,9 @@ def create_noisy_signal(signal_fp, snr, noise_fp=None, offset=None):
     else:
         rng = random.get_rng()
         if len(clean_signal.shape) > 1:  # multichannel
-            noise = rng.normal(size=(output_len, clean_signal.shape[1])).astype(np.float32)
+            noise = rng.normal(size=(output_len, clean_signal.shape[1])).astype(
+                np.float32
+            )
         else:
             noise = rng.normal(size=output_len).astype(np.float32)
         noise = normalize(noise)

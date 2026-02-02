@@ -716,8 +716,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
-from . import libroom
-from . import random
+from . import libroom, random
 from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, MeasuredDirectivity
@@ -2250,9 +2249,7 @@ class Room(object):
 
                     # add a random displacement to each cartesian coordinate
                     rng = random.get_rng()
-                    disp = rng.uniform(
-                        -max_disp, max_disp, size=(self.dim, n_images)
-                    )
+                    disp = rng.uniform(-max_disp, max_disp, size=(self.dim, n_images))
                     source.images += disp
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
