@@ -2867,10 +2867,10 @@ class Room(object):
         return False
 
         # We should never reach this
-        raise ValueError("""
-                Error could not determine if point is in or out in maximum number of iterations.
-                This is most likely a bug, please report it.
-                """)
+        raise ValueError(
+            "Error could not determine if point is in or out in maximum number of "
+            "iterations. This is most likely a bug, please report it."
+        )
 
     def wall_area(self, wall):
         """Computes the area of a 3D planar wall.

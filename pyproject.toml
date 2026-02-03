@@ -5,4 +5,8 @@ requires = ["setuptools", "wheel", "numpy>=1.13.0", "Cython", "pybind11>=2.2"]  
 [tool.pytest.ini_options]
 filterwarnings = [
   'ignore:Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.:UserWarning'
-]
+] 
+
+[tool.isort]
+profile = "black"
+line_length = 88
