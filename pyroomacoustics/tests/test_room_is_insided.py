@@ -5,7 +5,7 @@ import pyroomacoustics as pra
 
 def test_room_is_inside():
     # fix the seed for repeatable testing
-    np.random.seed(0)
+    pra.random.seed(0)
 
     # This was a problematic case
     # if the source is placed at the same height as one of the corners
@@ -38,7 +38,7 @@ def test_room_is_inside():
     # now test in 3D
     room.extrude(4.0)
 
-    for i in range(100):
+    for i in range(1_000):
         # because the test is randomized, let's check many times
 
         assert room.is_inside([2, 3, 1.7])

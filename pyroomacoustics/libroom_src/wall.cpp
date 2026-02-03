@@ -24,12 +24,13 @@
  * not, see <https://opensource.org/licenses/MIT>.
  */
 
-#include <iostream>
 #include <cmath>
 
 #include "wall.hpp"
 #include "geometry.hpp"
 #include "common.hpp"
+#include "constants.hpp"
+#include "random.hpp"
 
 template<>
 float Wall<2>::area() const
@@ -57,6 +58,12 @@ void Wall<D>::init()
   energy_reflection = 1.f - absorption;
   transmission.resize(absorption.size());
   transmission = energy_reflection.sqrt();
+
+  // keep the average scattering coefficient handy
+  average_scatter = scatter.mean();
+  does_scatter = scatter.maxCoeff() > 0.f;
+
+
 
   if (absorption.size() != scatter.size())
   {
@@ -183,10 +190,10 @@ int Wall<3>::intersection(
   ret1 = intersection_3d_segment_plane(p1, p2, origin, normal, intersection);
 
   if (ret1 == -1)
-    return -1;  // there is no intersection
+    return WALL_ISECT_NONE;
 
   if (ret1 == 1)  // intersection at endpoint of segment
-    ret = 1;
+    ret = WALL_ISECT_VALID_ENDPT;
 
   /* project intersection into plane basis */
   Eigen::Vector2f flat_intersection = basis.adjoint() * (intersection - origin);
@@ -195,10 +202,10 @@ int Wall<3>::intersection(
   ret2 = is_inside_2d_polygon(flat_intersection, flat_corners);
 
   if (ret2 < 0)  // intersection is outside of the wall
-    return -1;
+    return WALL_ISECT_NONE;
 
   if (ret2 == 1) // intersection is on the boundary of the wall
-    ret |= 2;
+    ret |= WALL_ISECT_VALID_BNDRY;
 
   return ret;  // no intersection
 }
@@ -331,3 +338,22 @@ float Wall<D>::cosine_angle(
 }
 
 
+template<size_t D>
+Vectorf<D> Wall<D>::sample_lambertian_reflection() const {
+    auto& engine = rng::get_engine();
+    std::uniform_real_distribution<float> dist(0.0, 1.0);
+
+    // Malley's Method
+    float u1 = dist(engine);
+    float u2 = dist(engine);
+
+    float r = std::sqrt(u1);
+    float phi = constants::TWO_PI * u2;
+
+    float x_l = r * std::cos(phi);
+    float y_l = r * std::sin(phi);
+    float z_l = std::sqrt(std::max(0.0, 1.0 - u1));
+
+    // Transform to world space using the basis and normal
+    return (basis * Eigen::Vector2f(x_l, y_l)) + (z_l * normal);
+}

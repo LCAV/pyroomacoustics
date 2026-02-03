@@ -11,8 +11,17 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- A new ``random`` sub-module that contains a Numpy random number generator to use
+  package wide and some methods to set the seeds for this generator and that of
+  the libroom module.
+
 Changed
 ~~~~~~~
+
+- Adds random "bending" of the rays to account for scattering in the ray tracing.
 
 - Refactor the way the RIR is weighted with the histogram in simulation/rt.py.
 

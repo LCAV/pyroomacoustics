@@ -322,8 +322,9 @@ class DOA(object):
             self.src_idx = np.zeros(self.num_src, dtype=np.int64)
             self.angle_of_arrival = None
         if X.shape[0] != self.M:
-            raise ValueError("Number of signals (rows) does not match the \
-                number of microphones.")
+            raise ValueError(
+                "Number of signals (rows) does not match the number of microphones."
+            )
         if X.shape[1] != self.max_bin:
             raise ValueError("Mismatch in FFT length.")
         self.num_snap = X.shape[2]
@@ -574,8 +575,9 @@ class DOA(object):
         #         str(self.M) + '.')
         #     num_src = self.M
         if num_src < 1:
-            warnings.warn("Number of sources must be at least 1. Changing \
-                number of sources to 1.")
+            warnings.warn(
+                "Number of sources must be at least 1. Changing number of sources to 1."
+            )
             num_src = 1
         valid = int(num_src)
         return valid

@@ -107,6 +107,9 @@ Available subpackages
 :py:obj:`pyroomacoustics.phase`
     Phase-related processing
 
+:py:obj:`pyroomacoustics.random`
+    Routines for random number generation.
+
 :py:obj:`pyroomacoustics.transform`
     Block frequency domain processing tools
 
@@ -129,6 +132,7 @@ from .directivities import *
 from .metrics import *
 from .multirate import *
 from .parameters import *
+from .random import get_rng, seed
 from .recognition import *
 from .room import *
 from .soundsource import *
