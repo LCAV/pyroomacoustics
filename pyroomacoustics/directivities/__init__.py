@@ -92,4 +92,5 @@ from .analytic import (
 )
 from .base import Directivity
 from .direction import DirectionVector, Rotation3D
+from .harmonics import RealSphericalHarmonicsDirectivity
 from .measured import MeasuredDirectivity, MeasuredDirectivityFile
