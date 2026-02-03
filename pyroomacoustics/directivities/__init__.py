@@ -81,6 +81,7 @@ receiver with two ears (i.e., microphones). This simulates a binaural response.
     room.add_microphone(mic_pos, directivity=dir)
     room.add_microphone(mic_pos, directivity=dir)
 """
+
 from .analytic import (
     Cardioid,
     CardioidFamily,

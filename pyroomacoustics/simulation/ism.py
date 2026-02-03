@@ -26,6 +26,7 @@ Internal routines used for simulation using the image source method. In
 particular, how to transform the image sources, attenuations, etc, obtained
 from the core simulation engine into impulse responses.
 """
+
 import math
 
 import numpy as np

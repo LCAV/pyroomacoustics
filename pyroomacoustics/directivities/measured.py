@@ -69,6 +69,7 @@ the directivities for left and right ears of a dummy head HRTF.
     dir_right = hrtf.get_mic_directivity("right", orientation=orientation)
 
 """
+
 from pathlib import Path
 
 import numpy as np

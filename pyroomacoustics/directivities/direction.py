@@ -34,6 +34,7 @@ However, in general, not all directivities are symmetric in this way.
 For the general case, the orientation can be defined by `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`_.
 This is implemented in the class :py:class:`pyroomacoustics.direction.Rotation3D`.
 """
+
 import numpy as np
 
 

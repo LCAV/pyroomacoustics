@@ -92,6 +92,7 @@ References
     transform,” IEEE Transactions on Acoustics, Speech, and Signal Processing, vol.
     32, no. 2, pp. 236–243, 1984.
 """
+
 # This is needed to check for string types
 # in a way compatible between python 2 and 3
 try:

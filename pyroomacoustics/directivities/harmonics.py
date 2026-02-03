@@ -20,6 +20,31 @@
 #
 # You should have received a copy of the MIT License along with this program. If
 # not, see <https://opensource.org/licenses/MIT>.
+r"""
+This class can be used to set a Real Spherical Harmonics directivities.
+
+.. code-block:: python
+
+    # Simple example recording the different Harmonics as different microphones.
+    order = 2
+    condon_shortley_phase = True
+    azimuth = np.deg2rad(50)
+
+    room = pra.AnechoicRoom(fs=16000)
+    room.add_source([np.cos(azimuth), np.sin(azimuth), 1.0])
+
+    for m, n in zip(*get_mn_in_acn_order(order)):
+        room.add_microphone(
+            [0.0, 0.0, 1.0],
+            directivity=pra.directivities.RealSphericalHarmonicsDirectivity(
+                m, n, condon_shortley_phase=condon_shortley_phase
+            ),
+        )
+
+    room.compute_rir()
+
+"""
+
 import numpy as np
 import scipy.special
 
@@ -30,13 +55,13 @@ def get_mn_in_acn_order(order):
     """
     Calculates the (m,n) pairs in ACN order up to a given order.
 
-    Parameters:
+    Parameters
     ----------
     order : int
         Maximum degree of the spherical harmonics.
 
-    Returns:
-    ----------
+    Returns
+    -------
     all_m : ndarray
         Array of orders m in ACN order.
     all_n : ndarray
@@ -51,7 +76,7 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     """
     Calculates the real spherical harmonics.
 
-    Parameters:
+    Parameters
     ----------
     n : int
         Degree of the spherical harmonic.
@@ -64,8 +89,8 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     condon_shortley_phase : bool, optional
         If True, includes the Condon-Shortley phase factor (-1)^m. Default is False.
 
-    Returns:
-    ----------
+    Returns
+    -------
     y_real : ndarray
         Real spherical harmonics evaluated at the given angles.
     """
@@ -97,7 +122,7 @@ class RealSphericalHarmonicsDirectivity(Directivity):
     """
     A class for real spherical harmonic directivity patterns.
 
-    Parameters:
+    Parameters
     ----------
     m: int
         Order of the spherical harmonic.

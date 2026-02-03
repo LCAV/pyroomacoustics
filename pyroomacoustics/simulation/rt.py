@@ -26,6 +26,7 @@ Internal routines used for simulation using the ray tracing method.
 In particular, how to transform the histograms obtained from the core
 simulation engine into impulse responses.
 """
+
 import math
 
 import numpy as np
