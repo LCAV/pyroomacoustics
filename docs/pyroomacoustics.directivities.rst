@@ -14,6 +14,14 @@ Analytic Directional Responses
    :undoc-members:
    :show-inheritance:
 
+Real Spherical Harmonics Directivities
+--------------------------------------
+
+.. automodule:: pyroomacoustics.directivities.harmonics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Measured Directivities
 ----------------------
 

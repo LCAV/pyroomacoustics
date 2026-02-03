@@ -28,6 +28,8 @@ Changed
 - Improves ``pra.experimental.measure_rt60``: Compute the T60 using a fit. Default is
   log-domain. Adds option to fit in linear domain.
 
+- Add Directivity pattern for real spherical harmonics. 
+
 Bugfix
 ~~~~~~
 
