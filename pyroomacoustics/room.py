@@ -2819,31 +2819,25 @@ class Room(object):
         # Obtain the package wide RNG.
         rng = random.get_rng()
 
-        # get the bounding box
+        # The initial reference point is the lower point of the bounding box.
         bbox = self.get_bbox()
-        bbox_center = np.mean(bbox, axis=1)
-        bbox_max_dist = np.linalg.norm(bbox[:, 1] - bbox[:, 0]) / 2
+        p0 = bbox[:, 0]
 
         # re-run until we get a non-ambiguous result
         it = 0
         while it < constants.get("room_isinside_max_iter"):
-            # Get random point outside the bounding box
-            random_vec = rng.normal(size=self.dim)
-            random_vec /= np.linalg.norm(random_vec)
-            p0 = bbox_center + 2 * bbox_max_dist * random_vec
+            # We slightly perturb the reference point away from the room.
+            p0 -= rng.uniform(0.015, 0.85)
 
             ambiguous = False  # be optimistic
             is_on_border = False  # we have to know if the point is on the boundary
             count = 0  # wall intersection counter
             for i in range(len(self.walls)):
-                # intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
-                # ret = self.walls[i].intersects(p0, p)
-                loc = np.zeros(self.dim, dtype=np.float32)
-                ret = self.walls[i].intersection(p0, p, loc)
+                ret = self.walls[i].intersects(p0, p)
 
-                if (
-                    ret == int(Wall.Isect.ENDPT) or ret == 3
-                ):  # this flag is True when p is on the wall
+                if ret > 0 and ret & int(Wall.Isect.ENDPT)  != 0:
+                    # I.e., ret == ENDPT or ret == ENDPT | BNDRY
+                    # I.e., the point is on the boundary.
                     is_on_border = True
 
                 elif ret == Wall.Isect.BNDRY:
