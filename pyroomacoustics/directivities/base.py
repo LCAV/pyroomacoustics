@@ -35,6 +35,7 @@ The class should implement the following methods:
 - ``filter_len_ir`` to return the length of the impulse response. This should return 1
   if the directivity is not an impulse response.
 """
+
 import abc
 
 

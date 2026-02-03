@@ -36,6 +36,7 @@ The simulation can be made deterministic by fixing a seed.
     pra.random.seed(numpy=42, libroom=43)
 
 """
+
 import numpy as np
 
 from .. import libroom

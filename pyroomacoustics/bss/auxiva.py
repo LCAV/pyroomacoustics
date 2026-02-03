@@ -68,6 +68,7 @@ References
 .. [2] R. Scheibler and N. Ono, Independent Vector Analysis with more Microphones
     than Sources, arXiv, 2019.  https://arxiv.org/abs/1905.07880
 """
+
 import numpy as np
 
 from .common import projection_back

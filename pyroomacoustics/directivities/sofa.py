@@ -26,6 +26,7 @@ r"""
 direction impulse responses. This module provides a function to read SOFA files and
 extract the impulse responses in a format that can be used for simulation.
 """
+
 from pathlib import Path
 
 import numpy as np

@@ -23,6 +23,7 @@
 # not, see <https://opensource.org/licenses/MIT>.
 
 """Class for real-time STFT analysis and processing."""
+
 from __future__ import division
 
 import numpy as np

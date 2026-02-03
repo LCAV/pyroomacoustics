@@ -57,6 +57,7 @@ a pattern with arbitrary parameter :math:`p`.
 
     dir = Cardioid([0, 0, 1], gain=1.0)
 """
+
 import numpy as np
 
 from ..doa import spher2cart

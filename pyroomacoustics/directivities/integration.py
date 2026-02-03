@@ -29,6 +29,7 @@ Provides a function to numerically integrate a function over the 3D unit-sphere 
     \iint_{\mathbb{S}^2} f(\mathbf{x})\, d\mathbf{x}
 
 """
+
 import numpy as np
 from scipy.spatial import SphericalVoronoi
 

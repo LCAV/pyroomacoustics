@@ -702,7 +702,6 @@ References
 
 """
 
-
 from __future__ import division, print_function
 
 import math
@@ -2835,7 +2834,7 @@ class Room(object):
             for i in range(len(self.walls)):
                 ret = self.walls[i].intersects(p0, p)
 
-                if ret > 0 and ret & int(Wall.Isect.ENDPT)  != 0:
+                if ret > 0 and ret & int(Wall.Isect.ENDPT) != 0:
                     # I.e., ret == ENDPT or ret == ENDPT | BNDRY
                     # I.e., the point is on the boundary.
                     is_on_border = True
@@ -2868,12 +2867,10 @@ class Room(object):
         return False
 
         # We should never reach this
-        raise ValueError(
-            """
+        raise ValueError("""
                 Error could not determine if point is in or out in maximum number of iterations.
                 This is most likely a bug, please report it.
-                """
-        )
+                """)
 
     def wall_area(self, wall):
         """Computes the area of a 3D planar wall.

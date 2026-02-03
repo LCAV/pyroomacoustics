@@ -25,6 +25,7 @@ r"""
 This module provides functions to interpolate impulse responses on a sphere.
 The interpolation is done in the spherical harmonics domain.
 """
+
 import numpy as np
 import scipy
 from scipy.spatial import SphericalVoronoi
