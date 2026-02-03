@@ -2827,7 +2827,7 @@ class Room(object):
         it = 0
         while it < constants.get("room_isinside_max_iter"):
             # We slightly perturb the reference point away from the room.
-            p0 -= rng.uniform(0.015, 0.85)
+            p0 -= rng.uniform(0.015, 0.85, size=p0.shape)
 
             ambiguous = False  # be optimistic
             is_on_border = False  # we have to know if the point is on the boundary
