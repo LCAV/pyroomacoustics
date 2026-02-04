@@ -74,15 +74,63 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.spatial import cKDTree
+from scipy.spatial import SphericalVoronoi, cKDTree
 
+from .. import random
+from ..acoustics import AntoniOctaveFilterBank
 from ..datasets import SOFADatabase
+from ..directivities.integration import spherical_integral
 from ..doa import Grid, GridSphere, cart2spher, fibonacci_spherical_sampling, spher2cart
+from ..parameters import constants
 from ..utilities import requires_matplotlib
 from .base import Directivity
 from .direction import Rotation3D
+from .integration import robust_spherical_voronoi_areas
 from .interp import spherical_interpolation
 from .sofa import open_sofa_file
+
+
+class MeasuredDirectivityEnergyDistribution(random.distributions.Distribution):
+    """
+    This object draws samples from the distribution defined by the energy
+    of the measured directional response object.
+
+    Parameters
+    ----------
+    kdtree: array_like
+        A kd-tree for the measurement points in cartesian coordinates.
+    energy: array_like
+        The energy measured at each measurement point.
+    areas: array_like
+        The areas of the spherical voronoi of the kd-tree.
+        If not provided, they are computed.
+    """
+
+    def __init__(self, kdtree, energy, areas=None):
+        super().__init__(kdtree.m)
+        self._kdtree = kdtree
+        self._energy = energy / energy.max()
+
+        self._sampler = random.sampler.RejectionSampler(
+            desired_func=self._pattern,
+            proposal_dist=random.distributions.UnnormalizedUniformSpherical(self.dim),
+            scale=1.0,
+        )
+
+        # The normalizing constant of the pdf is computed by spherical integration.
+        if areas is None:
+            areas = robust_spherical_voronoi_areas(kdtree.data)
+        self._normalizing_constant = np.sum(areas * self._energy)
+
+    def _pattern(self, x):
+        _, index = self._kdtree.query(x)
+        return self._energy[index]
+
+    def pdf(self, x):
+        return self._pattern(x) / self._normalizing_constant
+
+    def sample(self, size=None, rng=None):
+        return self._sampler(size=size, rng=rng)
 
 
 class MeasuredDirectivity(Directivity):
@@ -112,6 +160,8 @@ class MeasuredDirectivity(Directivity):
         self._irs = impulse_responses
         self.fs = fs
 
+        self._compute_band_energies()
+
         # set the initial orientation
         self.set_orientation(orientation)
 
@@ -123,6 +173,35 @@ class MeasuredDirectivity(Directivity):
     def filter_len_ir(self):
         """Length of the impulse response in samples"""
         return self._irs.shape[-1]
+
+    def _compute_band_energies(self):
+        # Use an energy preserving octave band to compute the per octave
+        # band energy of the impulse responses.
+        octave_bands = AntoniOctaveFilterBank(
+            base_frequency=constants.get("octave_bands_base_freq"),
+            fs=self.fs,
+            n_fft=constants.get("octave_bands_n_fft"),
+        )
+
+        # Energies per direction and octave band, shape == (n_grid, n_bands).
+        # Normalized per bandwidth and area.
+        self.areas = robust_spherical_voronoi_areas(self._original_grid.cartesian.T)
+        norm = octave_bands.get_bw()
+        self.energies = np.array([octave_bands.energy(ir) / norm for ir in self._irs])
+
+        # The total energy per direction over all bands.
+        self.energy_per_direction = self.energies.sum(axis=-1)
+
+        # We need to normalize by the total band energy because the rays are drawn
+        # over all the bands together.
+        self.total_energy = np.sum(self.energies * self.areas[:, None])
+
+        # Ray energies to use with the deterministic sampler.
+        self.energies_coeff_deterministic = self.energies * 4.0 * np.pi
+
+        # Ray energies to use with the random sampler.
+        norm = (self.energy_per_direction / self.total_energy)[:, None]
+        self.energies_coeff_random = self.energies / norm
 
     def set_orientation(self, orientation):
         """
@@ -142,8 +221,14 @@ class MeasuredDirectivity(Directivity):
         self._grid = GridSphere(
             cartesian_points=self._orientation.rotate(self._original_grid.cartesian)
         )
+
         # create the kd-tree
         self._kdtree = cKDTree(self._grid.cartesian.T)
+
+        # Create the energy directional distribution.
+        self.energy_distribution = MeasuredDirectivityEnergyDistribution(
+            self._kdtree, self.energy_per_direction, areas=self.areas
+        )
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -173,6 +258,18 @@ class MeasuredDirectivity(Directivity):
         _, index = self._kdtree.query(cart.T)
         return self._irs[index, :]
 
+    def sample_rays(self, n_rays, rng=None):
+        if rng is None:
+            rays = fibonacci_spherical_sampling(n_points=n_rays).T
+            energies_coeff = self.energies_coeff_deterministic
+        else:
+            rays = self.energy_distribution.sample(size=n_rays, rng=rng)
+            energies_coeff = self.energies_coeff_random
+
+        _, index = self._kdtree.query(rays)
+        energies = energies_coeff[index, :]
+        return rays, energies
+
     @requires_matplotlib
     def plot(self, freq_bin=0, n_grid=100, ax=None, depth=False, offset=None):
         """
@@ -199,13 +296,11 @@ class MeasuredDirectivity(Directivity):
             The axes on which the directivity is plotted
         """
         import matplotlib.pyplot as plt
-        from matplotlib import cm
 
         cart = self._grid.cartesian.T
         length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
 
         # regrid the data on a 2D grid
-        g = np.linspace(-1, 1, n_grid)
         AZ, COL = np.meshgrid(
             np.linspace(0, 2 * np.pi, n_grid), np.linspace(0, np.pi, n_grid // 2)
         )
@@ -239,7 +334,7 @@ class MeasuredDirectivity(Directivity):
             Y *= V
             Z *= V
 
-        surf = ax.plot_surface(
+        _ = ax.plot_surface(
             X, Y, Z, facecolors=cmap.to_rgba(V), linewidth=0, antialiased=False
         )
 

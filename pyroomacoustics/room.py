@@ -694,29 +694,28 @@ room), see `./examples/doa_anechoic_room.py`.
 References
 ----------
 
-.. [1] J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
+.. [1] J. B. Allen and D. A. Berkley, *Image method for efficiently simulating
+       small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
 
 .. [2] M. Vorlaender, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1-340.
 
-.. [3] D. Schroeder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
+.. [3] D. Schroeder, Physically based real-time auralization of interactive virtual
+       environments. PhD Thesis, RWTH Aachen University, 2011.
 
 """
 
 from __future__ import division, print_function
 
 import math
-import os
-import sys
 import warnings
 
 import numpy as np
 import scipy.spatial as spatial
-from scipy.interpolate import interp1d
 from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
 from . import libroom, random
-from .acoustics import OctaveBandsFactory, rt60_eyring, rt60_sabine
+from .acoustics import AntoniOctaveFilterBank, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, MeasuredDirectivity
 from .experimental import measure_rt60
@@ -942,11 +941,12 @@ class Room(object):
         self.max_order = max_order
         self.sigma2_awgn = sigma2_awgn
 
-        self.octave_bands = OctaveBandsFactory(
+        self.octave_bands = AntoniOctaveFilterBank(
             fs=self.fs,
             n_fft=constants.get("octave_bands_n_fft"),
-            keep_dc=constants.get("octave_bands_keep_dc"),
+            # keep_dc=constants.get("octave_bands_keep_dc"),
             base_frequency=constants.get("octave_bands_base_freq"),
+            slope=0,
         )
         self.max_rand_disp = max_rand_disp
 
@@ -1327,10 +1327,10 @@ class Room(object):
             materials = [Material(0.0, 0.0)] * n_walls
 
         # Resample material properties at octave bands
-        octave_bands = OctaveBandsFactory(
+        octave_bands = AntoniOctaveFilterBank(
             fs=fs,
             n_fft=constants.get("octave_bands_n_fft"),
-            keep_dc=constants.get("octave_bands_keep_dc"),
+            # keep_dc=constants.get("octave_bands_keep_dc"),
             base_frequency=constants.get("octave_bands_base_freq"),
         )
         if not Material.all_flat(materials):
@@ -2162,14 +2162,6 @@ class Room(object):
         if self.dim != 3 and directivity is not None:
             raise NotImplementedError("Directivity is only supported for 3D rooms.")
 
-        if directivity is not None:
-            from pyroomacoustics import ShoeBox
-
-            if not isinstance(self, ShoeBox):
-                raise NotImplementedError(
-                    "Source directivity only supported for ShoeBox room."
-                )
-
         if isinstance(position, SoundSource):
             if directivity is not None:
                 if isinstance(directivity, CardioidFamily) or isinstance(
@@ -2219,22 +2211,25 @@ class Room(object):
 
             if n_visible_sources > 0:
                 # Copy to python managed memory
-
-                source.images = (
-                    self.room_engine.sources.copy()
-                )  # Positions of the image source (3,n) n: n_sources
-                source.orders = (
-                    self.room_engine.orders.copy()
-                )  # Reflection order for each image source shape n:n_sources
-                source.orders_xyz = (
-                    self.room_engine.orders_xyz.copy()
-                )  # Reflection order for each image source for each coordinate shape (3,n) n:n_sources
-                source.walls = (
-                    self.room_engine.gen_walls.copy()
-                )  # Something that i don't get [-1,-1,-1,-1,-1...] shape n:n_sources
-                source.damping = (
-                    self.room_engine.attenuations.copy()
-                )  # Octave band damping's shape (no_of_octave_bands*n_sources) damping value for each image source for each octave bands
+                # image source locations
+                source.images = self.room_engine.sources.copy()
+                # image source reflection orders
+                source.orders = self.room_engine.orders.copy()
+                # image source reflection orders per x/y/z axis (shoebox only)
+                source.orders_xyz = self.room_engine.orders_xyz.copy()
+                # the microphone direction from the perspective of the image source
+                source.directions = (
+                    self.room_engine.source_directions.reshape(
+                        (self.dim, -1, self.mic_array.M)
+                    )
+                    .transpose(2, 0, 1)
+                    .copy()
+                )  # (n_mics, dim, n_image_sources)
+                # the index of the wall that produced the image source
+                source.walls = self.room_engine.gen_walls.copy()
+                # the attenuation coefficient associated with the image source
+                source.damping = self.room_engine.attenuations.copy()
+                # --deprecated--
                 source.generators = -np.ones(source.walls.shape)
 
                 # if randomized image method is selected, add a small random
@@ -2260,8 +2255,13 @@ class Room(object):
                         self.visibility[-1][m, :] = 0
             else:
                 # if we are here, this means even the direct path is not visible
-                # we set the visibility of the direct path as 0
+                # we set the visibility of the direct path as 0.
                 self.visibility.append(np.zeros((self.mic_array.M, 1), dtype=np.int32))
+                # We also need a fake array of directions as this is expected later in
+                # the code.
+                source.directions = np.zeros(
+                    (self.mic_array.M, self.dim, 1), dtype=np.float32
+                )
 
         # Update the state
         self.simulator_state["ism_done"] = True
@@ -2277,6 +2277,7 @@ class Room(object):
         for s, src in enumerate(self.sources):
             self.room_engine.ray_tracing(self.rt_args["n_rays"], src.position)
 
+            # There is one histogram for each mic/source pair.
             for r in range(self.mic_array.M):
                 self.rt_histograms[r].append([])
                 for h in self.room_engine.microphones[r].histograms:
@@ -2285,8 +2286,6 @@ class Room(object):
             # reset all the receivers' histograms
             self.room_engine.reset_mics()
 
-        # Basically, histograms for 2 mics corresponding to each source , the
-        # histograms are in each octave bands hence (7,2500) 2500 histogram length
         # update the state
         self.simulator_state["rt_done"] = True
 
@@ -2332,13 +2331,14 @@ class Room(object):
                         src,
                         mic,
                         self.mic_array.directivity[m],
+                        src.directions[m, :, :],
                         self.visibility[s][m, :],
                         fdl,
                         self.c,
                         self.fs,
                         self.octave_bands,
-                        air_abs_coeffs=self.air_absorption,
                         min_phase=self.min_phase,
+                        air_abs_coeffs=self.air_absorption,
                     )
                     rir_parts.append(ir_ism)
 
@@ -2373,238 +2373,6 @@ class Room(object):
                 self.rir[m].append(rir)
 
         self.simulator_state["rir_done"] = True
-
-    def dft_scale_rir_calc(
-        self,
-        attenuations,
-        dist,
-        time,
-        bws,
-        N,
-        azi_m,
-        col_m,
-        azi_s,
-        col_s,
-        src_pos=0,
-        mic_pos=0,
-    ):
-        """
-        Full DFT scale RIR construction.
-
-        This function also takes into account the FIR's of the source and receiver retrieved from the SOFA file.
-
-
-
-        Parameters
-        ----------
-        attenuations: arr
-            Dampings for all the image sources Shape : ( No_of_octave_band x no_img_src)
-        dist : arr
-            distance of all the image source present in the room from this particular mic Shape : (no_img_src)
-        time : arr
-            Time of arrival of all the image source Shape : (no_img_src)
-        bws :
-            bandwidth of all the octave bands
-        N :
-        azi_m : arr
-            Azimuth angle of arrival of this particular mic for all image sources Shape : (no_img_src)
-        col_m : arr
-            Colatitude angle of arrival of this particular mic  for all image sources Shape : (no_img_src)
-        azi_s : arr
-            Azimuth angle of departure of this particular source for all image sources Shape : (no_img_src)
-        col_s : arr
-            Colatitude angle of departure of this particular source for all image sources Shape : (no_img_src)
-        src_pos : int
-            The particular source we are calculating RIR
-        mic_pos : int
-            The particular mic we are calculating RIR
-
-        Returns
-        -------
-            rir : :py:class:`~numpy.ndarray`
-                Constructed RIR for this particlar src mic pair .
-
-            The constructed RIR still lacks air absorption and distance absorption because in the old pyroom these calculation happens on the octave band level.
-
-
-        """
-
-        attenuations = attenuations / dist
-        alp = []
-        window_length = 81
-
-        no_imag_src = attenuations.shape[1]
-
-        fp_im = N
-        fir_length_octave_band = self.octave_bands.n_fft
-
-        from .build_rir import (
-            fast_convolution_3,
-            fast_convolution_4,
-            fast_window_sinc_interpolator,
-        )
-
-        rec_presence = True if (len(azi_m) > 0 and len(col_m) > 0) else False
-        source_presence = True if (len(azi_s) > 0 and len(col_s) > 0) else False
-
-        final_fir_IS_len = (
-            (self.mic_array.directivity[mic_pos].filter_len_ir if (rec_presence) else 1)
-            + (
-                self.sources[src_pos].directivity.filter_len_ir
-                if (source_presence)
-                else 1
-            )
-            + window_length
-            + fir_length_octave_band
-        ) - 3
-
-        if rec_presence and source_presence:
-            resp_mic = self.mic_array.directivity[mic_pos].get_response(
-                azimuth=azi_m, colatitude=col_m, degrees=False
-            )  # Return response as an array of number of (img_sources * length of filters)
-            resp_src = self.sources[src_pos].directivity.get_response(
-                azimuth=azi_s, colatitude=col_s, degrees=False
-            )
-
-            if self.mic_array.directivity[mic_pos].filter_len_ir == 1:
-                resp_mic = np.array(resp_mic).reshape(-1, 1)
-
-            else:
-                assert (
-                    self.fs == self.mic_array.directivity[mic_pos].fs
-                ), "Mic directivity: frequency of simulation should be same as frequency of interpolation"
-
-            if self.sources[src_pos].directivity.filter_len_ir == 1:
-                resp_src = np.array(resp_src).reshape(-1, 1)
-            else:
-                assert (
-                    self.fs == self.sources[src_pos].directivity.fs
-                ), "Source directivity:  frequency of simulation should be same as frequency of interpolation"
-
-        else:
-            if source_presence:
-                assert (
-                    self.fs == self.sources[src_pos].directivity.fs
-                ), "Directivity source frequency of simulation should be same as frequency of interpolation"
-
-                resp_src = self.sources[src_pos].directivity.get_response(
-                    azimuth=azi_s,
-                    colatitude=col_s,
-                    degrees=False,
-                )
-
-            elif rec_presence:
-                assert (
-                    self.fs == self.mic_array.directivity[mic_pos].fs
-                ), "Directivity mic frequency of simulation should be same as frequency of interpolation"
-
-                resp_mic = self.mic_array.directivity[mic_pos].get_response(
-                    azimuth=azi_m,
-                    colatitude=col_m,
-                    degrees=False,
-                )
-
-        # else:
-        # txt = "No"
-        # final_fir_IS_len = (fir_length_octave_band + window_length) - 1
-
-        time_arrival_is = time  # For min phase
-
-        # Calculating fraction delay sinc filter
-        sample_frac = time_arrival_is * self.fs  # Find the fractional sample number
-
-        ir_diff = np.zeros(N + (final_fir_IS_len))  # 2050 #600
-
-        # Create arrays for fractional delay low pass filter, sum of {damping coeffiecients * octave band filter}, source response, receiver response.
-
-        cpy_ir_len_1 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_2 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_3 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
-        cpy_ir_len_4 = np.zeros((no_imag_src, final_fir_IS_len), dtype=np.complex_)
-        att_in_dft_scale = np.zeros(
-            (no_imag_src, fir_length_octave_band), dtype=np.complex_
-        )
-
-        # Vectorized sinc filters
-
-        vectorized_interpolated_sinc = np.zeros(
-            (no_imag_src, window_length), dtype=np.double
-        )
-        vectorized_time_ip = np.array(
-            [int(math.floor(sample_frac[img_src])) for img_src in range(no_imag_src)]
-        )
-        vectorized_time_fp = [
-            sample_frac[img_src] - int(math.floor(sample_frac[img_src]))
-            for img_src in range(no_imag_src)
-        ]
-        vectorized_time_fp = np.array(vectorized_time_fp, dtype=np.double)
-        vectorized_interpolated_sinc = fast_window_sinc_interpolator(
-            vectorized_time_fp, window_length, vectorized_interpolated_sinc
-        )
-
-        for i in range(no_imag_src):  # Loop through Image source
-            att_in_octave_band = attenuations[:, i]
-            att_in_dft_scale_ = att_in_dft_scale[i, :]
-
-            # Interpolating attenuations given in the single octave band to a DFT scale.
-
-            att_in_dft_scale_ = self.octave_bands.octave_band_dft_interpolation(
-                att_in_octave_band,
-                self.air_absorption,
-                dist[i],
-                att_in_dft_scale_,
-                bws,
-                self.min_phase,
-            )
-
-            # time_ip = int(math.floor(sample_frac[i]))  # Calculating the integer sample
-
-            # time_fp = sample_frac[i] - time_ip  # Calculating the fractional sample
-
-            # windowed_sinc_filter = fast_window_sinc_interpolater(time_fp)
-
-            cpy_ir_len_1[i, : att_in_dft_scale_.shape[0]] = np.fft.ifft(
-                att_in_dft_scale_
-            )
-            cpy_ir_len_2[i, :window_length] = vectorized_interpolated_sinc[i, :]
-
-            if source_presence and rec_presence:
-                cpy_ir_len_3[i, : resp_src[i, :].shape[0]] = resp_src[i, :]
-
-                cpy_ir_len_4[i, : resp_mic[i, :].shape[0]] = resp_mic[i, :]
-
-                out = fast_convolution_4(
-                    cpy_ir_len_1[i, :],
-                    cpy_ir_len_2[i, :],
-                    cpy_ir_len_3[i, :],
-                    cpy_ir_len_4[i, :],
-                    final_fir_IS_len,
-                )
-
-                ir_diff[
-                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
-                ] += np.real(out)
-
-            else:
-                if source_presence:
-                    resp = resp_src[i, :]
-                elif rec_presence:
-                    resp = resp_mic[i, :]
-
-                cpy_ir_len_3[i, : resp.shape[0]] = resp
-
-                out = fast_convolution_3(
-                    cpy_ir_len_1[i, :],
-                    cpy_ir_len_2[i, :],
-                    cpy_ir_len_3[i, :],
-                    final_fir_IS_len,
-                )
-
-                ir_diff[
-                    vectorized_time_ip[i] : (vectorized_time_ip[i] + final_fir_IS_len)
-                ] += np.real(out)
-
-        return ir_diff
 
     def simulate(
         self,
