@@ -24,18 +24,11 @@
  * If not, see <https://opensource.org/licenses/MIT>.
  */
 
-#include "room.hpp"
 
-#include <algorithm>
 #include <cmath>
-#include <iostream>
-
-const double pi = 3.14159265358979323846;
-const double pi_2 = 1.57079632679489661923;
-
-// Initial energy of a particule.
-// The value 2.0 is necessary to match the scale of the ISM.
-const double energy_0_numerator = 2.0f;
+#include <algorithm>
+#include "constants.hpp"
+#include "room.hpp"
 
 size_t number_image_sources_2(size_t max_order) {
   /*
@@ -899,6 +892,7 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
           auto p_hit =
               (1 - sqrt(1 - mic_radius_sq / std::max(mic_radius_sq, r_sq)));
           energy = transmitted / (r_sq * p_hit);
+
           microphones[k].log_histogram(travel_dist_at_mic, energy, start);
         }
       }
@@ -909,7 +903,7 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
     transmitted *= wall.get_energy_reflection();
 
     // Let's shoot the scattered ray induced by the rebound on the wall
-    if (wall.scatter.maxCoeff() > 0.f) {
+    if (wall.does_scatter) {
       // Shoot the scattered ray
       scat_ray(
           transmitted,
@@ -925,7 +919,18 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
 
     // set up for next iteration
     specular_counter += 1;
+
     dir = wall.normal_reflect(dir);  // conserves length
+
+    if (wall.does_scatter)
+    {
+      // Compute the scattered direction.
+      // We inverse the direction because the wall normal is pointing outward.
+      Vectorf<D> scat_dir = -wall.sample_lambertian_reflection();
+      dir = wall.average_scatter * scat_dir + (1.f - wall.average_scatter) * dir;
+      dir = dir.normalized();
+    }
+
     start = hit_point;
   }
 }
@@ -934,13 +939,12 @@ template <size_t D>
 void Room<D>::ray_tracing(
     const Eigen::Matrix<float, D - 1, Eigen::Dynamic> &angles,
     const Vectorf<D> &source_pos) {
-  // float energy_0 = 2.f / (mic_radius * mic_radius * angles.cols());
-  float energy_value = energy_0_numerator / angles.cols();
+  float energy_value = constants::ENERGY_0 / angles.cols();
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   for (int k(0); k < angles.cols(); k++) {
     float phi = angles.coeff(0, k);
-    float theta = pi_2;
+    float theta = constants::HALF_PI;
 
     if (D == 3) theta = angles.coeff(1, k);
 
@@ -981,13 +985,14 @@ void Room<D>::ray_tracing(size_t nb_phis, size_t nb_thetas,
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_value = energy_0_numerator / (nb_phis * nb_thetas);
+  float energy_value = constants::ENERGY_0 / (nb_phis * nb_thetas);
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------
 
-  for (size_t i(0); i < nb_phis; ++i) {
-    float phi = 2 * pi * (float)i / nb_phis;
+  for (size_t i(0); i < nb_phis; ++i)
+  {
+    float phi = constants::TWO_PI * (float) i / nb_phis;
 
     for (size_t j(0); j < nb_thetas; ++j) {
       // Having a 3D uniform sampling of the sphere surrounding the room
@@ -996,7 +1001,7 @@ void Room<D>::ray_tracing(size_t nb_phis, size_t nb_thetas,
       // For 2D, this parameter means nothing, but we set it to
       // PI/2 to be consistent
       if (D == 2) {
-        theta = pi_2;
+        theta = constants::HALF_PI;
       }
 
       // Trace this ray
@@ -1023,13 +1028,13 @@ void Room<D>::ray_tracing(size_t n_rays, const Vectorf<D> &source_pos) {
 
   // ------------------ INIT --------------------
   // initial energy of one ray
-  float energy_value = energy_0_numerator / n_rays;
+  float energy_value = constants::ENERGY_0 / n_rays;
   Eigen::ArrayXf energy_0 = Eigen::ArrayXf::Ones(n_bands) * energy_value;
 
   // ------------------ RAY TRACING --------------------
   if (D == 3) {
     auto offset = 2.f / n_rays;
-    auto increment = pi * (3.f - sqrt(5.f));  // phi increment
+    auto increment = constants::PI * (3.f - sqrt(5.f));  // phi increment
 
     for (size_t i(0); i < n_rays; ++i) {
       auto z = (i * offset - 1) + offset / 2.f;
@@ -1045,9 +1050,11 @@ void Room<D>::ray_tracing(size_t n_rays, const Vectorf<D> &source_pos) {
 
       simul_ray(azimuth, colatitude, source_pos, energy_0);
     }
-  } else if (D == 2) {
-    float offset = 2. * pi / n_rays;
-    for (size_t i(0); i < n_rays; ++i)
+  }
+  else if (D == 2)
+  {
+    float offset = constants::TWO_PI / n_rays;
+    for (size_t i(0) ; i < n_rays ; ++i)
       simul_ray(i * offset, 0.f, source_pos, energy_0);
   }
 }
@@ -1101,11 +1108,12 @@ bool Room<D>::contains(const Vectorf<D> point) {
     n_intersections = 0;
     ambiguous_intersection = false;
 
-    outside_point[0] -= (float)(rand() % 27) / 50;
-    outside_point[1] -= (float)(rand() % 22) / 26;
+    outside_point[0] -= rng::uniform(0.05f, 0.54f);
+    outside_point[1] -= rng::uniform(0.05f, 0.8461f);
 
-    if (D == 3) {
-      outside_point[2] -= (float)(rand() % 24 / 47);
+    if (D == 3)
+    {
+      outside_point[2] -= rng::uniform(0.05f, 0.501f);
     }
 
     for (size_t i(0); i < n_walls; ++i) {

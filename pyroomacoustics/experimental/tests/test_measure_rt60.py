@@ -20,6 +20,7 @@
 """
 Test code for RT60 measurement routine
 """
+
 import numpy as np
 
 import pyroomacoustics as pra

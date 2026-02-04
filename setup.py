@@ -173,16 +173,17 @@ setup_kwargs = dict(
     # simple. Or you can use find_packages().
     packages=[
         "pyroomacoustics",
-        "pyroomacoustics.doa",
         "pyroomacoustics.adaptive",
-        "pyroomacoustics.directivities",
-        "pyroomacoustics.transform",
-        "pyroomacoustics.experimental",
-        "pyroomacoustics.datasets",
         "pyroomacoustics.bss",
+        "pyroomacoustics.datasets",
         "pyroomacoustics.denoise",
+        "pyroomacoustics.directivities",
+        "pyroomacoustics.doa",
+        "pyroomacoustics.experimental",
         "pyroomacoustics.phase",
+        "pyroomacoustics.random",
         "pyroomacoustics.simulation",
+        "pyroomacoustics.transform",
     ],
     # Libroom C extension
     ext_modules=ext_modules,

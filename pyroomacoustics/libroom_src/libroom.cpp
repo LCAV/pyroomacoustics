@@ -29,12 +29,14 @@
 #include <pybind11/stl.h>
 
 #include <Eigen/Dense>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "common.hpp"
 #include "geometry.hpp"
 #include "microphone.hpp"
+#include "random.hpp"
 #include "rir_builder.hpp"
 #include "room.hpp"
 #include "wall.hpp"
@@ -46,6 +48,8 @@ float libroom_eps = 1e-5;  // epsilon is set to 0.1 millimeter (100 um)
 PYBIND11_MODULE(libroom, m) {
   m.doc() =
       "Libroom room simulation extension plugin";  // optional module docstring
+                                                   //
+  m.def("set_rng_seed", &rng::set_seed, "Sets the seed for the internal C++ random number generator.");
 
   // The 3D Room class
   py::class_<Room<3>>(m, "Room")
@@ -194,6 +198,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("normal_reflect",
            (Vectorf<3>(Wall<3>::*)(const Vectorf<3> &) const) &
                Wall<3>::normal_reflect)
+      .def("sample_lambertian_reflection", &Wall<3>::sample_lambertian_reflection)
       .def("same_as", &Wall<3>::same_as)
       .def_property_readonly_static("dim",
                                     [](py::object /* self */) { return 3; })
@@ -235,6 +240,7 @@ PYBIND11_MODULE(libroom, m) {
       .def("normal_reflect",
            (Vectorf<2>(Wall<2>::*)(const Vectorf<2> &) const) &
                Wall<2>::normal_reflect)
+      .def("sample_lambertian_reflection", &Wall<2>::sample_lambertian_reflection)
       .def("same_as", &Wall<2>::same_as)
       .def_property_readonly_static("dim",
                                     [](py::object /* self */) { return 2; })

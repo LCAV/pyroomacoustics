@@ -26,6 +26,7 @@ Internal routines used for simulation using the image source method. In
 particular, how to transform the image sources, attenuations, etc, obtained
 from the core simulation engine into impulse responses.
 """
+
 import math
 
 import numpy as np
@@ -91,8 +92,6 @@ def interpolate_octave_bands(
         Dampings in octave bands interpolated to full scale frequency domain.
 
     """
-    n_bands = octave_bands.n_bands
-
     att_in_dft_scale = np.einsum(
         "bi,fb->if", att_in_octave_bands, octave_bands.filters_freq_domain
     )

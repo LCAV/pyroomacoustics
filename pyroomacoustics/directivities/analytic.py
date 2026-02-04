@@ -27,7 +27,7 @@ A class of directional responses can be defined analytically.
 Such respones include in particular the cardioid family of patterns
 that describes cardioid, super-cardioid, and figure-of-eight microphones, (see
 `cardioid family <https://en.wikipedia.org/wiki/Microphone>`_, under Polar patterns, with cardioid, hypercardioid, cardioid, subcardioid, figure-eight, and omnidirectional).
-In three dimensions, for an orientation given by unit vector :math:`\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
+In three dimensions, for an orientation given by unit vector :math:`\boldsymbol{d}`, a parameter :math:`p \in [0, 1]`,
 and a gain :math:`G`, the response to direction :math:`\boldsymbol{r}` (also a unit vector) is given by the following equation.
 
 .. math::
@@ -57,6 +57,7 @@ a pattern with arbitrary parameter :math:`p`.
 
     dir = Cardioid([0, 0, 1], gain=1.0)
 """
+
 import numpy as np
 
 from .. import random
@@ -76,7 +77,7 @@ class CardioidFamily(Directivity):
     r"""
     Object for directivities coming from the
     `cardioid family`_.
-    In three dimensions, for an orientation given by unit vector :math:`\\boldsymbol{u}`, a parameter :math:`p \in [0, 1]`,
+    In three dimensions, for an orientation given by unit vector :math:`\boldsymbol{d}`, a parameter :math:`p \in [0, 1]`,
     and a gain :math:`G`, the pattern is given by the following equation.
 
     .. math::

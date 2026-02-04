@@ -280,7 +280,7 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     # calculate stft
     S = stft.analysis(rir, fft_size, fft_hop, win=analysis_window, zp_back=fft_zp)
 
-    (nFrames, nFreqs) = np.shape(S)
+    nFrames, nFreqs = np.shape(S)
     nFreqs = int(nFreqs / 2)
 
     # ignore negative frequencies
@@ -292,7 +292,7 @@ def sweeping_echo_measure(rir, fs, t_min=0, t_max=0.5, fb=400):
     assert nFreqs == len(freqSlice)
 
     # get time-frequency grid
-    (t_mesh, f_mesh) = np.meshgrid(timeSlice, freqSlice)
+    t_mesh, f_mesh = np.meshgrid(timeSlice, freqSlice)
 
     bmin = int(np.floor(nFreqs / fs * fmin))
     bmax = int(np.ceil(nFreqs / fs * fmax))

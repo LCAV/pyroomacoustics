@@ -26,14 +26,20 @@ Internal routines used for simulation using the ray tracing method.
 In particular, how to transform the histograms obtained from the core
 simulation engine into impulse responses.
 """
+
 import math
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import fftconvolve
 
+from .. import random
+
 
 def sequence_generation(volume, duration, c, fs, max_rate=10000):
+    # Get the random number generator.
+    rng = random.get_rng()
+
     # repeated constant
     fpcv = 4 * np.pi * c**3 / volume
 
@@ -43,7 +49,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     while times[-1] < t0 + duration:
         # uniform random variable
-        z = np.random.rand()
+        z = rng.uniform()
         # rate of the point process at this time
         mu = np.minimum(fpcv * (t0 + times[-1]) ** 2, max_rate)
         # time interval to next point
@@ -55,7 +61,7 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
 
     indices = (np.array(times) * fs).astype(np.int64)
     seq = np.zeros(indices[-1] + 1)
-    seq[indices] = np.random.choice([1, -1], size=len(indices))
+    seq[indices] = rng.choice([1, -1], size=len(indices))
 
     return seq
 

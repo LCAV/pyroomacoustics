@@ -135,6 +135,7 @@ Miscellaneous
   :py:func:`~pyroomacoustics.utilities.highpass` function.
 
 """
+
 import io
 import json
 import os

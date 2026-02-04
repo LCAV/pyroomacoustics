@@ -7,6 +7,7 @@ The SOFA format is described at https://www.sofaconventions.org
 
 Get more SOFA files at https://www.sofaconventions.org/mediawiki/index.php/Files
 """
+
 import argparse
 from pathlib import Path
 

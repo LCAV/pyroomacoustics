@@ -1,0 +1,30 @@
+# Global exclude: ignore build folders, virtual environments, and C++ dependencies
+exclude: '^(pyroomacoutics/libroom_src/ext/|build/|dist/|venv/|extern/)'
+
+repos:
+  - repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        files: ^(pyroomacoustics/|examples/|setup\.py)
+
+  - repo: https://github.com/psf/black
+    rev: 26.1.0
+    hooks:
+      - id: black
+        files: ^(pyroomacoustics/|examples/|setup\.py)
+
+#  - repo: https://github.com/pycqa/flake8
+#    rev: 7.3.0
+#    hooks:
+#      - id: flake8
+#        files: ^(pyroomacoustics/|examples/|setup\.py)
+#
+#  - repo: https://github.com/pre-commit/mirrors-clang-format
+#    rev: v21.1.8
+#    hooks:
+#      - id: clang-format
+#        # Only run on your C++ source and headers
+#        files: \.(cpp|h|hpp|cc)$
+
+

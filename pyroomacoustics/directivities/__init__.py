@@ -40,7 +40,8 @@ microphones and sources in the room impulse response simulation.
     Directional responses are only supported for 3D rooms.
 
 
-The directivities are described by an object of a class derived from :py:class:`~pyroomacoustics.directivities.base.Directivity`.
+The directivities are described by an object of a class derived from
+:py:class:`~pyroomacoustics.directivities.base.Directivity`.
 
 Let's dive right in with an example.
 Here, we simulate a shoebox room with a cardioid source and a dummy head
@@ -58,7 +59,9 @@ receiver with two ears (i.e., microphones). This simulates a binaural response.
     )
 
     # add a cardioid source
-    dir = pra.directivities.Cardioid(DirectionVector(azimuth=-65, colatitude=90) , gain=1.0)
+    dir = pra.directivities.Cardioid(
+        DirectionVector(azimuth=-65, colatitude=90) , gain=1.0
+    )
     room.add_source([3.75, 2.13, 1.41], directivity=dir)
 
     # add a dummy head receiver from the MIT KEMAR database
@@ -81,6 +84,7 @@ receiver with two ears (i.e., microphones). This simulates a binaural response.
     room.add_microphone(mic_pos, directivity=dir)
     room.add_microphone(mic_pos, directivity=dir)
 """
+
 from .analytic import (
     Cardioid,
     CardioidEnergyDistribution,
@@ -94,10 +98,33 @@ from .analytic import (
 )
 from .base import Directivity
 from .direction import DirectionVector, Rotation3D
+from .harmonics import RealSphericalHarmonicsDirectivity
 from .histogram import SphericalHistogram
-from .integration import spherical_integral, robust_spherical_voronoi_areas
+from .integration import robust_spherical_voronoi_areas, spherical_integral
 from .measured import (
     MeasuredDirectivity,
     MeasuredDirectivityEnergyDistribution,
     MeasuredDirectivityFile,
 )
+
+__all__ = [
+    "Cardioid",
+    "CardioidEnergyDistribution",
+    "CardioidFamily",
+    "DirectionVector",
+    "Directivity",
+    "FigureEight",
+    "HyperCardioid",
+    "MeasuredDirectivity",
+    "MeasuredDirectivityEnergyDistribution",
+    "MeasuredDirectivityFile",
+    "Omnidirectional",
+    "RealSphericalHarmonicsDirectivity",
+    "Rotation3D",
+    "SphericalHistogram",
+    "SubCardioid",
+    "cardioid_energy",
+    "cardioid_func",
+    "robust_spherical_voronoi_areas",
+    "spherical_integral",
+]

@@ -40,13 +40,24 @@ Changed
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- A new ``random`` sub-module that contains a Numpy random number generator to use
+  package wide and some methods to set the seeds for this generator and that of
+  the libroom module.
+
 Changed
 ~~~~~~~
+
+- Adds random "bending" of the rays to account for scattering in the ray tracing.
 
 - Refactor the way the RIR is weighted with the histogram in simulation/rt.py.
 
 - Improves ``pra.experimental.measure_rt60``: Compute the T60 using a fit. Default is
   log-domain. Adds option to fit in linear domain.
+
+- Add Directivity pattern for real spherical harmonics. 
 
 Bugfix
 ~~~~~~

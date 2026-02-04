@@ -429,6 +429,22 @@ A few example programs are provided in ``./examples``.
 - ``./examples/room_from_stl.py`` demonstrates how to import a model from an STL file
 
 
+Random vs Deterministic Simulation
+----------------------------------
+
+Pyroomacoustics relies on Numpy's and C++'s random number generation routines
+to obtain randomness. By default, these generators are initialized with some
+true randomness the first time they are used.
+
+However, it is often useful to make the simulation fully deterministic and
+repeatable. In this case, a seed can be provided at the start of the program as
+follows.
+
+.. code-block:: python
+
+    # Globally seed pyroomacoustics.
+    pra.random.seed(42)
+
 
 Wall Materials
 --------------
@@ -675,18 +691,18 @@ room), see `./examples/doa_anechoic_room.py`.
     # run the simulation
     room.simulate()
 
-
 References
 ----------
 
-.. [1] J. B. Allen and D. A. Berkley, *Image method for efficiently simulating small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
+.. [1] J. B. Allen and D. A. Berkley, *Image method for efficiently simulating
+       small-room acoustics,* J. Acoust. Soc. Am., vol. 65, no. 4, p. 943, 1979.
 
 .. [2] M. Vorlaender, Auralization, 1st ed. Berlin: Springer-Verlag, 2008, pp. 1-340.
 
-.. [3] D. Schroeder, Physically based real-time auralization of interactive virtual environments. PhD Thesis, RWTH Aachen University, 2011.
+.. [3] D. Schroeder, Physically based real-time auralization of interactive virtual
+       environments. PhD Thesis, RWTH Aachen University, 2011.
 
 """
-
 
 from __future__ import division, print_function
 
@@ -698,7 +714,7 @@ import scipy.spatial as spatial
 from scipy.signal import sosfiltfilt
 
 from . import beamforming as bf
-from . import libroom
+from . import libroom, random
 from .acoustics import AntoniOctaveFilterBank, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
 from .directivities import CardioidFamily, MeasuredDirectivity
@@ -1101,8 +1117,6 @@ class Room(object):
         self.rt_args["hist_bin_size"] = self.rt_args["hist_bin_size_samples"] / self.fs
 
         if n_rays is None:
-            n_rays_auto_flag = True
-
             # We follow Vorlaender 2008, Eq. (11.12) to set the default number of rays
             # It depends on the mean hit rate we want to target
             target_mean_hit_count = 20
@@ -1725,7 +1739,8 @@ class Room(object):
             # plot the walls
             for w in self.walls:
                 tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
-                tri.set_color(colors.rgb2hex(np.random.rand(3)))
+                rng = random.get_rng()
+                tri.set_color(colors.rgb2hex(rng.uniform(size=3)))
                 tri.set_edgecolor("k")
                 ax.add_collection3d(tri)
 
@@ -1912,7 +1927,8 @@ class Room(object):
                 freq = np.arange(H.shape[0]) / h.shape[0] * (self.fs / 1000)
                 ax.plot(freq, H)
             elif kind == "spec":
-                h = h + np.random.randn(*h.shape) * 1e-15
+                rng = random.get_rng()
+                h = h + rng.normal(size=h.shape) * 1e-15
                 ax.specgram(h, Fs=self.fs / 1000)
             else:
                 raise ValueError("The value of 'kind' should be 'ir', 'tf', or 'spec'.")
@@ -2226,9 +2242,8 @@ class Room(object):
                     max_disp = self.max_rand_disp
 
                     # add a random displacement to each cartesian coordinate
-                    disp = np.random.uniform(
-                        -max_disp, max_disp, size=(self.dim, n_images)
-                    )
+                    rng = random.get_rng()
+                    disp = rng.uniform(-max_disp, max_disp, size=(self.dim, n_images))
                     source.images += disp
 
                 self.visibility.append(self.room_engine.visible_mics.copy())
@@ -2481,7 +2496,8 @@ class Room(object):
 
         # add white gaussian noise if necessary
         if self.sigma2_awgn is not None:
-            signals += np.random.normal(0.0, np.sqrt(self.sigma2_awgn), signals.shape)
+            rng = random.get_rng()
+            signals += rng.normal(0.0, np.sqrt(self.sigma2_awgn), size=signals.shape)
 
         # record the signals in the microphones
         self.mic_array.record(signals, self.fs)
@@ -2567,31 +2583,28 @@ class Room(object):
         # a corner case happen is virtually zero. If the test raises a corner
         # case, we will repeat the test with a different reference point.
 
-        # get the bounding box
+        # Obtain the package wide RNG.
+        rng = random.get_rng()
+
+        # The initial reference point is the lower point of the bounding box.
         bbox = self.get_bbox()
-        bbox_center = np.mean(bbox, axis=1)
-        bbox_max_dist = np.linalg.norm(bbox[:, 1] - bbox[:, 0]) / 2
+        p0 = bbox[:, 0]
 
         # re-run until we get a non-ambiguous result
         it = 0
         while it < constants.get("room_isinside_max_iter"):
-            # Get random point outside the bounding box
-            random_vec = np.random.randn(self.dim)
-            random_vec /= np.linalg.norm(random_vec)
-            p0 = bbox_center + 2 * bbox_max_dist * random_vec
+            # We slightly perturb the reference point away from the room.
+            p0 -= rng.uniform(0.015, 0.85, size=p0.shape)
 
             ambiguous = False  # be optimistic
             is_on_border = False  # we have to know if the point is on the boundary
             count = 0  # wall intersection counter
             for i in range(len(self.walls)):
-                # intersects, border_of_wall, border_of_segment = self.walls[i].intersects(p0, p)
-                # ret = self.walls[i].intersects(p0, p)
-                loc = np.zeros(self.dim, dtype=np.float32)
-                ret = self.walls[i].intersection(p0, p, loc)
+                ret = self.walls[i].intersects(p0, p)
 
-                if (
-                    ret == int(Wall.Isect.ENDPT) or ret == 3
-                ):  # this flag is True when p is on the wall
+                if ret > 0 and ret & int(Wall.Isect.ENDPT) != 0:
+                    # I.e., ret == ENDPT or ret == ENDPT | BNDRY
+                    # I.e., the point is on the boundary.
                     is_on_border = True
 
                 elif ret == Wall.Isect.BNDRY:
@@ -2623,10 +2636,8 @@ class Room(object):
 
         # We should never reach this
         raise ValueError(
-            """
-                Error could not determine if point is in or out in maximum number of iterations.
-                This is most likely a bug, please report it.
-                """
+            "Error could not determine if point is in or out in maximum number of "
+            "iterations. This is most likely a bug, please report it."
         )
 
     def wall_area(self, wall):

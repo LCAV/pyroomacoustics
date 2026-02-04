@@ -5,4 +5,18 @@ requires = ["setuptools", "wheel", "numpy>=1.13.0", "Cython", "pybind11>=2.2"]  
 [tool.pytest.ini_options]
 filterwarnings = [
   'ignore:Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.:UserWarning'
+] 
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.pylint.format]
+max-line-length = "88"
+
+[tool.pylint.messages_control]
+# These are often disabled when using Black to avoid conflicts
+disable = [
+    "C0330", # Wrong hanging indentation
+    "C0326", # Bad whitespace
 ]
