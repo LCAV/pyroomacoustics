@@ -10,3 +10,13 @@ filterwarnings = [
 [tool.isort]
 profile = "black"
 line_length = 88
+
+[tool.pylint.format]
+max-line-length = "88"
+
+[tool.pylint.messages_control]
+# These are often disabled when using Black to avoid conflicts
+disable = [
+    "C0330", # Wrong hanging indentation
+    "C0326", # Bad whitespace
+]
