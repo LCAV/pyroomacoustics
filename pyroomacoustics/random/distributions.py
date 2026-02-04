@@ -3,6 +3,7 @@ import abc
 import numpy as np
 import scipy
 
+from .generator import get_rng
 from .spherical import power_spherical, uniform_spherical
 
 
@@ -77,6 +78,8 @@ class UniformSpherical(Distribution):
         return np.ones_like(x, shape=x.shape[:-1]) * scale
 
     def sample(self, size=None, rng=None):
+        if rng is None:
+            rng = get_rng()
         return uniform_spherical(dim=self.dim, size=size, rng=rng)
 
 
@@ -137,6 +140,8 @@ class PowerSpherical(Distribution):
         return self._scale
 
     def sample(self, size=None, rng=None):
+        if rng is None:
+            rng = get_rng()
         return power_spherical(loc=self._loc, scale=self._scale, size=size, rng=rng)
 
     def pdf(self, x):

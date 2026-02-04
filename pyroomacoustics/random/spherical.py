@@ -1,5 +1,7 @@
 import numpy as np
 
+from .generator import get_rng
+
 _eps = 1e-7
 
 
@@ -30,7 +32,7 @@ def uniform_spherical(dim=3, size=None, rng=None):
         size = list(size) + [dim]
 
     if rng is None:
-        rng = np.random.default_rng()
+        rng = get_rng()
 
     out = rng.standard_normal(size=size)
     out /= np.linalg.norm(out, axis=-1, keepdims=True)
@@ -86,7 +88,7 @@ def power_spherical(loc=None, scale=None, size=None, rng=None):
         scale = 1.0
 
     if rng is None:
-        rng = np.random.default_rng()
+        rng = get_rng()
 
     z = rng.beta((dim - 1.0) / 2.0 + scale, (dim - 1) / 2.0, size=size[:-1])
     v = uniform_spherical(size=size[:-1], dim=dim - 1)

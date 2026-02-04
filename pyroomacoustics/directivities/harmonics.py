@@ -160,3 +160,7 @@ class RealSphericalHarmonicsDirectivity(Directivity):
             azimuth,
             condon_shortley_phase=self.condon_shortley_phase,
         )[:, np.newaxis]
+
+    def sample_rays(self, n_rays, rng=None):
+        """Not yet implemented."""
+        raise NotImplementedError
