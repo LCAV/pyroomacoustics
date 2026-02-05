@@ -94,7 +94,11 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     y_real : ndarray
         Real spherical harmonics evaluated at the given angles.
     """
-    m = np.atleast_1d(m)
+    n = np.asarray(n)
+    m = np.asarray(m)
+
+    assert np.all(n >= 0), "Degree n must be non-negative."
+    assert np.all(np.abs(m) <= n), "Order m must satisfy |m| <= n."
 
     try:
         ysh_complx = scipy.special.sph_harm_y(n, m, theta, phi)
@@ -154,8 +158,8 @@ class RealSphericalHarmonicsDirectivity(Directivity):
             azimuth = np.radians(azimuth)
             colatitude = np.radians(colatitude)
         return real_sph_harm(
-            self.m,
             self.n,
+            self.m,
             colatitude,
             azimuth,
             condon_shortley_phase=self.condon_shortley_phase,
