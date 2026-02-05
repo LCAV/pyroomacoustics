@@ -14,7 +14,7 @@ def test_harmonics_directivity():
     of the spherical harmonics.
     """
     order = 2
-    condon_shortley_phase = True
+    condon_shortley_phase = False
     azimuth = np.deg2rad(50)
 
     room = pra.AnechoicRoom(fs=16000)
