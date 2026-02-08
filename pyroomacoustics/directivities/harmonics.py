@@ -23,9 +23,9 @@
 r"""
 This class can be used to set a Real Spherical Harmonics directivities.
 
-Real Spherical Harmonics are uses in the `Ambisonic file format 
+Real Spherical Harmonics are used in the `Ambisonic file format 
 <https://en.wikipedia.org/wiki/Ambisonic_data_exchange_formats>`_,
-which can be uses to represent and restore a sound field at a given point.
+which can be used to represent and restore a sound field at a given point.
 
 Here is a simple example of capturing room impulse response using real spherical harmonics directivities:
 
