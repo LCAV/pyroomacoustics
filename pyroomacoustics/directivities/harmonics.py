@@ -23,9 +23,9 @@
 r"""
 This class can be used to set a Real Spherical Harmonics directivities.
 
-Real Spherical Harmonics are used in the `Ambisonic file format 
+Real Spherical Harmonics are uses in the `Ambisonic file format 
 <https://en.wikipedia.org/wiki/Ambisonic_data_exchange_formats>`_,
-which can be uses to represents and restore a sound field at a given point.
+which can be uses to represent and restore a sound field at a given point.
 
 Here is a simple example of capturing room impulse response using real spherical harmonics directivities:
 
@@ -121,7 +121,7 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
         mask = m != 0
         if np.any(mask):
             y_real[mask] *= np.sqrt(2) * np.array([-1.0]) ** m[mask]
-        # In the formular, for m<0, |m| is used. We consider this by the use of the constraint.
+        # In the formula, for m<0, |m| is used. We consider this by the use of the constraint.
         y_real[np.logical_and(m < 0, (m % 2) == 0)] = -y_real[
             np.logical_and(m < 0, (m % 2) == 0)
         ]
