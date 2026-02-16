@@ -14,13 +14,15 @@ def test_harmonics_directivity():
     of the spherical harmonics.
     """
     order = 2
-    condon_shortley_phase = True
+    condon_shortley_phase = False
     azimuth = np.deg2rad(50)
 
     room = pra.AnechoicRoom(fs=16000)
     room.add_source([np.cos(azimuth), np.sin(azimuth), 1.0])
 
-    for m, n in zip(*get_mn_in_acn_order(order)):
+    mm, nn = get_mn_in_acn_order(order)
+
+    for m, n in zip(mm, nn):
         room.add_microphone(
             [0.0, 0.0, 1.0],
             directivity=pra.directivities.RealSphericalHarmonicsDirectivity(
@@ -31,9 +33,8 @@ def test_harmonics_directivity():
     room.compute_rir()
     rir_sum = np.asarray(room.rir).squeeze().sum(axis=1)
 
-    m, n = get_mn_in_acn_order(order)
     sh = real_sph_harm(
-        n, m, np.pi / 2, azimuth, condon_shortley_phase=condon_shortley_phase
+        nn, mm, np.pi / 2, azimuth, condon_shortley_phase=condon_shortley_phase
     )
 
     np.allclose(rir_sum, sh, atol=1e-2)

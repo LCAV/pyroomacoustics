@@ -23,11 +23,16 @@
 r"""
 This class can be used to set a Real Spherical Harmonics directivities.
 
+Real Spherical Harmonics are used in the `Ambisonic file format 
+<https://en.wikipedia.org/wiki/Ambisonic_data_exchange_formats>`_,
+which can be used to represent and restore a sound field at a given point.
+
+Here is a simple example of capturing room impulse response using real spherical harmonics directivities:
+
 .. code-block:: python
 
     # Simple example recording the different Harmonics as different microphones.
     order = 2
-    condon_shortley_phase = True
     azimuth = np.deg2rad(50)
 
     room = pra.AnechoicRoom(fs=16000)
@@ -37,8 +42,7 @@ This class can be used to set a Real Spherical Harmonics directivities.
         room.add_microphone(
             [0.0, 0.0, 1.0],
             directivity=pra.directivities.RealSphericalHarmonicsDirectivity(
-                m, n, condon_shortley_phase=condon_shortley_phase
-            ),
+                m, n),
         )
 
     room.compute_rir()
@@ -51,13 +55,14 @@ import scipy.special
 from .base import Directivity
 
 
-def get_mn_in_acn_order(order):
+def get_mn_in_acn_order(degree):
     """
-    Calculates the (m,n) pairs in ACN order up to a given order.
+    Calculates the order-degree (m,n) pairs in the `Ambisonic Channel Number (ACN) 
+    <https://en.wikipedia.org/wiki/Ambisonic_data_exchange_formats>`_ format up to a given degree.
 
     Parameters
     ----------
-    order : int
+    degree : int
         Maximum degree of the spherical harmonics.
 
     Returns
@@ -67,8 +72,8 @@ def get_mn_in_acn_order(order):
     all_n : ndarray
         Array of degrees n in ACN order.
     """
-    all_m = np.array([j - i for i in range(0, order + 1) for j in range(0, 2 * i + 1)])
-    all_n = np.array([i for i in range(0, order + 1) for _ in range(0, 2 * i + 1)])
+    all_m = np.array([j - i for i in range(0, degree + 1) for j in range(0, 2 * i + 1)])
+    all_n = np.array([i for i in range(0, degree + 1) for _ in range(0, 2 * i + 1)])
     return all_m, all_n
 
 
@@ -94,7 +99,11 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     y_real : ndarray
         Real spherical harmonics evaluated at the given angles.
     """
-    m = np.atleast_1d(m)
+    n = np.asarray(n)
+    m = np.asarray(m)
+
+    assert np.all(n >= 0), "Degree n must be non-negative."
+    assert np.all(np.abs(m) <= n), "Order m must satisfy |m| <= n."
 
     try:
         ysh_complx = scipy.special.sph_harm_y(n, m, theta, phi)
@@ -109,8 +118,10 @@ def real_sph_harm(n, m, theta, phi, condon_shortley_phase=False):
     if not condon_shortley_phase:
         # Cancel Condon-Shortley Phase (term (-1) ** m) by multiplying with (-1) ** m
         # In Rafaely's book, this step is not done
-        y_real[(m != 0)] *= np.sqrt(2) * np.array([-1.0]) ** m[(m != 0)]
-        # In the formular, for m<0, |m| is used. We consider this by the use of the constraint.
+        mask = m != 0
+        if np.any(mask):
+            y_real[mask] *= np.sqrt(2) * np.array([-1.0]) ** m[mask]
+        # In the formula, for m<0, |m| is used. We consider this by the use of the constraint.
         y_real[np.logical_and(m < 0, (m % 2) == 0)] = -y_real[
             np.logical_and(m < 0, (m % 2) == 0)
         ]
@@ -154,8 +165,8 @@ class RealSphericalHarmonicsDirectivity(Directivity):
             azimuth = np.radians(azimuth)
             colatitude = np.radians(colatitude)
         return real_sph_harm(
-            self.m,
             self.n,
+            self.m,
             colatitude,
             azimuth,
             condon_shortley_phase=self.condon_shortley_phase,
