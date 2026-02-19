@@ -52,25 +52,29 @@ struct ImageSource
 
   // this is a unit vector from the center of the source pointing
   // in the direction of the path to the microphone
-  Vectorf<D> source_impact_dir;
+  std::vector<Vectorf<D>> source_direction;
 
   // This contains the reflection orders with respect to x/y/z axis
   // for the shoebox image source model
   Vectori<D> order_xyz;
 
-  ImageSource(size_t n_bands)
+  ImageSource(size_t n_bands, size_t n_mics)
     : order(0), gen_wall(-1), parent(NULL)
   {
     loc.setZero();
     attenuation.resize(n_bands);
     attenuation.setOnes();
+    source_direction.resize(n_mics);
+    visible_mics.setZero(n_mics);
   }
 
-  ImageSource(const Vectorf<D> &_loc, size_t n_bands)
+  ImageSource(const Vectorf<D> &_loc, size_t n_bands, size_t n_mics)
     : loc(_loc), order(0), gen_wall(-1), parent(NULL)
   {
     attenuation.resize(n_bands);
     attenuation.setOnes();
+    source_direction.resize(n_mics);
+    visible_mics.setZero(n_mics);
   }
 };
 
@@ -116,6 +120,7 @@ class Room
     Eigen::VectorXi gen_walls;
     Eigen::VectorXi orders;
     Eigen::Matrix<int, D, Eigen::Dynamic> orders_xyz;
+    Eigen::Matrix<float, D, Eigen::Dynamic> source_directions;
     Eigen::MatrixXf attenuations;
 
     // This array will get filled by visibility status
@@ -199,6 +204,20 @@ class Room
         mic->reset();
     }
 
+    void broadcast_bands_to(int new_n_bands)
+    {
+      /* If the number of bands is 1, this function will copy the value over
+       * the given number of bands
+       */
+      n_bands = new_n_bands;
+      // Walls
+      for (auto wall = walls.begin() ; wall != walls.end() ; ++wall)
+        wall->broadcast_bands_to(new_n_bands);
+      // Microphones: resets and resizes the histograms to have new_n_bands.
+      for (auto mic = microphones.begin() ; mic != microphones.end() ; ++mic)
+        mic->reset(new_n_bands);
+    }
+
     Wall<D> &get_wall(int w) { return walls[w]; }
 
     // Image source model methods
@@ -223,24 +242,36 @@ class Room
     void simul_ray(
         float phi,
         float theta,
-        const Vectorf<D> source_pos,
-        float energy_0
+        const Vectorf<D> &source_pos,
+        const Eigen::ArrayXf &energy_0
+        );
+
+    void simul_ray(
+        const Vectorf<D> &ray_direction,
+        const Vectorf<D> &source_pos,
+        const Eigen::ArrayXf &energy_0
         );
 
     void ray_tracing(
         const Eigen::Matrix<float,D-1,Eigen::Dynamic> &angles,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
+        );
+
+    void ray_tracing(
+        const Eigen::Matrix<float,Eigen::Dynamic,D> &unit_vectors,
+        const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
+        const Vectorf<D> &source_pos
         );
 
     void ray_tracing(
         size_t nb_phis,
         size_t nb_thetas,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
         );
 
     void ray_tracing(
         size_t n_rays,
-        const Vectorf<D> source_pos
+        const Vectorf<D> &source_pos
         );
 
     bool contains(const Vectorf<D> point);
@@ -254,7 +285,7 @@ class Room
 
     // Image source model internal methods
     void image_sources_dfs(ImageSource<D> &is, int max_order);
-    bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is);
+    bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is, Vectorf<D> &source_direction);
     bool is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is);
     int fill_sources();
 

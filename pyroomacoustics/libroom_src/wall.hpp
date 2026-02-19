@@ -96,6 +96,20 @@ class Wall
     const Eigen::ArrayXf &get_transmission() const { return transmission; }
     const Eigen::ArrayXf &get_energy_reflection() const { return energy_reflection; }
     size_t get_n_bands() const { return transmission.size(); }
+
+    void broadcast_bands_to(int new_n_bands) {
+        int n_bands = get_n_bands();
+        if (n_bands == 1 || new_n_bands == 1) {
+            // Simple broadcasting.
+            absorption = Eigen::ArrayXf::Ones(new_n_bands) * absorption.coeff(0);
+            scatter = Eigen::ArrayXf::Ones(new_n_bands) * scatter.coeff(0);
+            transmission = Eigen::ArrayXf::Ones(new_n_bands) * transmission.coeff(0);
+            energy_reflection = Eigen::ArrayXf::Ones(new_n_bands) * energy_reflection.coeff(0);
+         } else {
+             throw std::runtime_error("Incompatible bands broadcasting size.");
+         }
+    }
+
     float area() const;  // compute the area of the wall
     int intersection(  // compute the intersection of line segment (p1 <-> p2) with wall
         const Vectorf<D> &p1,

@@ -68,6 +68,7 @@ ext_modules = [
             str(get_pybind_include()),
             str(get_pybind_include(user=True)),
             os.path.join(libroom_src_dir, "ext/eigen"),
+            os.path.join(libroom_src_dir, "ext/nanoflann/include"),
         ],
         language="c++",
         extra_compile_args=[

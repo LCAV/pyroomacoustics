@@ -64,22 +64,36 @@ PYBIND11_MODULE(libroom, m) {
       .def("set_params", &Room<3>::set_params)
       .def("add_mic", &Room<3>::add_mic)
       .def("reset_mics", &Room<3>::reset_mics)
+      .def("broadcast_bands_to", &Room<3>::broadcast_bands_to)
       .def("image_source_model", &Room<3>::image_source_model)
       .def("get_wall", &Room<3>::get_wall)
       .def("get_max_distance", &Room<3>::get_max_distance)
       .def("next_wall_hit", &Room<3>::next_wall_hit)
       .def("scat_ray", &Room<3>::scat_ray)
-      .def("simul_ray", &Room<3>::simul_ray)
+      .def("simul_ray",
+           (void (Room<3>::*)(float phi, float theta,
+                              const Vectorf<3> &source_pos, const Eigen::ArrayXf &energy_0)) &
+               Room<3>::simul_ray)
+      .def("simul_ray",
+           (void (Room<3>::*)(const Vectorf<3> &ray_direction,
+                              const Vectorf<3> &source_pos, const Eigen::ArrayXf &energy_0)) &
+               Room<3>::simul_ray)
       .def("ray_tracing",
-           (void(Room<3>::*)(
+           (void (Room<3>::*)(
                const Eigen::Matrix<float, 2, Eigen::Dynamic> &angles,
-               const Vectorf<3> source_pos)) &
+               const Vectorf<3> &source_pos)) &
                Room<3>::ray_tracing)
-      .def("ray_tracing", (void(Room<3>::*)(size_t nb_phis, size_t nb_thetas,
-                                            const Vectorf<3> source_pos)) &
+      .def("ray_tracing",
+           (void (Room<3>::*)(
+               const Eigen::Matrix<float, Eigen::Dynamic, 3> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
+               const Vectorf<3> &source_pos)) &
+               Room<3>::ray_tracing)
+      .def("ray_tracing", (void (Room<3>::*)(size_t nb_phis, size_t nb_thetas,
+                                             const Vectorf<3> &source_pos)) &
                               Room<3>::ray_tracing)
       .def("ray_tracing",
-           (void(Room<3>::*)(size_t nb_rays, const Vectorf<3> source_pos)) &
+           (void (Room<3>::*)(size_t nb_rays, const Vectorf<3> &source_pos)) &
                Room<3>::ray_tracing)
       .def("contains", &Room<3>::contains)
       .def_property("is_hybrid_sim", &Room<3>::get_is_hybrid_sim,
@@ -90,6 +104,7 @@ PYBIND11_MODULE(libroom, m) {
       .def_readonly("sources", &Room<3>::sources)
       .def_readonly("orders", &Room<3>::orders)
       .def_readonly("orders_xyz", &Room<3>::orders_xyz)
+      .def_readonly("source_directions", &Room<3>::source_directions)
       .def_readonly("attenuations", &Room<3>::attenuations)
       .def_readonly("gen_walls", &Room<3>::gen_walls)
       .def_readonly("visible_mics", &Room<3>::visible_mics)
@@ -112,22 +127,36 @@ PYBIND11_MODULE(libroom, m) {
       .def("set_params", &Room<2>::set_params)
       .def("add_mic", &Room<2>::add_mic)
       .def("reset_mics", &Room<2>::reset_mics)
+      .def("broadcast_bands_to", &Room<2>::broadcast_bands_to)
       .def("image_source_model", &Room<2>::image_source_model)
       .def("get_wall", &Room<2>::get_wall)
       .def("get_max_distance", &Room<2>::get_max_distance)
       .def("next_wall_hit", &Room<2>::next_wall_hit)
       .def("scat_ray", &Room<2>::scat_ray)
-      .def("simul_ray", &Room<2>::simul_ray)
+      .def("simul_ray",
+           (void (Room<2>::*)(float phi, float theta,
+                              const Vectorf<2> &source_pos, const Eigen::ArrayXf &energy_0)) &
+               Room<2>::simul_ray)
+      .def("simul_ray",
+           (void (Room<2>::*)(const Vectorf<2> &ray_direction,
+                              const Vectorf<2> &source_pos, const Eigen::ArrayXf &energy_0)) &
+               Room<2>::simul_ray)
       .def("ray_tracing",
-           (void(Room<2>::*)(
+           (void (Room<2>::*)(
                const Eigen::Matrix<float, 1, Eigen::Dynamic> &angles,
-               const Vectorf<2> source_pos)) &
+               const Vectorf<2> &source_pos)) &
                Room<2>::ray_tracing)
-      .def("ray_tracing", (void(Room<2>::*)(size_t nb_phis, size_t nb_thetas,
-                                            const Vectorf<2> source_pos)) &
+      .def("ray_tracing",
+           (void (Room<2>::*)(
+               const Eigen::Matrix<float, Eigen::Dynamic, 2> &vectors,
+               const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &energies,
+               const Vectorf<2> &source_pos)) &
+               Room<2>::ray_tracing)
+      .def("ray_tracing", (void (Room<2>::*)(size_t nb_phis, size_t nb_thetas,
+                                             const Vectorf<2> &source_pos)) &
                               Room<2>::ray_tracing)
       .def("ray_tracing",
-           (void(Room<2>::*)(size_t n_rays, const Vectorf<2> source_pos)) &
+           (void (Room<2>::*)(size_t n_rays, const Vectorf<2> &source_pos)) &
                Room<2>::ray_tracing)
       .def("contains", &Room<2>::contains)
       .def_property_readonly_static("dim",
@@ -138,6 +167,7 @@ PYBIND11_MODULE(libroom, m) {
       .def_readonly("sources", &Room<2>::sources)
       .def_readonly("orders", &Room<2>::orders)
       .def_readonly("orders_xyz", &Room<2>::orders_xyz)
+      .def_readonly("source_directions", &Room<2>::source_directions)
       .def_readonly("attenuations", &Room<2>::attenuations)
       .def_readonly("gen_walls", &Room<2>::gen_walls)
       .def_readonly("visible_mics", &Room<2>::visible_mics)
@@ -231,16 +261,18 @@ PYBIND11_MODULE(libroom, m) {
 
   // The microphone class
   py::class_<Microphone<3>>(m, "Microphone")
-      .def(py::init<const Vectorf<3> &, int, float, float>())
-      .def_readonly("loc", &Microphone<3>::loc)
-      .def_readonly("hits", &Microphone<3>::hits)
-      .def_readonly("histograms", &Microphone<3>::histograms);
+    .def(py::init<const Vectorf<3> &, int, float, float>())
+    .def("set_directions", &Microphone<3>::set_directions)
+    .def("log_histogram", (void(Microphone<3>::*)(float, const Eigen::ArrayXf &, const Vectorf<3> &))&Microphone<3>::log_histogram)
+    .def_readonly("loc", &Microphone<3>::loc)
+    .def_readonly("histograms", &Microphone<3>::histograms)
+    ;
 
   py::class_<Microphone<2>>(m, "Microphone2D")
-      .def(py::init<const Vectorf<2> &, int, float, float>())
-      .def_readonly("loc", &Microphone<2>::loc)
-      .def_readonly("hits", &Microphone<2>::hits)
-      .def_readonly("histograms", &Microphone<2>::histograms);
+    .def(py::init<const Vectorf<2> &, int, float, float>())
+    .def_readonly("loc", &Microphone<2>::loc)
+    .def_readonly("histograms", &Microphone<2>::histograms)
+    ;
 
   // The 2D histogram class
   py::class_<Histogram2D>(m, "Histogram2D")
@@ -259,8 +291,10 @@ PYBIND11_MODULE(libroom, m) {
       .def_readonly("distance", &Hit::distance);
 
   // getter and setter for geometric epsilon
-  m.def("set_eps", [](const float &eps) { libroom_eps = eps; });
-  m.def("get_eps", []() { return libroom_eps; });
+  m.def("set_eps", [](const float &eps) {
+    libroom_eps = eps; });
+  m.def("get_eps", []() {
+    return libroom_eps; });
 
   // Routines for the geometry packages
   m.def("ccw3p", &ccw3p, "Determines the orientation of three points");
@@ -287,7 +321,7 @@ PYBIND11_MODULE(libroom, m) {
         "Computes the angle between two 2D or 3D vectors");
 
   m.def("dist_line_point", &dist_line_point,
-        "Computes the distance between a point and an infinite line");
+      "Computes the distance between a point and an infinite line");
 
   m.def("rir_builder", &rir_builder, "RIR builder");
   m.def("delay_sum", &delay_sum, "Delay and sum");

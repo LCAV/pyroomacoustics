@@ -2,21 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyroomacoustics as pra
-from pyroomacoustics.directivities import (
-    CardioidFamily,
-    DirectionVector,
-    DirectivityPattern,
-)
+from pyroomacoustics.directivities import DirectionVector, FigureEight, HyperCardioid
 
 three_dim = True  # 2D or 3D
 shoebox = True  # source directivity not supported for non-shoebox!
 energy_absorption = 0.4
 source_pos = [2, 1.8]
 # source_dir = None   # to disable
-source_dir = DirectivityPattern.FIGURE_EIGHT
 mic_pos = [3.5, 1.8]
 # mic_dir = None   # to disable
-mic_dir = DirectivityPattern.HYPERCARDIOID
 
 
 # make 2-D room
@@ -42,19 +36,15 @@ else:
     colatitude = None
 
 # add source with directivity
-if source_dir is not None:
-    source_dir = CardioidFamily(
-        orientation=DirectionVector(azimuth=90, colatitude=colatitude, degrees=True),
-        pattern_enum=source_dir,
-    )
+source_dir = FigureEight(
+    orientation=DirectionVector(azimuth=90, colatitude=colatitude, degrees=True),
+)
 room.add_source(position=source_pos, directivity=source_dir)
 
 # add microphone with directivity
-if mic_dir is not None:
-    mic_dir = CardioidFamily(
-        orientation=DirectionVector(azimuth=0, colatitude=colatitude, degrees=True),
-        pattern_enum=mic_dir,
-    )
+mic_dir = HyperCardioid(
+    orientation=DirectionVector(azimuth=0, colatitude=colatitude, degrees=True),
+)
 room.add_microphone(loc=mic_pos, directivity=mic_dir)
 
 # plot room
