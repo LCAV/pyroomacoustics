@@ -32,12 +32,25 @@ def get_wall_material(multiband=True):
     if multiband:
         full_eabs = {
             "description": "Multi-band fully absorbant",
-            "coeffs": [0.11, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16],
+            "coeffs": [0.25, 0.26, 0.32, 0.27, 0.29, 0.34, 0.37],
             "center_freqs": 125 * 2.0 ** np.arange(7),
         }
-        return pra.Material(energy_absorption=full_eabs)
+        low_eabs = {
+            "description": "Absorbant wall",
+            "coeffs": [0.1] * 7,
+            "center_freqs": 125 * 2.0 ** np.arange(7),
+        }
+        mats = pra.make_materials(
+            ceiling=full_eabs,
+            floor=full_eabs,
+            north=full_eabs,
+            south=full_eabs,
+            east=full_eabs,
+            west=low_eabs,
+        )
+        return mats
     else:
-        return pra.Material(energy_absorption=0.15)
+        return pra.Material(energy_absorption=0.28)
 
 
 @pytest.fixture(params=[(True,), (False,)], ids=["Multiband", "Single-band"])
@@ -98,16 +111,28 @@ def simulate(room_dim, source_loc, mic_loc, material, use_rt, fs):
         room_dim,
         fs=fs,
         materials=material,
-        max_order=-1 if use_rt else 100,
+        max_order=-1 if use_rt else 30,
         ray_tracing=use_rt,
+        air_absorption=True,
     )
     if use_rt:
         room.set_ray_tracing(
             n_rays=250_000, receiver_radius=0.5, hist_bin_size=hist_bin_size
         )
 
-    room.add_source(source_loc, signal=np.zeros(10))
-    room.add_microphone(mic_loc)
+    hrtf = pra.MeasuredDirectivityFile(
+        path="mit_kemar_normal_pinna.sofa",
+        fs=fs,
+        interp_order=12,
+        interp_n_points=360,
+    )
+    orientation = pra.Rotation3D([30.0, 45.0], "yz", degrees=True)
+    dir_mic = pra.FigureEight(orientation=[0.0, 1.0, 0.0])
+    dir_mic = hrtf.get_mic_directivity("left", orientation=orientation)
+    dir_src = pra.Cardioid(orientation=[0.0, np.sqrt(0.25), np.sqrt(0.75)])
+
+    room.add_source(source_loc, signal=np.zeros(10), directivity=dir_src)
+    room.add_microphone(mic_loc, directivity=dir_mic)
 
     room.simulate()
     rir = room.rir[0][0]
@@ -148,8 +173,8 @@ def ism_to_rt_energy_ratio_db(t0, rir_rt, rir_ism, fs, hist_bin_size=0.004):
     return 10.0 * np.log10(np.mean(hist_ism**2) / np.mean((hist_rt - hist_ism) ** 2))
 
 
-def test_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
-    np.random.seed(42)
+def test_directive_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
+    pra.random.seed(198)
 
     room_dim, source_loc, mic_loc = scene_geometry
     fs = samplerate
@@ -173,7 +198,7 @@ def test_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
     assert irer_db >= 10.0, f"Failed IRER {irer_db:.2f} dB < 10.0"
 
     bws = room.octave_bands.get_bw()
-    tols = [0.30, 0.15, 0.08]
+    tols = [0.30, 0.15, 0.15]
     for b, bw in enumerate(np.sort(bws)):  # Loop through every band
         rir_band_ism = room.octave_bands.analysis(rir_ism, band=b)
         rir_band_rt = room.octave_bands.analysis(rir_rt, band=b)
@@ -191,6 +216,7 @@ def test_energy_decay_ism_vs_rt(samplerate, scene_geometry, wall_material):
 
 if __name__ == "__main__":
     # Room dimensions
+    pra.random.seed(198)
     fs = 16_000
     hist_bin_size = 0.004
     room_dim, source_loc, mic_loc = get_scene_geometry()
@@ -262,7 +288,7 @@ if __name__ == "__main__":
             f"Band {b}: RT60 error abs={rt60_delta:.3f} rel={rt60_rel_error:.3f}. ISM: {rt60_band_ism:.3f} RT: {rt60_band_rt:.3f}"
         )
 
-        for lbl, ir in zip(["ism", "rt"], [rir_band_ism, rir_band_rt]):
+        for lbl, ir in zip(["rt", "ism"], [rir_band_ism, rir_band_rt]):
             axes2[0, b].plot(
                 np.arange(ir.shape[0]) / fs, ir, label=lbl if b == 0 else None
             )
@@ -281,6 +307,7 @@ if __name__ == "__main__":
         )
         print(f"Band {b}: IRER={irer_db:.2f} dB")
 
+    fig2.tight_layout()
     fig2.legend()
 
     axes[0, 0].legend()

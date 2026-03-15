@@ -128,7 +128,10 @@ def measure_rt60(
         energy = np.maximum(energy, 0.0)
 
     # remove the possibly all zero tail
-    i_nz = np.max(np.where(energy > 0)[0])
+    def max_el(x):
+        return len(energy) if len(x) == 0 else max(x)
+
+    i_nz = max_el(np.where(energy > 0)[0])
     energy = energy[:i_nz]
     energy_db = 10 * np.log10(energy)
     energy_db -= energy_db[0]

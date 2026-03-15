@@ -52,6 +52,7 @@ Here is a simple example of capturing room impulse response using real spherical
 import numpy as np
 import scipy.special
 
+from ..doa import cart2spher
 from .base import Directivity
 
 
@@ -157,6 +158,12 @@ class RealSphericalHarmonicsDirectivity(Directivity):
     def filter_len_ir(self):
         return 1
 
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        az, co, _ = cart2spher(directions.T)
+        return self.get_response(
+            az, co, magnitude=magnitude, frequency=frequency, degrees=False
+        )
+
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
@@ -171,3 +178,7 @@ class RealSphericalHarmonicsDirectivity(Directivity):
             azimuth,
             condon_shortley_phase=self.condon_shortley_phase,
         )[:, np.newaxis]
+
+    def sample_rays(self, n_rays, rng=None):
+        """Not yet implemented."""
+        raise NotImplementedError

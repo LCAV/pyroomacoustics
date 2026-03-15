@@ -65,6 +65,27 @@ class Directivity(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        """
+        Get response for provided direction cartesian vectors.
+
+        Parameters
+        ----------
+        cartesian: np.ndarray, (n_points, 3)
+            The direction of the desired responses
+        magnitude: bool
+            Ignored
+        frequency: np.ndarray, (n_freq,)
+            Ignored
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided directions.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
@@ -91,5 +112,30 @@ class Directivity(abc.ABC):
         -------
         resp : :py:class:`~numpy.ndarray`
             Response at provided angles.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def sample_rays(self, n_rays, rng=None):
+        """
+        This method samples unit vectors from the sphere according to
+        the distribution of the source
+
+        Parameters
+        ----------
+        n_rays: int
+            The number of rays to sample
+        rng: numpy.random.Generator or None, optional
+            A random number generator object from numpy or None.
+            If None is passed numpy.random.default_rng is used to create
+            a Generator object.
+
+        Returns
+        -------
+        ray_directions: numpy.ndarray, shape (n_rays, n_dim)
+            An array containing the unit vectors in its columns
+        energies: numpy.ndarray, shape (n_rays, n_bands)
+            An energy carried per ray so that the expectation over all the rays
+            is the energy of the band, i.e., np.mean(energies) == band energy.
         """
         raise NotImplementedError
