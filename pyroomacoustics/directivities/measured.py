@@ -174,6 +174,16 @@ class MeasuredDirectivity(Directivity):
         """Length of the impulse response in samples"""
         return self._irs.shape[-1]
 
+    def get_direction_vectors(self):
+        """
+        Get the direction vectors of the measurements.
+
+        Returns
+        -------
+        A (n_directions, 3) numpy ndarray of unit vectors.
+        """
+        return self._grid.cartesian.T
+
     def _compute_band_energies(self):
         # Use an energy preserving octave band to compute the per octave
         # band energy of the impulse responses.
@@ -186,7 +196,7 @@ class MeasuredDirectivity(Directivity):
         # Energies per direction and octave band, shape == (n_grid, n_bands).
         # Normalized per bandwidth and area.
         self.areas = robust_spherical_voronoi_areas(self._original_grid.cartesian.T)
-        norm = octave_bands.get_bw()
+        norm = octave_bands.get_bw() / np.sum(octave_bands.get_bw())
         self.energies = np.array([octave_bands.energy(ir) / norm for ir in self._irs])
 
         # The total energy per direction over all bands.
@@ -197,7 +207,7 @@ class MeasuredDirectivity(Directivity):
         self.total_energy = np.sum(self.energies * self.areas[:, None])
 
         # Ray energies to use with the deterministic sampler.
-        self.energies_coeff_deterministic = self.energies * 4.0 * np.pi
+        self.energies_coeff_deterministic = self.energies
 
         # Ray energies to use with the random sampler.
         norm = (self.energy_per_direction / self.total_energy)[:, None]
@@ -230,6 +240,27 @@ class MeasuredDirectivity(Directivity):
             self._kdtree, self.energy_per_direction, areas=self.areas
         )
 
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        """
+        Get response for provided direction cartesian vectors.
+
+        Parameters
+        ----------
+        cartesian: np.ndarray, (n_points, 3)
+            The direction of the desired responses
+        magnitude: bool
+            Ignored
+        frequency: np.ndarray, (n_freq,)
+            Ignored
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided directions.
+        """
+        _, index = self._kdtree.query(directions)
+        return self._irs[index, :]
+
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):
@@ -255,8 +286,7 @@ class MeasuredDirectivity(Directivity):
 
         cart = spher2cart(azimuth, colatitude)
 
-        _, index = self._kdtree.query(cart.T)
-        return self._irs[index, :]
+        return self.get_response_cartesian(cart.T)
 
     def sample_rays(self, n_rays, rng=None):
         if rng is None:
@@ -264,7 +294,7 @@ class MeasuredDirectivity(Directivity):
             energies_coeff = self.energies_coeff_deterministic
         else:
             rays = self.energy_distribution.sample(size=n_rays, rng=rng)
-            energies_coeff = self.energies_coeff_random
+            energies_coeff = self.energies_coeff_random / (4.0 * np.pi)
 
         _, index = self._kdtree.query(rays)
         energies = energies_coeff[index, :]

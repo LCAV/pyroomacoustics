@@ -65,6 +65,27 @@ class Directivity(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        """
+        Get response for provided direction cartesian vectors.
+
+        Parameters
+        ----------
+        cartesian: np.ndarray, (n_points, 3)
+            The direction of the desired responses
+        magnitude: bool
+            Ignored
+        frequency: np.ndarray, (n_freq,)
+            Ignored
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided directions.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
     ):

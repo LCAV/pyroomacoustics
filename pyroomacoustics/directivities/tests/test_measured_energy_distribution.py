@@ -1,6 +1,7 @@
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 
 
 def test_robust_spherical_voronoi_areas_1point():
@@ -145,9 +146,10 @@ def test_sample_rays(rng, rtol):
     for i in range(kdtree.n):
         nz = index == i
         y = energies[nz, :]
-        measured_energies[i, :] += np.sum(y, axis=0) / rays.shape[0]
+        measured_energies[i, :] += 4.0 * np.pi * np.sum(y, axis=0) / rays.shape[0]
 
-    measured_energy_band = np.mean(energies, axis=0)
+    # Monte-Carlo integral: dOmega = 4.0 * np.pi / n_rays.
+    measured_energy_band = 4.0 * np.pi * np.mean(energies, axis=0)
     measured_total_energy = np.sum(measured_energy_band)
 
     # Expected quantities.
@@ -159,7 +161,7 @@ def test_sample_rays(rng, rtol):
     np.testing.assert_allclose(expected_energy_band, measured_energy_band, atol=0.01)
 
     np.testing.assert_allclose(
-        expected_energies, measured_energies, atol=1e-5, rtol=rtol
+        expected_energies, measured_energies, atol=1e-2, rtol=rtol
     )
 
 

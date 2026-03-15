@@ -24,6 +24,7 @@
 r"""
 A class to collect histograms of data distributed on the sphere.
 """
+
 import numpy as np
 from scipy.spatial import cKDTree
 

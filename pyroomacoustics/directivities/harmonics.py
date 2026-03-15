@@ -48,6 +48,7 @@ This class can be used to set a Real Spherical Harmonics directivities.
 import numpy as np
 import scipy.special
 
+from ..doa import cart2spher
 from .base import Directivity
 
 
@@ -145,6 +146,12 @@ class RealSphericalHarmonicsDirectivity(Directivity):
     @property
     def filter_len_ir(self):
         return 1
+
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        az, co, _ = cart2spher(directions.T)
+        return self.get_response(
+            az, co, magnitude=magnitude, frequency=frequency, degrees=False
+        )
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True

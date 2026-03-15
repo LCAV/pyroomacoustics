@@ -1,6 +1,7 @@
 import numpy as np
-import pyroomacoustics as pra
 import pytest
+
+import pyroomacoustics as pra
 
 
 @pytest.mark.parametrize("p", (0.0, 0.25, 0.5, 0.75, 1.0))
@@ -76,9 +77,9 @@ def test_sample_rays(p, gain, rng, rtol):
 
     dir_obj = pra.directivities.CardioidFamily(loc, p, gain=gain)
 
+    # Monte-Carlo integral: dOmega = 4.0 * np.pi / n_rays.
     rays, energies = dir_obj.sample_rays(100_000, rng=rng)
-
-    measured_total_energy = np.mean(energies)
+    measured_total_energy = 4.0 * np.pi * np.mean(energies)
 
     # Expected quantities.
     expected_total_energy = dir_obj.energy_distribution.total_energy

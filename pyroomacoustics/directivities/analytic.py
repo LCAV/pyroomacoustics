@@ -65,6 +65,7 @@ from ..doa import cart2spher, fibonacci_spherical_sampling, spher2cart
 from ..utilities import all_combinations, requires_matplotlib
 from .base import Directivity
 from .direction import DirectionVector
+from .integration import robust_spherical_voronoi_areas
 
 _FIGURE_EIGHT = 0
 _HYPERCARDIOID = 0.25
@@ -164,11 +165,40 @@ class CardioidFamily(Directivity):
         assert isinstance(orientation, DirectionVector)
         self._orientation = orientation
 
-    def _get_response_from_cartesian_vector(self, vectors):
+    def _get_response_from_cartesian_vector(self, vectors, magnitude):
         """vectors.shape == (3, n_points)."""
         return self._gain * (
             self._p + (1 - self._p) * np.matmul(self._orientation.unit_vector, vectors)
         )
+        cos_angle = np.matmul(self._orientation.unit_vector, vectors)
+        resp = self._gain * (self._p + (1 - self._p) * cos_angle)
+        if magnitude:
+            resp = np.abs(resp)
+        return resp
+
+    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+        """
+        Get response for provided direction cartesian vectors.
+
+        Parameters
+        ----------
+        cartesian: np.ndarray, (n_points, 3)
+            The direction of the desired responses
+        magnitude: bool
+            Ignored
+        frequency: np.ndarray, (n_freq,)
+            Ignored
+
+        Returns
+        -------
+        resp : :py:class:`~numpy.ndarray`
+            Response at provided directions.
+        """
+        if self._p == 1.0:
+            return self._gain * np.ones(directions.shape[0])
+        # Normalize.
+        directions = directions / np.linalg.norm(directions, axis=1, keepdims=True)
+        return self._get_response_from_cartesian_vector(directions.T, magnitude)
 
     def get_response(
         self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
@@ -199,27 +229,24 @@ class CardioidFamily(Directivity):
 
         if colatitude is not None:
             assert len(azimuth) == len(colatitude)
+
         if self._p == 1.0:
             return self._gain * np.ones(len(azimuth))
-        else:
-            coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
 
-            resp = self._get_response_from_cartesian_vector(coord)
+        coord = spher2cart(azimuth=azimuth, colatitude=colatitude, degrees=degrees)
 
-            if magnitude:
-                return np.abs(resp)
-            else:
-                return resp
+        return self._get_response_from_cartesian_vector(coord, magnitude)
 
     def sample_rays(self, n_rays, rng=None):
         if rng is None:
             rays = fibonacci_spherical_sampling(n_points=n_rays).T
-            energies = (
-                self._get_response_from_cartesian_vector(rays.T) ** 2 * 4.0 * np.pi
-            )
+            resp = self._get_response_from_cartesian_vector(rays.T, magnitude=False)
+            energies = resp**2
         else:
             rays = self.energy_distribution.sample(n_rays, rng=rng)
-            energies = np.ones(n_rays) * self.energy_distribution.total_energy
+            energies = (
+                np.ones(n_rays) * self.energy_distribution.total_energy / (4.0 * np.pi)
+            )
         # Cardioid have a single band.
         return rays, energies[:, np.newaxis]
 
