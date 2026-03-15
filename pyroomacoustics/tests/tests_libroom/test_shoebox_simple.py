@@ -9,12 +9,11 @@ https://github.com/LCAV/pyroomacoustics/issues/293<Paste>
 """
 
 import numpy as np
-import pytest
 
 import pyroomacoustics as pra
 
 
-def test_issu293_segfault_2d():
+def test_issue293_segfault_2d():
     np.random.seed(0)
     for i in range(30):
         room_dim = [30.0, 30.0]
@@ -35,7 +34,7 @@ def test_issu293_segfault_2d():
         room.compute_rir()
 
 
-def test_issu293_segfault_3d():
+def test_issue293_segfault_3d():
     np.random.seed(0)
     for i in range(30):
         room_dim = [5, 5, 5]
@@ -56,5 +55,5 @@ def test_issu293_segfault_3d():
 
 
 if __name__ == "__main__":
-    test_issu293_segfault_2d()
-    test_issu293_segfault_3d()
+    test_issue293_segfault_2d()
+    test_issue293_segfault_3d()

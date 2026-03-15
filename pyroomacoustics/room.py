@@ -2267,6 +2267,11 @@ class Room(object):
         n_dirs = self.rt_args["receiver_n_directions"]
         n_bands = len(self.octave_bands.get_bw()) if self.is_multi_band else 1
 
+        # Check if all sources/receivers are omnidirectional.
+        mic_all_omni = all([d is None for d in self.mic_array.directivity])
+        src_all_omni = all([s.directivity is None for s in self.sources])
+        is_all_omni = mic_all_omni and src_all_omni
+
         # For directive sources, we need to define directions.
         default_source_directions = fibonacci_spherical_sampling(n_rays).T
         default_source_energies = np.ones((n_rays, n_bands))
@@ -2314,9 +2319,19 @@ class Room(object):
                 source_energies = np.broadcast_to(source_energies, (n_rays, n_bands))
 
             # Run the ray tracing.
-            self.room_engine.ray_tracing(
-                source_directions, source_energies, src.position
-            )
+            if self.dim == 3:
+                self.room_engine.ray_tracing(
+                    source_directions, source_energies, src.position
+                )
+            elif self.dim == 2:
+                if is_all_omni:
+                    self.room_engine.ray_tracing(n_rays, src.position)
+                else:
+                    raise NotImplementedError(
+                        "Only omnidirectional sources are supported in 2D."
+                    )
+            else:
+                raise ValueError(f"Dimension must 2 or 3 (got {self.dim}).")
 
             # There is one histogram for each mic/source pair.
             for r in range(self.mic_array.M):

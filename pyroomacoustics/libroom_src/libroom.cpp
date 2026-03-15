@@ -271,6 +271,9 @@ PYBIND11_MODULE(libroom, m) {
 
   py::class_<Microphone<2>>(m, "Microphone2D")
     .def(py::init<const Vectorf<2> &, int, float, float>())
+    .def("set_directions", &Microphone<2>::set_directions)
+    .def("make_omnidirectional", &Microphone<2>::make_omni)
+    .def("log_histogram", (void(Microphone<2>::*)(float, const Eigen::ArrayXf &, const Vectorf<2> &))&Microphone<2>::log_histogram)
     .def_readonly("loc", &Microphone<2>::loc)
     .def_readonly("histograms", &Microphone<2>::histograms)
     ;
