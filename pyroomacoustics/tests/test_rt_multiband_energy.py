@@ -52,12 +52,16 @@ def energy_hist_2_rt60(hist, hist_bin_size, decay_db):
     # Remove the first 5 dB.
     schroeder += 5.0 - schroeder[0]
 
-    t0 = np.where(schroeder < 0.0)[0][0]
-    t1 = np.where(schroeder < -decay_db)[0][0]
+    def min_el(x):
+        return x[0] if len(x) else 0
+
+    t0 = min_el(np.where(schroeder < 0.0)[0])
+    t1 = min_el(np.where(schroeder < -decay_db)[0])
     N = t1 - t0
 
     data = schroeder[t0:t1]
-    data -= data[0]
+    if len(data) > 0:
+        data -= data[0]
 
     t = np.arange(N) * hist_bin_size
     X = np.column_stack((t, np.ones(N)))

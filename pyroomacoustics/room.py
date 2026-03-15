@@ -717,7 +717,12 @@ from . import beamforming as bf
 from . import libroom, random
 from .acoustics import AntoniOctaveFilterBank, rt60_eyring, rt60_sabine
 from .beamforming import MicrophoneArray
-from .directivities import CardioidFamily, MeasuredDirectivity
+from .directivities import (
+    CardioidFamily,
+    MeasuredDirectivity,
+    robust_spherical_voronoi_areas,
+)
+from .doa import fibonacci_spherical_sampling
 from .experimental import measure_rt60
 from .libroom import Wall, Wall2D
 from .parameters import Material, Physics, constants, eps, make_materials
@@ -1048,6 +1053,7 @@ class Room(object):
         energy_thres=1e-7,
         time_thres=10.0,
         hist_bin_size=0.004,
+        receiver_n_directions=720,
     ):
         """
         Activates the ray tracer.
@@ -1065,6 +1071,9 @@ class Room(object):
             The maximum time of flight of rays (default: 10 s)
         hist_bin_size: float
             The time granularity of bins in the energy histogram (default: 4 ms)
+        receiver_n_directions: int
+            The number of directions to use to collect the histograms of directional
+            receivers.
         """
         self._set_ray_tracing_options(
             use_ray_tracing=True,
@@ -1073,6 +1082,7 @@ class Room(object):
             energy_thres=energy_thres,
             time_thres=time_thres,
             hist_bin_size=hist_bin_size,
+            receiver_n_directions=receiver_n_directions,
         )
 
     def _set_ray_tracing_options(
@@ -1083,24 +1093,12 @@ class Room(object):
         energy_thres=1e-7,
         time_thres=10.0,
         hist_bin_size=0.004,
+        receiver_n_directions=720,
         is_init=False,
     ):
         """
         Base method to set all ray tracing related options
         """
-
-        if use_ray_tracing:
-            if hasattr(self, "mic_array") and self.mic_array is not None:
-                if self.mic_array.is_directive:
-                    raise NotImplementedError(
-                        "Directivity not supported with ray tracing."
-                    )
-            if hasattr(self, "sources"):
-                for source in self.sources:
-                    if source.directivity is not None:
-                        raise NotImplementedError(
-                            "Directivity not supported with ray tracing."
-                        )
 
         self.simulator_state["rt_needed"] = use_ray_tracing
 
@@ -1109,6 +1107,7 @@ class Room(object):
         self.rt_args["time_thres"] = time_thres
         self.rt_args["receiver_radius"] = receiver_radius
         self.rt_args["hist_bin_size"] = hist_bin_size
+        self.rt_args["receiver_n_directions"] = receiver_n_directions
 
         # set the histogram bin size so that it is an integer number of samples
         self.rt_args["hist_bin_size_samples"] = math.floor(
@@ -1561,7 +1560,7 @@ class Room(object):
             import matplotlib
             import matplotlib.pyplot as plt
             from matplotlib.collections import PatchCollection
-            from matplotlib.patches import Circle, Polygon, Wedge
+            from matplotlib.patches import Polygon
         except ImportError:
             import warnings
 
@@ -2067,9 +2066,6 @@ class Room(object):
             The room is returned for further tweaking.
         """
 
-        if self.simulator_state["rt_needed"] and directivity is not None:
-            raise NotImplementedError("Directivity not supported with ray tracing.")
-
         if self.dim != 3 and directivity is not None:
             raise NotImplementedError("Directivity is only supported for 3D rooms.")
 
@@ -2155,9 +2151,6 @@ class Room(object):
         :py:obj:`~pyroomacoustics.room.Room`
             The room is returned for further tweaking.
         """
-
-        if self.simulator_state["rt_needed"] and directivity is not None:
-            raise NotImplementedError("Directivity not supported with ray tracing.")
 
         if self.dim != 3 and directivity is not None:
             raise NotImplementedError("Directivity is only supported for 3D rooms.")
@@ -2270,12 +2263,60 @@ class Room(object):
         if not self.simulator_state["rt_needed"]:
             return
 
+        n_rays = self.rt_args["n_rays"]
+        n_dirs = self.rt_args["receiver_n_directions"]
+        n_bands = len(self.octave_bands.get_bw()) if self.is_multi_band else 1
+
+        # For directive sources, we need to define directions.
+        default_source_directions = fibonacci_spherical_sampling(n_rays).T
+        default_source_energies = np.ones((n_rays, n_bands))
+
+        # For directive microphones, we need to enable direction sensitive receivers.
+        default_directions = fibonacci_spherical_sampling(n_dirs).T
+        self.rt_directional_responses = []
+        for r, directivity in enumerate(self.mic_array.directivity):
+            if directivity is None:
+                # When no directivity is provided, the microphones are omnidirectional.
+                self.room_engine.microphones[r].make_omnidirectional()
+                self.rt_directional_responses.append(
+                    {
+                        "response": np.ones(1),
+                        "is_impulse_response": False,
+                    }
+                )
+            else:
+                if isinstance(directivity, MeasuredDirectivity):
+                    # Measured directivities already have a direction grid
+                    # that we can reuse.
+                    dir_vectors = directivity.get_direction_vectors()
+                else:
+                    # Otherwise, we use the default directions.
+                    dir_vectors = default_directions
+                self.room_engine.microphones[r].set_directions(dir_vectors)
+                self.rt_directional_responses.append(
+                    {
+                        "response": directivity.get_response_cartesian(dir_vectors),
+                        "is_impulse_response": directivity.is_impulse_response,
+                    }
+                )
+
         # this will be a list of lists with
         # shape (n_mics, n_src, n_directions, n_bands, n_time_bins)
         self.rt_histograms = [[] for r in range(self.mic_array.M)]
 
         for s, src in enumerate(self.sources):
-            self.room_engine.ray_tracing(self.rt_args["n_rays"], src.position)
+            # Create the directivity pattern if needed.
+            if src.directivity is None:
+                source_directions = default_source_directions
+                source_energies = default_source_energies
+            else:
+                source_directions, source_energies = src.directivity.sample_rays(n_rays)
+                source_energies = np.broadcast_to(source_energies, (n_rays, n_bands))
+
+            # Run the ray tracing.
+            self.room_engine.ray_tracing(
+                source_directions, source_energies, src.position
+            )
 
             # There is one histogram for each mic/source pair.
             for r in range(self.mic_array.M):
@@ -2343,8 +2384,11 @@ class Room(object):
                     rir_parts.append(ir_ism)
 
                 if self.simulator_state["rt_needed"]:
+                    t0 = np.linalg.norm(src.position - mic) / self.c
                     ir_rt = compute_rt_rir(
+                        t0.item(),
                         self.rt_histograms[m][s],
+                        self.rt_directional_responses[m],
                         self.rt_args["hist_bin_size"],
                         self.rt_args["hist_bin_size_samples"],
                         volume_room,

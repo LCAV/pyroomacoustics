@@ -95,6 +95,9 @@ class Microphone {
     delete_kdtree();
     n_dirs = 1;
     directions.setZero(1, D);
+
+    // Initialize the histograms.
+    reset();
   }
 
   void delete_kdtree() {
