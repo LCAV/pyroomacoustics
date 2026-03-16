@@ -31,8 +31,6 @@ References
     J. Acoust. Soc. Am., vol. 37, no. 3, pp. 409-412, Mar. 1968.
 """
 
-import math
-
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -49,7 +47,7 @@ def _fit_exp_and_extrapolate(
 
     # We use a least-square fit in log-domain as initialization.
     X = np.column_stack((t, np.ones(N)))
-    p, *_ = np.linalg.lstsq(X, data)
+    p, *_ = np.linalg.lstsq(X, data, rcond=None)
 
     if not linear_domain_fit:
         return extrapolate_value_db / p[0]
