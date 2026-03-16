@@ -240,7 +240,7 @@ class MeasuredDirectivity(Directivity):
             self._kdtree, self.energy_per_direction, areas=self.areas
         )
 
-    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+    def get_response_cartesian(self, directions, magnitude=False):
         """
         Get response for provided direction cartesian vectors.
 
@@ -249,8 +249,6 @@ class MeasuredDirectivity(Directivity):
         cartesian: np.ndarray, (n_points, 3)
             The direction of the desired responses
         magnitude: bool
-            Ignored
-        frequency: np.ndarray, (n_freq,)
             Ignored
 
         Returns
@@ -261,11 +259,9 @@ class MeasuredDirectivity(Directivity):
         _, index = self._kdtree.query(directions)
         return self._irs[index, :]
 
-    def get_response(
-        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
-    ):
+    def get_response(self, azimuth, colatitude=None, magnitude=False, degrees=True):
         """
-        Get response for provided angles and frequency.
+        Get response for provided angles.
 
         Parameters
         ----------
@@ -274,8 +270,6 @@ class MeasuredDirectivity(Directivity):
         colatitude: np.ndarray, (n_points,)
             The colatitude of the desired responses
         magnitude: bool
-            Ignored
-        frequency: np.ndarray, (n_freq,)
             Ignored
         degrees: bool
             If ``True``, indicates that azimuth and colatitude are provided in degrees

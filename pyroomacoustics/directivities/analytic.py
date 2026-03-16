@@ -176,7 +176,7 @@ class CardioidFamily(Directivity):
             resp = np.abs(resp)
         return resp
 
-    def get_response_cartesian(self, directions, magnitude=False, frequency=None):
+    def get_response_cartesian(self, directions, magnitude=False):
         """
         Get response for provided direction cartesian vectors.
 
@@ -185,8 +185,6 @@ class CardioidFamily(Directivity):
         cartesian: np.ndarray, (n_points, 3)
             The direction of the desired responses
         magnitude: bool
-            Ignored
-        frequency: np.ndarray, (n_freq,)
             Ignored
 
         Returns
@@ -200,9 +198,7 @@ class CardioidFamily(Directivity):
         directions = directions / np.linalg.norm(directions, axis=1, keepdims=True)
         return self._get_response_from_cartesian_vector(directions.T, magnitude)
 
-    def get_response(
-        self, azimuth, colatitude=None, magnitude=False, frequency=None, degrees=True
-    ):
+    def get_response(self, azimuth, colatitude=None, magnitude=False, degrees=True):
         """
         Get response for provided angles.
 
@@ -214,9 +210,6 @@ class CardioidFamily(Directivity):
             Colatitude. Default is to be on XY plane.
         magnitude : bool, optional
             Whether to return magnitude of response.
-        frequency : float, optional
-            For which frequency to compute the response. Cardioid are frequency-independent so this
-            value has no effect.
         degrees : bool, optional
             If ``True``, ``azimuth`` and ``colatitude`` are in degrees.
             Otherwise, they are in radians.

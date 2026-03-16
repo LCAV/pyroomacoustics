@@ -33,10 +33,6 @@ This sub-module provides an interface to add such directional responses to
 microphones and sources in the room impulse response simulation.
 
 .. warning::
-    The directional responses are currently only supported for the
-    image source method based simulation.
-
-.. warning::
     Directional responses are only supported for 3D rooms.
 
 

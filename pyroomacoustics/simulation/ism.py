@@ -174,9 +174,8 @@ def compute_ism_rir(
     # 2) (n_images, n_octave_bands) for directivites defined by octave bands
     # 3) (n_images, n_taps) for directivites defined as impulse responses
     # Cases 2-3 are ambiguous, although we will usually have no_of_octave_bands == 7
-    # and n_taps > 7
-    # Proposed solution: add a type for IR type of impulse responses
-    # (MeasuredDirectivity only for now)
+    # and n_taps > 7.
+    # This is disambiguated by the ``Directivity.is_impulse_response`` attribute.
     #
     # Then, we can have damping coefficients either
     # 1) (1, n_images) flat
