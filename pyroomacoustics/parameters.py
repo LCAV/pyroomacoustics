@@ -188,7 +188,7 @@ _constants_default = {
     "num_threads": get_num_threads(),  # num. of threads to use
     "octave_bands_n_fft": 512,
     "octave_bands_base_freq": 125.0,
-    "octave_bands_keep_dc": False,
+    "octave_bands_keep_dc": True,
     "resample_backend": "soxr",
     "rir_hpf_enable": True,
     "rir_hpf_fc": 10.0,
