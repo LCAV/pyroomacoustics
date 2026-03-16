@@ -2,7 +2,6 @@ Directional Sources and Microphones
 ===================================
 
 .. automodule:: pyroomacoustics.directivities
-   :members:
    :undoc-members:
    :show-inheritance:
 
@@ -54,8 +53,9 @@ SOFA File Readers
    :members:
    :show-inheritance:
 
-Direction of the Patterns
--------------------------
+
+Specifying Object Directions
+----------------------------
 
 .. automodule:: pyroomacoustics.directivities.direction
    :members:

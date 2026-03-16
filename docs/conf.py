@@ -19,6 +19,7 @@ import sys
 MOCK_MODULES = [
     "numpy",
     "numpy.fft",
+    "numpy.random",
     "scipy",
     "matplotlib",
     "matplotlib.pyplot",
@@ -121,6 +122,8 @@ source_suffix = ".rst"
 
 # The master toctree document.
 master_doc = "index"
+
+autodoc_imported_members = False
 
 # General information about the project.
 project = "Pyroomacoustics"
