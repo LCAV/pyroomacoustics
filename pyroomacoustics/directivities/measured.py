@@ -301,8 +301,9 @@ class MeasuredDirectivity(Directivity):
 
         Parameters
         ----------
-        freq_bin: int
-            The frequency bin to plot
+        freq_bin: int or float
+            The frequency bin to plot if an int. Normalized frequency ``freq_hz / fs``
+            if a float.
         n_grid: int
             The number of points to use for the interpolation grid
         ax: matplotlib.axes.Axes, optional
@@ -320,6 +321,14 @@ class MeasuredDirectivity(Directivity):
             The axes on which the directivity is plotted
         """
         import matplotlib.pyplot as plt
+
+        if isinstance(freq_bin, float):
+            n_fft = self._irs.shape[-1]
+            freq_bin = int(freq_bin * n_fft)
+        elif not isinstance(freq_bin, int):
+            raise TypeError(
+                f"freq_bin should be of type int or float (got {type(freq_bin)})."
+            )
 
         cart = self._grid.cartesian.T
         length = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
