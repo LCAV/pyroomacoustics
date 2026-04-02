@@ -1,8 +1,76 @@
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools", "wheel", "numpy>=1.13.0", "Cython", "pybind11>=2.2"]  # PEP 508 specifications.
+requires = ["setuptools>=61", "setuptools-scm>=8", "wheel", "numpy>=1.13.0", "Cython", "cmake"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyroomacoustics"
+dynamic = ["version", "readme"]
+description = "A simple framework for room acoustics and audio processing in Python."
+authors = [
+    { name = "Laboratory for Audiovisual Communications, EPFL", email = "fakufaku@gmail.ch" }
+]
+license = "MIT"
+keywords = ["room", "acoustics", "signal processing", "doa", "beamforming", "adaptive"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Information Technology",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "Cython",
+    "numpy>=1.13.0",
+    "scipy>=0.18.0",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/LCAV/pyroomacoustics"
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.rst"], content-type = "text/x-rst" }
+
+[tool.setuptools]
+packages = [
+    "pyroomacoustics",
+    "pyroomacoustics.adaptive",
+    "pyroomacoustics.bss",
+    "pyroomacoustics.datasets",
+    "pyroomacoustics.denoise",
+    "pyroomacoustics.directivities",
+    "pyroomacoustics.doa",
+    "pyroomacoustics.experimental",
+    "pyroomacoustics.phase",
+    "pyroomacoustics.random",
+    "pyroomacoustics.simulation",
+    "pyroomacoustics.transform",
+]
+
+[tool.setuptools.package-data]
+pyroomacoustics = [
+    "*.pxd",
+    "*.pyx",
+    "data/materials.json",
+    "data/sofa_files.json",
+    "data/sofa/AKG_c480_c414_CUBE.sofa",
+    "data/sofa/EM32_Directivity.sofa",
+    "data/sofa/mit_kemar_large_pinna.sofa",
+    "data/sofa/mit_kemar_normal_pinna.sofa",
+]
+
+[tool.setuptools_scm]
+write_to = "pyroomacoustics/version.py"
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 filterwarnings = [
   'ignore:Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.:UserWarning'
 ] 

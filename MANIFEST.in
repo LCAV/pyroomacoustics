@@ -7,11 +7,9 @@ include pyroomacoustics/libroom_src/*.h
 include pyroomacoustics/libroom_src/*.hpp
 include pyroomacoustics/libroom_src/*.cpp
 
-# The compiled extension code rely on Eigen and nanoflann,
-# which are included
-include pyroomacoustics/libroom_src/ext/eigen/COPYING.*
-graft pyroomacoustics/libroom_src/ext/eigen/Eigen
-graft pyroomacoustics/libroom_src/ext/nanoflann/include
+# CMake build files
+include CMakeLists.txt
+graft external
 
 include pyproject.toml
 include requirements.txt
@@ -26,7 +24,6 @@ graft pyroomacoustics/denoise/tests
 graft pyroomacoustics/directivities/tests
 graft pyroomacoustics/doa/tests
 graft pyroomacoustics/experimental/tests
-graft pyroomacoustics/libroom_src/tests
 graft pyroomacoustics/phase/tests
 graft pyroomacoustics/transform/tests
 
