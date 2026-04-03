@@ -24,16 +24,24 @@ We try to stick to `PEP8 <https://www.python.org/dev/peps/pep-0008/>`__
 as much as possible. Variables, functions, modules and packages should
 be in lowercase with underscores. Class names in CamelCase.
 
-We use `Black <https://github.com/psf/black>`__ to format the code and `isort <https://pycqa.github.io/isort/>`__ to sort the imports.
-The format will be automatically checked when doing a pull request so it is
-recommended to regularly run Black on the code.
-Please format your code as follows prior to commiting.
+We use `pre-commit <https://pre-commit.com/>`__ to manage code quality hooks,
+including `Black <https://github.com/psf/black>`__ for formatting and
+`isort <https://pycqa.github.io/isort/>`__ for sorting imports.
+The hooks will be automatically checked during pull requests.
+
+To set up the pre-commit hooks locally:
 
 .. code-block:: shell
 
-  pip install black isort
-  black .
-  isort --profile black .
+  pip install pre-commit
+  pre-commit install
+
+Once installed, the hooks will run automatically on every commit.
+You can also run them manually on all files:
+
+.. code-block:: shell
+
+  pre-commit run --all-files
 
 Documentation
 ~~~~~~~~~~~~~
@@ -51,79 +59,56 @@ We recommend the following steps for generating the documentation:
 -  Build and view the documentation locally with: ``make html``
 -  Open in your browser: ``docs/_build/html/index.html``
 
-Develop Locally
-~~~~~~~~~~~~~~~
-
-It can be convenient to develop and run tests locally.  In contrast to only
+It can be convenient to develop and run tests locally. In contrast to only
 using the package, you will then also need to compile the C++ extension for
-that. On Mac and Linux, GCC is required, while Visual C++ 14.0 is necessary for
-`windows <https://wiki.python.org/moin/WindowsCompilers>`__. 
+that.
 
-1. Get the source code. Use recursive close so that Eigen (a sub-module of this
-   repository) is also downloaded.
+Requirements:
+- C++ compiler: GCC or Clang on Mac/Linux, Visual C++ 14.0+ on Windows.
+- **CMake** (version 3.10 or higher).
+- **pre-commit**
 
-   .. code-block:: shell
-
-       git clone --recursive git@github.com:LCAV/pyroomacoustics.git
-
-   Alternatively, you can clone without the `--recursive` flag and directly
-   install the Eigen library. For macOS, you can find installation instruction
-   here: https://stackoverflow.com/a/35658421. After installation you can
-   create a symbolic link as such:
-
-    .. code-block:: shell
-
-        ln -s PATH_TO_EIGEN pyroomacoustics/libroom_src/ext/eigen/Eigen
-
-2. Install a few pre-requisites
-
-    .. code-block:: shell
-
-        pip install numpy Cython pybind11
-
-3. Compile locally
+1. Get the source code.
 
    .. code-block:: shell
 
-         python setup.py build_ext --inplace
+       git clone git@github.com:LCAV/pyroomacoustics.git
 
-   On recent Mac OS (Mojave), it is necessary in some cases to add a
-   higher deployment target
+   External dependencies (`Eigen`, `nanoflann`, `pybind11`) are automatically
+   downloaded during the build process using CMake's `FetchContent`.
 
-   .. code-block:: shell
+2. Install in editable mode.
 
-         MACOSX_DEPLOYMENT_TARGET=10.9 python setup.py build_ext --inplace
-
-4. Update ``$PYTHONPATH`` so that python knows where to find the local package
-
-   .. code-block:: shell
-
-      # Linux/Mac
-      export PYTHONPATH=<path_to_pyroomacoustics>:$PYTHONPATH
-
-   For windows, see `this question <https://stackoverflow.com/questions/3701646/how-to-add-to-the-pythonpath-in-windows>`__
-   on stackoverflow.
-
-5. Install the dependencies listed in ``requirements.txt``
+   Editable mode is recommended for local development as it correctly links
+   the source files and compiled extensions.
 
    .. code-block:: shell
 
-      pip install -r requirements.txt
+         pip install -U -e .
 
-6. Now fire up ``python`` or ``ipython`` and check that the package can be
-   imported
+   The build process uses CMake to compile the C++ extensions. 
+   The ``-U`` flag ensures that the package is upgraded to the latest version.
+   Make sure to re-run this command when changing the C++ code.
 
-   .. code-block:: python
+   On macOS, if necessary, you can set the deployment target:
 
-      import pyroomacoustics as pra
+   .. code-block:: shell
+
+         MACOSX_DEPLOYMENT_TARGET=11.0 pip install -U -e .
+
+3. Verify the installation.
+
+   .. code-block:: shell
+
+      python -c "import pyroomacoustics as pra; print(pra.__version__)"
 
 Unit Tests
 ~~~~~~~~~~
 
 As much as possible, for every new function added to the code base, add
-a short test script in ``pyroomacoustics/tests``. The names of the
+a short test script in the top-level ``tests/`` directory. The names of the
 script and the functions running the test should be prefixed by
-``test_``. The tests are started by running ``nosetests`` at the root of
+``test_``. The tests are started by running ``pytest`` at the root of
 the package.
 
 How to make a clean pull request
@@ -167,18 +152,18 @@ How to deploy a new version to pypi
 
 1. git checkout pypi-release
 2. git merge master
-3. Change version number in ``pyroomacoustics/version.py`` to new version number vX.Y.Z
-4. Edit ``CHANGELOG.rst`` as follows
+3. Edit ``CHANGELOG.rst`` as follows
 
    - Add new title ``X.Y.Z_ - YEAR-MONTH-DAY`` under ``Unreleased``, add "Nothing yet" in the unreleased section.
-   - Edit appropriately the lists of links at the bottom of the file.
-5. git commit
-6. git tag vX.Y.Z
-7. git push origin vX.Y.Z
-8. git push
-9. git checkout master
-10. git merge pypi-release
-11. git push origin master
+   - Edit appropriately the list of links at the bottom of the file.
+4. git commit
+5. Tag the new version (e.g., vX.Y.Z). Version strings are automatically 
+   generated from git tags using `setuptools_scm`.
+6. git push origin vX.Y.Z
+7. git push
+8. git checkout master
+9. git merge pypi-release
+10. git push origin master
 
 Reference
 ---------
