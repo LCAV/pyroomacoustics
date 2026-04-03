@@ -7,6 +7,7 @@ MIT License
 """
 
 import unittest
+from pathlib import Path
 
 import numpy as np
 from scipy.io import wavfile
@@ -15,7 +16,9 @@ import pyroomacoustics as pra
 
 test_tol = 1e-2
 
-filename = "examples/input_samples/cmu_arctic_us_axb_a0004.wav"
+filename = (
+    Path(__file__).parent / "../../examples/input_samples/cmu_arctic_us_axb_a0004.wav"
+)
 fs, audio = wavfile.read(filename)
 
 fft_size = 512

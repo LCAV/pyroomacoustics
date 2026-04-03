@@ -13,7 +13,6 @@ tol = 1e-5
 signal_fp = os.path.join(
     os.path.dirname(__file__),
     "..",
-    "..",
     "examples",
     "input_samples",
     "cmu_arctic_us_aew_a0001.wav",
