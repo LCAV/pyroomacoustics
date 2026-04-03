@@ -58,7 +58,7 @@ class WAVES(MUSIC):
         azimuth=None,
         colatitude=None,
         num_iter=5,
-        **kwargs
+        **kwargs,
     ):
         MUSIC.__init__(
             self,
@@ -71,7 +71,7 @@ class WAVES(MUSIC):
             r=r,
             azimuth=azimuth,
             colatitude=colatitude,
-            **kwargs
+            **kwargs,
         )
 
         self.iter = num_iter

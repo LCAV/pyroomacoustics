@@ -91,7 +91,7 @@ class FRIDA(DOA):
         verbose=False,
         symb=True,
         use_cache=False,
-        **kwargs
+        **kwargs,
     ):
         DOA.__init__(self, L, fs, nfft, c=c, num_src=num_src, mode="far", **kwargs)
 

@@ -1738,7 +1738,7 @@ def pt_src_recon_multiband(
     G_lst=None,
     GtG_lst=None,
     GtG_inv_lst=None,
-    **kwargs
+    **kwargs,
 ):
     """
     reconstruct point sources on the circle from the visibility measurements
@@ -1920,7 +1920,7 @@ def pt_src_recon(
     update_G=False,
     verbose=False,
     signal_type="visibility",
-    **kwargs
+    **kwargs,
 ):
     """
     reconstruct point sources on the circle from the visibility measurements
@@ -2026,7 +2026,7 @@ def pt_src_recon_rotate(
     num_rotation=1,
     verbose=False,
     signal_type="visibility",
-    **kwargs
+    **kwargs,
 ):
     """
     reconstruct point sources on the circle from the visibility measurements.

@@ -955,7 +955,7 @@ def resample(data, old_fs, new_fs, backend=None, *args, **kwargs):
             down=rate_frac.denominator,
             axis=0,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     # restore the original shape of the data

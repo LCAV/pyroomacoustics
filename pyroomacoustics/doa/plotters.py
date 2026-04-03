@@ -397,7 +397,7 @@ def sph_plot_diracs(
     colatitude_grid=None,
     azimuth_grid=None,
     file_name="sph_recon_2d_dirac.pdf",
-    **kwargs
+    **kwargs,
 ):
     """
     This function plots the dirty image with sources locations on

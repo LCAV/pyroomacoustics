@@ -53,7 +53,7 @@ class MUSIC(DOA):
         azimuth=None,
         colatitude=None,
         frequency_normalization=False,
-        **kwargs
+        **kwargs,
     ):
         DOA.__init__(
             self,
@@ -66,7 +66,7 @@ class MUSIC(DOA):
             r=r,
             azimuth=azimuth,
             colatitude=colatitude,
-            **kwargs
+            **kwargs,
         )
 
         self.Pssl = None

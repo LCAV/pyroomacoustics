@@ -210,7 +210,7 @@ class CMUArcticCorpus(Dataset):
                     speaker=speaker,
                     tag=tag,
                     text=info["text"],
-                    **cmu_arctic_speakers[speaker]
+                    **cmu_arctic_speakers[speaker],
                 )
 
                 # it there is a match, add it
