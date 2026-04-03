@@ -19,21 +19,27 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Topic :: Multimedia :: Sound/Audio :: Analysis",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "Cython",
     "numpy>=1.13.0",
     "scipy>=0.18.0",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.urls]
 Homepage = "https://github.com/LCAV/pyroomacoustics"
+Repository = "https://github.com/LCAV/pyroomacoustics.git"
+Documentation = "https://pyroomacoustics.readthedocs.io/en/pypi-release/"
+Issues = "https://github.com/LCAV/pyroomacoustics/issues"
+Changelog = "https://github.com/LCAV/pyroomacoustics/blob/master/CHANGELOG.rst"
+
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.rst"], content-type = "text/x-rst" }

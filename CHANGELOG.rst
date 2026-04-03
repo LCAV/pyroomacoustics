@@ -11,7 +11,14 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Changed
+~~~~~~~
+
+- Modernized the build system to use ``pyproject.toml`` and ``CMake``.
+- External dependencies (``Eigen``, ``nanoflann``, ``pybind11``) are now automatically managed via CMake's ``FetchContent``.
+- Switched to dynamic versioning using ``setuptools_scm``.
+- Relocated the test suite from the source package to a top-level ``tests/`` directory.
+- Update the continuous integration to use cibuildwheel to handle all platforms including manylinux.
 
 
 `0.10.0`_ - 2026-04-01
