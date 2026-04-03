@@ -16,16 +16,17 @@ include requirements.txt
 include LICENSE
 
 # Keep the test files too
-graft pyroomacoustics/tests
-graft pyroomacoustics/adaptive/tests
-graft pyroomacoustics/bss/tests
-graft pyroomacoustics/datasets/tests
-graft pyroomacoustics/denoise/tests
-graft pyroomacoustics/directivities/tests
-graft pyroomacoustics/doa/tests
-graft pyroomacoustics/experimental/tests
-graft pyroomacoustics/phase/tests
-graft pyroomacoustics/transform/tests
+graft tests
+graft tests/adaptive
+graft tests/bss
+graft tests/datasets
+graft tests/denoise
+graft tests/directivities
+graft tests/doa
+graft tests/experimental
+graft tests/libroom
+graft tests/phase
+graft tests/transform
 
 global-exclude *.py[co]
 global-exclude __pycache__
