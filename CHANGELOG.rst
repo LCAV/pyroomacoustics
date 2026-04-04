@@ -11,7 +11,11 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Changed
+-------
+
+- Removed the deprecated ``absorption`` parameter from ``ShoeBox``,
+  ``Room.from_corners``, and ``Room.extrude``.
 
 
 `0.10.0`_ - 2026-04-01
