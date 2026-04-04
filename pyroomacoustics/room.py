@@ -1210,7 +1210,6 @@ class Room(object):
     def from_corners(
         cls,
         corners,
-        absorption=None,
         fs=8000,
         t0=0.0,
         max_order=1,
@@ -1227,9 +1226,6 @@ class Room(object):
         ----------
         corners: (np.array dim 2xN, N>2)
             list of corners, must be antiClockwise oriented
-        absorption: float array or float
-            list of absorption factor for each wall or single value
-            for all walls (deprecated, use ``materials`` instead)
         fs: int, optional
             The sampling frequency in Hz. Default is 8000.
         t0: float, optional
@@ -1266,37 +1262,7 @@ class Room(object):
         if libroom.area_2d_polygon(corners) <= 0:
             corners = corners[:, ::-1]
 
-        ############################
-        # BEGIN COMPATIBILITY CODE #
-        ############################
-
-        if absorption is None:
-            absorption = 0.0
-            absorption_compatibility_request = False
-        else:
-            absorption_compatibility_request = True
-
-        absorption = np.array(absorption, dtype="float64")
-        if absorption.ndim == 0:
-            absorption = absorption * np.ones(n_walls)
-        elif absorption.ndim >= 1 and n_walls != len(absorption):
-            raise ValueError(
-                "Arg absorption must be the same size as corners or must be a single value."
-            )
-
-        ############################
-        # BEGIN COMPATIBILITY CODE #
-        ############################
-
         if materials is not None:
-            if absorption_compatibility_request:
-                import warnings
-
-                warnings.warn(
-                    "Because materials were specified, deprecated absorption parameter is ignored.",
-                    DeprecationWarning,
-                )
-
             if not isinstance(materials, list):
                 materials = [materials] * n_walls
 
@@ -1308,21 +1274,9 @@ class Room(object):
                     materials[i], Material
                 ), "Material not specified using correct class"
 
-        elif absorption_compatibility_request:
-            import warnings
-
-            warnings.warn(
-                "Using absorption parameter is deprecated. In the future, use materials instead."
-            )
-
-            # Fix the absorption
-            # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
-            # <=> a2 == 1 - (1 - a1) ** 2
-            correct_absorption = 1.0 - (1.0 - absorption) ** 2
-            materials = make_materials(*correct_absorption)
-
         else:
-            # In this case, no material is provided, use totally reflective walls, no scattering
+            # In this case, no material is provided, use totally reflective
+            # walls, no scattering
             materials = [Material(0.0, 0.0)] * n_walls
 
         # Resample material properties at octave bands
@@ -1359,10 +1313,11 @@ class Room(object):
             **kwargs,
         )
 
-    def extrude(self, height, v_vec=None, absorption=None, materials=None):
+    def extrude(self, height, v_vec=None, materials=None):
         """
         Creates a 3D room by extruding a 2D polygon.
-        The polygon is typically the floor of the room and will have z-coordinate zero. The ceiling
+        The polygon is typically the floor of the room and will have
+        z-coordinate zero. The ceiling
 
         Parameters
         ----------
@@ -1372,15 +1327,11 @@ class Room(object):
             A unit vector. An orientation for the extrusion direction. The
             ceiling will be placed as a translation of the floor with respect
             to this vector (The default is [0,0,1]).
-        absorption : float or array-like, optional
-            Absorption coefficients for all the walls. If a scalar, then all the walls
-            will have the same absorption. If an array is given, it should have as many elements
-            as there will be walls, that is the number of vertices of the polygon plus two. The two
-            last elements are for the floor and the ceiling, respectively.
-            It is recommended to use materials instead of absorption parameter. (Default: 1)
-        materials : dict
-            Absorption coefficients for floor and ceiling. This parameter overrides absorption.
-            (Default: {"floor": 1, "ceiling": 1})
+        materials : dict[str, pyroomacoustics.Material]
+            Material properties of the floor and ceiling.
+            A single Material object will be repeated for both floor and ceiling.
+            Otherwise, a dict with keys 'floor' and 'ceiling' is expected.
+            (Default: {"floor": pra.Material(0, 0), "ceiling": pra.Material(0, 0)})
         """
 
         if self.dim != 2:
@@ -1453,59 +1404,25 @@ class Room(object):
                     "Encountered a material with inconsistent number of bands."
                 )
 
-        ############################
-        # BEGIN COMPATIBILITY CODE #
-        ############################
-        if absorption is not None:
-            absorption = 0.0
-            absorption_compatibility_request = True
-        else:
-            absorption_compatibility_request = False
-        ##########################
-        # END COMPATIBILITY CODE #
-        ##########################
-
         if materials is not None:
-            if absorption_compatibility_request:
-                import warnings
-
-                warnings.warn(
-                    "Because materials were specified, "
-                    "deprecated absorption parameter is ignored.",
-                    DeprecationWarning,
-                )
-
             if not isinstance(materials, dict):
                 materials = {"floor": materials, "ceiling": materials}
 
-            for mat in materials.values():
-                assert isinstance(
-                    mat, Material
-                ), "Material not specified using correct class"
-
-        elif absorption_compatibility_request:
-            import warnings
-
-            warnings.warn(
-                "absorption parameter is deprecated for Room.extrude",
-                DeprecationWarning,
-            )
-
-            absorption = np.array(absorption)
-            if absorption.ndim == 0:
-                absorption = absorption * np.ones(2)
-            elif absorption.ndim == 1 and absorption.shape[0] != 2:
+            if "floor" not in materials or "ceiling" not in materials:
                 raise ValueError(
-                    "The size of the absorption array must be 2 for extrude, "
-                    "for the floor and ceiling"
+                    "Expected to find keys 'floor' and 'ceiling' in materials."
                 )
 
-            materials = make_materials(
-                floor=(absorption[0], 0.0), ceiling=(absorption[0], 0.0)
-            )
+            for mat in materials.values():
+                if not isinstance(mat, Material):
+                    raise TypeError(
+                        "Expected materials of type pyroomacoustics.Material "
+                        f"(got {type(mat)})."
+                    )
 
         else:
-            # In this case, no material is provided, use totally reflective walls, no scattering
+            # In this case, no material is provided, use totally reflective
+            # walls, no scattering.
             new_mat = Material(0.0, 0.0)
             materials = {"floor": new_mat, "ceiling": new_mat}
 
@@ -1513,7 +1430,8 @@ class Room(object):
         new_corners["floor"] = np.pad(floor_corners, ((0, 1), (0, 0)), mode="constant")
         new_corners["ceiling"] = (new_corners["floor"].T + height * v_vec).T
 
-        # we need the floor corners to ordered clockwise (for the normal to point outward)
+        # we need the floor corners to ordered clockwise
+        # (for the normal to point outward)
         new_corners["floor"] = np.fliplr(new_corners["floor"])
 
         # Concatenate new walls param with old ones.
@@ -2848,9 +2766,6 @@ class ShoeBox(Room):
         The sampling frequency in Hz. Default is 8000.
     t0: float, optional
         The global starting time of the simulation in seconds. Default is 0.
-    absorption : float
-        Average amplitude absorption of walls. Note that this parameter is
-        deprecated; use `materials` instead!
     max_order: int, optional
         The maximum reflection order in the image source model. Default is 1,
         namely direct sound and first order reflections.
@@ -2893,7 +2808,6 @@ class ShoeBox(Room):
         p,
         fs=8000,
         t0=0.0,
-        absorption=None,  # deprecated
         max_order=1,
         sigma2_awgn=None,
         sources=None,
@@ -2941,32 +2855,7 @@ class ShoeBox(Room):
 
         n_walls = len(self.wall_names)
 
-        ############################
-        # BEGIN COMPATIBILITY CODE #
-        ############################
-
-        if absorption is None:
-            absorption_compatibility_request = False
-            absorption = 0.0
-        else:
-            absorption_compatibility_request = True
-
-        # copy over the absorption coefficient
-        if isinstance(absorption, float):
-            absorption = dict(zip(self.wall_names, [absorption] * n_walls))
-
-        ##########################
-        # END COMPATIBILITY CODE #
-        ##########################
-
         if materials is not None:
-            if absorption_compatibility_request:
-                warnings.warn(
-                    "Because `materials` were specified, deprecated "
-                    "`absorption` parameter is ignored.",
-                    DeprecationWarning,
-                )
-
             if isinstance(materials, Material):
                 materials = dict(zip(self.wall_names, [materials] * n_walls))
             elif not isinstance(materials, dict):
@@ -2982,35 +2871,6 @@ class ShoeBox(Room):
                     materials[w_name], Material
                 ), "Material not specified using correct class"
 
-        elif absorption_compatibility_request:
-            warnings.warn(
-                "Using absorption parameter is deprecated. Use `materials` with "
-                "`Material` object instead.",
-                DeprecationWarning,
-            )
-
-            # order the wall absorptions
-            if not isinstance(absorption, dict):
-                raise ValueError(
-                    "`absorption` must be either a scalar or a "
-                    "2x dim dictionary with entries for each "
-                    "wall, namely: 'east', 'west', 'north', "
-                    "'south', 'ceiling' (3d), 'floor' (3d)."
-                )
-
-            materials = {}
-            for w_name in self.wall_names:
-                if w_name in absorption:
-                    # Fix the absorption
-                    # 1 - a1 == sqrt(1 - a2)    <-- a1 is former incorrect absorption, a2 is the correct definition based on energy
-                    # <=> a2 == 1 - (1 - a1) ** 2
-                    correct_abs = 1.0 - (1.0 - absorption[w_name]) ** 2
-                    materials[w_name] = Material(energy_absorption=correct_abs)
-                else:
-                    raise KeyError(
-                        "Absorption needs to have keys 'east', 'west', "
-                        "'north', 'south', 'ceiling' (3d), 'floor' (3d)."
-                    )
         else:
             # In this case, no material is provided, use totally reflective
             # walls, no scattering

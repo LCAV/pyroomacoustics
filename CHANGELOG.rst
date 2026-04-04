@@ -14,6 +14,8 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 Changed
 ~~~~~~~
 
+- Removed the deprecated ``absorption`` parameter from ``ShoeBox``,
+  ``Room.from_corners``, and ``Room.extrude``.
 - Modernized the build system to use ``pyproject.toml`` and ``CMake``.
 - External dependencies (``Eigen``, ``nanoflann``, ``pybind11``) are now
   automatically managed via CMake's ``FetchContent``.
