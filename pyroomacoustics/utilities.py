@@ -26,6 +26,7 @@ from __future__ import division
 import fractions
 import functools
 import itertools
+import math
 import warnings
 
 import numpy as np
@@ -935,9 +936,16 @@ def resample(data, old_fs, new_fs, backend=None, *args, **kwargs):
     if backend == "soxr":
         resampled_data = soxr.resample(data, old_fs, new_fs, *args, **kwargs)
     elif backend == "samplerate":
-        resampled_data = samplerate.resample(
-            data, new_fs / old_fs, "sinc_best", *args, **kwargs
-        )
+        # Split into arrays of 128 channels to accomodate a limitation of samplerate.
+        block = 128
+        data_inputs = [
+            data[:, i : i + block].copy() for i in range(0, data.shape[1], block)
+        ]
+        data_outputs = [
+            samplerate.resample(d, new_fs / old_fs, "sinc_best", *args, **kwargs)
+            for d in data_inputs
+        ]
+        resampled_data = np.concatenate(data_outputs, axis=1)
     else:
         # first, simplify the fraction
         rate_frac = fractions.Fraction(int(new_fs), int(old_fs))
