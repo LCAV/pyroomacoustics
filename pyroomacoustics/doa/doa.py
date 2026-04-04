@@ -189,7 +189,7 @@ class DOA(object):
         n_grid=None,
         dim=2,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if dim > L.shape[0]:
             raise ValueError("Microphones locations missing dimensions.")

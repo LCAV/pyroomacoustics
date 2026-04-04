@@ -84,7 +84,7 @@ class STFT(object):
         transform="numpy",
         streaming=True,
         precision="double",
-        **kwargs
+        **kwargs,
     ):
         # initialize parameters
         self.num_samples = N  # number of samples per frame

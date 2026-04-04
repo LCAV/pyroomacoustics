@@ -49,7 +49,7 @@ class SRP(DOA):
         r=None,
         azimuth=None,
         colatitude=None,
-        **kwargs
+        **kwargs,
     ):
         DOA.__init__(
             self,
@@ -62,7 +62,7 @@ class SRP(DOA):
             r=r,
             azimuth=azimuth,
             colatitude=colatitude,
-            **kwargs
+            **kwargs,
         )
 
         self.num_pairs = self.M * (self.M - 1) / 2

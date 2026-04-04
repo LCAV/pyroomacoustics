@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import numpy as np
 from scipy.io import wavfile
@@ -8,16 +9,17 @@ import pyroomacoustics as pra
 np.random.seed(0)
 
 # We use several sound samples for each source to have a long enough length
+wav_root = Path(__file__).parent / "../../"
 wav_files = [
     [
-        "examples/input_samples/cmu_arctic_us_axb_a0004.wav",
-        "examples/input_samples/cmu_arctic_us_axb_a0005.wav",
-        "examples/input_samples/cmu_arctic_us_axb_a0006.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_axb_a0004.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_axb_a0005.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_axb_a0006.wav",
     ],
     [
-        "examples/input_samples/cmu_arctic_us_aew_a0001.wav",
-        "examples/input_samples/cmu_arctic_us_aew_a0002.wav",
-        "examples/input_samples/cmu_arctic_us_aew_a0003.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_aew_a0001.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_aew_a0002.wav",
+        wav_root / "examples/input_samples/cmu_arctic_us_aew_a0003.wav",
     ],
 ]
 

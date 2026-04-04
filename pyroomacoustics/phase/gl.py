@@ -159,7 +159,7 @@ def griffin_lim(
         hop=hop,
         analysis_window=analysis_window,
         synthesis_window=synthesis_window,
-        **stft_kwargs
+        **stft_kwargs,
     )
 
     # Initialize the signal

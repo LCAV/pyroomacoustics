@@ -59,7 +59,7 @@ class TOPS(MUSIC):
         r=None,
         azimuth=None,
         colatitude=None,
-        **kwargs
+        **kwargs,
     ):
         MUSIC.__init__(
             self,
@@ -72,7 +72,7 @@ class TOPS(MUSIC):
             r=r,
             azimuth=azimuth,
             colatitude=colatitude,
-            **kwargs
+            **kwargs,
         )
 
     def _process(self, X):

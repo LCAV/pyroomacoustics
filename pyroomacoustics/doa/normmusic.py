@@ -48,7 +48,7 @@ class NormMUSIC(MUSIC):
         azimuth=None,
         colatitude=None,
         frequency_normalization=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             L,
@@ -61,5 +61,5 @@ class NormMUSIC(MUSIC):
             azimuth,
             colatitude,
             frequency_normalization,
-            **kwargs
+            **kwargs,
         )

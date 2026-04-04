@@ -1,83 +1,157 @@
-#!/usr/bin/env python
-from __future__ import print_function
+# Compile and install the python-samplerate package
+#
+# Script based on the cmake_example of pybind11 by Dean Moldovan
+# https://github.com/pybind/cmake_example
 
 import os
+import subprocess
 import sys
+from pathlib import Path
 
-# To use a consistent encoding
-from os import path
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
-# import version from file
-with open("pyroomacoustics/version.py") as f:
-    exec(f.read())
-
-try:
-    from setuptools import Extension, distutils, setup
-    from setuptools.command.build_ext import build_ext
-except ImportError:
-    print("Setuptools unavailable. Falling back to distutils.")
-    import distutils
-    from distutils.command.build_ext import build_ext
-    from distutils.core import setup
-    from distutils.extension import Extension
+# Convert distutils Windows platform specifiers to CMake -A arguments
+PLAT_TO_CMAKE = {
+    "win32": "Win32",
+    "win-amd64": "x64",
+    "win-arm32": "ARM",
+    "win-arm64": "ARM64",
+}
 
 
-class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path
-
-    The purpose of this class is to postpone importing pybind11
-    until it is actually installed, so that the ``get_include()``
-    method can be invoked."""
-
-    def __init__(self, user=False):
-        self.user = user
-
-    def __str__(self):
-        import pybind11
-
-        return pybind11.get_include(self.user)
+# A CMakeExtension needs a sourcedir instead of a file list.
+# The name must be the _single_ output extension from the CMake build.
+# If you need multiple extensions, see scikit-build.
+class CMakeExtension(Extension):
+    def __init__(self, name: str, sourcedir: str = "") -> None:
+        super().__init__(name, sources=[])
+        self.sourcedir = os.fspath(Path(sourcedir).resolve())
 
 
-# build C extension for image source model
-libroom_src_dir = "pyroomacoustics/libroom_src"
-libroom_files = [
-    os.path.join(libroom_src_dir, f)
-    for f in [
-        "room.hpp",
-        "room.cpp",
-        "wall.hpp",
-        "wall.cpp",
-        "microphone.hpp",
-        "geometry.hpp",
-        "geometry.cpp",
-        "common.hpp",
-        "rir_builder.cpp",
-        "rir_builder.hpp",
-        "libroom.cpp",
-        "threadpool.hpp",
-    ]
-]
+class CMakeBuild(build_ext):
+    def run(self):
+        try:
+            subprocess.check_output(["cmake", "--version"])
+        except OSError:
+            raise RuntimeError(
+                "CMake must be installed to build the following extensions: "
+                + ", ".join(
+                    e.name for e in self.extensions if isinstance(e, CMakeExtension)
+                )
+            )
+
+        super().run()
+
+    def build_extension(self, ext: Extension) -> None:
+        # This is needed to build the Cython extension.
+        if not isinstance(ext, CMakeExtension):
+            super().build_extension(ext)
+            return
+
+        # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
+        ext_fullpath = Path.cwd() / self.get_ext_fullpath(ext.name)
+        extdir = ext_fullpath.parent.resolve()
+
+        # Using this requires trailing slash for auto-detection & inclusion of
+        # auxiliary "native" libs
+
+        debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
+        cfg = "Debug" if debug else "Release"
+
+        # CMake lets you override the generator - we need to check this.
+        # Can be set with Conda-Build, for example.
+        cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
+
+        # EXAMPLE_VERSION_INFO shows you how to pass a value into the C++ code
+        # from Python.
+        cmake_args = [
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
+            f"-DPython_EXECUTABLE={sys.executable}",
+            f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
+        ]
+        build_args = []
+        # Adding CMake arguments set as environment variable
+        # (needed e.g. to build for ARM OSx on conda-forge)
+        if "CMAKE_ARGS" in os.environ:
+            cmake_args += [item for item in os.environ["CMAKE_ARGS"].split(" ") if item]
+
+        # In this example, we pass in the version to C++. You might not need to.
+        cmake_args += [f"-DPACKAGE_VERSION_INFO={self.distribution.get_version()}"]
+
+        if self.compiler.compiler_type != "msvc":
+            # Using Ninja-build since it a) is available as a wheel and b)
+            # multithreads automatically. MSVC would require all variables be
+            # exported for Ninja to pick it up, which is a little tricky to do.
+            # Users can override the generator with CMAKE_GENERATOR in CMake
+            # 3.15+.
+            if not cmake_generator or cmake_generator == "Ninja":
+                try:
+                    import ninja
+
+                    ninja_executable_path = Path(ninja.BIN_DIR) / "ninja"
+                    cmake_args += [
+                        "-GNinja",
+                        f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable_path}",
+                    ]
+                except ImportError:
+                    pass
+
+        else:
+            # Single config generators are handled "normally"
+            single_config = any(x in cmake_generator for x in {"NMake", "Ninja"})
+
+            # CMake allows an arch-in-generator style for backward compatibility
+            contains_arch = any(x in cmake_generator for x in {"ARM", "Win64"})
+
+            # Specify the arch if using MSVC generator, but only if it doesn't
+            # contain a backward-compatibility arch spec already in the
+            # generator name.
+            if not single_config and not contains_arch:
+                cmake_args += ["-A", PLAT_TO_CMAKE[self.plat_name]]
+
+            # Multi-config generators have a different way to specify configs
+            if not single_config:
+                cmake_args += [
+                    f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"
+                ]
+                build_args += ["--config", cfg]
+
+        # When building universal2 wheels, we need to set the architectures for CMake.
+        if "universal2" in self.plat_name:
+            cmake_args += ["-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"]
+
+        # Set MACOSX_DEPLOYMENT_TARGET for macOS builds.
+        if (
+            self.plat_name.startswith("macosx-")
+            and "MACOSX_DEPLOYMENT_TARGET" not in os.environ
+        ):
+            target_version = self.plat_name.split("-")[1]
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = target_version
+
+        # Set CMAKE_BUILD_PARALLEL_LEVEL to control the parallel build level
+        # across all generators.
+        if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
+            # self.parallel is a Python 3 only way to set parallel jobs by hand
+            # using -j in the build_ext call, not supported by pip or PyPA-build.
+            if hasattr(self, "parallel") and self.parallel:
+                # CMake 3.12+ only.
+                build_args += [f"-j{self.parallel}"]
+
+        build_temp = Path(self.build_temp) / ext.name
+        if not build_temp.exists():
+            build_temp.mkdir(parents=True)
+
+        subprocess.run(
+            ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
+        )
+        subprocess.run(
+            ["cmake", "--build", ".", *build_args], cwd=build_temp, check=True
+        )
+
+
 ext_modules = [
-    Extension(
-        "pyroomacoustics.libroom",
-        [os.path.join(libroom_src_dir, f) for f in ["libroom.cpp"]],
-        depends=libroom_files,
-        include_dirs=[
-            ".",
-            libroom_src_dir,
-            str(get_pybind_include()),
-            str(get_pybind_include(user=True)),
-            os.path.join(libroom_src_dir, "ext/eigen"),
-            os.path.join(libroom_src_dir, "ext/nanoflann/include"),
-        ],
-        language="c++",
-        extra_compile_args=[
-            "-DEIGEN_MPL2_ONLY",
-            "-Wall",
-            "-O3",
-            "-DEIGEN_NO_DEBUG",
-        ],
-    ),
+    CMakeExtension("pyroomacoustics.libroom", sourcedir="."),
     Extension(
         "pyroomacoustics.build_rir",
         ["pyroomacoustics/build_rir.pyx"],
@@ -86,155 +160,7 @@ ext_modules = [
     ),
 ]
 
-here = path.abspath(path.dirname(__file__))
-
-# Get the long description from the README file
-with open(path.join(here, "README.rst"), encoding="utf-8") as f:
-    long_description = f.read()
-
-
-### Build Tools (taken from pybind11 example) ###
-
-
-# As of Python 3.6, CCompiler has a `has_flag` method.
-# cf http://bugs.python.org/issue26689
-def has_flag(compiler, flagname):
-    """Return a boolean indicating whether a flag name is supported on
-    the specified compiler.
-    """
-    import tempfile
-
-    with tempfile.NamedTemporaryFile("w", suffix=".cpp") as f:
-        f.write("int main (int argc, char **argv) { return 0; }")
-        try:
-            compiler.compile([f.name], extra_postargs=[flagname])
-        except distutils.errors.CompileError:
-            return False
-    return True
-
-
-def cpp_flag(compiler):
-    """Return the -std=c++[11/14] compiler flag.
-
-    The c++14 is prefered over c++11 (when it is available).
-    """
-    if has_flag(compiler, "-std=c++14"):
-        return "-std=c++14"
-    elif has_flag(compiler, "-std=c++11"):
-        return "-std=c++11"
-    else:
-        raise RuntimeError(
-            "Unsupported compiler -- at least C++11 support " "is needed!"
-        )
-
-
-class BuildExt(build_ext):
-    """A custom build extension for adding compiler-specific options."""
-
-    c_opts = {
-        "msvc": ["/EHsc"],
-        "unix": [],
-    }
-
-    if sys.platform == "darwin":
-        c_opts["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
-
-    def build_extensions(self):
-        ct = self.compiler.compiler_type
-        opts = self.c_opts.get(ct, [])
-        if ct == "unix":
-            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append(cpp_flag(self.compiler))
-            if has_flag(self.compiler, "-fvisibility=hidden"):
-                opts.append("-fvisibility=hidden")
-        elif ct == "msvc":
-            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
-        for ext in self.extensions:
-            if ext.language == "c++":
-                ext.extra_compile_args += opts
-                ext.extra_link_args += opts
-        build_ext.build_extensions(self)
-
-
-### Build Tools End ###
-
-
-setup_kwargs = dict(
-    name="pyroomacoustics",
-    version=__version__,
-    description="A simple framework for room acoustics and audio processing in Python.",
-    long_description=long_description,
-    long_description_content_type="text/x-rst",
-    author="Laboratory for Audiovisual Communications, EPFL",
-    author_email="fakufaku@gmail.ch",
-    url="https://github.com/LCAV/pyroomacoustics",
-    license="MIT",
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
-    packages=[
-        "pyroomacoustics",
-        "pyroomacoustics.adaptive",
-        "pyroomacoustics.bss",
-        "pyroomacoustics.datasets",
-        "pyroomacoustics.denoise",
-        "pyroomacoustics.directivities",
-        "pyroomacoustics.doa",
-        "pyroomacoustics.experimental",
-        "pyroomacoustics.phase",
-        "pyroomacoustics.random",
-        "pyroomacoustics.simulation",
-        "pyroomacoustics.transform",
-    ],
-    # Libroom C extension
+setup(
     ext_modules=ext_modules,
-    # Necessary to keep the source files
-    package_data={
-        "pyroomacoustics": [
-            "*.pxd",
-            "*.pyx",
-            "data/materials.json",
-            "data/sofa_files.json",
-            "data/sofa/AKG_c480_c414_CUBE.sofa",
-            "data/sofa/EM32_Directivity.sofa",
-            "data/sofa/mit_kemar_large_pinna.sofa",
-            "data/sofa/mit_kemar_normal_pinna.sofa",
-        ]
-    },
-    install_requires=[
-        "Cython",
-        "numpy>=1.13.0",
-        "scipy>=0.18.0",
-        "pybind11>=2.2",
-    ],
-    cmdclass={"build_ext": BuildExt},  # taken from pybind11 example
-    zip_safe=False,
-    test_suite="pytest",
-    tests_require=["pytest"],
-    classifiers=[
-        # How mature is this project? Common values are
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
-        "Development Status :: 4 - Beta",
-        # Indicate who your project is intended for
-        "Intended Audience :: Science/Research",
-        "Intended Audience :: Information Technology",
-        "Topic :: Scientific/Engineering :: Information Analysis",
-        "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Multimedia :: Sound/Audio :: Speech",
-        "Topic :: Multimedia :: Sound/Audio :: Analysis",
-        # Pick your license as you wish (should match "license" above)
-        "License :: OSI Approved :: MIT License",
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-    ],
-    # What does your project relate to?
-    keywords="room acoustics signal processing doa beamforming adaptive",
+    cmdclass={"build_ext": CMakeBuild},
 )
-
-setup(**setup_kwargs)
