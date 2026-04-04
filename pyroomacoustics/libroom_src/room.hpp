@@ -1,4 +1,4 @@
-/* 
+/*
  * Definition of the Room class
  * Copyright (C) 2019  Robin Scheibler, Cyril Cadoux
  *
@@ -26,14 +26,17 @@
 #ifndef __ROOM_H__
 #define __ROOM_H__
 
-#include <vector>
-#include <stack>
-#include <tuple>
+#include <Eigen/Core>
 #include <Eigen/Dense>
 #include <algorithm>
 #include <ctime>
+#include <igl/AABB.h>
+#include <stack>
+#include <tuple>
+#include <vector>
 
 #include "common.hpp"
+#include "microphone.hpp"
 #include "wall.hpp"
 
 template<size_t D>
@@ -93,6 +96,12 @@ class Room
     std::vector<Microphone<D>> microphones;  // The microphones are in the room
     float sound_speed = 343.;  // the speed of sound in the room
 
+    // libigl mesh for ray tracing
+    Eigen::MatrixXf V_mesh;
+    Eigen::MatrixXi F_mesh;
+    std::vector<int> face_to_wall;
+    igl::AABB<Eigen::MatrixXf, 3> mesh_aabb;
+
     // Simulation parameters
     int ism_order = 0.;
 
@@ -126,6 +135,23 @@ class Room
     // This array will get filled by visibility status
     // its size is n_microphones * n_sources
     MatrixXb visible_mics;
+
+    // Constructor for general rooms with mesh
+    Room(
+        const std::vector<Wall<D>> &_walls,
+        const std::vector<int> &_obstructing_walls,
+        const Eigen::MatrixXf &_V,
+        const Eigen::MatrixXi &_F,
+        const std::vector<int> &_face_to_wall,
+        const std::vector<Microphone<D>> &_microphones,
+        float _sound_speed,
+        int _ism_order,
+        float _energy_thres,
+        float _time_thres,
+        float _mic_radius,
+        float _mic_hist_res,
+        bool _is_hybrid_sim
+        );
 
     // Constructor for general rooms
     Room(
@@ -288,7 +314,6 @@ class Room
     bool is_visible_dfs(const Vectorf<D> &p, ImageSource<D> &is, Vectorf<D> &source_direction);
     bool is_obstructed_dfs(const Vectorf<D> &p, ImageSource<D> &is);
     int fill_sources();
-
 };
 
 #include "room.cpp"

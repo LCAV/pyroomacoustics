@@ -882,11 +882,41 @@ class Room(object):
         use_rand_ism=False,
         max_rand_disp=0.08,
         min_phase=False,
+        V=None,
+        F=None,
+        face_to_wall=None,
     ):
-        self.walls = walls
+        if walls is None and V is not None and F is not None:
+            # derive walls from V and F
+            # if face_to_wall is not provided, we assume each face is a wall
+            # if provided, we group faces by wall index
+            if face_to_wall is None:
+                face_to_wall = np.arange(F.shape[0])
+
+            unique_walls = np.unique(face_to_wall)
+            self.walls = []
+            for w_idx in unique_walls:
+                faces = F[face_to_wall == w_idx]
+                # For simplicity, we just use the vertices of the first face
+                # but pyroomacoustics Walls are polygons.
+                # If we have multiple triangles for a single wall, we can't
+                # easily represent them as a single polygon if it's not simple.
+                # However, for simulation, the mesh is what matters.
+                # Here we create a dummy wall for each triangle if they are not grouped.
+                for face in faces:
+                    corners = V[face].T
+                    self.walls.append(
+                        wall_factory(corners, [0.0], [0.0], name=f"wall_{w_idx}")
+                    )
+        else:
+            self.walls = walls
+
+        self.V = V
+        self.F = F
+        self.face_to_wall = face_to_wall
 
         # Get the room dimension from that of the walls
-        self.dim = walls[0].dim
+        self.dim = self.walls[0].dim
 
         # Create a mapping with friendly names for walls
         self._wall_mapping()
@@ -999,7 +1029,23 @@ class Room(object):
             # This is a polygonal room
             # find the non convex walls
             obstructing_walls = find_non_convex_walls(self.walls)
-            args += [self.walls, obstructing_walls]
+
+            if self.dim == 3:
+                # If mesh is not provided, we triangulate
+                if self.V is None or self.F is None:
+                    self.V, self.F, self.face_to_wall = libroom.triangulate_walls(
+                        self.walls
+                    )
+
+                args += [
+                    self.walls,
+                    obstructing_walls,
+                    self.V,
+                    self.F,
+                    self.face_to_wall,
+                ]
+            else:
+                args += [self.walls, obstructing_walls]
 
         # for shoebox rooms, the required arguments are passed to
         # the function

@@ -24,11 +24,10 @@
  * If not, see <https://opensource.org/licenses/MIT>.
  */
 
-
-#include <cmath>
-#include <algorithm>
-#include "constants.hpp"
 #include "room.hpp"
+#include "constants.hpp"
+#include <algorithm>
+#include <cmath>
 
 size_t number_image_sources_2(size_t max_order) {
   /*
@@ -102,6 +101,29 @@ Room<D>::Room(const Vectorf<D> &_room_size,
 
   make_shoebox_walls(shoebox_size, _absorption, _scattering);
   init();
+}
+
+template <size_t D>
+Room<D>::Room(const std::vector<Wall<D>> &_walls,
+              const std::vector<int> &_obstructing_walls,
+              const Eigen::MatrixXf &_V, const Eigen::MatrixXi &_F,
+              const std::vector<int> &_face_to_wall,
+              const std::vector<Microphone<D>> &_microphones,
+              float _sound_speed, int _ism_order, float _energy_thres,
+              float _time_thres, float _mic_radius, float _mic_hist_res,
+              bool _is_hybrid_sim)
+    : walls(_walls), obstructing_walls(_obstructing_walls),
+      microphones(_microphones), V_mesh(_V), F_mesh(_F),
+      face_to_wall(_face_to_wall), sound_speed(_sound_speed),
+      ism_order(_ism_order), energy_thres(_energy_thres),
+      time_thres(_time_thres), mic_radius(_mic_radius),
+      mic_radius_sq(_mic_radius * _mic_radius), mic_hist_res(_mic_hist_res),
+      is_hybrid_sim(_is_hybrid_sim), is_shoebox(false) {
+  init();
+  // Initialize AABB tree if mesh is provided
+  if (F_mesh.rows() > 0) {
+    mesh_aabb.init(V_mesh, F_mesh);
+  }
 }
 
 template <>
@@ -669,6 +691,28 @@ std::tuple<Vectorf<D>, int, float> Room<D>::next_wall_hit(
       (void)0;  // no op
     }
   } else {
+    if constexpr (D == 3) {
+      if (F_mesh.rows() > 0 && !scattered_ray) {
+        // Use libigl AABB tree for 3D ray tracing (non-scattered)
+        igl::Hit<float> hit;
+        Vectorf<3> _start = start.template cast<float>();
+        Vectorf<3> _end = end.template cast<float>();
+        Vectorf<3> _dir = (_end - _start).normalized();
+        // Offset start to avoid hitting the same wall
+        Vectorf<3> _start_offset = _start + 1e-4f * _dir;
+        if (mesh_aabb.intersect_ray(V_mesh, F_mesh, _start_offset, _dir, hit)) {
+          // hit.t is the distance to the hit point from _start_offset
+          float actual_t = hit.t + 1e-4f;
+          if (actual_t < hit_dist) {
+            hit_dist = actual_t;
+            result = start + actual_t * _dir.template cast<float>();
+            next_wall_index = face_to_wall[hit.id];
+          }
+        }
+        return std::make_tuple(result, next_wall_index, hit_dist);
+      }
+    }
+
     // For case 1) in non-convex rooms, the segment might intersect several
     // walls. In this case, we are only interested on the closest wall to
     // 'start'. That's why we need a min_dist variable
@@ -696,7 +740,7 @@ std::tuple<Vectorf<D>, int, float> Room<D>::next_wall_hit(
         if (temp_dist > libroom_eps && temp_dist < hit_dist) {
           hit_dist = temp_dist;
           result = temp_hit;
-          next_wall_index = i;
+          next_wall_index = scattered_ray ? obstructing_walls[i] : i;
         }
       }
     }
@@ -1131,4 +1175,3 @@ bool Room<D>::contains(const Vectorf<D> point) {
   // then the point is in the room  => return true
   return ((n_intersections % 2) == 1);
 }
-

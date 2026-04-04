@@ -11,6 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+- Integration of `libigl <https://github.com/libigl/libigl>`_ to efficiently
+  handle ray-polygon intersection detection in the C++ engine.
+
 Changed
 ~~~~~~~
 
