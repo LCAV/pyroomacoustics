@@ -1,4 +1,4 @@
-name: samplerate
+name: pyroomacoustics
 
 on:
   push:
@@ -8,8 +8,22 @@ on:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+  setup-sofa:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache SOFA data
+      uses: actions/cache@v4
+      with:
+        path: pyroomacoustics/data/sofa
+        key: sofa-data-${{ hashFiles('pyroomacoustics/data/sofa_files.json') }}
+
   build_sdist:
+    needs: setup-sofa
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
@@ -52,6 +66,11 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
+    - name: Restore SOFA data
+      uses: actions/cache/restore@v4
+      with:
+        path: pyroomacoustics/data/sofa
+        key: sofa-data-${{ hashFiles('pyroomacoustics/data/sofa_files.json') }}
     - uses: pypa/cibuildwheel@v3.4.0
       env:
         CIBW_BUILD: ${{ matrix.cibw_build }}
@@ -59,8 +78,10 @@ jobs:
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
         CIBW_TEST_REQUIRES: "pytest numpy scipy matplotlib python-sofa soxr"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
+        CIBW_ENVIRONMENT: PYROOMACOUSTICS_DATA_PATH={project}/pyroomacoustics/data/sofa
 
   build_wheels:
+    needs: setup-sofa
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
@@ -69,71 +90,97 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          # Linux x86_64
+          - { os: ubuntu-latest, python: "cp39-*", arch: "x86_64" }
+          - { os: ubuntu-latest, python: "cp310-*", arch: "x86_64" }
+          - { os: ubuntu-latest, python: "cp311-*", arch: "x86_64" }
+          - { os: ubuntu-latest, python: "cp312-*", arch: "x86_64" }
+          - { os: ubuntu-latest, python: "cp313-*", arch: "x86_64" }
+          - { os: ubuntu-latest, python: "cp314-*", arch: "x86_64" }
+          # Linux aarch64
+          - { os: ubuntu-latest, python: "cp311-*", arch: "aarch64" }
+          - { os: ubuntu-latest, python: "cp312-*", arch: "aarch64" }
+          - { os: ubuntu-latest, python: "cp313-*", arch: "aarch64" }
+          - { os: ubuntu-latest, python: "cp314-*", arch: "aarch64" }
+          # MacOS (universal2 builds both x86_64 and arm64)
+          - { os: macos-latest, python: "cp39-*", arch: "universal2" }
+          - { os: macos-latest, python: "cp310-*", arch: "universal2" }
+          - { os: macos-latest, python: "cp311-*", arch: "universal2" }
+          - { os: macos-latest, python: "cp312-*", arch: "universal2" }
+          - { os: macos-latest, python: "cp313-*", arch: "universal2" }
+          - { os: macos-latest, python: "cp314-*", arch: "universal2" }
+          # Windows
+          - { os: windows-latest, python: "cp39-*", arch: "AMD64" }
+          - { os: windows-latest, python: "cp310-*", arch: "AMD64" }
+          - { os: windows-latest, python: "cp311-*", arch: "AMD64" }
+          - { os: windows-latest, python: "cp312-*", arch: "AMD64" }
+          - { os: windows-latest, python: "cp313-*", arch: "AMD64" }
+          - { os: windows-latest, python: "cp314-*", arch: "AMD64" }
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: recursive
         fetch-depth: 0
     - name: Set up QEMU
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && matrix.arch == 'aarch64'
       uses: docker/setup-qemu-action@v3
       with:
         platforms: all
+    - name: Restore SOFA data
+      uses: actions/cache/restore@v4
+      with:
+        path: pyroomacoustics/data/sofa
+        key: sofa-data-${{ hashFiles('pyroomacoustics/data/sofa_files.json') }}
     - uses: pypa/cibuildwheel@v3.4.0
       env:
-        CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
-        CIBW_SKIP: "*-musllinux_* cp39-*aarch64 cp310-*aarch64"
-        CIBW_ARCHS_LINUX: "x86_64 aarch64"
-        CIBW_ARCHS_MACOS: "universal2"
-        CIBW_ARCHS_WINDOWS: "AMD64"
+        CIBW_BUILD: ${{ matrix.python }}
+        CIBW_ARCHS: ${{ matrix.arch }}
+        CIBW_SKIP: "*-musllinux_*"
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
         CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
         CIBW_TEST_REQUIRES: "pytest numpy scipy matplotlib python-sofa soxr"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
         CIBW_TEST_SKIP: "cp314-*"
+        CIBW_ENVIRONMENT: PYROOMACOUSTICS_DATA_PATH={project}/pyroomacoustics/data/sofa
     - uses: actions/upload-artifact@v6
       with:
-        name: wheels-${{ matrix.os }}
+        name: cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}-${{ strategy.job-index }}
         path: wheelhouse/*.whl
 
   publish:
     needs: [build_sdist, build_wheels]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    environment: pypi
+    permissions:
+      id-token: write  # MANDATORY for OIDC publishing
     steps:
-    - uses: actions/download-artifact@v8
+    - uses: actions/download-artifact@v4
       with:
         path: dist
         merge-multiple: true
-    - name: Validate wheels
-      run: |
-        pip install --upgrade twine packaging
-        twine check dist/*
     - name: Publish to PyPI
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        twine upload --skip-existing dist/*
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
+        attestations: false
 
   publish-test:
     needs: [build_sdist, build_wheels]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/test-')
+    environment: testpypi
+    permissions:
+      id-token: write  # MANDATORY for OIDC publishing
     steps:
-    - uses: actions/download-artifact@v8
+    - uses: actions/download-artifact@v4
       with:
         path: dist
         merge-multiple: true
-    - name: Validate wheels
-      run: |
-        pip install --upgrade twine packaging
-        twine check dist/*
     - name: Publish to PyPI Test
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPITEST_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPITEST_PASSWORD }}
-        TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-      run: |
-        twine upload --skip-existing dist/*
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        verbose: true
+        attestations: false
