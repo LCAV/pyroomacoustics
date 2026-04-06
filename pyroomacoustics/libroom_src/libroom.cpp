@@ -35,6 +35,7 @@
 
 #include "common.hpp"
 #include "geometry.hpp"
+#include "geometry_utils.hpp"
 #include "microphone.hpp"
 #include "random.hpp"
 #include "rir_builder.hpp"
@@ -56,6 +57,11 @@ PYBIND11_MODULE(libroom, m) {
       .def(py::init<const std::vector<Wall<3>> &, const std::vector<int> &,
                     const std::vector<Microphone<3>> &, float, int, float,
                     float, float, float, bool>())
+      .def(
+          py::init<const std::vector<Wall<3>> &, const std::vector<int> &,
+                   const Eigen::MatrixXf &, const Eigen::MatrixXi &,
+                   const std::vector<int> &, const std::vector<Microphone<3>> &,
+                   float, int, float, float, float, float, bool>())
       .def(py::init<const Vectorf<3> &,
                     const Eigen::Array<float, Eigen::Dynamic, 6> &,
                     const Eigen::Array<float, Eigen::Dynamic, 6> &,
@@ -330,4 +336,7 @@ PYBIND11_MODULE(libroom, m) {
   m.def("rir_builder", &rir_builder, "RIR builder");
   m.def("delay_sum", &delay_sum, "Delay and sum");
   m.def("fractional_delay", &fractional_delay, "Fractional delays");
+
+  m.def("triangulate_walls", &triangulate_walls,
+        "Triangulates a set of walls into a mesh");
 }

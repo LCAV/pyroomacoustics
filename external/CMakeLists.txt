@@ -21,6 +21,13 @@ FetchContent_Declare(
   GIT_TAG v3.0.1
 )
 
+# libigl
+FetchContent_Declare(
+  libigl
+  GIT_REPOSITORY https://github.com/libigl/libigl
+  GIT_TAG v2.6.0
+)
+
 # eigen
 set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Disable Eigen pkg-config")
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Disable Eigen testing")
@@ -34,4 +41,4 @@ set(BUILD_BENCHMARKS OFF CACHE BOOL "Disable nanoflann benchmarks" FORCE)
 # pybind11
 set(PYBIND11_TEST OFF CACHE BOOL "Disable pybind11 tests")
 
-FetchContent_MakeAvailable(eigen nanoflann pybind11)
+FetchContent_MakeAvailable(eigen nanoflann pybind11 libigl)

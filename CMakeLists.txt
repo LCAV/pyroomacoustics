@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 project(pyroomacoustics)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find pybind11 (handled by external/CMakeLists.txt via FetchContent)
 set(PYBIND11_FINDPYTHON ON)
@@ -30,6 +32,7 @@ target_include_directories(libroom PRIVATE
 target_link_libraries(libroom PRIVATE
     Eigen3::Eigen
     nanoflann::nanoflann
+    igl::core
 )
 
 # Compile options
