@@ -9,7 +9,7 @@ description = "A simple framework for room acoustics and audio processing in Pyt
 authors = [
     { name = "Laboratory for Audiovisual Communications, EPFL", email = "fakufaku@gmail.ch" }
 ]
-license = "MIT"
+license = { file = "LICENSE" }
 keywords = ["room", "acoustics", "signal processing", "doa", "beamforming", "adaptive"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -66,10 +66,6 @@ pyroomacoustics = [
     "*.pyx",
     "data/materials.json",
     "data/sofa_files.json",
-    "data/sofa/AKG_c480_c414_CUBE.sofa",
-    "data/sofa/EM32_Directivity.sofa",
-    "data/sofa/mit_kemar_large_pinna.sofa",
-    "data/sofa/mit_kemar_normal_pinna.sofa",
 ]
 
 [tool.setuptools_scm]

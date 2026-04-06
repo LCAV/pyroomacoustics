@@ -30,3 +30,12 @@ graft tests/transform
 
 global-exclude *.py[co]
 global-exclude __pycache__
+
+# Exclude large data files from sdist to keep it under 100MB
+recursive-exclude pyroomacoustics/data/sofa *.sofa
+recursive-exclude examples *
+recursive-exclude notebooks *
+recursive-exclude logo *
+recursive-exclude offline_packages *
+recursive-exclude docs *
+recursive-exclude build_debug *

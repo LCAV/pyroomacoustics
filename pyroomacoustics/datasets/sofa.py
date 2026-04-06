@@ -67,9 +67,15 @@ The database contains the following files.
   for more details.
 
 
+
+The default location for the SOFA files is in the ``data/sofa`` folder of
+the ``pyroomacoustics`` package. This location can be overridden by setting the
+environment variable ``PYROOMACOUSTICS_DATA_PATH`` to a different path.
+
 """
 
 import json
+import os
 import typing as tp
 from dataclasses import dataclass
 from pathlib import Path
@@ -77,7 +83,9 @@ from pathlib import Path
 from .utils import AttrDict, download_multiple
 
 _pra_data_folder = Path(__file__).parents[1] / "data"
-DEFAULT_SOFA_PATH = _pra_data_folder / "sofa"
+DEFAULT_SOFA_PATH = Path(
+    os.environ.get("PYROOMACOUSTICS_DATA_PATH", _pra_data_folder / "sofa")
+)
 SOFA_INFO = _pra_data_folder / "sofa_files.json"
 
 _DIRPAT_FILES = [
