@@ -15,10 +15,14 @@ Changed
 ~~~~~~~
 
 - Modernized the build system to use ``pyproject.toml`` and ``CMake``.
-- External dependencies (``Eigen``, ``nanoflann``, ``pybind11``) are now automatically managed via CMake's ``FetchContent``.
+- External dependencies (``Eigen``, ``nanoflann``, ``pybind11``) are now
+  automatically managed via CMake's ``FetchContent``.
 - Switched to dynamic versioning using ``setuptools_scm``.
 - Relocated the test suite from the source package to a top-level ``tests/`` directory.
-- Update the continuous integration to use cibuildwheel to handle all platforms including manylinux.
+- Update the continuous integration to use cibuildwheel to handle all platforms
+  including manylinux.
+- The location of the SOFA files can be specified by the
+  ``PYROOMACOUSTICS_DATA_PATH`` environment variable.
 
 
 `0.10.0`_ - 2026-04-01
