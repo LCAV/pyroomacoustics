@@ -1470,6 +1470,7 @@ class Room(object):
         mic_marker_size=10,
         plot_directivity=True,
         ax=None,
+        plot_walls=True,
         **kwargs,
     ):
         """Plots the room with its walls, microphones, sources and images"""
@@ -1502,15 +1503,16 @@ class Room(object):
                     ax = fig.add_subplot(111, aspect="equal", **kwargs)
 
             # draw room
-            corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
-            polygons = [Polygon(xy=corners.T, closed=True)]
-            p = PatchCollection(
-                polygons,
-                cmap=matplotlib.cm.jet,
-                facecolor=np.array([1, 1, 1]),
-                edgecolor=np.array([0, 0, 0]),
-            )
-            ax.add_collection(p)
+            if plot_walls:
+                corners = np.array([wall.corners[:, 0] for wall in self.walls]).T
+                polygons = [Polygon(xy=corners.T, closed=True)]
+                p = PatchCollection(
+                    polygons,
+                    cmap=matplotlib.cm.jet,
+                    facecolor=np.array([1, 1, 1]),
+                    edgecolor=np.array([0, 0, 0]),
+                )
+                ax.add_collection(p)
 
             if self.mic_array is not None:
                 for i in range(self.mic_array.nmic):
@@ -1654,12 +1656,13 @@ class Room(object):
                 fig.add_axes(ax)
 
             # plot the walls
-            for w in self.walls:
-                tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
-                rng = random.get_rng()
-                tri.set_color(colors.rgb2hex(rng.uniform(size=3)))
-                tri.set_edgecolor("k")
-                ax.add_collection3d(tri)
+            if plot_walls:
+                for w in self.walls:
+                    tri = a3.art3d.Poly3DCollection([w.corners.T], alpha=0.5)
+                    rng = random.get_rng()
+                    tri.set_color(colors.rgb2hex(rng.uniform(size=3)))
+                    tri.set_edgecolor("k")
+                    ax.add_collection3d(tri)
 
             # define some markers for different sources and colormap for damping
             markers = ["o", "s", "v", "."]
@@ -3061,4 +3064,4 @@ class AnechoicRoom(ShoeBox):
         """Overloaded function to issue warning when img_order is given."""
         if "img_order" in kwargs.keys():
             warnings.warn("Ignoring img_order argument for AnechoicRoom.", UserWarning)
-        ShoeBox.plot(self, **kwargs)
+        return ShoeBox.plot(self, plot_walls=False, **kwargs)

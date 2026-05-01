@@ -11,6 +11,12 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
+Added
+~~~~~~~
+
+- Added a boolean flag ``plot_walls`` to toggle wall rendering in ``Room.plot``.
+- Set the ``plot_walls`` to ``False`` for ``AnechoicRoom`` by default.
+
 Changed
 ~~~~~~~
 
