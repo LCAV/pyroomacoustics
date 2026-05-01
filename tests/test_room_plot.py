@@ -12,8 +12,7 @@ import pyroomacoustics as pra
 
 def _has_wall_collection(ax):
     return any(
-        isinstance(c, (PatchCollection, art3d.Poly3DCollection))
-        for c in ax.collections
+        isinstance(c, (PatchCollection, art3d.Poly3DCollection)) for c in ax.collections
     )
 
 
