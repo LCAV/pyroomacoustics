@@ -280,7 +280,11 @@ def compute_rt_rir(
         hist = interp_hist(hist_bands[b, :], N)
 
         # Impulse response for every octave band for each microphone.
-        rir_bands[b, :] = seq_bp * np.sqrt(hist)
+        # Clamp to non-negative: interp_hist can produce tiny negatives
+        # from floating-point noise in linear interpolation.  sqrt of a
+        # negative yields NaN which downstream IIR filters (e.g. the
+        # high-pass in compute_rir) then propagate to the entire RIR.
+        rir_bands[b, :] = seq_bp * np.sqrt(np.maximum(hist, 0.0))
 
     if air_abs_coeffs is not None:
         if rir_bands.shape[0] == 1:
