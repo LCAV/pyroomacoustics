@@ -26,6 +26,11 @@ Changed
 - The location of the SOFA files can be specified by the
   ``PYROOMACOUSTICS_DATA_PATH`` environment variable.
 
+Bugfix
+~~~~~~
+
+- Fixes NaNs that may appear in RT histogram in some cases (issue #433). Thanks @jguice.
+
 
 `0.10.0`_ - 2026-04-01
 ----------------------
