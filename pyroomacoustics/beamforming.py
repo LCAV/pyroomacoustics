@@ -242,7 +242,7 @@ def spiral_2D_array(center, M, radius=1.0, divi=3, angle=None):
     pos_mic_x = pos_array_norm * np.cos(pos_array_angle)
     pos_mic_y = pos_array_norm * np.sin(pos_array_angle)
 
-    return np.array([pos_mic_x, pos_mic_y])
+    return np.array(center)[:, np.newaxis] + np.array([pos_mic_x, pos_mic_y])
 
 
 def fir_approximation_ls(weights, T, n1, n2):

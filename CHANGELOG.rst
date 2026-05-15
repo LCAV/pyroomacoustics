@@ -11,7 +11,10 @@ adheres to `Semantic Versioning <http://semver.org/spec/v2.0.0.html>`_.
 `Unreleased`_
 -------------
 
-Nothing yet.
+Fixed
+~~~~~
+
+- `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 
 
 `0.10.1`_ - 2026-05-01
