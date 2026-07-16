@@ -215,14 +215,36 @@ def clip(signal, high, low):
 
 def normalize(signal, bits=None):
     """
-    normalize to be in a given range. The default is to normalize the maximum
-    amplitude to be one. An optional argument allows to normalize the signal
-    to be within the range of a given signed integer representation of bits.
+    Normalize a signal to a given range.
+
+    By default, scale the maximum absolute amplitude to one. Integer inputs are
+    promoted to floating point so that the normalized values are not truncated.
+    A silent signal is returned unchanged.
+
+    Parameters
+    ----------
+    signal : numpy.ndarray
+        Signal to normalize.
+    bits : int, optional
+        Scale the signal to the range of a signed integer representation with
+        this number of bits.
+
+    Returns
+    -------
+    numpy.ndarray
+        The normalized signal.
     """
 
-    s = signal.copy()
+    if np.issubdtype(signal.dtype, np.integer):
+        s = signal.astype(float)
+    else:
+        s = signal.copy()
 
-    s /= np.abs(s).max()
+    peak = np.abs(s).max()
+    if peak == 0:
+        return s
+
+    s /= peak
 
     # if one wants to scale for bits allocated
     if bits is not None:
