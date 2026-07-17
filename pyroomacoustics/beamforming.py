@@ -491,7 +491,10 @@ class MicrophoneArray(object):
             `False`)
         bitdepth: int, optional
             the format of output samples [np.int8/16/32/64 or
-            float (default)/np.float32/np.float64]
+            float (default)/np.float32/np.float64]. For an integer bitdepth a
+            float signal is assumed to be in [-1, 1] (unless ``norm`` scales it)
+            and quantized to full scale. ``np.int8`` is written as unsigned
+            8-bit PCM, the only 8-bit format WAV supports.
         """
         from scipy.io import wavfile
 
@@ -520,7 +523,32 @@ class MicrophoneArray(object):
 
             signal = normalize(signal, bits=bits)
 
-        signal = np.array(signal, dtype=bitdepth)
+        signal = np.asarray(signal)
+
+        if bits is not None and not np.issubdtype(signal.dtype, np.integer):
+            # Quantize a float signal to integer PCM. This is the inverse of
+            # ``to_float32``: full scale is 2 ** (bits - 1). ``norm`` already
+            # scaled to that range; otherwise assume the signal is in [-1, 1].
+            # Round (not truncate) to avoid a sign-dependent bias.
+            full_scale = 2.0 ** (bits - 1)
+            if not norm:
+                signal = signal * full_scale
+            signal = np.round(signal)
+            if bitdepth is np.int8:
+                # WAV has no signed 8-bit format; scipy writes 8-bit as
+                # unsigned offset-binary, which ``to_float32`` reads back.
+                # Clip to [-128, 127] (both exact) before the +128 offset so
+                # the top rail cannot wrap to 0 in uint8.
+                signal = (np.clip(signal, -128.0, 127.0) + 128.0).astype(np.uint8)
+            else:
+                # Clip so the cast can never overflow. The upper bound is
+                # nudged just below full scale because 2 ** (bits - 1) is not
+                # representable as the target signed integer (and, for 64 bits,
+                # not exactly as a float either).
+                hi = np.nextafter(full_scale, 0.0)
+                signal = np.clip(signal, -full_scale, hi).astype(bitdepth)
+        else:
+            signal = signal.astype(bitdepth)
 
         wavfile.write(filename, self.fs, signal)
 
