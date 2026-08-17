@@ -21,6 +21,7 @@ Fixed
 
 - `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
+- The iterative Wiener filter (``denoise.iterative_wiener``) no longer scales its output down by ``sqrt(frame_len)``. The enhanced signal now keeps the same amplitude as the input. (`#420 <https://github.com/LCAV/pyroomacoustics/issues/420>`_).
 
 
 `0.10.1`_ - 2026-05-01
