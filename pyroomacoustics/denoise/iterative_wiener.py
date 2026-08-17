@@ -212,7 +212,6 @@ class IterativeWiener(object):
 
         if frame_dft is None:
             frame_dft = np.fft.rfft(current_frame)
-        frame_dft /= np.sqrt(self.frame_len)
 
         frame_energy = np.std(current_frame) ** 2
 
