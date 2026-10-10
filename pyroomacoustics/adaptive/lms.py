@@ -46,7 +46,9 @@ class NLMS(AdaptiveFilter):
         AdaptiveFilter.update(self, x_n, d_n)
 
         e = self.d - np.inner(self.x, self.w)
-        self.w += self.mu * e * self.x / np.inner(self.x, self.x)
+        power = np.inner(self.x, self.x)
+        if power > 0:
+            self.w += self.mu * e * self.x / power
 
 
 class BlockLMS(NLMS):
@@ -110,6 +112,8 @@ class BlockLMS(NLMS):
 
             if self.nlms:
                 norm = np.linalg.norm(X, axis=1) ** 2
+                # Zero input vectors contribute no update.
+                norm[norm == 0] = 1
                 if self.L == 1:
                     X = X / norm[0]
                 else:
