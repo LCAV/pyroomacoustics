@@ -834,9 +834,14 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
   float travel_dist = 0;
 
   // To count the number of times the ray bounces on the walls
-  // For hybrid generation we add a ray to output only if specular_counter
-  // is higher than the ism order.
+  // For hybrid generation, we add a ray that was not scattered to the output
+  // only if specular_counter is higher than the ism order.
   int specular_counter(0);
+
+  // Whether the ray was diffusely scattered by a wall. Such a ray does not
+  // follow a specular path anymore and is not produced by the image source
+  // model, so the hybrid threshold below is left unchanged for it.
+  bool scattered = false;
 
   // Convert the energy threshold to transmission threshold
   float e_thres = energy_0.maxCoeff() * energy_thres;
@@ -861,7 +866,10 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
     Wall<D> &wall = walls[next_wall_index];
 
     // Check if the specular ray hits any of the microphone
-    if (!(is_hybrid_sim && specular_counter < ism_order)) {
+    // In hybrid simulations, the specular paths with up to ism_order
+    // reflections are already produced by the image source model.
+    int skip_up_to = scattered ? ism_order - 1 : ism_order;
+    if (!(is_hybrid_sim && specular_counter <= skip_up_to)) {
       for (size_t k(0); k < microphones.size(); k++) {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)
@@ -929,6 +937,7 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
       Vectorf<D> scat_dir = -wall.sample_lambertian_reflection();
       dir = wall.average_scatter * scat_dir + (1.f - wall.average_scatter) * dir;
       dir = dir.normalized();
+      scattered = true;
     }
 
     start = hit_point;
