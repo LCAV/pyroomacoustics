@@ -508,7 +508,7 @@ Air Absorption
 
 The absorption of sound energy by air is frequency dependent.
 The absorption is described the frequency dependent coefficient :math:`\\alpha(f)` and the energy decreases with distance as :math:`e^{-\\alpha(f) d}`.
-This can be turned simply by providing the keyword argument ``air_absorption=True`` to the room constructor or calling ``set_absorption()`` on an existing room.
+This can be turned simply by providing the keyword argument ``air_absorption=True`` to the room constructor or calling ``set_air_absorption()`` on an existing room.
 The coefficients are also temperature and humidity dependent and the default values are as follows.
 
 ========= ========    ====== ====== ====== ===== ===== ===== ===== =====
@@ -977,7 +977,7 @@ class Room(object):
             self.physics = Physics(temperature=temperature, humidity=humidity)
 
         self.set_sound_speed(self.physics.get_sound_speed())
-        self.air_absorption = None
+        self._air_absorption = None
         if air_absorption:
             self.set_air_absorption()
 
@@ -1183,16 +1183,46 @@ class Room(object):
 
         self.simulator_state["air_abs_needed"] = True
         if coefficients is None:
-            self.air_absorption = self.octave_bands(**self.physics.get_air_absorption())
+            self._air_absorption = self.octave_bands(
+                **self.physics.get_air_absorption()
+            )
         else:
             # ignore temperature and humidity if coefficients are provided
-            self.air_absorption = self.octave_bands(
+            self._air_absorption = self.octave_bands(
                 coeffs=coefficients, center_freqs=center_freqs, interp_kind=interp_kind
             )
 
     def unset_air_absorption(self):
         """Deactivates air absorption in the simulation"""
         self.simulator_state["air_abs_needed"] = False
+
+    @property
+    def air_absorption(self):
+        """
+        The air absorption coefficients used in the simulation, one per
+        octave band, or ``None`` if air absorption was never set.
+
+        This property is read-only. Use :py:meth:`set_air_absorption` to
+        turn air absorption on (optionally with custom coefficients) and
+        :py:meth:`unset_air_absorption` to turn it off.
+        """
+        return getattr(self, "_air_absorption", None)
+
+    @air_absorption.setter
+    def air_absorption(self, value):
+        raise self._air_absorption_read_only_error("assigned")
+
+    @air_absorption.deleter
+    def air_absorption(self):
+        raise self._air_absorption_read_only_error("deleted")
+
+    def _air_absorption_read_only_error(self, action):
+        return AttributeError(
+            f"{type(self).__name__}.air_absorption is read-only and cannot be "
+            f"{action}. Use room.set_air_absorption() to turn air absorption on "
+            "(optionally with coefficients), and room.unset_air_absorption() "
+            "to turn it off."
+        )
 
     def set_sound_speed(self, c):
         """Sets the speed of sound unconditionnaly"""
