@@ -487,14 +487,19 @@ def test_plot_response_accepts_list_and_scalar_azimuth(source_directivity):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "freq_bin",
-    [np.int64(46), np.float32(46 / 2230), np.float64(46 / 2230), 46 / 2230],
-    ids=["np.int64", "np.float32", "np.float64", "float"],
-)
-def test_plot_response_freq_bin_int_and_float_equivalent(source_directivity, freq_bin):
+@pytest.mark.parametrize("kind", ["np.int64", "np.float32", "np.float64", "float"])
+def test_plot_response_freq_bin_int_and_float_equivalent(source_directivity, kind):
     """``freq_bin`` follows the convention of ``plot``: int bin or float ``f / fs``."""
-    assert source_directivity._irs.shape[-1] == 2230
+    # The response length depends on the resampling backend (soxr or
+    # samplerate), so derive the normalized frequency from it. The middle of
+    # bin 46 keeps the truncation to a bin index away from the bin edges.
+    n_fft = source_directivity._irs.shape[-1]
+    freq_bin = {
+        "np.int64": np.int64(46),
+        "np.float32": np.float32(46.5 / n_fft),
+        "np.float64": np.float64(46.5 / n_fft),
+        "float": 46.5 / n_fft,
+    }[kind]
     fig, (ax_int, ax_other) = plt.subplots(1, 2)
 
     source_directivity.plot_response(azimuth=AZIMUTH_PLOT, ax=ax_int, freq_bin=46)
@@ -584,8 +589,6 @@ def test_plot_response_all_zero_responses_draw_a_point():
 @pytest.mark.parametrize(
     "freq_bin, error",
     [
-        (1116, ValueError),  # n_fft // 2 + 1 for the 2230-sample responses
-        (2230, ValueError),
         (-1, ValueError),
         (0.75, ValueError),  # above Nyquist as a normalized frequency
         ("46", TypeError),
@@ -598,6 +601,16 @@ def test_plot_response_rejects_bad_freq_bin(source_directivity, freq_bin, error)
     """Bins outside the one-sided spectrum or of the wrong type are rejected."""
     with pytest.raises(error):
         source_directivity.plot_response(azimuth=AZIMUTH_PLOT, freq_bin=freq_bin)
+
+
+def test_plot_response_rejects_bins_past_nyquist(source_directivity):
+    """The last valid bin is ``n_fft // 2``; the next one and beyond are rejected."""
+    n_fft = source_directivity._irs.shape[-1]
+    fig, ax = plt.subplots()
+    source_directivity.plot_response(azimuth=AZIMUTH_PLOT, ax=ax, freq_bin=n_fft // 2)
+    for freq_bin in (n_fft // 2 + 1, n_fft):
+        with pytest.raises(ValueError):
+            source_directivity.plot_response(azimuth=AZIMUTH_PLOT, freq_bin=freq_bin)
 
 
 # ---------------------------------------------------------------------------
