@@ -21,6 +21,7 @@ Fixed
 
 - `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
+- ``Room.compute_rir`` no longer raises ``ValueError: zero-size array to reduction operation maximum`` when a microphone sees no image source of a source (e.g. in a non-convex room with a low ``max_order``). ``compute_ism_rir`` now returns a silent impulse response for such a dead channel. (`#441 <https://github.com/LCAV/pyroomacoustics/issues/441>`_).
 
 
 `0.10.1`_ - 2026-05-01
