@@ -25,8 +25,6 @@ src_dir1 = pra.FigureEight(
 
 @pytest.mark.parametrize("with_dir", ((True,), (False,)))
 def test_add_source_mic(with_dir):
-    room = pra.ShoeBox(room_size)
-
     if with_dir:
         sdir0 = src_dir0
         sdir1 = src_dir1
