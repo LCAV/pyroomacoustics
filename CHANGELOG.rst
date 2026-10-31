@@ -19,6 +19,8 @@ Added
 Fixed
 ~~~~~
 
+- Fix a ``NameError`` in ``examples/doa_algorithms.py`` by printing the
+  configured ``use_anechoic_class`` flag (`#454 <https://github.com/LCAV/pyroomacoustics/issues/454>`_).
 - `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
 
