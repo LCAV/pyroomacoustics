@@ -1193,6 +1193,7 @@ class Room(object):
     def unset_air_absorption(self):
         """Deactivates air absorption in the simulation"""
         self.simulator_state["air_abs_needed"] = False
+        self.air_absorption = None
 
     def set_sound_speed(self, c):
         """Sets the speed of sound unconditionnaly"""
