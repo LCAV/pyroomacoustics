@@ -21,6 +21,7 @@ Fixed
 
 - `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
+- ``Room.air_absorption`` is now a read-only property. Assigning to it (e.g. ``room.air_absorption = True``) raises an ``AttributeError`` pointing to ``set_air_absorption()`` and ``unset_air_absorption()``, instead of silently breaking the simulation later. Code that assigned the attribute directly (e.g. in a ``Room`` subclass) must switch to these two methods. (`#379 <https://github.com/LCAV/pyroomacoustics/issues/379>`_).
 
 
 `0.10.1`_ - 2026-05-01
