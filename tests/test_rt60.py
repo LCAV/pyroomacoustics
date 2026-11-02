@@ -31,6 +31,14 @@ def test_rt60_theory_single_band():
     assert (rt60_eyring - room.rt60_theory(formula="eyring")) < eps
 
 
+def test_rt60_eyring_air_absorption():
+    S, V, a, c = 94.0, 60.0, 0.2, 343.0
+    for m in [0.005, 0.05, 0.1]:
+        expected = 24 * np.log(10) * V / (c * (-S * np.log(1 - a) + 4 * m * V))
+        assert abs(pra.rt60_eyring(S, V, a, m, c) - expected) < eps
+        assert pra.rt60_eyring(S, V, a, m, c) < pra.rt60_eyring(S, V, a, 0.0, c)
+
+
 def test_rt60_theory_multi_band():
     # Create the room
     room = pra.ShoeBox(
