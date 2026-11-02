@@ -1152,7 +1152,7 @@ def rt60_eyring(S, V, a, m, c):
         The estimated reverberation time (RT60)
     """
 
-    return -(24 * np.log(10) / c) * V / (S * np.log(1 - a) + 4 * m * V)
+    return -(24 * np.log(10) / c) * V / (S * np.log(1 - a) - 4 * m * V)
 
 
 def rt60_sabine(S, V, a, m, c):
