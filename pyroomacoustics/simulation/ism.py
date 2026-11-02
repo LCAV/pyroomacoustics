@@ -121,7 +121,53 @@ def compute_ism_rir(
     min_phase=True,
     air_abs_coeffs=None,
 ):
+    """
+    Compute the image source method part of the room impulse response
+    between one source and one microphone.
+
+    Parameters
+    ----------
+    src: SoundSource
+        The source, with its ``images``, ``damping`` and ``directivity``
+        attributes filled by ``Room.image_source_model``.
+    mic: numpy.ndarray
+        The location of the microphone, shape ``(dim,)``.
+    mic_dir: Directivity or None
+        The directivity of the microphone, if any.
+    src_directions: numpy.ndarray
+        The directions from the source to the microphone for every image
+        source, shape ``(dim, n_images)``.
+    is_visible: numpy.ndarray
+        Boolean mask of shape ``(n_images,)`` selecting the image sources
+        visible from the microphone. ``Room.image_source_model`` stores an
+        all-zero integer array instead when not even the direct path is
+        visible; only the truth value of the entries is used here, so both
+        forms work.
+    fdl: int
+        The length of the fractional delay filter in samples.
+    c: float
+        The speed of sound.
+    fs: int
+        The sampling frequency.
+    octave_bands: OctaveBandsFactory
+        The octave bands used for frequency-dependent attenuation.
+    min_phase: bool, optional
+        If ``True`` (default), use minimum-phase filters for the octave bands.
+    air_abs_coeffs: numpy.ndarray or None, optional
+        The air absorption coefficients per octave band, if any.
+
+    Returns
+    -------
+    numpy.ndarray
+        The impulse response, a one-dimensional ``float32`` array. If no
+        image source is visible, it is all zeros and ``fdl`` samples long.
+    """
     fdl2 = fdl // 2
+
+    if not np.any(is_visible):
+        # No image source is visible from this microphone (issue #441). Check
+        # before indexing: an all-zero int32 mask would select image 0.
+        return np.zeros(fdl, dtype=np.float32)
 
     images = src.images[:, is_visible]
     att = src.damping[:, is_visible]
