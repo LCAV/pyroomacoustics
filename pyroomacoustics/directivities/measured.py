@@ -373,6 +373,144 @@ class MeasuredDirectivity(Directivity):
 
         return ax
 
+    def _get_freq_bin_index(self, freq_bin):
+        """
+        Convert the ``freq_bin`` argument of the plotting methods to a bin index
+        of the one-sided spectrum of the impulse responses.
+        """
+        n_fft = self._irs.shape[-1]
+        n_bins = n_fft // 2 + 1
+
+        if freq_bin is None:
+            # closest bin to 1 kHz, or the last bin if 1 kHz is above Nyquist
+            freq_bin = min(int(round(1000.0 / self.fs * n_fft)), n_bins - 1)
+        elif isinstance(freq_bin, (float, np.floating)):
+            freq_bin = int(freq_bin * n_fft)
+        elif isinstance(freq_bin, (int, np.integer)) and not isinstance(
+            freq_bin, (bool, np.bool_)
+        ):
+            freq_bin = int(freq_bin)
+        else:
+            raise TypeError(
+                f"freq_bin should be of type int or float (got {type(freq_bin)})."
+            )
+
+        if not (0 <= freq_bin < n_bins):
+            raise ValueError(
+                f"freq_bin should be in the range [0, {n_bins}) (got {freq_bin})."
+            )
+
+        return freq_bin
+
+    @requires_matplotlib
+    def plot_response(
+        self,
+        azimuth,
+        colatitude=None,
+        degrees=True,
+        ax=None,
+        offset=None,
+        freq_bin=None,
+    ):
+        """
+        Plot the magnitude of the directivity response at specified angles.
+
+        This is the counterpart of the method of the same name of the analytic
+        directivities, used by :py:meth:`pyroomacoustics.Room.plot`. The
+        measured response depends on frequency, so the magnitude is drawn at a
+        single frequency bin of the spectrum of the impulse responses. It is
+        normalized by its maximum over all measured directions, so that the
+        drawn pattern peaks at one, as the analytic patterns do. For each
+        requested angle, the closest measured direction is used, as in
+        :py:meth:`get_response`.
+
+        Parameters
+        ----------
+        azimuth : array_like
+            Azimuth values for plotting.
+        colatitude : array_like, optional
+            Colatitude values for plotting. If not provided, 2D plot.
+        degrees : bool
+            Whether provided values are in degrees (True) or radians (False).
+        ax : axes object
+        offset : list
+            3-D coordinates of the point where the response needs to be plotted.
+        freq_bin : int or float, optional
+            The frequency bin to plot if an int. Normalized frequency
+            ``freq_hz / fs`` if a float. By default, the bin closest to 1 kHz
+            is drawn. Note that :py:meth:`plot` defaults to bin 0 instead, so
+            the two methods do not draw the same frequency unless ``freq_bin``
+            is given.
+
+        Returns
+        -------
+        ax : :py:class:`~matplotlib.axes.Axes`
+        """
+        import matplotlib.pyplot as plt
+
+        freq_bin = self._get_freq_bin_index(freq_bin)
+
+        # magnitude at the chosen bin for every measured direction
+        magnitude = np.abs(np.fft.rfft(self._irs, axis=-1)[:, freq_bin])
+        if magnitude.max() > 0:
+            magnitude = magnitude / magnitude.max()
+
+        if offset is not None:
+            x_offset = offset[0]
+            y_offset = offset[1]
+        else:
+            x_offset = 0
+            y_offset = 0
+
+        if degrees:
+            azimuth = np.radians(azimuth)
+
+        if colatitude is not None:
+            if degrees:
+                colatitude = np.radians(colatitude)
+
+            if ax is None:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1, projection="3d")
+
+            if offset is not None:
+                z_offset = offset[2]
+            else:
+                z_offset = 0
+
+            # look up the closest measured direction for every point of the grid
+            AZI, COL = np.meshgrid(azimuth, colatitude)
+            cart = spher2cart(AZI.flatten(), COL.flatten())
+            _, index = self._kdtree.query(cart.T)
+            RESP = magnitude[index].reshape(AZI.shape)
+
+            # create surface plot, need cartesian coordinates
+            X = RESP * np.sin(COL) * np.cos(AZI) + x_offset
+            Y = RESP * np.sin(COL) * np.sin(AZI) + y_offset
+            Z = RESP * np.cos(COL) + z_offset
+
+            ax.plot_surface(X, Y, Z)
+
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+
+        else:
+            if ax is None:
+                fig = plt.figure()
+                ax = plt.subplot(111)
+
+            # response in the horizontal plane
+            cart = spher2cart(azimuth)
+            _, index = self._kdtree.query(cart.T)
+            RESP = magnitude[index]
+
+            X = RESP * np.cos(azimuth) + x_offset
+            Y = RESP * np.sin(azimuth) + y_offset
+            ax.plot(X, Y)
+
+        return ax
+
 
 class MeasuredDirectivityFile:
     """
