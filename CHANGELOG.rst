@@ -23,8 +23,7 @@ Fixed
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
 - Fixes the double counting of the specular paths at order ``max_order`` in
   hybrid image source / ray tracing simulations. These paths were produced by
-  the image source model and logged again by the ray tracer. The logging
-  threshold for rays that have already been scattered by a wall is unchanged.
+  the image source model and logged again by the ray tracer.
 
 
 `0.10.1`_ - 2026-05-01

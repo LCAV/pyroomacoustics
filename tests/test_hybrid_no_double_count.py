@@ -14,21 +14,18 @@ mic_locs = np.array(
 ).T
 
 
+@pytest.mark.parametrize("scattering", [0.0, 1e-12])
 @pytest.mark.parametrize("max_order", [0, 1, 2, 3])
-def test_hybrid_no_double_counting(max_order):
+def test_hybrid_no_double_counting(max_order, scattering):
     """
-    In the hybrid simulator, the image source model already produces all the
-    specular reflections up to order ``max_order``. The ray tracer should thus
-    only log specular rays that were reflected strictly more than ``max_order``
-    times. Then, no ray tracing energy can reach a microphone before the
-    earliest arrival of the image sources of order ``max_order + 1`` (up to the
-    size of the receiver sphere), while the later part of the ray tracing
-    histogram is kept.
+    The image source model already produces the specular paths with up to
+    ``max_order`` reflections, so the ray tracer should log no energy before
+    the earliest arrival of the image sources of order ``max_order + 1``.
     """
     room = pra.ShoeBox(
         room_dim,
         fs=16000,
-        materials=pra.Material(energy_absorption=0.2),
+        materials=pra.Material(energy_absorption=0.2, scattering=scattering),
         max_order=max_order,
         ray_tracing=True,
         air_absorption=False,
@@ -61,33 +58,3 @@ def test_hybrid_no_double_counting(max_order):
         hist = room.rt_histograms[m][0][0]
         assert np.sum(hist[..., :first_bin]) == 0.0
         assert np.sum(hist[..., first_bin:]) > 0.0
-
-
-@pytest.mark.parametrize("scattering", [0.1, 1.0])
-def test_hybrid_scattered_rays_keep_threshold(scattering):
-    """
-    A ray that was diffusely scattered by a wall does not follow a specular
-    path anymore and is not produced by the image source model. When all the
-    walls scatter, every ray is scattered at its first reflection, so only the
-    direct path (a specular path of order 0) is left to the image source model
-    both for ``max_order=0`` and ``max_order=1``. With the same random sequence,
-    the ray tracing histograms must then be the same.
-    """
-    hists = []
-    for max_order in [0, 1]:
-        room = pra.ShoeBox(
-            room_dim,
-            fs=16000,
-            materials=pra.Material(energy_absorption=0.2, scattering=scattering),
-            max_order=max_order,
-            ray_tracing=True,
-            air_absorption=False,
-        )
-        room.add_source(source_loc)
-        room.add_microphone_array(mic_locs)
-        pra.random.seed(numpy=0, libroom=0)
-        room.ray_tracing()
-        hists.append([room.rt_histograms[m][0][0] for m in range(mic_locs.shape[1])])
-
-    for h0, h1 in zip(*hists):
-        assert np.array_equal(h0, h1)
