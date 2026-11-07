@@ -12,6 +12,22 @@ soundstage 이슈 2: 스피커를 놓을 "후보 위치"를 만드는 함수
 
 import math
 
+# 스피커 높이는 demo_basic.py의 스피커 위치(SPEAKER_POS)의 z값을 그대로 쓴다.
+from demo_basic import SPEAKER_POS
+
+# =====================================================================
+# 기본 설정 상수
+# candidates.py / evaluate.py / recommend.py 의 실행 예제가 모두 이 값을 같이 쓴다.
+# (여러 파일에 같은 숫자를 따로 적어 두면 한쪽만 바뀌었을 때 결과가 어긋나므로
+#  여기 한 곳에만 적고, 다른 파일은 import해서 쓴다)
+# =====================================================================
+DEFAULT_STEP = 1.0                  # 격자 간격 [m]: 1 m마다 후보 하나
+DEFAULT_MIN_WALL_DISTANCE = 0.5     # 벽에서 최소 0.5 m 떨어진 곳에만 후보를 둔다
+DEFAULT_HEIGHT = SPEAKER_POS[2]     # 스피커 설치 높이 [m] (demo_basic.py와 같은 2.5 m)
+# 설치 금지 구역 예시: 앞쪽 중앙의 교탁/스크린 자리 (x 4~6 m, y 0~2 m)
+# 튜플로 둔 이유: 리스트와 달리 실수로 내용을 바꿀(append 등) 수 없어서 상수로 안전하다.
+DEFAULT_FORBIDDEN_ZONES = ((4.0, 0.0, 6.0, 2.0),)
+
 
 def _to_number(value, name):
     """값을 실수(float)로 바꾼다. 숫자가 아니거나 무한대/NaN이면 오류를 낸다."""
@@ -184,14 +200,14 @@ def generate_candidates(room_dims, step, min_wall_distance, height,
 if __name__ == "__main__":
     # 방 치수와 스피커 높이는 demo_basic.py에서 그대로 가져온다.
     # (숫자를 복사해 두면 한쪽만 바뀌었을 때 어긋나므로 직접 import한다)
-    from demo_basic import ROOM_WIDTH, ROOM_LENGTH, ROOM_HEIGHT, SPEAKER_POS
+    from demo_basic import ROOM_WIDTH, ROOM_LENGTH, ROOM_HEIGHT
 
     room_dims = (ROOM_WIDTH, ROOM_LENGTH, ROOM_HEIGHT)
-    STEP = 1.0                     # 1 m 간격 격자
-    MIN_WALL_DISTANCE = 0.5        # 벽에서 최소 0.5 m
-    HEIGHT = SPEAKER_POS[2]        # demo_basic.py의 스피커 높이(2.5 m)
-    # 예시 금지 구역: 앞쪽 중앙의 교탁/스크린 자리 (x 4~6 m, y 0~2 m)
-    FORBIDDEN = [(4.0, 0.0, 6.0, 2.0)]
+    # 후보 생성 설정은 파일 맨 위의 DEFAULT_... 상수를 쓴다
+    STEP = DEFAULT_STEP
+    MIN_WALL_DISTANCE = DEFAULT_MIN_WALL_DISTANCE
+    HEIGHT = DEFAULT_HEIGHT
+    FORBIDDEN = list(DEFAULT_FORBIDDEN_ZONES)   # 출력 모양을 예전과 같게 리스트로
 
     cands = generate_candidates(room_dims, STEP, MIN_WALL_DISTANCE, HEIGHT,
                                 forbidden_zones=FORBIDDEN)

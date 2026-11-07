@@ -23,7 +23,10 @@ from demo_basic import (
     FS, WALL_ABSORPTION, MAX_ORDER,
     make_listener_grid,
 )
-from candidates import generate_candidates
+from candidates import (
+    generate_candidates,
+    DEFAULT_STEP, DEFAULT_MIN_WALL_DISTANCE, DEFAULT_HEIGHT, DEFAULT_FORBIDDEN_ZONES,
+)
 
 # 에너지가 0일 때 log10(0) = -무한대 오류를 막기 위해 더하는 아주 작은 값
 EPS = 1e-12
@@ -177,12 +180,11 @@ def _print_table(title, rows):
 if __name__ == "__main__":
     room_dims = (ROOM_WIDTH, ROOM_LENGTH, ROOM_HEIGHT)
 
-    # 후보 생성 설정: candidates.py의 실행 예제(__main__)와 같은 값
-    # (그 값들은 __main__ 블록 안에 있어 import할 수 없으므로 여기 다시 적는다)
-    STEP = 1.0                      # 1 m 간격 격자
-    MIN_WALL_DISTANCE = 0.5         # 벽에서 최소 0.5 m
-    HEIGHT = 2.5                    # 스피커 높이 (demo_basic.SPEAKER_POS의 z)
-    FORBIDDEN = [(4.0, 0.0, 6.0, 2.0)]   # 앞쪽 중앙 교탁/스크린 자리
+    # 후보 생성 설정: candidates.py 상단의 DEFAULT_... 상수를 그대로 쓴다
+    STEP = DEFAULT_STEP                          # 1 m 간격 격자
+    MIN_WALL_DISTANCE = DEFAULT_MIN_WALL_DISTANCE  # 벽에서 최소 0.5 m
+    HEIGHT = DEFAULT_HEIGHT                      # 스피커 높이 2.5 m
+    FORBIDDEN = list(DEFAULT_FORBIDDEN_ZONES)    # 앞쪽 중앙 교탁/스크린 자리
 
     cands = generate_candidates(room_dims, STEP, MIN_WALL_DISTANCE, HEIGHT,
                                 forbidden_zones=FORBIDDEN)
