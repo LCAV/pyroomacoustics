@@ -56,6 +56,7 @@ def select_best(results, baseline, min_level_db=None, margin_db=0.0, top_n=5):
     improvement_percent : 균일도 개선율 [%]
                           = (기준 std_db - 최적 std_db) / 기준 std_db * 100
                           (양수면 기준보다 더 균일해졌다는 뜻)
+    results             : 입력한 후보 전체 평가 결과 (시각화 히트맵에서 사용, 이슈 5에서 추가)
     """
     # -----------------------------------------------------------------
     # 1) 입력 검사
@@ -113,6 +114,7 @@ def select_best(results, baseline, min_level_db=None, margin_db=0.0, top_n=5):
         "num_candidates": len(results),
         "num_passed": len(passed),
         "improvement_percent": float(improvement),
+        "results": results,
     }
 
 
