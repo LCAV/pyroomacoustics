@@ -148,10 +148,10 @@ class CardioidFamily(Directivity):
         return self._pattern_name
 
     def get_azimuth(self, degrees=True):
-        return self._orientation.get_azimuth(degrees, degrees=degrees)
+        return self._orientation.get_azimuth(degrees=degrees)
 
     def get_colatitude(self, degrees=True):
-        return self._orientation.get_colatitude(degrees, degrees=degrees)
+        return self._orientation.get_colatitude(degrees=degrees)
 
     def set_orientation(self, orientation):
         """
