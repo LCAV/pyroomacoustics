@@ -95,26 +95,33 @@ def open_sofa_file(path, fs=16000):
 
     file_sofa = sofa.Database.open(path)
 
-    # we have a special case for DIRPAT files because they need surgery
-    if is_dirpat(path):
-        # special case for DIRPAT files
-        # this is needed because the DIRPAT files are not following the SOFA conventions
-        # and require some custom processing
-        ir, fs, src_loc, mic_loc = _read_dirpat(file_sofa, path.stem, fs)
-
-    else:
-        # readers for SOFA files following the conventions
-
-        conv_name = file_sofa.convention.name
-
-        if conv_name == "SimpleFreeFieldHRIR":
-            ir, fs, src_loc, mic_loc = _read_simple_free_field_hrir(file_sofa, fs)
-
-        elif conv_name == "GeneralFIR":
-            ir, fs, src_loc, mic_loc = _read_general_fir(file_sofa, fs)
+    # The SOFA file is backed by a netCDF4 handle; make sure it is released
+    # once the data has been read, even if reading fails (see #410)
+    try:
+        # we have a special case for DIRPAT files because they need surgery
+        if is_dirpat(path):
+            # special case for DIRPAT files
+            # this is needed because the DIRPAT files are not following the SOFA conventions
+            # and require some custom processing
+            ir, fs, src_loc, mic_loc = _read_dirpat(file_sofa, path.stem, fs)
 
         else:
-            raise NotImplementedError(f"SOFA convention {conv_name} not implemented")
+            # readers for SOFA files following the conventions
+
+            conv_name = file_sofa.convention.name
+
+            if conv_name == "SimpleFreeFieldHRIR":
+                ir, fs, src_loc, mic_loc = _read_simple_free_field_hrir(file_sofa, fs)
+
+            elif conv_name == "GeneralFIR":
+                ir, fs, src_loc, mic_loc = _read_general_fir(file_sofa, fs)
+
+            else:
+                raise NotImplementedError(
+                    f"SOFA convention {conv_name} not implemented"
+                )
+    finally:
+        file_sofa.close()
 
     # assign the source labels if known
     source_labels = None
