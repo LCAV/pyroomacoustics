@@ -21,6 +21,7 @@ Fixed
 
 - `spiral_2D_array` now correctly uses the ``center`` parameter. Previously, it always returned the array at the origin. (`#413 <https://github.com/LCAV/pyroomacoustics/issues/413>`_).
 - ``to_float32`` no longer produces ``nan``/``inf`` for unsigned-integer input (e.g. 8-bit WAV read as ``uint8``). Unsigned PCM is now centered and scaled correctly instead of dividing by zero.
+- Corrected the speaker metadata in the CMU ARCTIC dataset to match the official festvox listing: ``fem`` accent is now ``German`` (was ``Irish``), ``rxr`` accent is now ``Israeli`` (was ``Dutch``), and ``slp`` sex is now ``male`` (was ``female``). (`#359 <https://github.com/LCAV/pyroomacoustics/issues/359>`_).
 
 
 `0.10.1`_ - 2026-05-01

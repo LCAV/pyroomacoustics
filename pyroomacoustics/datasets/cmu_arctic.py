@@ -55,15 +55,15 @@ cmu_arctic_speakers = {
     "bdl": {"sex": "male", "lang": "US English", "accent": "US"},
     "clb": {"sex": "female", "lang": "US English", "accent": "US"},
     "eey": {"sex": "female", "lang": "US English", "accent": "US"},
-    "fem": {"sex": "male", "lang": "US English", "accent": "Irish"},
+    "fem": {"sex": "male", "lang": "US English", "accent": "German"},
     "gka": {"sex": "male", "lang": "US English", "accent": "Indian"},
     "jmk": {"sex": "male", "lang": "US English", "accent": "Canadian"},
     "ksp": {"sex": "male", "lang": "US English", "accent": "Indian"},
     "ljm": {"sex": "female", "lang": "US English", "accent": "US"},
     "lnh": {"sex": "female", "lang": "US English", "accent": "US"},
     "rms": {"sex": "male", "lang": "US English", "accent": "US"},
-    "rxr": {"sex": "male", "lang": "US English", "accent": "Dutch"},
-    "slp": {"sex": "female", "lang": "US English", "accent": "Indian"},
+    "rxr": {"sex": "male", "lang": "US English", "accent": "Israeli"},
+    "slp": {"sex": "male", "lang": "US English", "accent": "Indian"},
     "slt": {"sex": "female", "lang": "US English", "accent": "US"},
 }
 
