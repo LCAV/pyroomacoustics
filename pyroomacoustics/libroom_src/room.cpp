@@ -861,7 +861,9 @@ void Room<D>::simul_ray(const Vectorf<D> &ray_direction,
     Wall<D> &wall = walls[next_wall_index];
 
     // Check if the specular ray hits any of the microphone
-    if (!(is_hybrid_sim && specular_counter < ism_order)) {
+    // In hybrid simulations, the specular paths with up to ism_order
+    // reflections are already produced by the image source model.
+    if (!(is_hybrid_sim && specular_counter <= ism_order)) {
       for (size_t k(0); k < microphones.size(); k++) {
         // Compute the distance between the line defined by (start, hit_point)
         // and the center of the microphone (mic_pos)
