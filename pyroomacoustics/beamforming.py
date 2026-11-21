@@ -454,23 +454,6 @@ class MicrophoneArray(object):
 
         if fs != self.fs:
             self.signals = u.resample(signals, fs, self.fs)
-            try:
-                import samplerate
-
-                fs_ratio = self.fs / float(fs)
-                newL = int(fs_ratio * signals.shape[1]) - 1
-                self.signals = np.zeros((self.M, newL))
-                # samplerate resample function considers columns as channels
-                # (hence the transpose)
-                for m in range(self.M):
-                    self.signals[m] = samplerate.resample(
-                        signals[m], fs_ratio, "sinc_best"
-                    )
-            except ImportError:
-                raise ImportError(
-                    "The samplerate package must be installed for"
-                    " resampling of the signals."
-                )
 
         else:
             self.signals = signals
