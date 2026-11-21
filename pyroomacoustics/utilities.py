@@ -200,7 +200,7 @@ def to_16b(signal):
     No clipping in performed, you are responsible to ensure signal is within
     the correct interval.
     """
-    return ((2**15 - 1) * signal).astype(np.int16)
+    return np.round((2**15 - 1) * signal).astype(np.int16)
 
 
 def clip(signal, high, low):
