@@ -62,7 +62,7 @@ room_dim = np.r_[10.0, 10.0]
 # The plots change a little because in one case there are no walls.
 use_anechoic_class = True
 
-print("============ Using anechoic: {} ==================".format(anechoic))
+print("============ Using anechoic: {} ==================".format(use_anechoic_class))
 
 #######################
 # algorithms parameters
