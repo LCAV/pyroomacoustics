@@ -716,19 +716,29 @@ class Beamformer(MicrophoneArray):
             return np.exp(-1j * omega * D / constants.get("c"))
 
     def steering_vector_2D_from_point(self, frequency, source, attn=True, ff=False):
-        """Creates a steering vector for a particular frequency and source
-        Args:
-            frequency
-            source: location in cartesian coordinates
-            attn: include attenuation factor if True
-            ff:   uses far-field distance if true
-        Return:
-            A 2x1 ndarray containing the steering vector.
+        """Compute a steering vector for each source position.
+
+        Parameters
+        ----------
+        frequency : float
+            Frequency in Hz.
+        source : array_like
+            Cartesian coordinates of one source or one source per column.
+        attn : bool
+            Include spherical spreading. In the far field, the amplitude is
+            constant across microphones and uses the source-to-center distance.
+        ff : bool
+            Use plane-wave delays relative to the closest microphone for each source.
+
+        Returns
+        -------
+        ndarray
+            Complex steering vectors with one row per microphone.
         """
 
         X = np.array(source)
         if X.ndim == 1:
-            X = source[:, np.newaxis]
+            X = X[:, np.newaxis]
 
         omega = 2 * np.pi * frequency
 
@@ -736,13 +746,16 @@ class Beamformer(MicrophoneArray):
         if ff:
             # unit vectors pointing towards sources
             p = X - self.center
-            p /= np.linalg.norm(p)
+            ranges = np.linalg.norm(p, axis=0)
+            if np.any(ranges == 0):
+                raise ValueError("Far-field direction is undefined at the array center")
+            p /= ranges
 
             # The projected microphone distances on the unit vectors
             D = -1 * np.dot(self.R.T, p)
 
             # subtract minimum in each column
-            D -= np.min(D)
+            D -= np.min(D, axis=0)
 
         else:
             D = distance(self.R, X)
@@ -750,10 +763,7 @@ class Beamformer(MicrophoneArray):
         phase = np.exp(-1j * omega * D / constants.get("c"))
 
         if attn:
-            # TO DO 1: This will mean slightly different absolute value for
-            # every entry, even within the same steering vector. Perhaps a
-            # better paradigm is far-field with phase carrier.
-            return 1.0 / (4 * np.pi) / D * phase
+            return 1.0 / (4 * np.pi) / (ranges if ff else D) * phase
         else:
             return phase
 

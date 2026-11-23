@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import pyroomacoustics as pra
 
@@ -19,6 +20,31 @@ room.image_source_model()
 # the noise matrix, note that the size is the number of
 # sensors multiplied by the filter size
 Rn = np.eye(bf.M * bf.Lg) * 1e-5
+
+
+@pytest.mark.parametrize("attn", [False, True])
+def test_far_field_steering(attn):
+    array = pra.Beamformer(np.array([[2.0, 2.3, 2.1], [3.0, 3.1, 3.4]]), 16000)
+    directions = np.array([[0.6, -0.8], [0.8, 0.6]])
+    ranges = np.array([8.0, 13.0])
+    sources = array.center + directions * ranges
+    frequency = 750
+    steering = array.steering_vector_2D_from_point
+    result = steering(frequency, sources, ff=True, attn=attn)
+    for i in range(sources.shape[1]):
+        projection = array.R.T @ directions[:, i]
+        delay = (projection.max() - projection) / pra.constants.get("c")
+        expected = np.exp(-2j * np.pi * frequency * delay)
+        if attn:
+            expected /= 4 * np.pi * ranges[i]
+        np.testing.assert_allclose(result[:, i], expected)
+        single = steering(frequency, sources[:, i], ff=True, attn=attn)
+        np.testing.assert_allclose(result[:, i], single[:, 0])
+
+
+def test_far_field_source_at_center():
+    with pytest.raises(ValueError, match="array center"):
+        bf.steering_vector_2D_from_point(750, bf.center, ff=True)
 
 
 def test_rake_max_udr_filters():
